@@ -37,6 +37,20 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:    "list",
+				Aliases: []string{"l"},
+				Usage:   "List sessions",
+				Action: func(*cli.Context) error {
+					utils.ListSessions()
+					// sessions, err := utils.ListSessions()
+					// if err != nil {
+					// 	return err
+					// }
+					// log.Println(sessions)
+					return nil
+				},
+			},
 		},
 	}
 
