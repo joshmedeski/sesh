@@ -11,8 +11,9 @@ import (
 
 func ListSessions(cCtx *cli.Context) {
 	var sessions []string
+	hasFlags := cCtx.Bool("tmux") || cCtx.Bool("zoxide")
 
-	if cCtx.Bool("tmux") {
+	if !hasFlags || cCtx.Bool("tmux") {
 		tmuxSessions, err := getTmuxSessions()
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -21,7 +22,7 @@ func ListSessions(cCtx *cli.Context) {
 		sessions = append(sessions, tmuxSessions...)
 	}
 
-	if cCtx.Bool("zoxide") {
+	if !hasFlags || cCtx.Bool("zoxide") {
 		zoxideResults, err := getZoxideResults()
 		if err != nil {
 			fmt.Println("Error:", err)
