@@ -5,23 +5,31 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 )
 
-func ListSessions() {
+func ListSessions(cCtx *cli.Context) {
 	var sessions []string
-	tmuxSessions, err := getTmuxSessions()
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	sessions = append(sessions, tmuxSessions...)
 
-	zoxideResults, err := getZoxideResults()
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
+	if cCtx.Bool("tmux") {
+		tmuxSessions, err := getTmuxSessions()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		sessions = append(sessions, tmuxSessions...)
 	}
-	sessions = append(sessions, zoxideResults...)
+
+	if cCtx.Bool("zoxide") {
+		zoxideResults, err := getZoxideResults()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		sessions = append(sessions, zoxideResults...)
+	}
+
 	fmt.Println(strings.Join(sessions, "\n"))
 }
 

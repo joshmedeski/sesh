@@ -38,16 +38,24 @@ func main() {
 				},
 			},
 			{
-				Name:    "list",
-				Aliases: []string{"l"},
-				Usage:   "List sessions",
-				Action: func(*cli.Context) error {
-					utils.ListSessions()
-					// sessions, err := utils.ListSessions()
-					// if err != nil {
-					// 	return err
-					// }
-					// log.Println(sessions)
+				Name:                   "list",
+				Aliases:                []string{"l"},
+				Usage:                  "List sessions",
+				UseShortOptionHandling: true,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "tmux",
+						Aliases: []string{"t"},
+						Usage:   "show tmux sessions",
+					},
+					&cli.BoolFlag{
+						Name:    "zoxide",
+						Aliases: []string{"z"},
+						Usage:   "show zoxide results",
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					utils.ListSessions(ctx)
 					return nil
 				},
 			},
