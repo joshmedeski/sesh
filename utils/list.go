@@ -8,19 +8,21 @@ import (
 )
 
 func ListSessions() {
-	sessions, err := getTmuxSessions()
+	var sessions []string
+	tmuxSessions, err := getTmuxSessions()
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
+	sessions = append(sessions, tmuxSessions...)
 
-	if len(sessions) == 0 {
-		fmt.Println("No sessions found")
-	} else {
-		fmt.Println(strings.Join(sessions, "\n"))
+	zoxideResults, err := getZoxideResults()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
 	}
-
-	// TODO: list zoxide sesssions
+	sessions = append(sessions, zoxideResults...)
+	fmt.Println(strings.Join(sessions, "\n"))
 }
 
 func getTmuxSessions() ([]string, error) {
@@ -46,4 +48,15 @@ func getTmuxSessions() ([]string, error) {
 	}
 
 	return sessions, nil
+}
+
+func getZoxideResults() ([]string, error) {
+	cmd := exec.Command("zoxide", "query", "-l")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	resultList := strings.TrimSpace(string(output))
+	results := strings.Split(resultList, "\n")
+	return results, nil
 }
