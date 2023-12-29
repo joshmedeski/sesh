@@ -19,6 +19,7 @@ func App() cli.App {
 		Usage: "Smart session manager for the terminal",
 		Commands: []*cli.Command{
 			cmds.ListSessions(),
+			cmds.ChooseSession(),
 		},
 	}
 }
