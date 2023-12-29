@@ -18,8 +18,8 @@ func App() cli.App {
 		Name:  "sesh",
 		Usage: "Smart session manager for the terminal",
 		Commands: []*cli.Command{
-			cmds.ListSessions(),
-			cmds.ChooseSession(),
+			cmds.List(),
+			cmds.Choose(),
 		},
 	}
 }

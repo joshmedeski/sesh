@@ -1,32 +1,25 @@
 package tmux
 
 import (
-	"joshmedeski/sesh/session"
-	"os"
 	"os/exec"
 	"sort"
 	"strings"
 )
 
-func IsRunning() bool {
-	return len(os.Getenv("TMUX")) > 0
-}
-
-type TmuxSession struct {
-	session.Session
-	tmuxSessionName string
-}
+// func isRunning() b ol {
+// 	cmd := exec.Command("tmux", "ls")
+// 	err := cmd.Run() // throws an exit code if tmux isn't running
+// 	return err != nil
+// }
+// func isActive() bool {
+// 	return len(os.Getenv("TMUX")) > 0
+// }
 
 func Sessions() ([]string, error) {
-	isRunning := IsRunning()
-	if !isRunning {
-		return nil, nil
-	}
-
 	cmd := exec.Command("tmux", "list-sessions", "-F", "#{session_last_attached} #{session_name}")
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
 
 	sessionList := strings.TrimSpace(string(output))
