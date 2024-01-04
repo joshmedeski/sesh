@@ -2,14 +2,17 @@ package connect
 
 import (
 	"joshmedeski/sesh/session"
+	"joshmedeski/sesh/tmux"
 )
 
 func Connect(choice string) error {
 	sessionName := session.DetermineName(choice)
-	print(sessionName)
+
+	if tmux.IsSession(sessionName) {
+		tmux.Connect(sessionName)
+	}
 	return nil
 
-	// TODO: generate session name from path
 	// TODO: if starting with ~ then it's a dir
 	// TODO: if dir, create new tmux session
 	// 	print("is path")
