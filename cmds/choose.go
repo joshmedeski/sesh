@@ -1,7 +1,10 @@
 package cmds
 
 import (
+	"bytes"
+	"joshmedeski/sesh/connect"
 	"joshmedeski/sesh/session"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -29,11 +32,14 @@ func Choose() *cli.Command {
 		},
 		Action: func(cCtx *cli.Context) error {
 			cmd := exec.Command("fzf")
+
+			var cmdOutput bytes.Buffer
+			cmd.Stdout = &cmdOutput
+
 			stdin, err := cmd.StdinPipe()
 			if err != nil {
 				return err
 			}
-			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			err = cmd.Start()
 			if err != nil {
@@ -52,7 +58,13 @@ func Choose() *cli.Command {
 				return err
 			}
 
-			return cmd.Wait()
+			err = cmd.Wait()
+			if err != nil {
+				log.Fatal(err)
+			}
+			choice := cmdOutput.String()
+			connect.Connect(choice)
+			return nil
 		},
 	}
 }

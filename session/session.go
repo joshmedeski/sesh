@@ -2,9 +2,11 @@ package session
 
 import (
 	"fmt"
+	"joshmedeski/sesh/dir"
 	"joshmedeski/sesh/tmux"
 	"joshmedeski/sesh/zoxide"
 	"os"
+	"path"
 	"reflect"
 )
 
@@ -52,4 +54,23 @@ func Sessions(srcs Srcs) []string {
 		sessions = append(sessions, dirs...)
 	}
 	return sessions
+}
+
+func DetermineName(session string) string {
+	fullPath, err := dir.FullPath(session)
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+
+	if path.IsAbs(fullPath) {
+		// TODO: git detection
+		// TODO: git worktree detection
+		// TODO: parent directory feature flag detection
+		base := path.Base(fullPath)
+		print(base)
+		return base
+	} else {
+		return session
+	}
 }
