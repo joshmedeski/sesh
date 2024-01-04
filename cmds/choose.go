@@ -15,7 +15,7 @@ import (
 func Choose() *cli.Command {
 	return &cli.Command{
 		Name:                   "choose",
-		Aliases:                []string{"c"},
+		Aliases:                []string{"ch"},
 		Usage:                  "Select session",
 		UseShortOptionHandling: true,
 		Flags: []cli.Flag{

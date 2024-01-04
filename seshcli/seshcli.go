@@ -20,6 +20,7 @@ func App() cli.App {
 		Commands: []*cli.Command{
 			cmds.List(),
 			cmds.Choose(),
+			cmds.Connect(),
 		},
 	}
 }
