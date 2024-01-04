@@ -68,7 +68,6 @@ func DetermineName(session string) string {
 		// TODO: git worktree detection
 		// TODO: parent directory feature flag detection
 		base := path.Base(fullPath)
-		print(base)
 		return base
 	} else {
 		return session
