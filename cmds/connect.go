@@ -2,7 +2,6 @@ package cmds
 
 import (
 	"joshmedeski/sesh/connect"
-	"log"
 
 	"github.com/urfave/cli/v2"
 )
@@ -23,7 +22,7 @@ func Connect() *cli.Command {
 		Action: func(cCtx *cli.Context) error {
 			session := cCtx.Args().First()
 			if session == "" {
-				log.Fatal("No session provided")
+				return cli.Exit("No session provided", 0)
 			}
 			connect.Connect(session)
 			return nil

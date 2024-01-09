@@ -1,24 +1,24 @@
 package connect
 
 import (
+	"fmt"
+	"joshmedeski/sesh/dir"
 	"joshmedeski/sesh/session"
 	"joshmedeski/sesh/tmux"
+	"os"
 )
 
 func Connect(choice string) error {
-	sessionName := session.DetermineName(choice)
-
-	if tmux.IsSession(sessionName) {
-		tmux.Connect(sessionName)
+	fullPath, err := dir.FullPath(choice)
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
+	sessionName := session.DetermineName(choice)
+	session := tmux.TmuxSession{
+		Name:           sessionName,
+		StartDirectory: fullPath,
+	}
+	tmux.Connect(session)
 	return nil
-
-	// TODO: if starting with ~ then it's a dir
-	// TODO: if dir, create new tmux session
-	// 	print("is path")
-	// } else {
-	// TODO: if not, then it's a tmux session
-	// TODO: if tmux session, then attach
-	// 	print("is not path")
-	// }
 }

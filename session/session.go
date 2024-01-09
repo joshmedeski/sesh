@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strings"
 )
 
 type session struct {
@@ -68,6 +69,7 @@ func DetermineName(session string) string {
 		// TODO: git worktree detection
 		// TODO: parent directory feature flag detection
 		base := path.Base(fullPath)
+		base = strings.ReplaceAll(base, ".", "_")
 		return base
 	} else {
 		return session

@@ -34,7 +34,12 @@ func Sessions() ([]string, error) {
 	sessions := make([]string, len(sessionItems))
 	for i, item := range sessionItems {
 		fields := strings.Fields(item)
-		sessions[i] = fields[1]
+		if len(fields) >= 2 {
+			sessions[i] = fields[1]
+		} else {
+			// handle case when there is no whitespace - replace with your behavior in this case
+			sessions[i] = ""
+		}
 	}
 	return sessions, nil
 }
@@ -68,20 +73,41 @@ func attachSession(session string) error {
 }
 
 func switchSession(session string) error {
-	cmd := exec.Command("tmux", "switch-client", "-t", session)
-	output, err := cmd.CombinedOutput()
+	tmux, err := exec.LookPath("tmux")
 	if err != nil {
-		return fmt.Errorf("failed to switch to session '%s', error: '%v', output: '%s'", session, err, output)
+		return err
+	}
+
+	args := append([]string{tmux}, "switch-client", "-t", session)
+	if err := syscall.Exec(tmux, args, os.Environ()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type TmuxSession struct {
+	Name           string
+	StartDirectory string
+}
+
+func NewSession(s TmuxSession) error {
+	cmd := exec.Command("tmux", "new-session", "-d", "-s", s.Name, "-c", s.StartDirectory)
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to create session: %w", err)
 	}
 	return nil
 }
 
-func Connect(session string) error {
+func Connect(s TmuxSession) error {
+	if !IsSession(s.Name) {
+		NewSession(s)
+	}
 	if isAttached() {
-		switchSession(session)
+		switchSession(s.Name)
 	} else {
-		print("Attaching")
-		attachSession(session)
+		attachSession(s.Name)
 	}
 	return nil
 }
