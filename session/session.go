@@ -94,7 +94,8 @@ func determineGitPathName(result string) string {
 	}
 	root := ""
 	gitWorktreePath := git.WorktreePath(result)
-	if gitWorktreePath != "" {
+	print("gitWorktreePath: ", gitWorktreePath)
+	if gitWorktreePath != "" && gitWorktreePath != ".git" {
 		root = filepath.Base(gitWorktreePath)
 	} else {
 		root = filepath.Base(gitRootPath)
