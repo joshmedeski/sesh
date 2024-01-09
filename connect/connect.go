@@ -1,20 +1,16 @@
 package connect
 
 import (
-	"fmt"
 	"joshmedeski/sesh/dir"
 	"joshmedeski/sesh/session"
 	"joshmedeski/sesh/tmux"
-	"os"
+	"joshmedeski/sesh/zoxide"
 )
 
 func Connect(choice string) error {
-	fullPath, err := dir.FullPath(choice)
-	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
-	sessionName := session.DetermineName(choice)
+	fullPath := dir.FullPath(choice)
+	zoxide.Add(fullPath)
+	sessionName := session.DetermineName(fullPath)
 	// TODO: get zoxide result if not path and tmux session doesn't exist
 	session := tmux.TmuxSession{
 		Name:           sessionName,

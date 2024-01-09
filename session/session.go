@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"joshmedeski/sesh/dir"
 	"joshmedeski/sesh/git"
 	"joshmedeski/sesh/tmux"
 	"joshmedeski/sesh/zoxide"
@@ -65,31 +64,41 @@ func convertToValidName(name string) string {
 	return validName
 }
 
-func DetermineName(entry string) string {
-	name := entry
-	fullPath, err := dir.FullPath(entry)
-	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
-	if path.IsAbs(fullPath) {
-		// TODO: parent directory feature flag detection
-		baseName := filepath.Base(fullPath)
-		gitRootPath := git.RootPath(fullPath)
-		if gitRootPath != "" {
-			gitWorktreePath := git.WorktreePath(fullPath)
-			if gitWorktreePath != "" {
-				gitWorktreeBaseName := filepath.Base(gitWorktreePath)
-				relativePath := strings.TrimPrefix(fullPath, gitWorktreePath)
-				name = gitWorktreeBaseName + relativePath
-			} else {
-				gitRootBaseName := filepath.Base(gitRootPath)
-				relativePath := strings.TrimPrefix(fullPath, gitRootPath)
-				name = gitRootBaseName + relativePath
-			}
-		} else {
-			name = baseName
-		}
+// TODO: parent directory feature flag detection
+func DetermineName(result string) string {
+	name := result
+	pathName := determinePathName(result)
+	if pathName != "" {
+		name = pathName
 	}
 	return convertToValidName(name)
+}
+
+func determinePathName(result string) string {
+	name := ""
+	if path.IsAbs(result) {
+		gitName := determineGitPathName(result)
+		if gitName != "" {
+			name = gitName
+		} else {
+			name = filepath.Base(result)
+		}
+	}
+	return name
+}
+
+func determineGitPathName(result string) string {
+	gitRootPath := git.RootPath(result)
+	if gitRootPath == "" {
+		return ""
+	}
+	root := ""
+	gitWorktreePath := git.WorktreePath(result)
+	if gitWorktreePath != "" {
+		root = filepath.Base(gitWorktreePath)
+	} else {
+		root = filepath.Base(gitRootPath)
+	}
+	relativePath := strings.TrimPrefix(result, gitRootPath)
+	return root + relativePath
 }

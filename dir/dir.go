@@ -1,6 +1,7 @@
 package dir
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -18,13 +19,14 @@ func PrettyPath(path string) (string, error) {
 	return path, nil
 }
 
-func FullPath(path string) (string, error) {
+func FullPath(path string) string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
 	if strings.HasPrefix(path, "~") {
-		return strings.Replace(path, "~", home, 1), nil
+		return strings.Replace(path, "~", home, 1)
 	}
-	return path, nil
+	return path
 }
