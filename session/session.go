@@ -77,9 +77,16 @@ func DetermineName(entry string) string {
 		baseName := filepath.Base(fullPath)
 		gitRootPath := git.RootPath(fullPath)
 		if gitRootPath != "" {
-			gitRootBaseName := filepath.Base(gitRootPath)
-			relativePath := strings.TrimPrefix(fullPath, gitRootPath)
-			name = gitRootBaseName + relativePath
+			gitWorktreePath := git.WorktreePath(fullPath)
+			if gitWorktreePath != "" {
+				gitWorktreeBaseName := filepath.Base(gitWorktreePath)
+				relativePath := strings.TrimPrefix(fullPath, gitWorktreePath)
+				name = gitWorktreeBaseName + relativePath
+			} else {
+				gitRootBaseName := filepath.Base(gitRootPath)
+				relativePath := strings.TrimPrefix(fullPath, gitRootPath)
+				name = gitRootBaseName + relativePath
+			}
 		} else {
 			name = baseName
 		}
