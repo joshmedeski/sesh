@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -93,13 +94,16 @@ func determineGitPathName(result string) string {
 		return ""
 	}
 	root := ""
+	base := ""
 	gitWorktreePath := git.WorktreePath(result)
-	print("gitWorktreePath: ", gitWorktreePath)
-	if gitWorktreePath != "" && gitWorktreePath != ".git" {
-		root = filepath.Base(gitWorktreePath)
+	match, _ := regexp.MatchString(`^(\.\./)*\.git$`, gitWorktreePath)
+	if gitWorktreePath != "" && !match {
+		root = gitWorktreePath
+		base = filepath.Base(gitWorktreePath)
 	} else {
-		root = filepath.Base(gitRootPath)
+		root = gitRootPath
+		base = filepath.Base(gitRootPath)
 	}
-	relativePath := strings.TrimPrefix(result, gitRootPath)
-	return root + relativePath
+	relativePath := strings.TrimPrefix(result, root)
+	return base + relativePath
 }
