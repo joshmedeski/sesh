@@ -3,10 +3,12 @@ package session
 import (
 	"fmt"
 	"joshmedeski/sesh/dir"
+	"joshmedeski/sesh/git"
 	"joshmedeski/sesh/tmux"
 	"joshmedeski/sesh/zoxide"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 )
@@ -57,21 +59,30 @@ func Sessions(srcs Srcs) []string {
 	return sessions
 }
 
-func DetermineName(session string) string {
-	fullPath, err := dir.FullPath(session)
+func convertToValidName(name string) string {
+	validName := strings.ReplaceAll(name, ".", "_")
+	validName = strings.ReplaceAll(validName, ":", "_")
+	return validName
+}
+
+func DetermineName(entry string) string {
+	name := entry
+	fullPath, err := dir.FullPath(entry)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-
 	if path.IsAbs(fullPath) {
-		// TODO: git detection
-		// TODO: git worktree detection
 		// TODO: parent directory feature flag detection
-		base := path.Base(fullPath)
-		base = strings.ReplaceAll(base, ".", "_")
-		return base
-	} else {
-		return session
+		baseName := filepath.Base(fullPath)
+		gitRootPath := git.RootPath(fullPath)
+		if gitRootPath != "" {
+			gitRootBaseName := filepath.Base(gitRootPath)
+			relativePath := strings.TrimPrefix(fullPath, gitRootPath)
+			name = gitRootBaseName + relativePath
+		} else {
+			name = baseName
+		}
 	}
+	return convertToValidName(name)
 }

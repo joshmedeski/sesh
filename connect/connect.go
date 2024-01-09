@@ -15,6 +15,7 @@ func Connect(choice string) error {
 		os.Exit(1)
 	}
 	sessionName := session.DetermineName(choice)
+	// TODO: get zoxide result if not path and tmux session doesn't exist
 	session := tmux.TmuxSession{
 		Name:           sessionName,
 		StartDirectory: fullPath,
