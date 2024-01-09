@@ -2,6 +2,7 @@ package git
 
 import (
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -25,5 +26,10 @@ func WorktreePath(path string) string {
 	gitWorktreePath := strings.TrimSpace(string(gitWorktreePathByteOutput))
 	re := regexp.MustCompile(`(\/.git|\/.bare)$`)
 	gitWorktreePath = re.ReplaceAllString(gitWorktreePath, "")
-	return gitWorktreePath
+
+	absolutePath, err := filepath.Abs(path + "/" + gitWorktreePath)
+	if err != nil {
+		return ""
+	}
+	return absolutePath
 }
