@@ -27,7 +27,9 @@ func WorktreePath(path string) string {
 	if match {
 		return ""
 	}
-	gitWorktreePath = strings.TrimSuffix(gitWorktreePath, "/.git")
-	gitWorktreePath = strings.TrimSuffix(gitWorktreePath, "/.bare")
+	suffixes := []string{"/.git", "/.bare"}
+	for _, suffix := range suffixes {
+		gitWorktreePath = strings.TrimSuffix(gitWorktreePath, suffix)
+	}
 	return gitWorktreePath
 }
