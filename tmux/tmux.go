@@ -1,12 +1,13 @@
 package tmux
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
 	"syscall"
+
+	"github.com/mattn/go-isatty"
 )
 
 // func isRunning() b ol {
@@ -17,6 +18,10 @@ import (
 
 func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
+}
+
+func isTerminal() bool {
+	return isatty.IsTerminal(os.Stdout.Fd())
 }
 
 func Sessions() ([]string, error) {
@@ -78,7 +83,7 @@ func switchSession(session string) error {
 		return err
 	}
 
-	args := append([]string{tmux}, "switch-client", "-t", session)
+	args := append([]string{tmux}, "switch", "-t", session)
 	if err := syscall.Exec(tmux, args, os.Environ()); err != nil {
 		return err
 	}
@@ -92,19 +97,26 @@ type TmuxSession struct {
 }
 
 func NewSession(s TmuxSession) error {
-	cmd := exec.Command("tmux", "new-session", "-d", "-s", s.Name, "-c", s.StartDirectory)
-	err := cmd.Run()
+	tmux, err := exec.LookPath("tmux")
 	if err != nil {
-		return fmt.Errorf("failed to create session: %w", err)
+		return err
 	}
+
+	args := append([]string{tmux}, "new-session", "-d", "-s", s.Name, "-c", s.StartDirectory)
+	if err := syscall.Exec(tmux, args, os.Environ()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func Connect(s TmuxSession) error {
-	if !IsSession(s.Name) {
+	isSession := IsSession(s.Name)
+	if !isSession {
 		NewSession(s)
 	}
-	if isAttached() {
+	isAttached := isAttached()
+	if isAttached || !isTerminal() {
 		switchSession(s.Name)
 	} else {
 		attachSession(s.Name)
