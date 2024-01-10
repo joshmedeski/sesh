@@ -9,7 +9,6 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"strings"
 )
 
@@ -68,17 +67,17 @@ func convertToValidName(name string) string {
 // TODO: parent directory feature flag detection
 func DetermineName(result string) string {
 	name := result
-	pathName := determinePathName(result)
+	pathName := nameFromPath(result)
 	if pathName != "" {
 		name = pathName
 	}
 	return convertToValidName(name)
 }
 
-func determinePathName(result string) string {
+func nameFromPath(result string) string {
 	name := ""
 	if path.IsAbs(result) {
-		gitName := determineGitPathName(result)
+		gitName := nameFromGit(result)
 		if gitName != "" {
 			name = gitName
 		} else {
@@ -88,7 +87,7 @@ func determinePathName(result string) string {
 	return name
 }
 
-func determineGitPathName(result string) string {
+func nameFromGit(result string) string {
 	gitRootPath := git.RootPath(result)
 	if gitRootPath == "" {
 		return ""
@@ -96,8 +95,7 @@ func determineGitPathName(result string) string {
 	root := ""
 	base := ""
 	gitWorktreePath := git.WorktreePath(result)
-	match, _ := regexp.MatchString(`^(\.\./)*\.git$`, gitWorktreePath)
-	if gitWorktreePath != "" && !match {
+	if gitWorktreePath != "" {
 		root = gitWorktreePath
 		base = filepath.Base(gitWorktreePath)
 	} else {
@@ -105,5 +103,6 @@ func determineGitPathName(result string) string {
 		base = filepath.Base(gitRootPath)
 	}
 	relativePath := strings.TrimPrefix(result, root)
-	return base + relativePath
+	nameFromGit := base + relativePath
+	return nameFromGit
 }

@@ -2,7 +2,6 @@ package git
 
 import (
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -24,12 +23,12 @@ func WorktreePath(path string) string {
 		return ""
 	}
 	gitWorktreePath := strings.TrimSpace(string(gitWorktreePathByteOutput))
-	re := regexp.MustCompile(`(\/.git|\/.bare)$`)
-	gitWorktreePath = re.ReplaceAllString(gitWorktreePath, "")
-
-	absolutePath, err := filepath.Abs(path + "/" + gitWorktreePath)
-	if err != nil {
+	match, _ := regexp.MatchString(`^(\.\./)*\.git$`, gitWorktreePath)
+	if match {
 		return ""
 	}
-	return absolutePath
+	// TODO: remove .git or .bare from string
+	gitWorktreePath = strings.TrimSuffix(gitWorktreePath, "/.git")
+	gitWorktreePath = strings.TrimSuffix(gitWorktreePath, "/.bare")
+	return gitWorktreePath
 }
