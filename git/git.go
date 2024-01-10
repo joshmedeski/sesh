@@ -27,7 +27,6 @@ func WorktreePath(path string) string {
 	if match {
 		return ""
 	}
-	// TODO: remove .git or .bare from string
 	gitWorktreePath = strings.TrimSuffix(gitWorktreePath, "/.git")
 	gitWorktreePath = strings.TrimSuffix(gitWorktreePath, "/.bare")
 	return gitWorktreePath
