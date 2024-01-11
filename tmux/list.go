@@ -1,9 +1,7 @@
 package tmux
 
 import (
-	"fmt"
-	"os"
-	"strconv"
+	"joshmedeski/sesh/convert"
 	"strings"
 	"time"
 )
@@ -107,92 +105,42 @@ func format() string {
 	return variablesStr
 }
 
-func stringToTime(s string) time.Time {
-	i, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
-	t := time.Unix(i, 0)
-	return t
-}
-
-func stringToIntSlice(s string) []int {
-	split := strings.Split(s, ",") // Or another delimiter if not ","
-	ints := make([]int, 0, len(split))
-	for _, str := range split {
-		if i, err := strconv.Atoi(str); err == nil {
-			ints = append(ints, i)
-		}
-	}
-	return ints
-}
-
-func stringToBool(s string) bool {
-	return s == "1"
-}
-
 func List() ([]*TmuxSession, error) {
 	format := format()
 	output, err := tmuxCmd([]string{"list-sessions", "-F", format})
 	if err != nil {
 		return nil, err
 	}
-
 	sessionList := strings.TrimSpace(string(output))
 	lines := strings.Split(sessionList, "\n")
-
 	sessions := make([]*TmuxSession, 0, len(lines))
 	for _, line := range lines {
 		fields := strings.Split(line, " ") // Strings split by single space
 		if len(fields) == 21 {
-			activity := stringToTime(fields[0])
-			alerts := stringToIntSlice(fields[1])
-			attached, _ := strconv.Atoi(fields[2])
-			attachedList := strings.Split(fields[3], ",") // replace "," with appropriate delimiter
-			created := stringToTime(fields[4])
-			format := stringToBool(fields[5])
-			group := fields[6]
-			groupAttached, _ := strconv.Atoi(fields[7])
-			groupAttachedList := strings.Split(fields[8], ",") // replace "," with appropriate delimiter
-			groupList := strings.Split(fields[9], ",")         // replace "," with appropriate delimiter
-			groupManyAttached := stringToBool(fields[10])
-			groupSize, _ := strconv.Atoi(fields[11])
-			grouped := stringToBool(fields[12])
-			id := fields[13]
-			lastAttached := stringToTime(fields[14])
-			manyAttached := stringToBool(fields[15])
-			marked := stringToBool(fields[16])
-			name := fields[17]
-			path := fields[18]
-			stack := stringToIntSlice(fields[19])
-			windows, _ := strconv.Atoi(fields[20])
-
 			sessions = append(sessions, &TmuxSession{
-				Activity:          activity,
-				Alerts:            alerts,
-				Attached:          attached,
-				AttachedList:      attachedList,
-				Created:           created,
-				Format:            format,
-				Group:             group,
-				GroupAttached:     groupAttached,
-				GroupAttachedList: groupAttachedList,
-				GroupList:         groupList,
-				GroupManyAttached: groupManyAttached,
-				GroupSize:         groupSize,
-				Grouped:           grouped,
-				ID:                id,
-				LastAttached:      lastAttached,
-				ManyAttached:      manyAttached,
-				Marked:            marked,
-				Name:              name,
-				Path:              path,
-				Stack:             stack,
-				Windows:           windows,
+				Activity:          convert.StringToTime(fields[0]),
+				Alerts:            convert.StringToIntSlice(fields[1]),
+				Attached:          convert.StringToInt(fields[2]),
+				AttachedList:      strings.Split(fields[3], ","),
+				Created:           convert.StringToTime(fields[4]),
+				Format:            convert.StringToBool(fields[5]),
+				Group:             fields[6],
+				GroupAttached:     convert.StringToInt(fields[7]),
+				GroupAttachedList: strings.Split(fields[8], ","),
+				GroupList:         strings.Split(fields[9], ","),
+				GroupManyAttached: convert.StringToBool(fields[10]),
+				GroupSize:         convert.StringToInt(fields[11]),
+				Grouped:           convert.StringToBool(fields[12]),
+				ID:                fields[13],
+				LastAttached:      convert.StringToTime(fields[14]),
+				ManyAttached:      convert.StringToBool(fields[15]),
+				Marked:            convert.StringToBool(fields[16]),
+				Name:              fields[17],
+				Path:              fields[18],
+				Stack:             convert.StringToIntSlice(fields[19]),
+				Windows:           convert.StringToInt(fields[20]),
 			})
 		}
 	}
-
 	return sessions, nil
 }
