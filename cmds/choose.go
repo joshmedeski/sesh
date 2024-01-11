@@ -46,7 +46,7 @@ func Choose() *cli.Command {
 				return err
 			}
 
-			sessions := session.Sessions(session.Srcs{
+			sessions := session.List(session.Srcs{
 				Tmux:   cCtx.Bool("tmux"),
 				Zoxide: cCtx.Bool("zoxide"),
 			})
@@ -63,6 +63,7 @@ func Choose() *cli.Command {
 				log.Fatal(err)
 			}
 			choice := strings.TrimSpace(cmdOutput.String())
+			// TODO: get choice from Session structs array
 			connect.Connect(choice, false)
 			return nil
 		},

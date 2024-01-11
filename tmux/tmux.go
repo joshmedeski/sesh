@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
-	"strings"
 )
 
 func tmuxCmd(args []string) ([]byte, error) {
@@ -25,37 +23,34 @@ func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
 
-func Sessions() ([]string, error) {
-	output, err := tmuxCmd([]string{"list-sessions", "-F", "#{session_last_attached} #{session_name}"})
-	if err != nil {
-		return nil, nil
-	}
-
-	sessionList := strings.TrimSpace(string(output))
-	sessionItems := strings.Split(sessionList, "\n")
-	sort.SliceStable(sessionItems, func(i, j int) bool {
-		return sessionItems[i] > sessionItems[j]
-	})
-	sessions := make([]string, len(sessionItems))
-	for i, item := range sessionItems {
-		fields := strings.Fields(item)
-		if len(fields) >= 2 {
-			sessions[i] = fields[1]
-		} else {
-			sessions[i] = fields[0]
-		}
-	}
-	return sessions, nil
-}
+// func SessionPath(session string) *string {
+// 	sessions, err := Sessions()
+// 	if err != nil {
+// 		return nil
+// 	}
+//
+// 	for _, s := range sessions {
+// 		if s == session {
+// 			if len(fields) >= 3 {
+// 				sessions[i] = fields[1]
+// 			} else {
+// 				sessions[i] = fields[0]
+// 			}
+// 		}
+// 	}
+// 	return false
+//
+// 	output, err := tmuxCmd([]string{"display-message", "-p", "-F", "#{session_path}"})
+// }
 
 func IsSession(session string) bool {
-	sessions, err := Sessions()
+	sessions, err := List()
 	if err != nil {
 		return false
 	}
 
 	for _, s := range sessions {
-		if s == session {
+		if s.Name == session {
 			return true
 		}
 	}
@@ -78,13 +73,8 @@ func switchSession(session string) ([]byte, error) {
 	return output, nil
 }
 
-type TmuxSession struct {
-	Name           string
-	StartDirectory string
-}
-
 func NewSession(s TmuxSession) ([]byte, error) {
-	output, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.StartDirectory})
+	output, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.Path})
 	if err != nil {
 		return nil, err
 	}
