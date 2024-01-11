@@ -94,7 +94,6 @@ func NewSession(s TmuxSession) ([]byte, error) {
 func Connect(s TmuxSession, alwaysSwitch bool) error {
 	isSession := IsSession(s.Name)
 	if !isSession {
-		print("make session", "\n")
 		output, err := NewSession(s)
 		if err != nil {
 			fmt.Println(err)
