@@ -63,7 +63,7 @@ func Choose() *cli.Command {
 				log.Fatal(err)
 			}
 			choice := strings.TrimSpace(cmdOutput.String())
-			connect.Connect(choice)
+			connect.Connect(choice, false)
 			return nil
 		},
 	}

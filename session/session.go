@@ -27,7 +27,7 @@ func checkAnyTrue(s interface{}) bool {
 	val := reflect.ValueOf(s)
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
-		if field.Kind() == reflect.Ptr && !field.IsNil() && field.Elem().Bool() {
+		if field.Kind() == reflect.Bool && field.Bool() {
 			return true
 		}
 	}

@@ -1,32 +1,32 @@
 package tmux
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
-	"syscall"
-
-	"github.com/mattn/go-isatty"
 )
 
-// func isRunning() b ol {
-// 	cmd := exec.Command("tmux", "ls")
-// 	err := cmd.Run() // throws an exit code if tmux isn't running
-// 	return err != nil
-// }
+func tmuxCmd(args []string) ([]byte, error) {
+	tmux, err := exec.LookPath("tmux")
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(tmux, args...)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
 
 func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
 
-func isTerminal() bool {
-	return isatty.IsTerminal(os.Stdout.Fd())
-}
-
 func Sessions() ([]string, error) {
-	cmd := exec.Command("tmux", "list-sessions", "-F", "#{session_last_attached} #{session_name}")
-	output, err := cmd.Output()
+	output, err := tmuxCmd([]string{"list-sessions", "-F", "#{session_last_attached} #{session_name}"})
 	if err != nil {
 		return nil, nil
 	}
@@ -42,8 +42,7 @@ func Sessions() ([]string, error) {
 		if len(fields) >= 2 {
 			sessions[i] = fields[1]
 		} else {
-			// handle case when there is no whitespace - replace with your behavior in this case
-			sessions[i] = ""
+			sessions[i] = fields[0]
 		}
 	}
 	return sessions, nil
@@ -63,32 +62,20 @@ func IsSession(session string) bool {
 	return false
 }
 
-func attachSession(session string) error {
-	tmux, err := exec.LookPath("tmux")
+func attachSession(session string) ([]byte, error) {
+	output, err := tmuxCmd([]string{"attach", "-t", session})
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	args := append([]string{tmux}, "attach", "-t", session)
-	if err := syscall.Exec(tmux, args, os.Environ()); err != nil {
-		return err
-	}
-
-	return nil
+	return output, nil
 }
 
-func switchSession(session string) error {
-	tmux, err := exec.LookPath("tmux")
+func switchSession(session string) ([]byte, error) {
+	output, err := tmuxCmd([]string{"switch", "-t", session})
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	args := append([]string{tmux}, "switch", "-t", session)
-	if err := syscall.Exec(tmux, args, os.Environ()); err != nil {
-		return err
-	}
-
-	return nil
+	return output, nil
 }
 
 type TmuxSession struct {
@@ -96,27 +83,26 @@ type TmuxSession struct {
 	StartDirectory string
 }
 
-func NewSession(s TmuxSession) error {
-	tmux, err := exec.LookPath("tmux")
+func NewSession(s TmuxSession) ([]byte, error) {
+	output, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.StartDirectory})
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	args := append([]string{tmux}, "new-session", "-d", "-s", s.Name, "-c", s.StartDirectory)
-	if err := syscall.Exec(tmux, args, os.Environ()); err != nil {
-		return err
-	}
-
-	return nil
+	return output, nil
 }
 
-func Connect(s TmuxSession) error {
+func Connect(s TmuxSession, alwaysSwitch bool) error {
 	isSession := IsSession(s.Name)
 	if !isSession {
-		NewSession(s)
+		print("make session", "\n")
+		output, err := NewSession(s)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(output))
 	}
 	isAttached := isAttached()
-	if isAttached || !isTerminal() {
+	if isAttached || alwaysSwitch {
 		switchSession(s.Name)
 	} else {
 		attachSession(s.Name)

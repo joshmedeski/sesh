@@ -14,17 +14,18 @@ func Connect() *cli.Command {
 		UseShortOptionHandling: true,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
-				Name:    "tmux",
-				Aliases: []string{"t"},
-				Usage:   "connect to tmux session",
+				Name:    "switch",
+				Aliases: []string{"s"},
+				Usage:   "Always switch the session (and never attach). This is useful for third-party tools like Raycast.",
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			session := cCtx.Args().First()
+			alwaysSwitch := cCtx.Bool("switch")
 			if session == "" {
 				return cli.Exit("No session provided", 0)
 			}
-			connect.Connect(session)
+			connect.Connect(session, alwaysSwitch)
 			return nil
 		},
 	}
