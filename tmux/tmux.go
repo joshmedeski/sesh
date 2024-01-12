@@ -51,7 +51,6 @@ func IsSession(session string) bool {
 }
 
 func attachSession(session string) error {
-	fmt.Println("attaching session ", session)
 	if _, err := tmuxCmd([]string{"attach", "-t", session}); err != nil {
 		return err
 	}
@@ -59,7 +58,6 @@ func attachSession(session string) error {
 }
 
 func switchSession(session string) error {
-	fmt.Println("switching session ", session)
 	if _, err := tmuxCmd([]string{"switch-client", "-t", session}); err != nil {
 		return err
 	}
@@ -77,11 +75,10 @@ func NewSession(s TmuxSession) (string, error) {
 func Connect(s TmuxSession, alwaysSwitch bool) error {
 	isSession := IsSession(s.Name)
 	if !isSession {
-		output, err := NewSession(s)
+		_, err := NewSession(s)
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(string(output))
 	}
 	isAttached := isAttached()
 	if isAttached || alwaysSwitch {
