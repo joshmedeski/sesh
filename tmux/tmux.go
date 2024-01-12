@@ -1,47 +1,40 @@
 package tmux
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
-func tmuxCmd(args []string) ([]byte, error) {
+func tmuxCmd(args []string) (string, error) {
 	tmux, err := exec.LookPath("tmux")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
+	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(tmux, args...)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = &stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		return "", err
 	}
-	return output, nil
+	if err := cmd.Wait(); err != nil {
+		errString := strings.TrimSpace(stderr.String())
+		if strings.HasPrefix(errString, "no server running on") {
+			return "", nil
+		}
+		return "", err
+	}
+	return stdout.String(), nil
 }
 
 func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
-
-// func SessionPath(session string) *string {
-// 	sessions, err := Sessions()
-// 	if err != nil {
-// 		return nil
-// 	}
-//
-// 	for _, s := range sessions {
-// 		if s == session {
-// 			if len(fields) >= 3 {
-// 				sessions[i] = fields[1]
-// 			} else {
-// 				sessions[i] = fields[0]
-// 			}
-// 		}
-// 	}
-// 	return false
-//
-// 	output, err := tmuxCmd([]string{"display-message", "-p", "-F", "#{session_path}"})
-// }
 
 func IsSession(session string) bool {
 	sessions, err := List()
@@ -57,28 +50,28 @@ func IsSession(session string) bool {
 	return false
 }
 
-func attachSession(session string) ([]byte, error) {
-	output, err := tmuxCmd([]string{"attach", "-t", session})
-	if err != nil {
-		return nil, err
+func attachSession(session string) error {
+	fmt.Println("attaching session ", session)
+	if _, err := tmuxCmd([]string{"attach", "-t", session}); err != nil {
+		return err
 	}
-	return output, nil
+	return nil
 }
 
-func switchSession(session string) ([]byte, error) {
-	output, err := tmuxCmd([]string{"switch", "-t", session})
-	if err != nil {
-		return nil, err
+func switchSession(session string) error {
+	fmt.Println("switching session ", session)
+	if _, err := tmuxCmd([]string{"switch-client", "-t", session}); err != nil {
+		return err
 	}
-	return output, nil
+	return nil
 }
 
-func NewSession(s TmuxSession) ([]byte, error) {
-	output, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.Path})
+func NewSession(s TmuxSession) (string, error) {
+	out, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.Path})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return output, nil
+	return out, nil
 }
 
 func Connect(s TmuxSession, alwaysSwitch bool) error {

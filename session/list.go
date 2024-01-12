@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"joshmedeski/sesh/convert"
 	"joshmedeski/sesh/tmux"
 	"joshmedeski/sesh/zoxide"
 	"os"
@@ -22,7 +21,9 @@ func List(srcs Srcs) []string {
 		}
 		tmuxSessionNames := make([]string, len(tmuxList))
 		for i, session := range tmuxSessions {
-			tmuxSessionNames[i] = session.Name + " (" + convert.PathToPretty(session.Path) + ")"
+			// TODO: allow support for connect as well (PrettyName?)
+			// tmuxSessionNames[i] = session.Name + " (" + convert.PathToPretty(session.Path) + ")"
+			tmuxSessionNames[i] = session.Name
 		}
 		sessions = append(sessions, tmuxSessionNames...)
 	}

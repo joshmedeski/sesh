@@ -8,13 +8,13 @@ import (
 
 type TmuxSession struct {
 	// Time of session last activity
-	Activity time.Time
+	Activity *time.Time
 
 	// Time session created
-	Created time.Time
+	Created *time.Time
 
 	// Time session last attached
-	LastAttached time.Time
+	LastAttached *time.Time
 
 	// List of window indexes with alerts
 	Alerts []int
@@ -108,8 +108,9 @@ func format() string {
 func List() ([]*TmuxSession, error) {
 	format := format()
 	output, err := tmuxCmd([]string{"list-sessions", "-F", format})
-	if err != nil {
-		return nil, err
+	cleanOutput := strings.TrimSpace(output)
+	if err != nil || strings.HasPrefix(cleanOutput, "no server running on") {
+		return nil, nil
 	}
 	sessionList := strings.TrimSpace(string(output))
 	lines := strings.Split(sessionList, "\n")

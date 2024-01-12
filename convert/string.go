@@ -8,14 +8,17 @@ import (
 	"time"
 )
 
-func StringToTime(s string) time.Time {
+func StringToTime(s string) *time.Time {
+	if s == "" {
+		return nil
+	}
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 	t := time.Unix(i, 0)
-	return t
+	return &t
 }
 
 func StringToIntSlice(s string) []int {
