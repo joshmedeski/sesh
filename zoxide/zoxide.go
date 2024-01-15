@@ -2,30 +2,22 @@ package zoxide
 
 import (
 	"fmt"
-	"joshmedeski/sesh/dir"
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 )
 
-func Dirs() ([]string, error) {
-	cmd := exec.Command("zoxide", "query", "-l")
+func zoxideCmd(args []string) ([]byte, error) {
+	tmux, err := exec.LookPath("zoxide")
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(tmux, args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
-	resultList := strings.TrimSpace(string(output))
-	results := strings.Split(resultList, "\n")
-
-	for i, path := range results {
-		prettyPath, err := dir.PrettyPath(path)
-		if err != nil {
-			return nil, err
-		}
-		results[i] = prettyPath
-	}
-	return results, nil
+	return output, nil
 }
 
 func Add(result string) {

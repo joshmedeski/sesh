@@ -27,7 +27,7 @@ func List() *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			sessions := session.Sessions(session.Srcs{
+			sessions := session.List(session.Srcs{
 				Tmux:   cCtx.Bool("tmux"),
 				Zoxide: cCtx.Bool("zoxide"),
 			})

@@ -1,104 +1,84 @@
 package tmux
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
 	"strings"
 )
 
-func tmuxCmd(args []string) ([]byte, error) {
+func tmuxCmd(args []string) (string, error) {
 	tmux, err := exec.LookPath("tmux")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
+	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(tmux, args...)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = &stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		return "", err
 	}
-	return output, nil
+	if err := cmd.Wait(); err != nil {
+		errString := strings.TrimSpace(stderr.String())
+		if strings.HasPrefix(errString, "no server running on") {
+			return "", nil
+		}
+		return "", err
+	}
+	return stdout.String(), nil
 }
 
 func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
 
-func Sessions() ([]string, error) {
-	output, err := tmuxCmd([]string{"list-sessions", "-F", "#{session_last_attached} #{session_name}"})
-	if err != nil {
-		return nil, nil
-	}
-
-	sessionList := strings.TrimSpace(string(output))
-	sessionItems := strings.Split(sessionList, "\n")
-	sort.SliceStable(sessionItems, func(i, j int) bool {
-		return sessionItems[i] > sessionItems[j]
-	})
-	sessions := make([]string, len(sessionItems))
-	for i, item := range sessionItems {
-		fields := strings.Fields(item)
-		if len(fields) >= 2 {
-			sessions[i] = fields[1]
-		} else {
-			sessions[i] = fields[0]
-		}
-	}
-	return sessions, nil
-}
-
 func IsSession(session string) bool {
-	sessions, err := Sessions()
+	sessions, err := List()
 	if err != nil {
 		return false
 	}
 
 	for _, s := range sessions {
-		if s == session {
+		if s.Name == session {
 			return true
 		}
 	}
 	return false
 }
 
-func attachSession(session string) ([]byte, error) {
-	output, err := tmuxCmd([]string{"attach", "-t", session})
-	if err != nil {
-		return nil, err
+func attachSession(session string) error {
+	if _, err := tmuxCmd([]string{"attach", "-t", session}); err != nil {
+		return err
 	}
-	return output, nil
+	return nil
 }
 
-func switchSession(session string) ([]byte, error) {
-	output, err := tmuxCmd([]string{"switch", "-t", session})
-	if err != nil {
-		return nil, err
+func switchSession(session string) error {
+	if _, err := tmuxCmd([]string{"switch-client", "-t", session}); err != nil {
+		return err
 	}
-	return output, nil
+	return nil
 }
 
-type TmuxSession struct {
-	Name           string
-	StartDirectory string
-}
-
-func NewSession(s TmuxSession) ([]byte, error) {
-	output, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.StartDirectory})
+func NewSession(s TmuxSession) (string, error) {
+	out, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.Path})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return output, nil
+	return out, nil
 }
 
 func Connect(s TmuxSession, alwaysSwitch bool) error {
 	isSession := IsSession(s.Name)
 	if !isSession {
-		output, err := NewSession(s)
+		_, err := NewSession(s)
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(string(output))
 	}
 	isAttached := isAttached()
 	if isAttached || alwaysSwitch {
