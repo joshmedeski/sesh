@@ -37,7 +37,7 @@ The easiest way to integrate sesh into your workflow is to use [fzf](https://git
 sesh connect (sesh list | fzf)
 ```
 
-### tmux
+### tmux + fzf
 
 In order to integrate with tmux, you can add a binding to your tmux config (`tmux.conf`). For example, the following will bind `ctrl-a T` to open a fzf prompt as a tmux popup (using `fzf-tmux`) and using different commands to list sessions (`sesh list -t`), zoxide directories (`sesh list -z`), and find directories (`fd...`).
 
@@ -55,6 +55,14 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 ```
 
 You can customize this however you want, see `man fzf` for more info on the different options.
+
+### zf
+
+[zf](https://github.com/natecraddock/zf) is an alternative fuzzy finder designed for filtering filepaths, I've found it to be more accurate than fzf. It doesn't have as many options, but it's still a great tool. You can use it to select a session to connect to:
+
+```sh
+sesh connect (sesh list | zf --height 24)
+```
 
 ## Background (the "t" script)
 
