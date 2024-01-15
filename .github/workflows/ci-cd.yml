@@ -1,7 +1,7 @@
 on: [push, pull_request]
 name: Test, Build and Publish
 jobs:
-  test:
+  tests:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
