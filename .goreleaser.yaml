@@ -56,7 +56,7 @@ brews:
     skip_upload: false
     tap:
       owner: joshmedeski
-      name: sesh
+      name: homebrew-sesh
       branch: main
     commit_author:
       name: goreleaser-bot
