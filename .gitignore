@@ -24,3 +24,4 @@ go.work
 sesh
 
 dist/
+.DS_Store
