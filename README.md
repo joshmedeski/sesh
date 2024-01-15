@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="50%" height="50%" src="https://github.com/joshmedeski/sesh/main/sesh-icon.png" />
+  <img src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
 </p>
 
 <p align="center">Sesh, the smart terminal session manager</p>
@@ -7,8 +7,8 @@
 <hr/>
 
 <p align="center">
-  <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yaml">
-    <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yaml/badge.svg" />
+  <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml">
+    <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml/badge.svg" />
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
