@@ -1,10 +1,8 @@
 <p align="center">
-  <img src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
 </p>
 
 <h1 align="center">Sesh, the smart terminal session manager</h1>
-
-<hr/>
 
 <p align="center">
   <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml">
