@@ -2,10 +2,11 @@ package zoxide
 
 import (
 	"fmt"
-	"github.com/joshmedeski/sesh/convert"
-	"github.com/joshmedeski/sesh/tmux"
 	"os"
 	"strings"
+
+	"github.com/joshmedeski/sesh/convert"
+	"github.com/joshmedeski/sesh/tmux"
 )
 
 type ZoxideResult struct {

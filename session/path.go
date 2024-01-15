@@ -1,9 +1,10 @@
 package session
 
 import (
+	"path"
+
 	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/tmux"
-	"path"
 )
 
 func DeterminPath(choice string) (string, error) {

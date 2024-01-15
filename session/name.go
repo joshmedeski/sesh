@@ -1,10 +1,11 @@
 package session
 
 import (
-	"github.com/joshmedeski/sesh/git"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/joshmedeski/sesh/git"
 )
 
 func convertToValidName(name string) string {

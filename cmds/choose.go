@@ -2,12 +2,13 @@ package cmds
 
 import (
 	"bytes"
-	"github.com/joshmedeski/sesh/connect"
-	"github.com/joshmedeski/sesh/session"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/joshmedeski/sesh/connect"
+	"github.com/joshmedeski/sesh/session"
 
 	"github.com/urfave/cli/v2"
 )

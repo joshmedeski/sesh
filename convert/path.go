@@ -2,8 +2,9 @@ package convert
 
 import (
 	"fmt"
-	"github.com/joshmedeski/sesh/dir"
 	"os"
+
+	"github.com/joshmedeski/sesh/dir"
 )
 
 func PathToPretty(path string) string {

@@ -1,9 +1,10 @@
 package tmux
 
 import (
-	"github.com/joshmedeski/sesh/convert"
 	"strings"
 	"time"
+
+	"github.com/joshmedeski/sesh/convert"
 )
 
 type TmuxSession struct {

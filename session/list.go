@@ -2,9 +2,10 @@ package session
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
-	"os"
 )
 
 func List(srcs Srcs) []string {

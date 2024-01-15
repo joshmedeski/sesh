@@ -2,8 +2,9 @@ package cmds
 
 import (
 	"fmt"
-	"github.com/joshmedeski/sesh/session"
 	"strings"
+
+	"github.com/joshmedeski/sesh/session"
 
 	"github.com/urfave/cli/v2"
 )
