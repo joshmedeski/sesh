@@ -2,7 +2,7 @@
   <img src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
 </p>
 
-<p align="center">Sesh, the smart terminal session manager</p>
+<h1 align="center">Sesh, the smart terminal session manager</h1>
 
 <hr/>
 
