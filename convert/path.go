@@ -2,7 +2,7 @@ package convert
 
 import (
 	"fmt"
-	"joshmedeski/sesh/dir"
+	"github.com/joshmedeski/sesh/dir"
 	"os"
 )
 

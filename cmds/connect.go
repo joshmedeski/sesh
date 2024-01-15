@@ -1,7 +1,7 @@
 package cmds
 
 import (
-	"joshmedeski/sesh/connect"
+	"github.com/joshmedeski/sesh/connect"
 
 	"github.com/urfave/cli/v2"
 )

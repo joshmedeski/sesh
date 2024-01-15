@@ -2,8 +2,8 @@ package zoxide
 
 import (
 	"fmt"
-	"joshmedeski/sesh/convert"
-	"joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/convert"
+	"github.com/joshmedeski/sesh/tmux"
 	"os"
 	"strings"
 )

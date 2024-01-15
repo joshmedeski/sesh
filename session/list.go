@@ -2,8 +2,8 @@ package session
 
 import (
 	"fmt"
-	"joshmedeski/sesh/tmux"
-	"joshmedeski/sesh/zoxide"
+	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/zoxide"
 	"os"
 )
 

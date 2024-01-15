@@ -1,9 +1,9 @@
 package connect
 
 import (
-	"joshmedeski/sesh/session"
-	"joshmedeski/sesh/tmux"
-	"joshmedeski/sesh/zoxide"
+	"github.com/joshmedeski/sesh/session"
+	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/zoxide"
 )
 
 func Connect(choice string, alwaysSwitch bool) error {

@@ -1,7 +1,7 @@
 package session
 
 import (
-	"joshmedeski/sesh/git"
+	"github.com/joshmedeski/sesh/git"
 	"path"
 	"path/filepath"
 	"strings"

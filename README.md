@@ -1,3 +1,23 @@
+<p align="center">
+  <img width="50%" height="50%" src="https://github.com/arl/gitmux/raw/readme-images/logo-transparent.png" />
+</p>
+
+<p align="center">Gitmux shows git status in your tmux status bar</p>
+
+<hr/>
+
+<p align="center">
+  <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yaml">
+    <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yaml/badge.svg" />
+  </a>
+  <a href="https://goreportcard.com/report/github.com/arl/gitmux">
+    <img alt="goreport" src="https://goreportcard.com/badge/github.com/arl/gitmux" />
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+  </a>
+</p>
+
 # sesh
 
 Smart session manager tooling for the terminal.

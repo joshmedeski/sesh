@@ -1,8 +1,8 @@
 package session
 
 import (
-	"joshmedeski/sesh/dir"
-	"joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/dir"
+	"github.com/joshmedeski/sesh/tmux"
 	"path"
 )
 

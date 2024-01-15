@@ -1,4 +1,4 @@
-module joshmedeski/sesh
+module github.com/joshmedeski/sesh
 
 go 1.21
 

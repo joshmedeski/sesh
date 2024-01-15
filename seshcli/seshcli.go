@@ -1,7 +1,7 @@
 package seshcli
 
 import (
-	"joshmedeski/sesh/cmds"
+	"github.com/joshmedeski/sesh/cmds"
 
 	"github.com/urfave/cli/v2"
 )

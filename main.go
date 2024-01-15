@@ -1,7 +1,7 @@
 package main
 
 import (
-	"joshmedeski/sesh/seshcli"
+	"github.com/joshmedeski/sesh/seshcli"
 	"log"
 	"os"
 )

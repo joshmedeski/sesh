@@ -1,7 +1,7 @@
 package tmux
 
 import (
-	"joshmedeski/sesh/convert"
+	"github.com/joshmedeski/sesh/convert"
 	"strings"
 	"time"
 )

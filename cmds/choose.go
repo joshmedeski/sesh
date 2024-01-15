@@ -2,8 +2,8 @@ package cmds
 
 import (
 	"bytes"
-	"joshmedeski/sesh/connect"
-	"joshmedeski/sesh/session"
+	"github.com/joshmedeski/sesh/connect"
+	"github.com/joshmedeski/sesh/session"
 	"log"
 	"os"
 	"os/exec"
