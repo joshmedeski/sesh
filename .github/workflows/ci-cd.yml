@@ -1,0 +1,50 @@
+on: [push, pull_request]
+name: Test, Build and Publish
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.20.x"
+      - name: Run tests
+        run: go test -race ./...
+
+  goreleaser:
+    name: Build and Publish
+    needs: tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.20.x"
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+  check_brew:
+    name: Check Brew Tap
+    needs: goreleaser
+    runs-on: macos-latest
+    steps:
+      - name: Install with brew
+        run: |
+          brew install joshmedeski/sesh/sesh
+      - name: Check installed sesh version
+        run: |
+          [ v$(sesh ---version) == "$GITHUB_REF_NAME" ]
