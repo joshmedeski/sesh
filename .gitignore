@@ -22,3 +22,5 @@ go.work
 
 # binary
 sesh
+
+dist/
