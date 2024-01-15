@@ -52,8 +52,6 @@ brews:
     license: "MIT"
     url_template: "https://github.com/joshmedeski/sesh/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
-    folder: Formula
-    skip_upload: false
     repository:
       owner: joshmedeski
       name: homebrew-sesh
