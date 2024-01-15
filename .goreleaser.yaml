@@ -44,3 +44,23 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+brews:
+  - name: sesh
+    homepage: "https://github.com/joshmedeski/sesh"
+    description: "Smart terminal session manager"
+    license: "MIT"
+    url_template: "https://github.com/joshmedeski/sesh/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    folder: Formula
+    skip_upload: false
+    tap:
+      owner: joshmedeski
+      name: sesh
+      branch: main
+    commit_author:
+      name: goreleaser-bot
+      email: bot@goreleaser.com
+    dependencies:
+      - tmux
+      - zoxide
