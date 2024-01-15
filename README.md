@@ -15,7 +15,7 @@
   </a>
 </p>
 
-**BETA:** This project is in active development and is not ready for use. I will update the README with proper installation instructions once it's ready. Please check out the issues and contribute if you're interested in helping out.
+**BETA:** This project is in active development. Please check out the issues and contribute if you're interested in helping out.
 
 ## How to install
 
@@ -32,6 +32,31 @@ brew install joshsmedeski/sesh/sesh
 `sesh list` will list all your sessions, and `sesh connect {session}` will connect to a session (automatically creating it if it doesn't exist yet). It is best used by integrating it into your sehll and tmux.
 
 ### fzf
+
+The easiest way to integrate sesh into your workflow is to use [fzf](https://github.com/junegunn/fzf). You can use it to select a session to connect to:
+
+```sh
+sesh connect (sesh list | fzf)
+```
+
+### tmux
+
+In order to integrate with tmux, you can add a binding to your tmux config (`tmux.conf`). For example, the following will bind `ctrl-a T` to open a fzf prompt as a tmux popup (using `fzf-tmux`) and using different commands to list sessions (`sesh list -t`), zoxide directories (`sesh list -z`), and find directories (`fd...`).
+
+```sh
+ bind-key "T" run-shell "sesh connect $(
+	sesh list -tz | fzf-tmux -p 55%,60% \
+		--no-sort --border-label ' sesh ' --prompt '⚡  ' \
+		--header '  ^a all ^t tmux ^x zoxide ^f find' \
+		--bind 'tab:down,btab:up' \
+		--bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
+		--bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
+		--bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
+		--bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)'
+)"
+```
+
+You can customize this however you want, see `man fzf` for more info on the different options.
 
 ## Background (the "t" script)
 
