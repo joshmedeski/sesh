@@ -8,13 +8,13 @@ import (
 func Determine(choice string) Session {
 	path, err := DeterminPath(choice)
 	if err != nil {
-		fmt.Println("Could't determine the session path", err)
+		fmt.Println("Couldn't determine the session path", err)
 		os.Exit(1)
 	}
 
 	name := DetermineName(path)
 	if name == "" {
-		fmt.Println("Could't determine the session name", err)
+		fmt.Println("Couldn't determine the session name", err)
 		os.Exit(1)
 	}
 

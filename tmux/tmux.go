@@ -64,6 +64,14 @@ func switchSession(session string) error {
 	return nil
 }
 
+func runPersistentCommand(session string, command string) error {
+	finalCmd := []string{"send-keys", "-t", session, command, "Enter"}
+	if _, err := tmuxCmd(finalCmd); err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewSession(s TmuxSession) (string, error) {
 	out, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.Path})
 	if err != nil {
@@ -72,12 +80,15 @@ func NewSession(s TmuxSession) (string, error) {
 	return out, nil
 }
 
-func Connect(s TmuxSession, alwaysSwitch bool) error {
+func Connect(s TmuxSession, alwaysSwitch bool, command string) error {
 	isSession := IsSession(s.Name)
 	if !isSession {
 		_, err := NewSession(s)
 		if err != nil {
 			fmt.Println(err)
+		}
+		if command != "" && err == nil {
+			runPersistentCommand(s.Name, command)
 		}
 	}
 	isAttached := isAttached()

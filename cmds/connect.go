@@ -18,14 +18,20 @@ func Connect() *cli.Command {
 				Aliases: []string{"s"},
 				Usage:   "Always switch the session (and never attach). This is useful for third-party tools like Raycast.",
 			},
+			&cli.StringFlag{
+				Name:    "command",
+				Aliases: []string{"c"},
+				Usage:   "Execute a command when connecting to a new session.",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			session := cCtx.Args().First()
 			alwaysSwitch := cCtx.Bool("switch")
+			command := cCtx.String("command")
 			if session == "" {
 				return cli.Exit("No session provided", 0)
 			}
-			connect.Connect(session, alwaysSwitch)
+			connect.Connect(session, alwaysSwitch, command)
 			return nil
 		},
 	}
