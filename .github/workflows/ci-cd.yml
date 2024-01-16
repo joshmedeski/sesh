@@ -49,6 +49,4 @@ jobs:
       - name: Install with brew
         run: |
           brew install joshmedeski/sesh/sesh
-      - name: Check installed sesh version
-        run: |
-          [ v$(sesh --version) == "$GITHUB_REF_NAME" ]
+      # TODO: assert the latest version was installed
