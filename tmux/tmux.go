@@ -2,7 +2,7 @@ package tmux
 
 import (
 	"bytes"
-	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -85,9 +85,9 @@ func Connect(s TmuxSession, alwaysSwitch bool, command string) error {
 	if !isSession {
 		_, err := NewSession(s)
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
-		if command != "" && err == nil {
+		if command != "" {
 			runPersistentCommand(s.Name, command)
 		}
 	}

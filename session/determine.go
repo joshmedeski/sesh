@@ -1,21 +1,18 @@
 package session
 
 import (
-	"fmt"
-	"os"
+	"log"
 )
 
 func Determine(choice string) Session {
-	path, err := DeterminPath(choice)
+	path, err := DeterminePath(choice)
 	if err != nil {
-		fmt.Println("Couldn't determine the session path", err)
-		os.Exit(1)
+		log.Fatal("Couldn't determine the session path", err)
 	}
 
 	name := DetermineName(path)
 	if name == "" {
-		fmt.Println("Couldn't determine the session name", err)
-		os.Exit(1)
+		log.Fatal("Couldn't determine the session name", err)
 	}
 
 	return Session{
