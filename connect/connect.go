@@ -6,12 +6,12 @@ import (
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
-func Connect(choice string, alwaysSwitch bool) error {
+func Connect(choice string, alwaysSwitch bool, command string) error {
 	session := session.Determine(choice)
 	zoxide.Add(session.Path)
 	tmux.Connect(tmux.TmuxSession{
 		Name: session.Name,
 		Path: session.Path,
-	}, alwaysSwitch)
+	}, alwaysSwitch, command)
 	return nil
 }

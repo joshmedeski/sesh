@@ -7,7 +7,7 @@ import (
 	"github.com/joshmedeski/sesh/tmux"
 )
 
-func DeterminPath(choice string) (string, error) {
+func DeterminePath(choice string) (string, error) {
 	fullPath := dir.FullPath(choice)
 	if path.IsAbs(fullPath) {
 		return fullPath, nil
