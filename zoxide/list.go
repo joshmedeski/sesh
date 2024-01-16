@@ -18,7 +18,7 @@ type ZoxideResult struct {
 func List(tmuxSessions []*tmux.TmuxSession) ([]*ZoxideResult, error) {
 	output, err := zoxideCmd([]string{"query", "-ls"})
 	if err != nil {
-		return nil, err
+		return []*ZoxideResult{}, nil
 	}
 	cleanOutput := strings.TrimSpace(string(output))
 	list := strings.Split(cleanOutput, "\n")
