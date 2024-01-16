@@ -20,7 +20,7 @@
 To install sesh, run the following [homebrew](https://brew.sh/) command:
 
 ```sh
-brew install joshsmedeski/sesh/sesh
+brew install joshmedeski/sesh/sesh
 ```
 
 **Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
