@@ -21,7 +21,7 @@ func Connect() *cli.Command {
 			&cli.StringFlag{
 				Name:    "command",
 				Aliases: []string{"c"},
-				Usage:   "Execute a command when connecting to a new session.",
+				Usage:   "Execute a command when connecting to a new session. Will be ignored if the session exists.",
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
