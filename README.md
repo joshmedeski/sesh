@@ -71,3 +71,7 @@ Sesh is a predecessor to my popular [t-smart-tmux-session-manager](https://githu
 I've decided to start over and build a session manager from the ground up. This time, I'm using a language that's more suited for the task: Go. Go is a compiled language that's fast, statically typed, and has a great standard library. It's perfect for a project like this. I've also decided to make this session manager multiplexer agnostic. It will be able to work with any terminal multiplexer, including tmux, zellij, Wezterm, and more.
 
 The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
+
+## Contributing
+
+Pull requests are welcome, please help me make this project better! For major changes, please open an issue first to open a discussion.
