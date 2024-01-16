@@ -22,8 +22,12 @@ func List(tmuxSessions []*tmux.TmuxSession) ([]*ZoxideResult, error) {
 	}
 	cleanOutput := strings.TrimSpace(string(output))
 	list := strings.Split(cleanOutput, "\n")
+	listLen := len(list)
+	if listLen == 1 && list[0] == "" {
+		return []*ZoxideResult{}, nil
+	}
 
-	results := make([]*ZoxideResult, 0, len(list))
+	results := make([]*ZoxideResult, 0, listLen)
 	tmuxSessionPaths := make(map[string]struct{})
 	for _, session := range tmuxSessions {
 		tmuxSessionPaths[session.Path] = struct{}{}
