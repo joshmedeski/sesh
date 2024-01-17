@@ -17,6 +17,7 @@ func App() cli.App {
 			cmds.List(),
 			cmds.Choose(),
 			cmds.Connect(),
+			cmds.Clone(),
 		},
 	}
 }
