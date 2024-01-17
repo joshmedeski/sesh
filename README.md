@@ -8,6 +8,9 @@
   <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml">
     <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml/badge.svg" />
   </a>
+  <a href="https://goreportcard.com/report/github.com/joshmedeski/sesh">
+    <img alt="goreport" src="https://goreportcard.com/badge/github.com/joshmedeski/sesh" />
+  </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
   </a>
