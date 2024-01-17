@@ -12,7 +12,7 @@ func Determine(choice string, config *config.Config) Session {
 		log.Fatal("Couldn't determine the session path", err)
 	}
 
-	name := DetermineName(path)
+	name := DetermineName(path, config)
 	if name == "" {
 		log.Fatal("Couldn't determine the session name", err)
 	}

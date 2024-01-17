@@ -1,6 +1,7 @@
 package cmds
 
 import (
+	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/connect"
 	"github.com/joshmedeski/sesh/git"
 
@@ -32,7 +33,8 @@ func Clone() *cli.Command {
 			if err != nil {
 				return cli.Exit(err, 1)
 			}
-			connect.Connect(c.Path, false, "")
+			config := config.ParseConfigFile()
+			connect.Connect(c.Path, false, "", &config)
 			return nil
 		},
 	}

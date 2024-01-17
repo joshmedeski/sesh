@@ -67,7 +67,7 @@ func Choose() *cli.Command {
 			choice := strings.TrimSpace(cmdOutput.String())
 			// TODO: get choice from Session structs array
 			config := config.ParseConfigFile()
-			connect.Connect(choice, false, "", config)
+			connect.Connect(choice, false, "", &config)
 			return nil
 		},
 	}

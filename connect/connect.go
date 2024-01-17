@@ -7,8 +7,8 @@ import (
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
-func Connect(choice string, alwaysSwitch bool, command string, config config.Config) error {
-	session := session.Determine(choice)
+func Connect(choice string, alwaysSwitch bool, command string, config *config.Config) error {
+	session := session.Determine(choice, config)
 	zoxide.Add(session.Path)
 	tmux.Connect(tmux.TmuxSession{
 		Name: session.Name,
