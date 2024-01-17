@@ -9,7 +9,7 @@ import (
 )
 
 type SessionName struct {
-	IncludeRootDir bool `toml:"include_root_dir"`
+	PrependParentDir bool `toml:"prepend_parent_dir"`
 }
 type Session struct {
 	Name SessionName

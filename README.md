@@ -67,9 +67,21 @@ You can customize this however you want, see `man fzf` for more info on the diff
 sesh connect (sesh list | zf --height 24)
 ```
 
+## Configuration
+
+To configure `sesh`, you will need to create a directory called `sesh` with `sesh.toml` nested within it. This directory should be created with `$XDG_CONFIG_HOME` or `$HOME/.config` as the root directory, depending on whether the former has been set. On MacOS, this will likely be `~/.config/` by default and therefore the configuration filepath would be `~/.config/sesh/sesh.toml`. See the [Go docs](https://cs.opensource.google/go/go/+/go1.21.6:src/os/file.go;l=460) for more information.
+
+An example of the `sesh.toml` file is shown below with all configurable options and their default values:
+
+```toml
+[session.name]
+# Name sessions according to the target directory's filepath vs. git info
+prepend_parent_dir = false
+```
+
 ## Background (the "t" script)
 
-Sesh is a predecessor to my popular [t-smart-tmux-session-manager](https://github.com/joshmedeski/t-smart-tmux-session-manager) tmux plugin. After a year of development and over 250 stars, it's clear that people enjoy the idea of a smart session manager. However, I've always felt that the tmux plugin was a bit of a hack. It's a bash script that runs in the background and parses the output of tmux commands. It works, but it's not ideal and isn't flexible enough to support other terminal multiplexers.
+Sesh is a successor to my popular [t-smart-tmux-session-manager](https://github.com/joshmedeski/t-smart-tmux-session-manager) tmux plugin. After a year of development and over 250 stars, it's clear that people enjoy the idea of a smart session manager. However, I've always felt that the tmux plugin was a bit of a hack. It's a bash script that runs in the background and parses the output of tmux commands. It works, but it's not ideal and isn't flexible enough to support other terminal multiplexers.
 
 I've decided to start over and build a session manager from the ground up. This time, I'm using a language that's more suited for the task: Go. Go is a compiled language that's fast, statically typed, and has a great standard library. It's perfect for a project like this. I've also decided to make this session manager multiplexer agnostic. It will be able to work with any terminal multiplexer, including tmux, zellij, Wezterm, and more.
 
