@@ -1,10 +1,7 @@
 package zoxide
 
 import (
-	"fmt"
-	"os"
 	"os/exec"
-	"path"
 )
 
 func zoxideCmd(args []string) ([]byte, error) {
@@ -18,16 +15,4 @@ func zoxideCmd(args []string) ([]byte, error) {
 		return nil, err
 	}
 	return output, nil
-}
-
-func Add(result string) {
-	if !path.IsAbs(result) {
-		return
-	}
-	cmd := exec.Command("zoxide", "add", result)
-	_, err := cmd.Output()
-	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
 }

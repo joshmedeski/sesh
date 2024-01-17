@@ -1,10 +1,13 @@
 package session
 
 import (
+	"fmt"
+	"os"
 	"path"
 
 	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/zoxide"
 )
 
 func DeterminePath(choice string) (string, error) {
@@ -16,7 +19,15 @@ func DeterminePath(choice string) (string, error) {
 	if tmux.IsSession(fullPath) {
 		return fullPath, nil
 	}
-	// TODO: if not absolute path, get zoxide results
-	// TODO: get zoxide result if not path and tmux session doesn't exist
+
+	zoxideResult, err := zoxide.Query(fullPath)
+	if err != nil {
+		fmt.Println("Couldn't query zoxide", err)
+		os.Exit(1)
+	}
+	if zoxideResult != nil {
+		return zoxideResult.Path, nil
+	}
+
 	return fullPath, nil
 }
