@@ -2,9 +2,11 @@ package session
 
 import (
 	"log"
+
+	"github.com/joshmedeski/sesh/config"
 )
 
-func Determine(choice string) Session {
+func Determine(choice string, config *config.Config) Session {
 	path, err := DeterminePath(choice)
 	if err != nil {
 		log.Fatal("Couldn't determine the session path", err)

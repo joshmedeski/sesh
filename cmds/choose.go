@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/connect"
 	"github.com/joshmedeski/sesh/session"
 
@@ -65,7 +66,8 @@ func Choose() *cli.Command {
 			}
 			choice := strings.TrimSpace(cmdOutput.String())
 			// TODO: get choice from Session structs array
-			connect.Connect(choice, false, "")
+			config := config.ParseConfigFile()
+			connect.Connect(choice, false, "", config)
 			return nil
 		},
 	}
