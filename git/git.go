@@ -6,6 +6,19 @@ import (
 	"strings"
 )
 
+func gitCmd(args []string) ([]byte, error) {
+	tmux, err := exec.LookPath("git")
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(tmux, args...)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
 func RootPath(path string) string {
 	gitRootPathCmd := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel")
 	gitRootPathByteOutput, err := gitRootPathCmd.CombinedOutput()
