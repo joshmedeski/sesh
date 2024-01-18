@@ -11,6 +11,13 @@ import (
 )
 
 func DeterminePath(choice string) (string, error) {
+	if choice == "." {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		return cwd, nil
+	}
 	fullPath := dir.FullPath(choice)
 	if path.IsAbs(fullPath) {
 		return fullPath, nil
