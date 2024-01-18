@@ -69,7 +69,7 @@ sesh connect (sesh list | zf --height 24)
 
 ## Configuration
 
-To configure `sesh`, you will need to create a directory called `sesh` with `sesh.toml` nested within it. This directory should be created with `$XDG_CONFIG_HOME` or `$HOME/.config` as the root directory, depending on whether the former has been set. On MacOS, this will likely be `~/.config/` by default and therefore the configuration filepath would be `~/.config/sesh/sesh.toml`. See the [Go docs](https://cs.opensource.google/go/go/+/go1.21.6:src/os/file.go;l=460) for more information.
+To configure `sesh`, you will need to create `sesh/sesh.toml` with `$XDG_CONFIG_HOME` or `$HOME/.config` as the root directory, depending on whether the former has been set. On MacOS, this will likely be `~/.config/` by default and therefore the configuration filepath would be `~/.config/sesh/sesh.toml`. See the [Go docs](https://cs.opensource.google/go/go/+/go1.21.6:src/os/file.go;l=460) for more information.
 
 An example of the `sesh.toml` file is shown below with all configurable options and their default values:
 
