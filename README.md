@@ -47,7 +47,7 @@ This will download and install the latest version of Sesh. Make sure that your G
 The easiest way to integrate sesh into your workflow is to use [fzf](https://github.com/junegunn/fzf). You can use it to select a session to connect to:
 
 ```sh
-sesh connect (sesh list | fzf)
+sesh connect $(sesh list | fzf)
 ```
 
 ### tmux + fzf
