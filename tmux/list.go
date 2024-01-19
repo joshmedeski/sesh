@@ -1,6 +1,7 @@
 package tmux
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -119,7 +120,7 @@ func List() ([]*TmuxSession, error) {
 	for _, line := range lines {
 		fields := strings.Split(line, " ") // Strings split by single space
 		if len(fields) == 21 {
-			sessions = append(sessions, &TmuxSession{
+			session := &TmuxSession{
 				Activity:          convert.StringToTime(fields[0]),
 				Alerts:            convert.StringToIntSlice(fields[1]),
 				Attached:          convert.StringToInt(fields[2]),
@@ -141,6 +142,12 @@ func List() ([]*TmuxSession, error) {
 				Path:              fields[18],
 				Stack:             convert.StringToIntSlice(fields[19]),
 				Windows:           convert.StringToInt(fields[20]),
+			}
+			if session.Attached != 1 {
+				sessions = append(sessions, session)
+			}
+			sort.Slice(sessions, func(i, j int) bool {
+				return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
 			})
 		}
 	}
