@@ -6,9 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var version = "dev"
-
-func App() cli.App {
+func App(version string) cli.App {
 	return cli.App{
 		Name:    "sesh",
 		Version: version,
