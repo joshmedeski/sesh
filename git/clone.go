@@ -1,6 +1,7 @@
 package git
 
 import (
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -26,8 +27,13 @@ func Clone(o CloneOptions) (ClonedRepo, error) {
 	if o.CmdDir != nil && strings.TrimSpace(*o.CmdDir) != "" {
 		cmd.Dir = *o.CmdDir
 	}
-	_, err := cmd.Output()
-	cmd.Wait()
+
+  cmd.Stdin = os.Stdin
+  cmd.Stderr = os.Stderr
+  cmd.Stdout = os.Stdout
+  cmd.Env = os.Environ()
+
+	err := cmd.Run()
 	if err != nil {
 		return ClonedRepo{}, err
 	}
