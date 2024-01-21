@@ -75,36 +75,30 @@ type TmuxSession struct {
 
 func format() string {
 	variables := []string{
-		"session_activity",
-		"session_alerts",
-		"session_attached",
-		"session_attached_list",
-		"session_created",
-		"session_format",
-		"session_group",
-		"session_group_attached",
-		"session_group_attached_list",
-		"session_group_list",
-		"session_group_many_attached",
-		"session_group_size",
-		"session_grouped",
-		"session_id",
-		"session_last_attached",
-		"session_many_attached",
-		"session_marked",
-		"session_name",
-		"session_path",
-		"session_stack",
-		"session_windows",
+		"#{session_activity}",
+		"#{session_alerts}",
+		"#{session_attached}",
+		"#{session_attached_list}",
+		"#{session_created}",
+		"#{session_format}",
+		"#{session_group}",
+		"#{session_group_attached}",
+		"#{session_group_attached_list}",
+		"#{session_group_list}",
+		"#{session_group_many_attached}",
+		"#{session_group_size}",
+		"#{session_grouped}",
+		"#{session_id}",
+		"#{session_last_attached}",
+		"#{session_many_attached}",
+		"#{session_marked}",
+		"#{session_name}",
+		"#{session_path}",
+		"#{session_stack}",
+		"#{session_windows}",
 	}
-	variablesStr := ""
-	for i, variable := range variables {
-		variablesStr += "#{" + variable + "}"
-		if i != len(variables)-1 {
-			variablesStr += " "
-		}
-	}
-	return variablesStr
+
+	return strings.Join(variables, " ")
 }
 
 func List() ([]*TmuxSession, error) {

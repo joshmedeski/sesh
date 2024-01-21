@@ -20,7 +20,12 @@ func TestFormat(t *testing.T) {
 }
 
 // BenchmarkFormat
-// - Initial: BenchmarkFormat-10  649407  1830 ns/op  9936 B/op  41 allocs/op
+//
+//   - Initial:
+//     BenchmarkFormat-10  649407  1830 ns/op  9936 B/op  41 allocs/op
+//
+//   - Refactored:
+//     BenchmarkFormat-10  6360228  181.9 ns/op  448 B/op  1 allocs/op
 func BenchmarkFormat(i *testing.B) {
 	for n := 0; n < i.N; n++ {
 		format()
