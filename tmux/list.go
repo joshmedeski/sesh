@@ -101,17 +101,9 @@ func format() string {
 	return strings.Join(variables, " ")
 }
 
-func List() ([]*TmuxSession, error) {
-	format := format()
-	output, err := tmuxCmd([]string{"list-sessions", "-F", format})
-	cleanOutput := strings.TrimSpace(output)
-	if err != nil || strings.HasPrefix(cleanOutput, "no server running on") {
-		return nil, nil
-	}
-	sessionList := strings.TrimSpace(string(output))
-	lines := strings.Split(sessionList, "\n")
-	sessions := make([]*TmuxSession, 0, len(lines))
-	for _, line := range lines {
+func processSessions(sessionList []string) []*TmuxSession {
+	sessions := make([]*TmuxSession, 0, len(sessionList))
+	for _, line := range sessionList {
 		fields := strings.Split(line, " ") // Strings split by single space
 		if len(fields) == 21 {
 			session := &TmuxSession{
@@ -141,9 +133,25 @@ func List() ([]*TmuxSession, error) {
 				sessions = append(sessions, session)
 			}
 			sort.Slice(sessions, func(i, j int) bool {
-				return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
+				return sessions[j].LastAttached.Before(
+					*sessions[i].LastAttached,
+				)
 			})
 		}
 	}
+	return sessions
+}
+
+func List() ([]*TmuxSession, error) {
+	format := format()
+	output, err := tmuxCmd([]string{"list-sessions", "-F", format})
+	cleanOutput := strings.TrimSpace(output)
+	if err != nil || strings.HasPrefix(cleanOutput, "no server running on") {
+		return nil, nil
+	}
+	sessionList := strings.TrimSpace(string(output))
+	lines := strings.Split(sessionList, "\n")
+	sessions := processSessions(lines)
+
 	return sessions, nil
 }
