@@ -56,6 +56,13 @@ func TestProcessSessions(t *testing.T) {
 			},
 			Expected: make([]*TmuxSession, 2),
 		},
+		"Two active session": {
+			Input: []string{
+				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
+				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
+			},
+			Expected: []*TmuxSession{},
+		},
 		"No sessions": {
 			Expected: []*TmuxSession{},
 		},
@@ -72,6 +79,20 @@ func TestProcessSessions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := processSessions(tc.Input)
 			require.Equal(t, len(tc.Expected), len(got))
+		})
+	}
+}
+
+// BenchmarkProcessSessions
+//   - Initial:
+//     BenchmarkProcessSessions-10  817090  1405 ns/op 1712 B/op  29 allocs/op
+//   - Refactored:
+//     BenchmarkProcessSessions-10  1692590  709.8 ns/op  744 B/op  4 allocs/op
+func BenchmarkProcessSessions(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		processSessions([]string{
+			"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
+			"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 		})
 	}
 }

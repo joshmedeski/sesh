@@ -105,40 +105,44 @@ func processSessions(sessionList []string) []*TmuxSession {
 	sessions := make([]*TmuxSession, 0, len(sessionList))
 	for _, line := range sessionList {
 		fields := strings.Split(line, " ") // Strings split by single space
-		if len(fields) == 21 {
-			session := &TmuxSession{
-				Activity:          convert.StringToTime(fields[0]),
-				Alerts:            convert.StringToIntSlice(fields[1]),
-				Attached:          convert.StringToInt(fields[2]),
-				AttachedList:      strings.Split(fields[3], ","),
-				Created:           convert.StringToTime(fields[4]),
-				Format:            convert.StringToBool(fields[5]),
-				Group:             fields[6],
-				GroupAttached:     convert.StringToInt(fields[7]),
-				GroupAttachedList: strings.Split(fields[8], ","),
-				GroupList:         strings.Split(fields[9], ","),
-				GroupManyAttached: convert.StringToBool(fields[10]),
-				GroupSize:         convert.StringToInt(fields[11]),
-				Grouped:           convert.StringToBool(fields[12]),
-				ID:                fields[13],
-				LastAttached:      convert.StringToTime(fields[14]),
-				ManyAttached:      convert.StringToBool(fields[15]),
-				Marked:            convert.StringToBool(fields[16]),
-				Name:              fields[17],
-				Path:              fields[18],
-				Stack:             convert.StringToIntSlice(fields[19]),
-				Windows:           convert.StringToInt(fields[20]),
-			}
-			if session.Attached != 1 {
-				sessions = append(sessions, session)
-			}
-			sort.Slice(sessions, func(i, j int) bool {
-				return sessions[j].LastAttached.Before(
-					*sessions[i].LastAttached,
-				)
-			})
+
+		if len(fields) != 21 {
+			continue
 		}
+		if fields[2] == "1" {
+			continue
+		}
+
+		session := &TmuxSession{
+			Activity:          convert.StringToTime(fields[0]),
+			Alerts:            convert.StringToIntSlice(fields[1]),
+			Attached:          convert.StringToInt(fields[2]),
+			AttachedList:      strings.Split(fields[3], ","),
+			Created:           convert.StringToTime(fields[4]),
+			Format:            convert.StringToBool(fields[5]),
+			Group:             fields[6],
+			GroupAttached:     convert.StringToInt(fields[7]),
+			GroupAttachedList: strings.Split(fields[8], ","),
+			GroupList:         strings.Split(fields[9], ","),
+			GroupManyAttached: convert.StringToBool(fields[10]),
+			GroupSize:         convert.StringToInt(fields[11]),
+			Grouped:           convert.StringToBool(fields[12]),
+			ID:                fields[13],
+			LastAttached:      convert.StringToTime(fields[14]),
+			ManyAttached:      convert.StringToBool(fields[15]),
+			Marked:            convert.StringToBool(fields[16]),
+			Name:              fields[17],
+			Path:              fields[18],
+			Stack:             convert.StringToIntSlice(fields[19]),
+			Windows:           convert.StringToInt(fields[20]),
+		}
+		sessions = append(sessions, session)
 	}
+
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
+	})
+
 	return sessions
 }
 
