@@ -13,6 +13,6 @@ func Connect(choice string, alwaysSwitch bool, command string, config *config.Co
 	tmux.Connect(tmux.TmuxSession{
 		Name: session.Name,
 		Path: session.Path,
-	}, alwaysSwitch, command)
+	}, alwaysSwitch, command, session.Path, config)
 	return nil
 }
