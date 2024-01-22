@@ -19,13 +19,6 @@ func TestFormat(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-// BenchmarkFormat
-//
-//   - Initial:
-//     BenchmarkFormat-10  649407  1830 ns/op  9936 B/op  41 allocs/op
-//
-//   - Refactored:
-//     BenchmarkFormat-10  6360228  181.9 ns/op  448 B/op  1 allocs/op
 func BenchmarkFormat(i *testing.B) {
 	for n := 0; n < i.N; n++ {
 		format()
@@ -83,11 +76,6 @@ func TestProcessSessions(t *testing.T) {
 	}
 }
 
-// BenchmarkProcessSessions
-//   - Initial:
-//     BenchmarkProcessSessions-10  817090  1405 ns/op 1712 B/op  29 allocs/op
-//   - Refactored:
-//     BenchmarkProcessSessions-10  1692590  709.8 ns/op  744 B/op  4 allocs/op
 func BenchmarkProcessSessions(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		processSessions([]string{
