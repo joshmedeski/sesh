@@ -122,7 +122,6 @@ func Connect(
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("Running command: ", command)
 		if command != "" {
 			runPersistentCommand(s.Name, command)
 		} else if scriptPath := getStartupScript(sessionPath, config); scriptPath != "" {
