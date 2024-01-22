@@ -139,8 +139,12 @@ func processSessions(sessionList []string) []*TmuxSession {
 		sessions = append(sessions, session)
 	}
 
+	return sessions
+}
+
+func sortSessions(sessions []*TmuxSession) []*TmuxSession {
 	sort.Slice(sessions, func(i, j int) bool {
-	  return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
+		return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
 	})
 
 	return sessions
@@ -157,5 +161,5 @@ func List() ([]*TmuxSession, error) {
 	lines := strings.Split(sessionList, "\n")
 	sessions := processSessions(lines)
 
-	return sessions, nil
+	return sortSessions(sessions), nil
 }
