@@ -93,7 +93,7 @@ func execStartupScript(name string, scriptPath string) error {
 		[]string{bash, "-c", fmt.Sprintf("\"source %s\"", scriptPath)},
 		" ",
 	)
-	_, err = tmuxCmd([]string{"send-keys", "-t", name, cmd, "Enter"})
+	err = runPersistentCommand(name, cmd)
 	if err != nil {
 		return err
 	}
