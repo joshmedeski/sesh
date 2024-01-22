@@ -147,6 +147,12 @@ func List() ([]*TmuxSession, error) {
 				sessions = append(sessions, session)
 			}
 			sort.Slice(sessions, func(i, j int) bool {
+				if sessions[i].LastAttached == nil {
+					return false
+				}
+				if sessions[j].LastAttached == nil {
+					return true
+				}
 				return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
 			})
 		}
