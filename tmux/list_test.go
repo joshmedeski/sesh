@@ -31,3 +31,47 @@ func BenchmarkFormat(i *testing.B) {
 		format()
 	}
 }
+
+func TestProcessSessions(t *testing.T) {
+	testCases := map[string]struct {
+		Input    []string
+		Expected []*TmuxSession
+	}{
+		"Single active session": {
+			Input: []string{
+				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
+			},
+			Expected: []*TmuxSession{},
+		},
+		"Single inactive session": {
+			Input: []string{
+				"1705879002  0  1705878987 1       0 $2 1705878987 0 0 session-1 /some/test/path 1 1",
+			},
+			Expected: make([]*TmuxSession, 1),
+		},
+		"Two inactive session": {
+			Input: []string{
+				"1705879002  0  1705878987 1       0 $2 1705878987 0 0 session-1 /some/test/path 1 1",
+				"1705879063  0  1705879002 1       0 $3 1705879002 0 0 session-2 /some/other/test/path 1 1",
+			},
+			Expected: make([]*TmuxSession, 2),
+		},
+		"No sessions": {
+			Expected: []*TmuxSession{},
+		},
+		"Invalid LastAttached (Issue 34)": {
+			Input: []string{
+				"1705879002  0  1705878987 1       0 $2 1705878987 0 0 session-1 /some/test/path 1 1",
+				"1705879063  0  1705879002 1       0 $3  0 0 session-2 /some/other/test/path 1 1",
+			},
+			Expected: make([]*TmuxSession, 2),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			got := processSessions(tc.Input)
+			require.Equal(t, len(tc.Expected), len(got))
+		})
+	}
+}
