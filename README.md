@@ -74,10 +74,18 @@ To configure `sesh`, you will need to create `sesh/sesh.toml` with `$XDG_CONFIG_
 An example of the `sesh.toml` file is shown below with all configurable options and their default values:
 
 ```toml
-[session.name]
-# Name sessions according to the target directory's filepath vs. git info
-prepend_parent_dir = false
+default_startup_script = "~/git_repos/dotfiles/bin/sesh/default.sh"
+
+[[startup_scripts]]
+session_path = "~/git_repos/sesh"
+script_path = "~/git_repos/dotfiles/bin/sesh/sesh.sh"
 ```
+
+### Startup Scripts
+
+Startup scripts will be ignored if the `--command/-c` flag is passed! Startup scripts will only be run upon session creation!
+
+If a `[[startup_scripts]]` entry is present for a given session path, then the startup script path specified by `script_path` will be run when the session is created. Otherwise, if `default_startup_script` is specified, then the script at that path will be executed. Make sure that the scripts specified are executable, e.g. `chmod +x ~/git_repos/dotfiles/bin/sesh/default.sh`.
 
 ## Background (the "t" script)
 
