@@ -22,12 +22,7 @@ func DeterminePath(choice string) (string, error) {
 	fullPath := dir.FullPath(choice)
 
 	realPath, err := filepath.EvalSymlinks(choice)
-	if err != nil {
-		fmt.Println("Couldn't evaluate symbolic link", err)
-		os.Exit(1)
-	}
-
-	if path.IsAbs(realPath) {
+	if err == nil && path.IsAbs(realPath) {
 		return realPath, nil
 	}
 
