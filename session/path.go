@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/tmux"
@@ -19,7 +20,18 @@ func DeterminePath(choice string) (string, error) {
 		return cwd, nil
 	}
 	fullPath := dir.FullPath(choice)
-	if path.IsAbs(fullPath) {
+
+	realPath, err := filepath.EvalSymlinks(choice)
+	if err != nil {
+		fmt.Println("Couldn't evaluate symbolic link", err)
+		os.Exit(1)
+	}
+
+	if path.IsAbs(realPath) {
+		return realPath, nil
+	}
+
+	if path.IsAbs(realPath) {
 		return fullPath, nil
 	}
 
