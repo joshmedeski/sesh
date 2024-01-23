@@ -26,7 +26,7 @@ func DeterminePath(choice string) (string, error) {
 		return realPath, nil
 	}
 
-	if path.IsAbs(realPath) {
+	if path.IsAbs(fullPath) {
 		return fullPath, nil
 	}
 
