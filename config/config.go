@@ -11,19 +11,11 @@ import (
 )
 
 type (
-	// SessionName struct {
-	// 	PrependParentDir bool `toml:"prepend_parent_dir"`
-	// }
-	//
-	// Session struct {
-	// 	Name SessionName
-	// }
 	Script struct {
 		SessionPath string `toml:"session_path"`
 		ScriptPath  string `toml:"script_path"`
 	}
 	Config struct {
-		// Session              Session
 		StartupScripts       []Script `toml:"startup_scripts"`
 		DefaultStartupScript string   `toml:"default_startup_script"`
 	}

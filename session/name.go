@@ -51,9 +51,6 @@ func nameFromGit(result string) string {
 func DetermineName(result string, config *config.Config) string {
 	name := result
 	// TODO: parent directory config option detection
-	// config := config.ParseConfigFile()
-	// if config.Session.Name.PrependParentDir {
-	// }
 	pathName := nameFromPath(result)
 	if pathName != "" {
 		name = pathName
