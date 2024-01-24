@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/tmux"
@@ -11,7 +12,20 @@ import (
 )
 
 func DeterminePath(choice string) (string, error) {
+	if choice == "." {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		return cwd, nil
+	}
 	fullPath := dir.FullPath(choice)
+
+	realPath, err := filepath.EvalSymlinks(choice)
+	if err == nil && path.IsAbs(realPath) {
+		return realPath, nil
+	}
+
 	if path.IsAbs(fullPath) {
 		return fullPath, nil
 	}
