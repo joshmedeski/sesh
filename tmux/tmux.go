@@ -2,7 +2,7 @@ package tmux
 
 import (
 	"bytes"
-	"log"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -73,7 +73,9 @@ func runPersistentCommand(session string, command string) error {
 }
 
 func NewSession(s TmuxSession) (string, error) {
-	out, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.Path})
+	out, err := tmuxCmd(
+		[]string{"new-session", "-d", "-s", s.Name, "-c", s.Path},
+	)
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +87,7 @@ func Connect(s TmuxSession, alwaysSwitch bool, command string) error {
 	if !isSession {
 		_, err := NewSession(s)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Errorf("unable to connect to tmux session %q: %w", s.Name, err)
 		}
 		if command != "" {
 			runPersistentCommand(s.Name, command)
@@ -97,5 +99,6 @@ func Connect(s TmuxSession, alwaysSwitch bool, command string) error {
 	} else {
 		attachSession(s.Name)
 	}
+
 	return nil
 }
