@@ -1,6 +1,13 @@
 # cSpell:words jstemmer benchmem goreleaser
-on: [push, pull_request]
 name: Test, Build and Publish
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main]
+    tags:
+      - "*"
 
 permissions:
   contents: write
