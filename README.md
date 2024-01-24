@@ -85,6 +85,10 @@ I've decided to start over and build a session manager from the ground up. This 
 
 The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
 
-## Contributing
+## Contributors
 
-Pull requests are welcome, please help me make this project better! For major changes, please open an issue first to open a discussion.
+<a href="https://github.com/joshmedeski/sesh/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=joshmedeski/sesh" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
