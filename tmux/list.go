@@ -109,9 +109,6 @@ func processSessions(sessionList []string) []*TmuxSession {
 		if len(fields) != 21 {
 			continue
 		}
-		if fields[2] == "1" {
-			continue
-		}
 
 		session := &TmuxSession{
 			Activity:          convert.StringToTime(fields[0]),
