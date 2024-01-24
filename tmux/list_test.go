@@ -34,7 +34,7 @@ func TestProcessSessions(t *testing.T) {
 			Input: []string{
 				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 			},
-			Expected: []*TmuxSession{},
+			Expected: make([]*TmuxSession, 1),
 		},
 		"Single inactive session": {
 			Input: []string{
@@ -54,7 +54,7 @@ func TestProcessSessions(t *testing.T) {
 				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 			},
-			Expected: []*TmuxSession{},
+			Expected: make([]*TmuxSession, 2),
 		},
 		"No sessions": {
 			Expected: []*TmuxSession{},
