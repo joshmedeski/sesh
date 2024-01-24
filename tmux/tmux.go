@@ -77,7 +77,9 @@ func runPersistentCommand(session string, command string) error {
 }
 
 func NewSession(s TmuxSession) (string, error) {
-	out, err := tmuxCmd([]string{"new-session", "-d", "-s", s.Name, "-c", s.Path})
+	out, err := tmuxCmd(
+		[]string{"new-session", "-d", "-s", s.Name, "-c", s.Path},
+	)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +122,7 @@ func Connect(
 	if !isSession {
 		_, err := NewSession(s)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Errorf("unable to connect to tmux session %q: %w", s.Name, err)
 		}
 		if command != "" {
 			runPersistentCommand(s.Name, command)

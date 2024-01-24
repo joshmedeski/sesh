@@ -1,11 +1,11 @@
 package cmds
 
 import (
+	cli "github.com/urfave/cli/v2"
+
 	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/connect"
 	"github.com/joshmedeski/sesh/git"
-
-	"github.com/urfave/cli/v2"
 )
 
 func Clone() *cli.Command {
@@ -34,8 +34,7 @@ func Clone() *cli.Command {
 				return cli.Exit(err, 1)
 			}
 			config := config.ParseConfigFile()
-			connect.Connect(c.Path, false, "", &config)
-			return nil
+			return connect.Connect(c.Path, false, "", &config)
 		},
 	}
 }

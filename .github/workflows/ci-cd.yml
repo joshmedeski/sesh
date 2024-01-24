@@ -1,5 +1,13 @@
-on: [push, pull_request]
+# cSpell:words jstemmer benchmem goreleaser
 name: Test, Build and Publish
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main]
+    tags:
+      - "*"
 
 permissions:
   contents: write
@@ -15,8 +23,16 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: "1.21"
+      - name: Install deps
+        run: go install github.com/jstemmer/go-junit-report/v2@latest
       - name: Run tests
-        run: go test -race ./...
+        run: go test -cover -bench=. -benchmem -race -v 2>&1 ./... | go-junit-report -set-exit-code > report.xml
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: |
+            report.xml
+        if: always()
 
   goreleaser:
     name: Build and Publish
