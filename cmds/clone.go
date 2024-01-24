@@ -1,10 +1,10 @@
 package cmds
 
 import (
+	cli "github.com/urfave/cli/v2"
+
 	"github.com/joshmedeski/sesh/connect"
 	"github.com/joshmedeski/sesh/git"
-
-	"github.com/urfave/cli/v2"
 )
 
 func Clone() *cli.Command {
@@ -32,8 +32,8 @@ func Clone() *cli.Command {
 			if err != nil {
 				return cli.Exit(err, 1)
 			}
-			connect.Connect(c.Path, false, "")
-			return nil
+
+			return connect.Connect(c.Path, false, "")
 		},
 	}
 }

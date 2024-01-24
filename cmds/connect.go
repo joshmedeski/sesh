@@ -1,9 +1,9 @@
 package cmds
 
 import (
-	"github.com/joshmedeski/sesh/connect"
+	cli "github.com/urfave/cli/v2"
 
-	"github.com/urfave/cli/v2"
+	"github.com/joshmedeski/sesh/connect"
 )
 
 func Connect() *cli.Command {
@@ -31,8 +31,7 @@ func Connect() *cli.Command {
 			if session == "" {
 				return cli.Exit("No session provided", 0)
 			}
-			connect.Connect(session, alwaysSwitch, command)
-			return nil
+			return connect.Connect(session, alwaysSwitch, command)
 		},
 	}
 }
