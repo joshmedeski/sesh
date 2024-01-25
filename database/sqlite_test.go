@@ -153,3 +153,12 @@ func TestGetByName(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestGetAllEntries(t *testing.T) {
+	db := NewSqliteDatabase(dbPath)
+
+	entries, err := db.GetAllEntries()
+	assert.NoError(t, err)
+	assert.NotEqual(t, []Entry{}, entries)
+
+}

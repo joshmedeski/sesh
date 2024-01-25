@@ -51,6 +51,15 @@ func (db *SqliteDatabase) DeleteEntry(id uint) error {
 	return db.Delete(&Entry{}, id).Error
 }
 
+func (db *SqliteDatabase) GetAllEntries() ([]Entry, error) {
+	var entries []Entry
+	err := db.Find(&entries).Error
+	if err != nil {
+		return []Entry{}, err
+	}
+	return entries, nil
+}
+
 func (db *SqliteDatabase) GetByID(id uint) (Entry, error) {
 	var entry Entry
 	res := db.First(&entry, id)
