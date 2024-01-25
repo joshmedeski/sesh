@@ -37,7 +37,7 @@ func isAttached() bool {
 }
 
 func IsSession(session string) (bool, string) {
-	sessions, err := List()
+	sessions, err := List(Options{})
 	if err != nil {
 		return false, ""
 	}

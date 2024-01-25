@@ -30,6 +30,11 @@ func Choose() *cli.Command {
 				Aliases: []string{"z"},
 				Usage:   "show zoxide results",
 			},
+			&cli.BoolFlag{
+				Name:    "hide-attached",
+				Aliases: []string{"H"},
+				Usage:   "don't show currently attached sessions",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			cmd := exec.Command("fzf")
@@ -47,7 +52,10 @@ func Choose() *cli.Command {
 				return err
 			}
 
-			sessions := session.List(session.Srcs{
+			o := session.Options{
+				HideAttached: cCtx.Bool("hide-attached"),
+			}
+			sessions := session.List(o, session.Srcs{
 				Tmux:   cCtx.Bool("tmux"),
 				Zoxide: cCtx.Bool("zoxide"),
 			})
