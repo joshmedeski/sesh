@@ -9,7 +9,7 @@ import (
 const dbPath = "file::memory:?cache=shared"
 
 func TestCreateEntry(t *testing.T) {
-	db := NewSqliteDatabase(dbPath)
+	database := NewSqliteDatabase(dbPath)
 
 	t.Run("Succesful", func(t *testing.T) {
 		entry := &Entry{
@@ -18,13 +18,13 @@ func TestCreateEntry(t *testing.T) {
 			Score:    1,
 			Metadata: "test,entry,metadata",
 		}
-		err := db.CreateEntry(entry)
+		err := database.CreateEntry(entry)
 		assert.NoError(t, err)
 	})
 
 	t.Run("Empty Entry", func(t *testing.T) {
 		entry := &Entry{}
-		err := db.CreateEntry(entry)
+		err := database.CreateEntry(entry)
 		assert.Error(t, err)
 	})
 
@@ -33,7 +33,7 @@ func TestCreateEntry(t *testing.T) {
 			Name: "empty path",
 			Path: "",
 		}
-		err := db.CreateEntry(entry)
+		err := database.CreateEntry(entry)
 		assert.Equal(t, err, ErrorEntryEmptyPath)
 	})
 
@@ -42,7 +42,7 @@ func TestCreateEntry(t *testing.T) {
 			Name: "",
 			Path: "/some/path/",
 		}
-		err := db.CreateEntry(entry)
+		err := database.CreateEntry(entry)
 		assert.Equal(t, err, ErrorEntryEmptyName)
 	})
 
@@ -51,7 +51,7 @@ func TestCreateEntry(t *testing.T) {
 			Name: "no unique path",
 			Path: "/tmp/sesh/",
 		}
-		err := db.CreateEntry(entry)
+		err := database.CreateEntry(entry)
 		assert.Error(t, err)
 	})
 
@@ -60,104 +60,104 @@ func TestCreateEntry(t *testing.T) {
 			Name: "testEntry",
 			Path: "/some/random/path/",
 		}
-		err := db.CreateEntry(entry)
+		err := database.CreateEntry(entry)
 		assert.Error(t, err)
 	})
 }
 
 func TestUpdateEntry(t *testing.T) {
-	db := NewSqliteDatabase(dbPath)
+	database := NewSqliteDatabase(dbPath)
 	entry := &Entry{
 		Name: "hfpwadsf",
 		Path: "new/path/update",
 	}
-	err := db.CreateEntry(entry)
+	err := database.CreateEntry(entry)
 	assert.NoError(t, err)
 
 	t.Run("Succesful", func(t *testing.T) {
-		err := db.UpdateEntry(entry, "name", "updated")
+		err := database.UpdateEntry(entry, "name", "updated")
 		assert.NoError(t, err)
 	})
 
 	t.Run("Update ID", func(t *testing.T) {
-		err := db.UpdateEntry(entry, "id", "23468")
+		err := database.UpdateEntry(entry, "id", "23468")
 		assert.Equal(t, err, ErrorEntryCantUpdateID)
 	})
 
 	t.Run("Empty Name", func(t *testing.T) {
-		err := db.UpdateEntry(entry, "name", "")
+		err := database.UpdateEntry(entry, "name", "")
 		assert.Equal(t, err, ErrorEntryEmptyName)
 	})
 
 	t.Run("Empty Path", func(t *testing.T) {
-		err := db.UpdateEntry(entry, "path", "")
+		err := database.UpdateEntry(entry, "path", "")
 		assert.Equal(t, err, ErrorEntryEmptyPath)
 	})
 
 }
 
 func TestDeleteEntry(t *testing.T) {
-	db := NewSqliteDatabase(dbPath)
+	database := NewSqliteDatabase(dbPath)
 	entry := &Entry{
 		Name: "aslasd",
 		Path: "/asdli/asdf/xc",
 	}
-	err := db.CreateEntry(entry)
+	err := database.CreateEntry(entry)
 	assert.NoError(t, err)
 
 	t.Run("Succesful", func(t *testing.T) {
-		err := db.DeleteEntry(entry.ID)
+		err := database.DeleteEntry(entry.ID)
 		assert.NoError(t, err)
 	})
 
 }
 
 func TestGetByID(t *testing.T) {
-	db := NewSqliteDatabase(dbPath)
+	database := NewSqliteDatabase(dbPath)
 	entry := &Entry{
 		Name: "testnry",
 		Path: "/mpssh/",
 	}
-	err := db.CreateEntry(entry)
+	err := database.CreateEntry(entry)
 	assert.NoError(t, err)
 
 	t.Run("Succesful", func(t *testing.T) {
-		e, err := db.GetByID(entry.ID)
+		e, err := database.GetByID(entry.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, entry.ID, e.ID)
 	})
 
 	t.Run("Invalid ID", func(t *testing.T) {
-		_, err := db.GetByID(3748523245)
+		_, err := database.GetByID(3748523245)
 		assert.Error(t, err)
 	})
 }
 
 func TestGetByName(t *testing.T) {
-	db := NewSqliteDatabase(dbPath)
+	database := NewSqliteDatabase(dbPath)
 	entry := &Entry{
 		Name: "asldjhfg",
 		Path: "/mps/",
 	}
-	err := db.CreateEntry(entry)
+	err := database.CreateEntry(entry)
 	assert.NoError(t, err)
 
 	t.Run("Succesful", func(t *testing.T) {
-		e, err := db.GetByName(entry.Name)
+		e, err := database.GetByName(entry.Name)
 		assert.NoError(t, err)
 		assert.Equal(t, entry.Name, e.Name)
 	})
 
 	t.Run("Invalid Name", func(t *testing.T) {
-		_, err := db.GetByName("q38fhaalsdf")
+		_, err := database.GetByName("q38fhaalsdf")
 		assert.Error(t, err)
 	})
 }
 
 func TestGetAllEntries(t *testing.T) {
-	db := NewSqliteDatabase(dbPath)
+	database := NewSqliteDatabase(dbPath)
 
-	entries, err := db.GetAllEntries()
+	entries, err := database.GetAllEntries()
 	assert.NoError(t, err)
 	assert.NotEqual(t, []Entry{}, entries)
 
