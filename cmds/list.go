@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/joshmedeski/sesh/session"
+	cli "github.com/urfave/cli/v2"
 
-	"github.com/urfave/cli/v2"
+	"github.com/joshmedeski/sesh/session"
 )
 
 func List() *cli.Command {
@@ -26,9 +26,17 @@ func List() *cli.Command {
 				Aliases: []string{"z"},
 				Usage:   "show zoxide results",
 			},
+			&cli.BoolFlag{
+				Name:    "hide-attached",
+				Aliases: []string{"H"},
+				Usage:   "don't show currently attached sessions",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			sessions := session.List(session.Srcs{
+			o := session.Options{
+				HideAttached: cCtx.Bool("hide-attached"),
+			}
+			sessions := session.List(o, session.Srcs{
 				Tmux:   cCtx.Bool("tmux"),
 				Zoxide: cCtx.Bool("zoxide"),
 			})

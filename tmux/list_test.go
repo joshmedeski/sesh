@@ -28,6 +28,7 @@ func BenchmarkFormat(i *testing.B) {
 func TestProcessSessions(t *testing.T) {
 	testCases := map[string]struct {
 		Input    []string
+		Options  Options
 		Expected []*TmuxSession
 	}{
 		"Single active session": {
@@ -35,6 +36,15 @@ func TestProcessSessions(t *testing.T) {
 				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 			},
 			Expected: make([]*TmuxSession, 1),
+		},
+		"Hide single active session": {
+			Input: []string{
+				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
+			},
+			Options: Options{
+				HideAttached: true,
+			},
+			Expected: make([]*TmuxSession, 0),
 		},
 		"Single inactive session": {
 			Input: []string{
@@ -70,7 +80,7 @@ func TestProcessSessions(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			got := processSessions(tc.Input)
+			got := processSessions(tc.Options, tc.Input)
 			require.Equal(t, len(tc.Expected), len(got))
 		})
 	}
@@ -78,7 +88,7 @@ func TestProcessSessions(t *testing.T) {
 
 func BenchmarkProcessSessions(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		processSessions([]string{
+		processSessions(Options{}, []string{
 			"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 			"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 		})

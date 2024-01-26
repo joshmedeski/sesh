@@ -8,13 +8,19 @@ import (
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
-func List(srcs Srcs) []string {
+type Options struct {
+	HideAttached bool
+}
+
+func List(o Options, srcs Srcs) []string {
 	var sessions []string
 	anySrcs := checkAnyTrue(srcs)
 
 	tmuxSessions := make([]*tmux.TmuxSession, 0)
 	if !anySrcs || srcs.Tmux {
-		tmuxList, err := tmux.List()
+		tmuxList, err := tmux.List(tmux.Options{
+			HideAttached: o.HideAttached,
+		})
 		tmuxSessions = append(tmuxSessions, tmuxList...)
 		if err != nil {
 			fmt.Println("Error:", err)

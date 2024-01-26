@@ -101,12 +101,19 @@ func format() string {
 	return strings.Join(variables, " ")
 }
 
-func processSessions(sessionList []string) []*TmuxSession {
+type Options struct {
+	HideAttached bool
+}
+
+func processSessions(o Options, sessionList []string) []*TmuxSession {
 	sessions := make([]*TmuxSession, 0, len(sessionList))
 	for _, line := range sessionList {
 		fields := strings.Split(line, " ") // Strings split by single space
 
 		if len(fields) != 21 {
+			continue
+		}
+		if o.HideAttached && fields[2] == "1" {
 			continue
 		}
 
@@ -147,7 +154,7 @@ func sortSessions(sessions []*TmuxSession) []*TmuxSession {
 	return sessions
 }
 
-func List() ([]*TmuxSession, error) {
+func List(o Options) ([]*TmuxSession, error) {
 	format := format()
 	output, err := tmuxCmd([]string{"list-sessions", "-F", format})
 	cleanOutput := strings.TrimSpace(output)
@@ -156,7 +163,7 @@ func List() ([]*TmuxSession, error) {
 	}
 	sessionList := strings.TrimSpace(string(output))
 	lines := strings.Split(sessionList, "\n")
-	sessions := processSessions(lines)
+	sessions := processSessions(o, lines)
 
 	return sortSessions(sessions), nil
 }

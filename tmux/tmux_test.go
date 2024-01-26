@@ -1,5 +1,5 @@
 package tmux
 
 func SessionsList() {
-	List()
+	List(Options{})
 }
