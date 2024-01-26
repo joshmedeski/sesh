@@ -40,18 +40,18 @@ func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
 
-func IsSession(session string) bool {
+func IsSession(session string) (bool, string) {
 	sessions, err := List()
 	if err != nil {
-		return false
+		return false, ""
 	}
 
 	for _, s := range sessions {
 		if s.Name == session {
-			return true
+			return true, s.Path
 		}
 	}
-	return false
+	return false, ""
 }
 
 func attachSession(session string) error {
@@ -118,11 +118,11 @@ func Connect(
 	sessionPath string,
 	config *config.Config,
 ) error {
-	isSession := IsSession(s.Name)
+	isSession, _ := IsSession(s.Name)
 	if !isSession {
 		_, err := NewSession(s)
 		if err != nil {
-			fmt.Errorf("unable to connect to tmux session %q: %w", s.Name, err)
+			return fmt.Errorf("unable to connect to tmux session %q: %w", s.Name, err)
 		}
 		if command != "" {
 			runPersistentCommand(s.Name, command)
