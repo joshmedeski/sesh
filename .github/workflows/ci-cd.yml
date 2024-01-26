@@ -57,12 +57,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
-  check_brew:
-    name: Check Brew Tap
-    needs: goreleaser
+  integration_test:
+    name: Integration Test
+    # needs: goreleaser
     runs-on: macos-latest
     steps:
       - name: Install with brew
         run: |
+          brew install tmux
+          brew install fzf
+          brew install zoxide
+          brew install vhs
           brew install joshmedeski/sesh/sesh
-      # TODO: assert the latest version was installed
+          vhs happy-path.tape
+          git diff --quiet

@@ -55,15 +55,18 @@
 #   Hide                            Hide the subsequent commands from the output
 #   Show                            Show the subsequent commands in the output
 
-Output happy-path.gif
+Output happy-path.ascii
 
-Require echo
+Require tmux
+Require zoxide
+Require sesh
 
 Set Shell "bash"
 Set FontSize 32
 Set Width 1200
 Set Height 600
 
-Type "echo 'Welcome to VHS!'" Sleep 500ms  Enter
+Type "sesh connect dotfiles" Sleep 500ms  Enter
+Type "tmux attach" Enter
 
 Sleep 5s
