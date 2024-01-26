@@ -20,6 +20,7 @@ func App(version string) cli.App {
 		Commands: []*cli.Command{
 			storage.Add(),
 			storage.Delete(),
+			storage.Update(),
 			cmds.List(),
 			cmds.Choose(),
 			cmds.Connect(),
