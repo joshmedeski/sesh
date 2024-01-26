@@ -21,13 +21,3 @@ type Entry struct {
 	Score    uint   `gorm:"default:0"`
 	Metadata string
 }
-
-type Storage interface {
-	CreateEntry(*Entry) error
-	UpdateEntry(*Entry, string, interface{}) error
-	DeleteEntry(uint) error
-	GetAllEntries() ([]Entry, error)
-	GetByID(uint) (Entry, error)
-	GetByName(string) (Entry, error)
-	GetByMetadata(string) ([]Entry, error)
-}

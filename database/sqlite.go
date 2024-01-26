@@ -47,8 +47,8 @@ func (database *SqliteDatabase) UpdateEntry(entry *Entry, column string, value i
 	return database.Model(entry).Where("id = ?", entry.ID).Update(column, value).Error
 }
 
-func (database *SqliteDatabase) DeleteEntry(id uint) error {
-	return database.Delete(&Entry{}, id).Error
+func (database *SqliteDatabase) DeleteEntry(name string) error {
+	return database.Where("name = ?", name).Delete(&Entry{}).Error
 }
 
 func (database *SqliteDatabase) GetAllEntries() ([]Entry, error) {

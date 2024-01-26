@@ -106,7 +106,7 @@ func TestDeleteEntry(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("Succesful", func(t *testing.T) {
-		err := database.DeleteEntry(entry.ID)
+		err := database.DeleteEntry(entry.Name)
 		assert.NoError(t, err)
 	})
 
