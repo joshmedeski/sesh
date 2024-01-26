@@ -59,6 +59,7 @@ jobs:
   vhs:
     runs-on: macos-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: charmbracelet/vhs-action@v1
         with:
           path: "happy-path.tape"
