@@ -13,10 +13,8 @@ func TestCreateEntry(t *testing.T) {
 
 	t.Run("Succesful", func(t *testing.T) {
 		entry := &Entry{
-			Name:     "testEntry",
-			Path:     "/tmp/sesh/",
-			Score:    1,
-			Metadata: "test,entry,metadata",
+			Name: "testEntry",
+			Path: "/tmp/sesh/",
 		}
 		err := database.CreateEntry(entry)
 		assert.NoError(t, err)
@@ -75,22 +73,22 @@ func TestUpdateEntry(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("Succesful", func(t *testing.T) {
-		err := database.UpdateEntry(entry, "name", "updated")
+		err := database.UpdateEntry(entry.Name, "name", "updated")
 		assert.NoError(t, err)
 	})
 
 	t.Run("Update ID", func(t *testing.T) {
-		err := database.UpdateEntry(entry, "id", "23468")
+		err := database.UpdateEntry(entry.Name, "id", "23468")
 		assert.Equal(t, err, ErrorEntryCantUpdateID)
 	})
 
 	t.Run("Empty Name", func(t *testing.T) {
-		err := database.UpdateEntry(entry, "name", "")
+		err := database.UpdateEntry(entry.Name, "name", "")
 		assert.Equal(t, err, ErrorEntryEmptyName)
 	})
 
 	t.Run("Empty Path", func(t *testing.T) {
-		err := database.UpdateEntry(entry, "path", "")
+		err := database.UpdateEntry(entry.Name, "path", "")
 		assert.Equal(t, err, ErrorEntryEmptyPath)
 	})
 
@@ -110,27 +108,6 @@ func TestDeleteEntry(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-}
-
-func TestGetByID(t *testing.T) {
-	database := NewSqliteDatabase(dbPath)
-	entry := &Entry{
-		Name: "testnry",
-		Path: "/mpssh/",
-	}
-	err := database.CreateEntry(entry)
-	assert.NoError(t, err)
-
-	t.Run("Succesful", func(t *testing.T) {
-		e, err := database.GetByID(entry.ID)
-		assert.NoError(t, err)
-		assert.Equal(t, entry.ID, e.ID)
-	})
-
-	t.Run("Invalid ID", func(t *testing.T) {
-		_, err := database.GetByID(3748523245)
-		assert.Error(t, err)
-	})
 }
 
 func TestGetByName(t *testing.T) {
