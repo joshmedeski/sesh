@@ -56,6 +56,12 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+  vhs:
+    runs-on: macos-latest
+    steps:
+      - uses: charmbracelet/vhs-action@v1
+        with:
+          path: "happy-path.tape"
 
   integration_test:
     name: Integration Test
@@ -71,4 +77,5 @@ jobs:
           brew install vhs
           brew install joshmedeski/sesh/sesh
           vhs happy-path.tape
+          echo "done with vhs"
           git diff --quiet
