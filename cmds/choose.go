@@ -9,6 +9,7 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
+	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/connect"
 	"github.com/joshmedeski/sesh/session"
 )
@@ -65,7 +66,8 @@ func Choose() *cli.Command {
 			}
 			choice := strings.TrimSpace(cmdOutput.String())
 			// TODO: get choice from Session structs array
-			return connect.Connect(choice, false, "")
+			config := config.ParseConfigFile()
+			return connect.Connect(choice, false, "", &config)
 		},
 	}
 }

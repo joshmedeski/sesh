@@ -3,9 +3,11 @@ package session
 import (
 	"fmt"
 	"log"
+
+	"github.com/joshmedeski/sesh/config"
 )
 
-func Determine(choice string) (s Session, err error) {
+func Determine(choice string, config *config.Config) (s Session, err error) {
 	path, err := DeterminePath(choice)
 	if err != nil {
 		return s, fmt.Errorf(
@@ -16,7 +18,7 @@ func Determine(choice string) (s Session, err error) {
 	}
 	s.Path = path
 
-	name := DetermineName(path)
+	name := DetermineName(path, config)
 	if name == "" {
 		log.Fatal("Couldn't determine the session name", err)
 		return s, fmt.Errorf(

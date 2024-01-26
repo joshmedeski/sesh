@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/git"
 )
 
@@ -47,9 +48,9 @@ func nameFromGit(result string) string {
 	return nameFromGit
 }
 
-// TODO: parent directory feature flag detection
-func DetermineName(result string) string {
+func DetermineName(result string, config *config.Config) string {
 	name := result
+	// TODO: parent directory config option detection
 	pathName := nameFromPath(result)
 	if pathName != "" {
 		name = pathName

@@ -77,6 +77,26 @@ You can customize this however you want, see `man fzf` for more info on the diff
 sesh connect (sesh list | zf --height 24)
 ```
 
+## Configuration
+
+To configure `sesh`, you will need to create `sesh/sesh.toml` with `$XDG_CONFIG_HOME` or `$HOME/.config` as the root directory, depending on whether the former has been set. On MacOS, this will likely be `~/.config/` by default and therefore the configuration filepath would be `~/.config/sesh/sesh.toml`. See the [Go docs](https://cs.opensource.google/go/go/+/go1.21.6:src/os/file.go;l=460) for more information.
+
+An example of the `sesh.toml` file is shown below with all configurable options and their default values:
+
+```toml
+default_startup_script = "~/git_repos/dotfiles/bin/sesh/default.sh"
+
+[[startup_scripts]]
+session_path = "~/git_repos/sesh"
+script_path = "~/git_repos/dotfiles/bin/sesh/sesh.sh"
+```
+
+### Startup Scripts
+
+Startup scripts will be ignored if the `--command/-c` flag is passed! Startup scripts will only be run upon session creation!
+
+If a `[[startup_scripts]]` entry is present for a given session path, then the startup script path specified by `script_path` will be run when the session is created. Otherwise, if `default_startup_script` is specified, then the script at that path will be executed. Make sure that the scripts specified are executable, e.g. `chmod +x ~/git_repos/dotfiles/bin/sesh/default.sh`.
+
 ## Background (the "t" script)
 
 Sesh is the successor to my popular [t-smart-tmux-session-manager](https://github.com/joshmedeski/t-smart-tmux-session-manager) tmux plugin. After a year of development and over 250 stars, it's clear that people enjoy the idea of a smart session manager. However, I've always felt that the tmux plugin was a bit of a hack. It's a bash script that runs in the background and parses the output of tmux commands. It works, but it's not ideal and isn't flexible enough to support other terminal multiplexers.

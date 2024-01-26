@@ -3,9 +3,13 @@ package tmux
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/joshmedeski/sesh/config"
+	"github.com/joshmedeski/sesh/dir"
 )
 
 func tmuxCmd(args []string) (string, error) {
@@ -82,7 +86,38 @@ func NewSession(s TmuxSession) (string, error) {
 	return out, nil
 }
 
-func Connect(s TmuxSession, alwaysSwitch bool, command string) error {
+func execStartupScript(name string, scriptPath string) error {
+	bash, err := exec.LookPath("bash")
+	if err != nil {
+		return err
+	}
+	cmd := strings.Join(
+		[]string{bash, "-c", fmt.Sprintf("\"source %s\"", scriptPath)},
+		" ",
+	)
+	err = runPersistentCommand(name, cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getStartupScript(sessionPath string, config *config.Config) string {
+	for _, script := range config.StartupScripts {
+		if dir.FullPath(script.SessionPath) == sessionPath {
+			return dir.FullPath(script.ScriptPath)
+		}
+	}
+	return ""
+}
+
+func Connect(
+	s TmuxSession,
+	alwaysSwitch bool,
+	command string,
+	sessionPath string,
+	config *config.Config,
+) error {
 	isSession, _ := IsSession(s.Name)
 	if !isSession {
 		_, err := NewSession(s)
@@ -91,6 +126,16 @@ func Connect(s TmuxSession, alwaysSwitch bool, command string) error {
 		}
 		if command != "" {
 			runPersistentCommand(s.Name, command)
+		} else if scriptPath := getStartupScript(sessionPath, config); scriptPath != "" {
+			err := execStartupScript(s.Name, scriptPath)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else if config.DefaultStartupScript != "" {
+			err := execStartupScript(s.Name, config.DefaultStartupScript)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 	isAttached := isAttached()
@@ -99,6 +144,5 @@ func Connect(s TmuxSession, alwaysSwitch bool, command string) error {
 	} else {
 		attachSession(s.Name)
 	}
-
 	return nil
 }
