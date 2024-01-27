@@ -10,7 +10,7 @@ func (c *SqliteDatabase) Update() *cli.Command {
 	return &cli.Command{
 		Name:                   "update",
 		Aliases:                []string{"u"},
-		Usage:                  "update a session entry (?)",
+		Usage:                  "Update a session entry",
 		Args:                   true,
 		UseShortOptionHandling: true,
 		Action: func(ctx *cli.Context) error {

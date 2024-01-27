@@ -10,7 +10,7 @@ func (c *SqliteDatabase) Delete() *cli.Command {
 	return &cli.Command{
 		Name:                   "delete",
 		Aliases:                []string{"d"},
-		Usage:                  "delete a session entry (?)",
+		Usage:                  "Delete a session entry",
 		Args:                   true,
 		UseShortOptionHandling: true,
 		Action: func(ctx *cli.Context) error {

@@ -10,7 +10,7 @@ func (c *SqliteDatabase) Add() *cli.Command {
 	return &cli.Command{
 		Name:                   "add",
 		Aliases:                []string{"a"},
-		Usage:                  "add a new session entry (?)",
+		Usage:                  "Add a new session",
 		Args:                   true,
 		UseShortOptionHandling: true,
 		Action: func(ctx *cli.Context) error {
