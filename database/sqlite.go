@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+	"os"
+	"path/filepath"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -12,6 +14,7 @@ type SqliteDatabase struct {
 }
 
 func NewSqliteDatabase(path string) *SqliteDatabase {
+	os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	database, _ := sql.Open("sqlite3", path)
 	database.Exec(`
     CREATE TABLE IF NOT EXISTS entries (
