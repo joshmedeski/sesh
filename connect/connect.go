@@ -4,21 +4,27 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/config"
-	"github.com/joshmedeski/sesh/session"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
-func Connect(choice string, alwaysSwitch bool, command string, config *config.Config) error {
-	session, err := session.Determine(choice, config)
+func Connect(
+	choice string,
+	alwaysSwitch bool,
+	command string,
+	config *config.Config,
+) error {
+	cmd, err := tmux.NewCommand(tmux.Options{})
 	if err != nil {
+		return fmt.Errorf("unable to configure the tmux command: %w", err)
+	}
+	s, err := cmd.SessionByName(choice)
+	if err != nil {
+		return err
+	}
+	if err = zoxide.Add(s.Path); err != nil {
 		return fmt.Errorf("unable to connect to %q: %w", choice, err)
 	}
-	if err = zoxide.Add(session.Path); err != nil {
-		return fmt.Errorf("unable to connect to %q: %w", choice, err)
-	}
-	return tmux.Connect(tmux.TmuxSession{
-		Name: session.Name,
-		Path: session.Path,
-	}, alwaysSwitch, command, session.Path, config)
+
+	return tmux.Connect(s, alwaysSwitch, command, s.Path, config)
 }
