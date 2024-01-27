@@ -12,6 +12,36 @@ import (
 	"github.com/joshmedeski/sesh/dir"
 )
 
+// Interface for using the tmux cli to interact with a tmux server.
+type Interface interface{}
+
+// Command is an implementation of the Interface interface providing a means of
+// interacting with the tmux cli.
+type Command struct{}
+
+// NewCommand returns a new instance of the Command struct ready to run tmux
+// commands.
+func NewCommand(o Options) (c *Command, err error) {
+	c = new(Command)
+	return c, nil
+}
+
+// SessionByName returns a TmuxSession matching the given name.
+func (c *Command) SessionByName(name string) (TmuxSession, error) {
+	ss, err := List(Options{})
+	if err != nil {
+		return TmuxSession{}, fmt.Errorf("unable to get tmux sessions: %w", err)
+	}
+
+	for _, s := range ss {
+		if s.Name == name {
+			return *s, nil
+		}
+	}
+
+	return TmuxSession{}, fmt.Errorf("no tmux session found with name %q", name)
+}
+
 func tmuxCmd(args []string) (string, error) {
 	tmux, err := exec.LookPath("tmux")
 	if err != nil {
@@ -122,7 +152,11 @@ func Connect(
 	if !isSession {
 		_, err := NewSession(s)
 		if err != nil {
-			return fmt.Errorf("unable to connect to tmux session %q: %w", s.Name, err)
+			return fmt.Errorf(
+				"unable to connect to tmux session %q: %w",
+				s.Name,
+				err,
+			)
 		}
 		if command != "" {
 			runPersistentCommand(s.Name, command)
