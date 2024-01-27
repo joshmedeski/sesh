@@ -13,7 +13,9 @@ import (
 )
 
 // Interface for using the tmux cli to interact with a tmux server.
-type Interface interface{}
+type Interface interface {
+	GetSession(string) (TmuxSession, error)
+}
 
 // Command is an implementation of the Interface interface providing a means of
 // interacting with the tmux cli.
@@ -23,23 +25,38 @@ type Command struct{}
 // commands.
 func NewCommand(o Options) (c *Command, err error) {
 	c = new(Command)
+
 	return c, nil
 }
 
-// SessionByName returns a TmuxSession matching the given name.
-func (c *Command) SessionByName(name string) (TmuxSession, error) {
-	ss, err := List(Options{})
+// GetSession returns a TmuxSession where the name or path matches the given
+// string.
+func (c *Command) GetSession(s string) (TmuxSession, error) {
+	sessionList, err := List(Options{})
 	if err != nil {
 		return TmuxSession{}, fmt.Errorf("unable to get tmux sessions: %w", err)
 	}
 
-	for _, s := range ss {
-		if s.Name == name {
-			return *s, nil
+	altPath := alternatePath(s)
+
+	for _, session := range sessionList {
+		if session.Name == s {
+			return *session, nil
+		}
+
+		if session.Path == s {
+			return *session, nil
+		}
+
+		if altPath != "" && session.Path == altPath {
+			return *session, nil
 		}
 	}
 
-	return TmuxSession{}, fmt.Errorf("no tmux session found with name %q", name)
+	return TmuxSession{}, fmt.Errorf(
+		"no tmux session found with name or path matching %q",
+		s,
+	)
 }
 
 func tmuxCmd(args []string) (string, error) {
