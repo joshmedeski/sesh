@@ -12,8 +12,6 @@ import (
 	"github.com/joshmedeski/sesh/dir"
 )
 
-// GetSession returns a TmuxSession where the name or path matches the given
-// string.
 func GetSession(s string) (TmuxSession, error) {
 	sessionList, err := List(Options{})
 	if err != nil {

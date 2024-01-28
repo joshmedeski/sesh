@@ -11,16 +11,12 @@ import (
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
-// Connect to an established tmux session if one with a name or path matching
-// the 'choice' already exists, otherwise if the 'choice' is a valid file system
-// path create and connect to a new tmux session with that name.
 func Connect(
 	choice string,
 	alwaysSwitch bool,
 	command string,
 	config *config.Config,
 ) error {
-	// Check if the 'choice' is a valid tmux session name or path.
 	var errorStack []error
 	isActiveSession := true
 	s, err := tmux.GetSession(choice)
@@ -57,11 +53,9 @@ func Connect(
 		}
 	}
 
-	// Add the path to zoxide.
 	if err = zoxide.Add(s.Path); err != nil {
 		return fmt.Errorf("unable to connect to %q: %w", choice, err)
 	}
 
-	// Connect to the tmux session.
 	return tmux.Connect(s, alwaysSwitch, command, s.Path, config)
 }
