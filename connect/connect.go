@@ -20,16 +20,10 @@ func Connect(
 	command string,
 	config *config.Config,
 ) error {
-	// Create a new tmux command.
-	cmd, err := tmux.NewCommand(tmux.Options{})
-	if err != nil {
-		return fmt.Errorf("unable to configure the tmux command: %w", err)
-	}
-
 	// Check if the 'choice' is a valid tmux session name or path.
 	var errorStack []error
 	isActiveSession := true
-	s, err := cmd.GetSession(choice)
+	s, err := tmux.GetSession(choice)
 	if err != nil {
 		isActiveSession = false
 		errorStack = append(errorStack, err)

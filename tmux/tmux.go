@@ -12,26 +12,9 @@ import (
 	"github.com/joshmedeski/sesh/dir"
 )
 
-// Interface for using the tmux cli to interact with a tmux server.
-type Interface interface {
-	GetSession(string) (TmuxSession, error)
-}
-
-// Command is an implementation of the Interface interface providing a means of
-// interacting with the tmux cli.
-type Command struct{}
-
-// NewCommand returns a new instance of the Command struct ready to run tmux
-// commands.
-func NewCommand(o Options) (c *Command, err error) {
-	c = new(Command)
-
-	return c, nil
-}
-
 // GetSession returns a TmuxSession where the name or path matches the given
 // string.
-func (c *Command) GetSession(s string) (TmuxSession, error) {
+func GetSession(s string) (TmuxSession, error) {
 	sessionList, err := List(Options{})
 	if err != nil {
 		return TmuxSession{}, fmt.Errorf("unable to get tmux sessions: %w", err)
