@@ -1,4 +1,4 @@
-package tmux
+package dir
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 
 // alternatePath returns an altnerate string that should be check when doing
 // path based comparisons.
-func alternatePath(s string) (altPath string) {
+func AlternatePath(s string) (altPath string) {
 	// If the path is absolute, there is no alternate path.
 	if filepath.IsAbs(s) {
 		return ""

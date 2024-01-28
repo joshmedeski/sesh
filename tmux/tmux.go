@@ -37,7 +37,7 @@ func (c *Command) GetSession(s string) (TmuxSession, error) {
 		return TmuxSession{}, fmt.Errorf("unable to get tmux sessions: %w", err)
 	}
 
-	altPath := alternatePath(s)
+	altPath := dir.AlternatePath(s)
 
 	for _, session := range sessionList {
 		if session.Name == s {
