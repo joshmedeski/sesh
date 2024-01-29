@@ -20,13 +20,15 @@
 
 ## How to install
 
+### Homebrew
+
 To install sesh, run the following [homebrew](https://brew.sh/) command:
 
 ```sh
 brew install joshmedeski/sesh/sesh
 ```
 
-### Using Go
+### Go
 
 Alternatively, you can install Sesh using Go's go install command:
 
@@ -69,33 +71,67 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 
 You can customize this however you want, see `man fzf` for more info on the different options.
 
-### zf
+See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
 
-[zf](https://github.com/natecraddock/zf) is an alternative fuzzy finder designed for filtering filepaths, I've found it to be more accurate than fzf. It doesn't have as many options, but it's still a great tool. You can use it to select a session to connect to:
+## Recommended tmux Settings
+
+I recommend you add these settings to your `tmux.conf` to have a better experience with this plugin.
 
 ```sh
-sesh connect (sesh list | zf --height 24)
+bind-key x kill-pane # skip "kill-pane 1? (y/n)" prompt
+set -g detach-on-destroy off  # don't exit from tmux when closing a session
 ```
 
 ## Configuration
 
-To configure `sesh`, you will need to create `sesh/sesh.toml` with `$XDG_CONFIG_HOME` or `$HOME/.config` as the root directory, depending on whether the former has been set. On MacOS, this will likely be `~/.config/` by default and therefore the configuration filepath would be `~/.config/sesh/sesh.toml`. See the [Go docs](https://cs.opensource.google/go/go/+/go1.21.6:src/os/file.go;l=460) for more information.
+You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/sesh` or `$HOME/.config/sesh` directory.
 
-An example of the `sesh.toml` file is shown below with all configurable options and their default values:
-
-```toml
-default_startup_script = "~/git_repos/dotfiles/bin/sesh/default.sh"
-
-[[startup_scripts]]
-session_path = "~/git_repos/sesh"
-script_path = "~/git_repos/dotfiles/bin/sesh/sesh.sh"
+```sh
+mkdir -p ~/.config/sesh
+touch sesh.toml
 ```
 
 ### Startup Scripts
 
-Startup scripts will be ignored if the `--command/-c` flag is passed! Startup scripts will only be run upon session creation!
+A startup script is a script that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server.
 
-If a `[[startup_scripts]]` entry is present for a given session path, then the startup script path specified by `script_path` will be run when the session is created. Otherwise, if `default_startup_script` is specified, then the script at that path will be executed. Make sure that the scripts specified are executable, e.g. `chmod +x ~/git_repos/dotfiles/bin/sesh/default.sh`.
+**Note:** If you use the `--command/-c` flag, then the startup script will not be run.
+
+The default startup will run on every project that doesn't have a specific startup script. You can configure the default startup script by setting the `default_startup_script` property in your `sesh.toml` file.
+
+```toml
+default_startup_script = "~/.config/sesh/scripts/default"
+```
+
+I like to use a script that opens nvim on session startup:
+
+```sh
+#!/usr/bin/env bash
+tmux send-keys "nvim" Enter
+```
+
+The set a specific startup script for a project, you can add a `startup_script` property to your `sesh.toml` file.
+
+```toml
+[[startup_scripts]]
+session_path = "~/code/sesh"
+script_path = "~/.config/sesh/scripts/go"
+
+[[startup_scripts]]
+session_path = "~/code/joshmedeski.com"
+script_path = "~/.config/sesh/scripts/node_dev"
+```
+
+The script can execute tmux commands to create panes, additional windows and trigger commands. Here is an example of a script (node_dev) that creates a pane for a dev server and opens a new pane with nvim:
+
+```sh
+#!/usr/bin/env bash
+tmux split-window -v -p 30 "npm run dev"
+tmux select-pane -t :.+
+tmux send-keys "nvim" Enter
+```
+
+Set the file as an executable and it will be run when you connect to the specified session.
 
 ## Background (the "t" script)
 
