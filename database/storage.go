@@ -16,3 +16,11 @@ type Entry struct {
 	Path  string `db:"path"`
 	Score uint   `db:"score"`
 }
+
+type Storage interface {
+	CreateEntry(*Entry) error
+	UpdateEntry(string, string, interface{}) error
+	DeleteEntry(string) error
+	GetAllEntries() ([]Entry, error)
+	GetByName(string) (Entry, error)
+}
