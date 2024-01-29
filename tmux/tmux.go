@@ -12,6 +12,34 @@ import (
 	"github.com/joshmedeski/sesh/dir"
 )
 
+func GetSession(s string) (TmuxSession, error) {
+	sessionList, err := List(Options{})
+	if err != nil {
+		return TmuxSession{}, fmt.Errorf("unable to get tmux sessions: %w", err)
+	}
+
+	altPath := dir.AlternatePath(s)
+
+	for _, session := range sessionList {
+		if session.Name == s {
+			return *session, nil
+		}
+
+		if session.Path == s {
+			return *session, nil
+		}
+
+		if altPath != "" && session.Path == altPath {
+			return *session, nil
+		}
+	}
+
+	return TmuxSession{}, fmt.Errorf(
+		"no tmux session found with name or path matching %q",
+		s,
+	)
+}
+
 func tmuxCmd(args []string) (string, error) {
 	tmux, err := exec.LookPath("tmux")
 	if err != nil {
@@ -122,7 +150,11 @@ func Connect(
 	if !isSession {
 		_, err := NewSession(s)
 		if err != nil {
-			return fmt.Errorf("unable to connect to tmux session %q: %w", s.Name, err)
+			return fmt.Errorf(
+				"unable to connect to tmux session %q: %w",
+				s.Name,
+				err,
+			)
 		}
 		if command != "" {
 			runPersistentCommand(s.Name, command)
