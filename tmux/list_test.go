@@ -1,6 +1,7 @@
 package tmux
 
 import (
+	_ "embed"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -82,6 +83,47 @@ func TestProcessSessions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := processSessions(tc.Options, tc.Input)
 			require.Equal(t, len(tc.Expected), len(got))
+		})
+	}
+}
+
+//go:embed testdata/session_list.txt
+var sessionList string
+
+func TestList(t *testing.T) {
+	testCase := map[string]struct {
+		MockResponse   string
+		MockError      error
+		Options        Options
+		ExpectedLength int
+		Error          error
+	}{
+		"happy path": {
+			MockResponse:   sessionList,
+			ExpectedLength: 3,
+		},
+		"happy path show hidden": {
+			MockResponse:   sessionList,
+			Options:        Options{HideAttached: true},
+			ExpectedLength: 2,
+		},
+	}
+
+	for name, tc := range testCase {
+		t.Run(name, func(t *testing.T) {
+			command = &Command{
+				execFunc: func(string, []string) (string, error) {
+					return tc.MockResponse, tc.MockError
+				},
+			}
+			res, err := List(tc.Options)
+			require.ErrorIs(t, tc.Error, err)
+			if err != nil {
+				return
+			}
+
+			require.Len(t, res, tc.ExpectedLength)
+			t.Log(res)
 		})
 	}
 }
