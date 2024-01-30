@@ -1,12 +1,13 @@
-package db
+package cmds
 
 import (
 	"errors"
 
+	db "github.com/joshmedeski/sesh/database"
 	"github.com/urfave/cli/v2"
 )
 
-func (c *SqliteDatabase) Add() *cli.Command {
+func Add(storage db.Storage) *cli.Command {
 	return &cli.Command{
 		Name:                   "add",
 		Aliases:                []string{"a"},
@@ -18,7 +19,7 @@ func (c *SqliteDatabase) Add() *cli.Command {
 			if len(args) != 2 {
 				return errors.New("Name and Path needed")
 			}
-			return c.CreateEntry(&Entry{
+			return storage.CreateEntry(&db.Entry{
 				Name: args[0],
 				Path: args[1],
 			})

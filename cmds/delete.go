@@ -1,12 +1,13 @@
-package db
+package cmds
 
 import (
 	"errors"
 
+	db "github.com/joshmedeski/sesh/database"
 	"github.com/urfave/cli/v2"
 )
 
-func (c *SqliteDatabase) Delete() *cli.Command {
+func Delete(storage db.Storage) *cli.Command {
 	return &cli.Command{
 		Name:                   "delete",
 		Aliases:                []string{"d"},
@@ -18,7 +19,7 @@ func (c *SqliteDatabase) Delete() *cli.Command {
 			if name == "" {
 				return errors.New("No name provided")
 			}
-			return c.DeleteEntry(name)
+			return storage.DeleteEntry(name)
 		},
 	}
 }
