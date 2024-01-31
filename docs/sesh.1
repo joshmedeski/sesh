@@ -1,4 +1,4 @@
-.TH SESH 1 "2024-01-30" GNU 
+.TH SESH 1 "2024-01-31" MIT 
 
 .SH NAME 
 sesh
@@ -55,9 +55,12 @@ Clone a git repo and connect to it as a session
 
 .SH EXAMPLES
 sesh connect $(sesh list | fzf)
-sesh --command nvim connect .
+
+sesh connect --command nvim .
+
 sesh list -tzH
-sesh -d ~/sesh clone https://github.com/joshmedeski/sesh.git
+
+sesh clone -d ~/sesh https://github.com/joshmedeski/sesh.git
 
 .SH SEE ALSO
 \fBhttps://github.com/joshmedeski/sesh\fP

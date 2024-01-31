@@ -1,4 +1,4 @@
-.TH {{ upper .App.Name }} 1 "{{ formatDate .Date }}" GNU 
+.TH {{ upper .App.Name }} 1 "{{ formatDate .Date }}" MIT 
 
 .SH NAME 
 {{ .App.Name }}
@@ -30,11 +30,11 @@
 .SH EXAMPLES
 {{ .App.Name }} connect $({{ .App.Name }} list | fzf)
 
-{{ .App.Name }} --command nvim connect .
+{{ .App.Name }} connect --command nvim .
 
 {{ .App.Name }} list -tzH
 
-{{ .App.Name }} -d ~/{{ .App.Name }} clone https://github.com/joshmedeski/{{ .App.Name }}.git
+{{ .App.Name }} clone -d ~/{{ .App.Name }} https://github.com/joshmedeski/{{ .App.Name }}.git
 
 .SH SEE ALSO
 \fBhttps://github.com/joshmedeski/{{ .App.Name }}\fP
