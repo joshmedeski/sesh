@@ -1,0 +1,40 @@
+.TH {{ upper .App.Name }} 1 "{{ formatDate .Date }}" GNU 
+
+.SH NAME 
+{{ .App.Name }}
+
+.SH DESfPIPTION
+.B {{ .App.Name }} \- {{ .App.Usage }}
+{{ .App.UsageText }}
+
+.SH SYNOPSIS
+{{ .App.Name }} [global options] command [command options]
+
+.SH GLOBAL OPTIONS
+[\fB\-h\fP]
+[\fB\-\-help\fP]
+[\fB\-v\fP]
+[\fB\-\-version\fP]
+
+.SH COMMANDS 
+{{ range .App.Commands}}
+.TP
+\fB{{ .Name }}\fP{{ range .Aliases }}, \fB{{.}}\fP{{ end }} 
+{{ .Usage }}
+
+{{ range .Flags }} 
+    \fB\-\-{{ .Name }}\fP{{ range .Aliases }}, \fB\-{{.}}\fP{{ end }} {{ .Usage }} {{ end }}
+{{ end }}
+
+
+.SH EXAMPLES
+{{ .App.Name }} connect $({{ .App.Name }} list | fzf)
+
+{{ .App.Name }} --command nvim connect .
+
+{{ .App.Name }} list -tzH
+
+{{ .App.Name }} -d ~/{{ .App.Name }} clone https://github.com/joshmedeski/{{ .App.Name }}.git
+
+.SH SEE ALSO
+\fBhttps://github.com/joshmedeski/{{ .App.Name }}\fP
