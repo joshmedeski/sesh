@@ -58,7 +58,11 @@ func Choose() *cli.Command {
 				IncludeTmux:   true,
 				IncludeZoxide: true,
 			}
-			sessions := session.List(o)
+			sessions, err := session.List(o)
+			if err != nil {
+				return err
+			}
+
 			stdin.Write([]byte(
 				strings.Join(sessions, "\n"),
 			))

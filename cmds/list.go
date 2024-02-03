@@ -38,7 +38,11 @@ func List() *cli.Command {
 				IncludeZoxide: true,
 				IncludeTmux:   true,
 			}
-			sessions := session.List(o)
+			sessions, err := session.List(o)
+			if err != nil {
+				return err
+			}
+
 			fmt.Println(strings.Join(sessions, "\n"))
 			return nil
 		},

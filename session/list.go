@@ -1,9 +1,6 @@
 package session
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 )
@@ -14,7 +11,7 @@ type Options struct {
 	IncludeTmux   bool
 }
 
-func List(o Options) []string {
+func List(o Options) ([]string, error) {
 	var sessions []string
 
 	tmuxSessions := make([]tmux.Session, 0)
@@ -23,11 +20,11 @@ func List(o Options) []string {
 		tmuxList, err := tmux.List(tmux.Options{
 			HideAttached: o.HideAttached,
 		})
-		tmuxSessions = append(tmuxSessions, tmuxList...)
 		if err != nil {
-			fmt.Println("Error:", err)
-			os.Exit(1)
+			return nil, err
 		}
+
+		tmuxSessions = append(tmuxSessions, tmuxList...)
 		tmuxSessionNames := make([]string, len(tmuxList))
 		for i, session := range tmuxSessions {
 			// TODO: allow support for connect as well (PrettyName?)
@@ -42,8 +39,7 @@ func List(o Options) []string {
 	if o.IncludeZoxide {
 		results, err := zoxide.List(sessionPaths)
 		if err != nil {
-			fmt.Println("Error:", err)
-			os.Exit(1)
+			return nil, err
 		}
 		zoxideResultNames := make([]string, len(results))
 		for i, result := range results {
@@ -52,5 +48,5 @@ func List(o Options) []string {
 		sessions = append(sessions, zoxideResultNames...)
 	}
 
-	return sessions
+	return sessions, nil
 }
