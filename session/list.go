@@ -16,7 +16,7 @@ func List(o Options, srcs Srcs) []string {
 	var sessions []string
 	anySrcs := checkAnyTrue(srcs)
 
-	tmuxSessions := make([]*tmux.Session, 0)
+	tmuxSessions := make([]tmux.Session, 0)
 	if !anySrcs || srcs.Tmux {
 		tmuxList, err := tmux.List(tmux.Options{
 			HideAttached: o.HideAttached,
@@ -29,7 +29,8 @@ func List(o Options, srcs Srcs) []string {
 		tmuxSessionNames := make([]string, len(tmuxList))
 		for i, session := range tmuxSessions {
 			// TODO: allow support for connect as well (PrettyName?)
-			// tmuxSessionNames[i] = session.Name + " (" + convert.PathToPretty(session.Path) + ")"
+			// tmuxSessionNames[i] = session.Name + " (" +
+			// convert.PathToPretty(session.Path) + ")"
 			tmuxSessionNames[i] = session.Name()
 		}
 		sessions = append(sessions, tmuxSessionNames...)

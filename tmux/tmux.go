@@ -93,15 +93,15 @@ func GetSession(s string) (Session, error) {
 
 	for _, session := range sessionList {
 		if session.Name() == s {
-			return *session, nil
+			return session, nil
 		}
 
 		if session.Path() == s {
-			return *session, nil
+			return session, nil
 		}
 
 		if altPath != "" && session.Path() == altPath {
-			return *session, nil
+			return session, nil
 		}
 	}
 

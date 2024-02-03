@@ -39,8 +39,8 @@ type Options struct {
 	HideAttached bool
 }
 
-func processSessions(o Options, sessionList []string) []*Session {
-	sessions := make([]*Session, 0, len(sessionList))
+func processSessions(o Options, sessionList []string) []Session {
+	sessions := make([]Session, 0, len(sessionList))
 	for _, line := range sessionList {
 		fields := strings.Split(line, " ") // Strings split by single space
 
@@ -51,7 +51,7 @@ func processSessions(o Options, sessionList []string) []*Session {
 			continue
 		}
 
-		session := &Session{
+		session := Session{
 			Activity:          convert.StringToTime(fields[0]),
 			Alerts:            convert.StringToIntSlice(fields[1]),
 			Attached:          convert.StringToInt(fields[2]),
@@ -80,7 +80,7 @@ func processSessions(o Options, sessionList []string) []*Session {
 	return sessions
 }
 
-func sortSessions(sessions []*Session) []*Session {
+func sortSessions(sessions []Session) []Session {
 	sort.Slice(sessions, func(i, j int) bool {
 		return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
 	})
@@ -88,7 +88,7 @@ func sortSessions(sessions []*Session) []*Session {
 	return sessions
 }
 
-func List(o Options) ([]*Session, error) {
+func List(o Options) ([]Session, error) {
 	format := format()
 	output, err := command.Run([]string{"list-sessions", "-F", format})
 	if err != nil {
