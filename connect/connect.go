@@ -46,7 +46,7 @@ func Connect(
 			)
 			return errors.Join(errorStack...)
 		}
-		s = tmux.TmuxSession{
+		s = tmux.Session{
 			Name:     filepath.Base(p),
 			Path:     p,
 			Attached: 0,

@@ -83,10 +83,10 @@ func (c *Command) Run(args []string) (string, error) {
 	return c.execFunc(c.cliPath, args)
 }
 
-func GetSession(s string) (TmuxSession, error) {
+func GetSession(s string) (Session, error) {
 	sessionList, err := List(Options{})
 	if err != nil {
-		return TmuxSession{}, fmt.Errorf("unable to get tmux sessions: %w", err)
+		return Session{}, fmt.Errorf("unable to get tmux sessions: %w", err)
 	}
 
 	altPath := dir.AlternatePath(s)
@@ -105,7 +105,7 @@ func GetSession(s string) (TmuxSession, error) {
 		}
 	}
 
-	return TmuxSession{}, fmt.Errorf(
+	return Session{}, fmt.Errorf(
 		"no tmux session found with name or path matching %q",
 		s,
 	)
@@ -155,7 +155,7 @@ func runPersistentCommand(session string, command string) error {
 	return nil
 }
 
-func NewSession(s TmuxSession) (string, error) {
+func NewSession(s Session) (string, error) {
 	out, err := tmuxCmd(
 		[]string{"new-session", "-d", "-s", s.Name, "-c", s.Path},
 	)
@@ -191,7 +191,7 @@ func getStartupScript(sessionPath string, config *config.Config) string {
 }
 
 func Connect(
-	s TmuxSession,
+	s Session,
 	alwaysSwitch bool,
 	command string,
 	sessionPath string,

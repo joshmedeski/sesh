@@ -2,7 +2,7 @@ package tmux
 
 import "time"
 
-type TmuxSession struct {
+type Session struct {
 	// Time of session last activity
 	Activity *time.Time
 
@@ -33,11 +33,8 @@ type TmuxSession struct {
 	// Unique session ID
 	ID string
 
-	// Name of session
-	Name string
-
-	// Working directory of session
-	Path string
+	name string // Name of session
+	path string // Working directory of session
 
 	// Number of clients session is attached to
 	Attached int
@@ -66,3 +63,8 @@ type TmuxSession struct {
 	// 1 if this session contains the marked pane
 	Marked bool
 }
+
+func (s *Session) Name() string     { return s.name }
+func (s *Session) Path() string     { return s.path }
+func (s *Session) Source() string   { return "tmux" }
+func (s *Session) IsAttached() bool { return s.Attached > 0 }

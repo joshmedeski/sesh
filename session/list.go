@@ -16,7 +16,7 @@ func List(o Options, srcs Srcs) []string {
 	var sessions []string
 	anySrcs := checkAnyTrue(srcs)
 
-	tmuxSessions := make([]*tmux.TmuxSession, 0)
+	tmuxSessions := make([]*tmux.Session, 0)
 	if !anySrcs || srcs.Tmux {
 		tmuxList, err := tmux.List(tmux.Options{
 			HideAttached: o.HideAttached,

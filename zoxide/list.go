@@ -15,7 +15,7 @@ type ZoxideResult struct {
 	Score float64
 }
 
-func List(tmuxSessions []*tmux.TmuxSession) ([]*ZoxideResult, error) {
+func List(tmuxSessions []*tmux.Session) ([]*ZoxideResult, error) {
 	output, err := zoxideCmd([]string{"query", "-ls"})
 	if err != nil {
 		return []*ZoxideResult{}, nil

@@ -30,13 +30,13 @@ func TestProcessSessions(t *testing.T) {
 	testCases := map[string]struct {
 		Input    []string
 		Options  Options
-		Expected []*TmuxSession
+		Expected []*Session
 	}{
 		"Single active session": {
 			Input: []string{
 				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 			},
-			Expected: make([]*TmuxSession, 1),
+			Expected: make([]*Session, 1),
 		},
 		"Hide single active session": {
 			Input: []string{
@@ -45,37 +45,37 @@ func TestProcessSessions(t *testing.T) {
 			Options: Options{
 				HideAttached: true,
 			},
-			Expected: make([]*TmuxSession, 0),
+			Expected: make([]*Session, 0),
 		},
 		"Single inactive session": {
 			Input: []string{
 				"1705879002  0  1705878987 1       0 $2 1705878987 0 0 session-1 /some/test/path 1 1",
 			},
-			Expected: make([]*TmuxSession, 1),
+			Expected: make([]*Session, 1),
 		},
 		"Two inactive session": {
 			Input: []string{
 				"1705879002  0  1705878987 1       0 $2 1705878987 0 0 session-1 /some/test/path 1 1",
 				"1705879063  0  1705879002 1       0 $3 1705879002 0 0 session-2 /some/other/test/path 1 1",
 			},
-			Expected: make([]*TmuxSession, 2),
+			Expected: make([]*Session, 2),
 		},
 		"Two active session": {
 			Input: []string{
 				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 				"1705879337  1 /dev/ttys000 1705878987 1       0 $2 1705879328 0 0 session-1 /some/test/path 1 1",
 			},
-			Expected: make([]*TmuxSession, 2),
+			Expected: make([]*Session, 2),
 		},
 		"No sessions": {
-			Expected: []*TmuxSession{},
+			Expected: []*Session{},
 		},
 		"Invalid LastAttached (Issue 34)": {
 			Input: []string{
 				"1705879002  0  1705878987 1       0 $2 1705878987 0 0 session-1 /some/test/path 1 1",
 				"1705879063  0  1705879002 1       0 $3  0 0 session-2 /some/other/test/path 1 1",
 			},
-			Expected: make([]*TmuxSession, 2),
+			Expected: make([]*Session, 2),
 		},
 	}
 
