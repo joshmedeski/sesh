@@ -9,16 +9,17 @@ import (
 )
 
 type Options struct {
-	HideAttached bool
+	HideAttached  bool
+	IncludeZoxide bool
+	IncludeTmux   bool
 }
 
-func List(o Options, srcs Srcs) []string {
+func List(o Options) []string {
 	var sessions []string
-	anySrcs := checkAnyTrue(srcs)
 
 	tmuxSessions := make([]tmux.Session, 0)
 	var sessionPaths []string
-	if !anySrcs || srcs.Tmux {
+	if o.IncludeTmux {
 		tmuxList, err := tmux.List(tmux.Options{
 			HideAttached: o.HideAttached,
 		})
@@ -38,7 +39,7 @@ func List(o Options, srcs Srcs) []string {
 		sessions = append(sessions, tmuxSessionNames...)
 	}
 
-	if !anySrcs || srcs.Zoxide {
+	if o.IncludeZoxide {
 		results, err := zoxide.List(sessionPaths)
 		if err != nil {
 			fmt.Println("Error:", err)

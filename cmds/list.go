@@ -34,12 +34,11 @@ func List() *cli.Command {
 		},
 		Action: func(cCtx *cli.Context) error {
 			o := session.Options{
-				HideAttached: cCtx.Bool("hide-attached"),
+				HideAttached:  cCtx.Bool("hide-attached"),
+				IncludeZoxide: true,
+				IncludeTmux:   true,
 			}
-			sessions := session.List(o, session.Srcs{
-				Tmux:   cCtx.Bool("tmux"),
-				Zoxide: cCtx.Bool("zoxide"),
-			})
+			sessions := session.List(o)
 			fmt.Println(strings.Join(sessions, "\n"))
 			return nil
 		},

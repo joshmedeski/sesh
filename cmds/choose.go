@@ -54,12 +54,11 @@ func Choose() *cli.Command {
 			}
 
 			o := session.Options{
-				HideAttached: cCtx.Bool("hide-attached"),
+				HideAttached:  cCtx.Bool("hide-attached"),
+				IncludeTmux:   true,
+				IncludeZoxide: true,
 			}
-			sessions := session.List(o, session.Srcs{
-				Tmux:   cCtx.Bool("tmux"),
-				Zoxide: cCtx.Bool("zoxide"),
-			})
+			sessions := session.List(o)
 			stdin.Write([]byte(
 				strings.Join(sessions, "\n"),
 			))
