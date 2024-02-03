@@ -119,8 +119,8 @@ func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
 
-func IsSession(session string) (bool, string) {
-	sessions, err := command.List(Options{})
+func (c *Command) IsSession(session string) (bool, string) {
+	sessions, err := c.List(Options{})
 	if err != nil {
 		return false, ""
 	}
@@ -193,11 +193,11 @@ func getStartupScript(sessionPath string, config *config.Config) string {
 func Connect(
 	sessionName string,
 	alwaysSwitch bool,
-	command string,
+	cmd string,
 	sessionPath string,
 	config *config.Config,
 ) error {
-	isSession, _ := IsSession(sessionName)
+	isSession, _ := command.IsSession(sessionName)
 	if !isSession {
 		_, err := NewSession(sessionName, sessionPath)
 		if err != nil {
@@ -207,8 +207,8 @@ func Connect(
 				err,
 			)
 		}
-		if command != "" {
-			runPersistentCommand(sessionName, command)
+		if cmd != "" {
+			runPersistentCommand(sessionName, cmd)
 		} else if scriptPath := getStartupScript(sessionPath, config); scriptPath != "" {
 			err := execStartupScript(sessionName, scriptPath)
 			if err != nil {
