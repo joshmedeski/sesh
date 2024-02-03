@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/joshmedeski/sesh/convert"
-	"github.com/joshmedeski/sesh/tmux"
 )
 
 type ZoxideResult struct {
@@ -15,7 +14,7 @@ type ZoxideResult struct {
 	Score float64
 }
 
-func List(tmuxSessions []tmux.Session) ([]*ZoxideResult, error) {
+func List(sessionPaths []string) ([]*ZoxideResult, error) {
 	output, err := zoxideCmd([]string{"query", "-ls"})
 	if err != nil {
 		return []*ZoxideResult{}, nil
@@ -29,8 +28,8 @@ func List(tmuxSessions []tmux.Session) ([]*ZoxideResult, error) {
 
 	results := make([]*ZoxideResult, 0, listLen)
 	tmuxSessionPaths := make(map[string]struct{})
-	for _, session := range tmuxSessions {
-		tmuxSessionPaths[session.Path()] = struct{}{}
+	for _, p := range sessionPaths {
+		tmuxSessionPaths[p] = struct{}{}
 	}
 
 	for _, line := range list {
@@ -38,7 +37,9 @@ func List(tmuxSessions []tmux.Session) ([]*ZoxideResult, error) {
 		trimmed = strings.Trim(trimmed, " ")
 		fields := strings.SplitN(trimmed, " ", 2)
 		if len(fields) != 2 {
-			fmt.Println("Zoxide entry has invalid number of fields (expected 2)")
+			fmt.Println(
+				"Zoxide entry has invalid number of fields (expected 2)",
+			)
 			os.Exit(1)
 		}
 		path := fields[1]

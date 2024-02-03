@@ -17,6 +17,7 @@ func List(o Options, srcs Srcs) []string {
 	anySrcs := checkAnyTrue(srcs)
 
 	tmuxSessions := make([]tmux.Session, 0)
+	var sessionPaths []string
 	if !anySrcs || srcs.Tmux {
 		tmuxList, err := tmux.List(tmux.Options{
 			HideAttached: o.HideAttached,
@@ -32,12 +33,13 @@ func List(o Options, srcs Srcs) []string {
 			// tmuxSessionNames[i] = session.Name + " (" +
 			// convert.PathToPretty(session.Path) + ")"
 			tmuxSessionNames[i] = session.Name()
+			sessionPaths = append(sessionPaths, session.Path())
 		}
 		sessions = append(sessions, tmuxSessionNames...)
 	}
 
 	if !anySrcs || srcs.Zoxide {
-		results, err := zoxide.List(tmuxSessions)
+		results, err := zoxide.List(sessionPaths)
 		if err != nil {
 			fmt.Println("Error:", err)
 			os.Exit(1)
