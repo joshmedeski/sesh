@@ -7,26 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
 	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/dir"
 )
-
-var (
-	command *Command
-	once    sync.Once
-)
-
-func init() {
-	once.Do(func() {
-		var err error
-		command, err = NewCommand()
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
-}
 
 type Error struct{ msg string }
 
@@ -111,8 +95,8 @@ func (c *Command) GetSession(s string) (Session, error) {
 	)
 }
 
-func tmuxCmd(args []string) (string, error) {
-	return command.Run(args)
+func (c *Command) tmuxCmd(args []string) (string, error) {
+	return c.Run(args)
 }
 
 func isAttached() bool {
@@ -133,30 +117,30 @@ func (c *Command) IsSession(session string) (bool, string) {
 	return false, ""
 }
 
-func attachSession(session string) error {
-	if _, err := tmuxCmd([]string{"attach", "-t", session}); err != nil {
+func (c *Command) attachSession(session string) error {
+	if _, err := c.tmuxCmd([]string{"attach", "-t", session}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func switchSession(session string) error {
-	if _, err := tmuxCmd([]string{"switch-client", "-t", session}); err != nil {
+func (c *Command) switchSession(session string) error {
+	if _, err := c.tmuxCmd([]string{"switch-client", "-t", session}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func runPersistentCommand(session string, command string) error {
+func (c *Command) runPersistentCommand(session string, command string) error {
 	finalCmd := []string{"send-keys", "-t", session, command, "Enter"}
-	if _, err := tmuxCmd(finalCmd); err != nil {
+	if _, err := c.tmuxCmd(finalCmd); err != nil {
 		return err
 	}
 	return nil
 }
 
-func NewSession(sessionName, sessionPath string) (string, error) {
-	out, err := tmuxCmd(
+func (c *Command) NewSession(sessionName, sessionPath string) (string, error) {
+	out, err := c.tmuxCmd(
 		[]string{"new-session", "-d", "-s", sessionName, "-c", sessionPath},
 	)
 	if err != nil {
@@ -165,7 +149,7 @@ func NewSession(sessionName, sessionPath string) (string, error) {
 	return out, nil
 }
 
-func execStartupScript(name string, scriptPath string) error {
+func (c *Command) execStartupScript(name string, scriptPath string) error {
 	bash, err := exec.LookPath("bash")
 	if err != nil {
 		return err
@@ -174,7 +158,7 @@ func execStartupScript(name string, scriptPath string) error {
 		[]string{bash, "-c", fmt.Sprintf("\"source %s\"", scriptPath)},
 		" ",
 	)
-	err = runPersistentCommand(name, cmd)
+	err = c.runPersistentCommand(name, cmd)
 	if err != nil {
 		return err
 	}
@@ -199,7 +183,7 @@ func (c *Command) Connect(
 ) error {
 	isSession, _ := c.IsSession(sessionName)
 	if !isSession {
-		_, err := NewSession(sessionName, sessionPath)
+		_, err := c.NewSession(sessionName, sessionPath)
 		if err != nil {
 			return fmt.Errorf(
 				"unable to connect to tmux session %q: %w",
@@ -208,14 +192,14 @@ func (c *Command) Connect(
 			)
 		}
 		if cmd != "" {
-			runPersistentCommand(sessionName, cmd)
+			c.runPersistentCommand(sessionName, cmd)
 		} else if scriptPath := getStartupScript(sessionPath, config); scriptPath != "" {
-			err := execStartupScript(sessionName, scriptPath)
+			err := c.execStartupScript(sessionName, scriptPath)
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else if config.DefaultStartupScript != "" {
-			err := execStartupScript(sessionName, config.DefaultStartupScript)
+			err := c.execStartupScript(sessionName, config.DefaultStartupScript)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -223,9 +207,9 @@ func (c *Command) Connect(
 	}
 	isAttached := isAttached()
 	if isAttached || alwaysSwitch {
-		switchSession(sessionName)
+		c.switchSession(sessionName)
 	} else {
-		attachSession(sessionName)
+		c.attachSession(sessionName)
 	}
 	return nil
 }

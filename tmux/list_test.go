@@ -111,7 +111,7 @@ func TestList(t *testing.T) {
 
 	for name, tc := range testCase {
 		t.Run(name, func(t *testing.T) {
-			command = &Command{
+			command := &Command{
 				execFunc: func(string, []string) (string, error) {
 					return tc.MockResponse, tc.MockError
 				},
