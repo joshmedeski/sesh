@@ -14,19 +14,19 @@ type ZoxideResult struct {
 	Score float64
 }
 
-func List(sessionPaths []string) ([]*ZoxideResult, error) {
+func List(sessionPaths []string) ([]ZoxideResult, error) {
 	output, err := zoxideCmd([]string{"query", "-ls"})
 	if err != nil {
-		return []*ZoxideResult{}, nil
+		return []ZoxideResult{}, nil
 	}
 	cleanOutput := strings.TrimSpace(string(output))
 	list := strings.Split(cleanOutput, "\n")
 	listLen := len(list)
 	if listLen == 1 && list[0] == "" {
-		return []*ZoxideResult{}, nil
+		return []ZoxideResult{}, nil
 	}
 
-	results := make([]*ZoxideResult, 0, listLen)
+	results := make([]ZoxideResult, 0, listLen)
 	tmuxSessionPaths := make(map[string]struct{})
 	for _, p := range sessionPaths {
 		tmuxSessionPaths[p] = struct{}{}
@@ -44,7 +44,7 @@ func List(sessionPaths []string) ([]*ZoxideResult, error) {
 		}
 		path := fields[1]
 		if _, exists := tmuxSessionPaths[path]; !exists {
-			results = append(results, &ZoxideResult{
+			results = append(results, ZoxideResult{
 				Score: convert.StringToFloat(fields[0]),
 				Name:  convert.PathToPretty(path),
 				Path:  path,

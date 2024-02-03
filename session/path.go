@@ -40,7 +40,7 @@ func DeterminePath(choice string) (string, error) {
 		fmt.Println("Couldn't query zoxide", err)
 		os.Exit(1)
 	}
-	if zoxideResult != nil {
+	if zoxideResult.Path != "" {
 		return zoxideResult.Path, nil
 	}
 
