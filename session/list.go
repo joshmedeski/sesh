@@ -12,12 +12,17 @@ type Options struct {
 }
 
 func List(o Options) ([]string, error) {
+	t, err := tmux.NewCommand()
+	if err != nil {
+		return nil, err
+	}
+
 	var sessions []string
 
 	tmuxSessions := make([]tmux.Session, 0)
 	var sessionPaths []string
 	if o.IncludeTmux {
-		tmuxList, err := tmux.List(tmux.Options{
+		tmuxList, err := t.List(tmux.Options{
 			HideAttached: o.HideAttached,
 		})
 		if err != nil {

@@ -116,7 +116,7 @@ func TestList(t *testing.T) {
 					return tc.MockResponse, tc.MockError
 				},
 			}
-			res, err := List(tc.Options)
+			res, err := command.List(tc.Options)
 			require.ErrorIs(t, tc.Error, err)
 			if err != nil {
 				return

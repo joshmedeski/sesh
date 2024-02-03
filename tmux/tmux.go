@@ -84,7 +84,7 @@ func (c *Command) Run(args []string) (string, error) {
 }
 
 func GetSession(s string) (Session, error) {
-	sessionList, err := List(Options{})
+	sessionList, err := command.List(Options{})
 	if err != nil {
 		return Session{}, fmt.Errorf("unable to get tmux sessions: %w", err)
 	}
@@ -120,7 +120,7 @@ func isAttached() bool {
 }
 
 func IsSession(session string) (bool, string) {
-	sessions, err := List(Options{})
+	sessions, err := command.List(Options{})
 	if err != nil {
 		return false, ""
 	}

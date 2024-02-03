@@ -88,7 +88,7 @@ func sortSessions(sessions []Session) []Session {
 	return sessions
 }
 
-func List(o Options) ([]Session, error) {
+func (c *Command) List(o Options) ([]Session, error) {
 	format := format()
 	output, err := command.Run([]string{"list-sessions", "-F", format})
 	if err != nil {
