@@ -190,14 +190,14 @@ func getStartupScript(sessionPath string, config *config.Config) string {
 	return ""
 }
 
-func Connect(
+func (c *Command) Connect(
 	sessionName string,
 	alwaysSwitch bool,
 	cmd string,
 	sessionPath string,
 	config *config.Config,
 ) error {
-	isSession, _ := command.IsSession(sessionName)
+	isSession, _ := c.IsSession(sessionName)
 	if !isSession {
 		_, err := NewSession(sessionName, sessionPath)
 		if err != nil {

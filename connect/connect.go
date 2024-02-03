@@ -55,5 +55,10 @@ func Connect(
 		return fmt.Errorf("unable to connect to %q: %w", choice, err)
 	}
 
-	return tmux.Connect(sessionName, alwaysSwitch, command, sessionPath, config)
+	t, err := tmux.NewCommand()
+	if err != nil {
+		return err
+	}
+
+	return t.Connect(sessionName, alwaysSwitch, command, sessionPath, config)
 }
