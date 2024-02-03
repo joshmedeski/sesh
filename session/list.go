@@ -30,7 +30,7 @@ func List(o Options, srcs Srcs) []string {
 		for i, session := range tmuxSessions {
 			// TODO: allow support for connect as well (PrettyName?)
 			// tmuxSessionNames[i] = session.Name + " (" + convert.PathToPretty(session.Path) + ")"
-			tmuxSessionNames[i] = session.Name
+			tmuxSessionNames[i] = session.Name()
 		}
 		sessions = append(sessions, tmuxSessionNames...)
 	}

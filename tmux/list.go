@@ -69,8 +69,8 @@ func processSessions(o Options, sessionList []string) []*Session {
 			LastAttached:      convert.StringToTime(fields[14]),
 			ManyAttached:      convert.StringToBool(fields[15]),
 			Marked:            convert.StringToBool(fields[16]),
-			Name:              fields[17],
-			Path:              fields[18],
+			name:              fields[17],
+			path:              fields[18],
 			Stack:             convert.StringToIntSlice(fields[19]),
 			Windows:           convert.StringToInt(fields[20]),
 		}

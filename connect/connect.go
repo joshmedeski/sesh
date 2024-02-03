@@ -24,6 +24,7 @@ func Connect(
 		isActiveSession = false
 		errorStack = append(errorStack, err)
 	}
+	sessionName, sessionPath := s.Name(), s.Path()
 	if !isActiveSession {
 		p, err := filepath.Abs(choice)
 		if err != nil {
@@ -46,16 +47,13 @@ func Connect(
 			)
 			return errors.Join(errorStack...)
 		}
-		s = tmux.Session{
-			Name:     filepath.Base(p),
-			Path:     p,
-			Attached: 0,
-		}
+		sessionName = filepath.Base(p)
+		sessionPath = p
 	}
 
-	if err = zoxide.Add(s.Path); err != nil {
+	if err = zoxide.Add(s.Path()); err != nil {
 		return fmt.Errorf("unable to connect to %q: %w", choice, err)
 	}
 
-	return tmux.Connect(s, alwaysSwitch, command, s.Path, config)
+	return tmux.Connect(sessionName, alwaysSwitch, command, sessionPath, config)
 }

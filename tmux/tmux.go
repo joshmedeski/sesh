@@ -92,15 +92,15 @@ func GetSession(s string) (Session, error) {
 	altPath := dir.AlternatePath(s)
 
 	for _, session := range sessionList {
-		if session.Name == s {
+		if session.Name() == s {
 			return *session, nil
 		}
 
-		if session.Path == s {
+		if session.Path() == s {
 			return *session, nil
 		}
 
-		if altPath != "" && session.Path == altPath {
+		if altPath != "" && session.Path() == altPath {
 			return *session, nil
 		}
 	}
@@ -126,8 +126,8 @@ func IsSession(session string) (bool, string) {
 	}
 
 	for _, s := range sessions {
-		if s.Name == session {
-			return true, s.Path
+		if s.name == session {
+			return true, s.path
 		}
 	}
 	return false, ""
@@ -155,9 +155,9 @@ func runPersistentCommand(session string, command string) error {
 	return nil
 }
 
-func NewSession(s Session) (string, error) {
+func NewSession(sessionName, sessionPath string) (string, error) {
 	out, err := tmuxCmd(
-		[]string{"new-session", "-d", "-s", s.Name, "-c", s.Path},
+		[]string{"new-session", "-d", "-s", sessionName, "-c", sessionPath},
 	)
 	if err != nil {
 		return "", err
@@ -191,31 +191,31 @@ func getStartupScript(sessionPath string, config *config.Config) string {
 }
 
 func Connect(
-	s Session,
+	sessionName string,
 	alwaysSwitch bool,
 	command string,
 	sessionPath string,
 	config *config.Config,
 ) error {
-	isSession, _ := IsSession(s.Name)
+	isSession, _ := IsSession(sessionName)
 	if !isSession {
-		_, err := NewSession(s)
+		_, err := NewSession(sessionName, sessionPath)
 		if err != nil {
 			return fmt.Errorf(
 				"unable to connect to tmux session %q: %w",
-				s.Name,
+				sessionName,
 				err,
 			)
 		}
 		if command != "" {
-			runPersistentCommand(s.Name, command)
+			runPersistentCommand(sessionName, command)
 		} else if scriptPath := getStartupScript(sessionPath, config); scriptPath != "" {
-			err := execStartupScript(s.Name, scriptPath)
+			err := execStartupScript(sessionName, scriptPath)
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else if config.DefaultStartupScript != "" {
-			err := execStartupScript(s.Name, config.DefaultStartupScript)
+			err := execStartupScript(sessionName, config.DefaultStartupScript)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -223,9 +223,9 @@ func Connect(
 	}
 	isAttached := isAttached()
 	if isAttached || alwaysSwitch {
-		switchSession(s.Name)
+		switchSession(sessionName)
 	} else {
-		attachSession(s.Name)
+		attachSession(sessionName)
 	}
 	return nil
 }

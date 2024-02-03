@@ -30,7 +30,7 @@ func List(tmuxSessions []*tmux.Session) ([]*ZoxideResult, error) {
 	results := make([]*ZoxideResult, 0, listLen)
 	tmuxSessionPaths := make(map[string]struct{})
 	for _, session := range tmuxSessions {
-		tmuxSessionPaths[session.Path] = struct{}{}
+		tmuxSessionPaths[session.Path()] = struct{}{}
 	}
 
 	for _, line := range list {
