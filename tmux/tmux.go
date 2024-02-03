@@ -83,8 +83,8 @@ func (c *Command) Run(args []string) (string, error) {
 	return c.execFunc(c.cliPath, args)
 }
 
-func GetSession(s string) (Session, error) {
-	sessionList, err := command.List(Options{})
+func (c *Command) GetSession(s string) (Session, error) {
+	sessionList, err := c.List(Options{})
 	if err != nil {
 		return Session{}, fmt.Errorf("unable to get tmux sessions: %w", err)
 	}

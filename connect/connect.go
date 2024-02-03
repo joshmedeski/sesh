@@ -17,9 +17,14 @@ func Connect(
 	command string,
 	config *config.Config,
 ) error {
+	t, err := tmux.NewCommand()
+	if err != nil {
+		return err
+	}
+
 	var errorStack []error
 	isActiveSession := true
-	s, err := tmux.GetSession(choice)
+	s, err := t.GetSession(choice)
 	if err != nil {
 		isActiveSession = false
 		errorStack = append(errorStack, err)
@@ -53,11 +58,6 @@ func Connect(
 
 	if err = zoxide.Add(s.Path()); err != nil {
 		return fmt.Errorf("unable to connect to %q: %w", choice, err)
-	}
-
-	t, err := tmux.NewCommand()
-	if err != nil {
-		return err
 	}
 
 	return t.Connect(sessionName, alwaysSwitch, command, sessionPath, config)
