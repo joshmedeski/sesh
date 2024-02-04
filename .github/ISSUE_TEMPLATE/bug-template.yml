@@ -15,14 +15,14 @@ body:
       label: What happened?
       description: Also tell us, what did you expect to happen?
       placeholder: Tell us what you see!
-      value: "A bug happened!"
+      value: When I _, I expected _ but _ happened!
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: Version
-      description: What version of sesh are you using?
+      description: What version of sesh are you using? (`sesh --version`)
     validations:
       required: true
   - type: textarea
@@ -34,7 +34,6 @@ body:
     id: review
     attributes:
       label: Reviewed
-      description: You have done the following.
       options:
         - label: Reviewed existing issues and made sure this bug has not already been submitted.
           required: true
