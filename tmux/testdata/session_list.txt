@@ -1,3 +1,0 @@
-1706646951  1 /dev/ttys000 1706475706 1       0 $2 1706643877 0 0 sesh /Users/test_user/dev/sesh 2,1 2
-1706632190  0  1706485534 1       0 $8 1706632189 0 0 dotfiles /Users/test_user/dotfiles 1 1
-1706485830  0  1706485825 1       0 $10 1706485825 0 0 window-name /Users/test_user/test_user/tmux-nerd-font-window-name 1 1

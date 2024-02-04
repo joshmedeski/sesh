@@ -7,81 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
 	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/dir"
 )
-
-var (
-	command *Command
-	once    sync.Once
-)
-
-func init() {
-	once.Do(func() {
-		var err error
-		command, err = NewCommand()
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
-}
-
-type Error struct{ msg string }
-
-func (e Error) Error() string { return e.msg }
-
-var ErrNotRunning = Error{"no server running"}
-
-func executeCommand(command string, args []string) (string, error) {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(command, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Start(); err != nil {
-		return "", err
-	}
-
-	if err := cmd.Wait(); err != nil {
-		if strings.Contains(stderr.String(), "no server running on") {
-			return "", ErrNotRunning
-		}
-
-		return "", err
-	}
-
-	out := strings.TrimSpace(stdout.String())
-	if strings.Contains(out, "no server running on") {
-		return "", ErrNotRunning
-	}
-
-	return out, nil
-}
-
-type Command struct {
-	cliPath  string
-	execFunc func(string, []string) (string, error)
-}
-
-func NewCommand() (c *Command, err error) {
-	c = new(Command)
-
-	c.cliPath, err = exec.LookPath("tmux")
-	if err != nil {
-		return nil, err
-	}
-
-	c.execFunc = executeCommand
-
-	return c, nil
-}
-
-func (c *Command) Run(args []string) (string, error) {
-	return c.execFunc(c.cliPath, args)
-}
 
 func GetSession(s string) (TmuxSession, error) {
 	sessionList, err := List(Options{})
@@ -112,7 +41,27 @@ func GetSession(s string) (TmuxSession, error) {
 }
 
 func tmuxCmd(args []string) (string, error) {
-	return command.Run(args)
+	tmux, err := exec.LookPath("tmux")
+	if err != nil {
+		return "", err
+	}
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command(tmux, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = &stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+	if err := cmd.Wait(); err != nil {
+		errString := strings.TrimSpace(stderr.String())
+		if strings.HasPrefix(errString, "no server running on") {
+			return "", nil
+		}
+		return "", err
+	}
+	return stdout.String(), nil
 }
 
 func isAttached() bool {
