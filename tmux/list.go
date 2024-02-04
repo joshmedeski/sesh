@@ -156,12 +156,12 @@ func sortSessions(sessions []*TmuxSession) []*TmuxSession {
 
 func List(o Options) ([]*TmuxSession, error) {
 	format := format()
-	output, err := command.Run([]string{"list-sessions", "-F", format})
-	if err != nil {
-		return nil, err
+	output, err := tmuxCmd([]string{"list-sessions", "-F", format})
+	cleanOutput := strings.TrimSpace(output)
+	if err != nil || strings.HasPrefix(cleanOutput, "no server running on") {
+		return nil, nil
 	}
-
-	sessionList := output
+	sessionList := strings.TrimSpace(string(output))
 	lines := strings.Split(sessionList, "\n")
 	sessions := processSessions(o, lines)
 
