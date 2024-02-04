@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/dir"

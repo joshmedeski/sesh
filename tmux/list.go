@@ -90,6 +90,7 @@ func sortSessions(sessions []Session) []Session {
 
 func (c *Command) List(o Options) ([]Session, error) {
 	format := format()
+  
 	output, err := c.Run([]string{"list-sessions", "-F", format})
 	if err != nil {
 		return nil, err
