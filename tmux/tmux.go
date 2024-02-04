@@ -95,10 +95,6 @@ func (c *Command) GetSession(s string) (Session, error) {
 	)
 }
 
-func (c *Command) tmuxCmd(args []string) (string, error) {
-	return c.Run(args)
-}
-
 func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
@@ -118,14 +114,14 @@ func (c *Command) IsSession(session string) (bool, string) {
 }
 
 func (c *Command) attachSession(session string) error {
-	if _, err := c.tmuxCmd([]string{"attach", "-t", session}); err != nil {
+	if _, err := c.Run([]string{"attach", "-t", session}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *Command) switchSession(session string) error {
-	if _, err := c.tmuxCmd([]string{"switch-client", "-t", session}); err != nil {
+	if _, err := c.Run([]string{"switch-client", "-t", session}); err != nil {
 		return err
 	}
 	return nil
@@ -133,14 +129,14 @@ func (c *Command) switchSession(session string) error {
 
 func (c *Command) runPersistentCommand(session string, command string) error {
 	finalCmd := []string{"send-keys", "-t", session, command, "Enter"}
-	if _, err := c.tmuxCmd(finalCmd); err != nil {
+	if _, err := c.Run(finalCmd); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *Command) NewSession(sessionName, sessionPath string) (string, error) {
-	out, err := c.tmuxCmd(
+	out, err := c.Run(
 		[]string{"new-session", "-d", "-s", sessionName, "-c", sessionPath},
 	)
 	if err != nil {
