@@ -2,7 +2,6 @@ name: Bug Report
 description: File a bug report
 title: "[Bug]: "
 labels: ["bug", "triage"]
-projects: []
 assignees:
   - joshmedeski
 body:
@@ -19,7 +18,7 @@ body:
       value: "A bug happened!"
     validations:
       required: true
-  - type: dropdown
+  - type: input
     id: version
     attributes:
       label: Version
@@ -31,7 +30,6 @@ body:
     attributes:
       label: Relevant log output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks. If you are using fzf, please rerun the command on it's own (ex `sesh connect ~/code/project/src`) and share the output here.
-      render: shell
   - type: checkboxes
     id: review
     attributes:
