@@ -1,0 +1,17 @@
+name: Feature Request
+description: Request new functionality
+labels: ["enhancement", "triage"]
+assignees:
+  - joshmedeski
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this form for requesting a new feature. Sesh continues to grow as people like you share their ideas.
+  - type: textarea
+    id: request
+    attributes:
+      label: What would you like sesh to do?
+      description: Describe in as much detail as possible, what you would you would like to see sesh do.
+    validations:
+      required: true
