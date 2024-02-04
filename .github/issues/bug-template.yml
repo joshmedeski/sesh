@@ -1,0 +1,44 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug", "triage"]
+projects: []
+assignees:
+  - joshmedeski
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Sesh is in active development and I expect things to not always go as expected.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "A bug happened!"
+    validations:
+      required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of sesh are you using?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks. If you are using fzf, please rerun the command on it's own (ex `sesh connect ~/code/project/src`) and share the output here.
+      render: shell
+  - type: checkboxes
+    id: review
+    attributes:
+      label: Reviewed
+      description: You have done the following.
+      options:
+        - label: Reviewed existing issues and made sure this bug has not already been submitted.
+          required: true
+        - label: I have read the documentation and understand how sesh works before submitting this bug
+          required: false
