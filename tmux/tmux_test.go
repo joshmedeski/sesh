@@ -48,3 +48,34 @@ func TestCommand_GetSession(t *testing.T) {
 		})
 	}
 }
+
+func TestCommand_IsSession(t *testing.T) {
+	testCases := map[string]struct {
+		MockResponse string
+		MockError    error
+		SessionName  string
+		Expected     bool
+	}{
+		"happy path": {
+			MockResponse: sessionList,
+			SessionName:  "dotfiles",
+			Expected:     true,
+		},
+		"unhappy path": {
+			MockResponse: sessionList,
+			SessionName:  "not found",
+			Expected:     false,
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			command := &Command{
+				execFunc: func(string, []string) (string, error) {
+					return tc.MockResponse, tc.MockError
+				},
+			}
+			isSession, _ := command.IsSession(tc.SessionName)
+			require.Equal(t, tc.Expected, isSession)
+		})
+	}
+}
