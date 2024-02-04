@@ -16,7 +16,10 @@ type Error struct{ msg string }
 
 func (e Error) Error() string { return e.msg }
 
-var ErrNotRunning = Error{"no server running"}
+var (
+	ErrNotRunning = Error{"no server running"}
+	ErrNotFound   = Error{"no tmux session found"}
+)
 
 func executeCommand(command string, args []string) (string, error) {
 	var stdout, stderr bytes.Buffer
@@ -90,7 +93,8 @@ func (c *Command) GetSession(s string) (Session, error) {
 	}
 
 	return Session{}, fmt.Errorf(
-		"no tmux session found with name or path matching %q",
+		"%w with name or path matching %q",
+		ErrNotFound,
 		s,
 	)
 }
