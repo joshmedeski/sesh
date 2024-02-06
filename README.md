@@ -42,9 +42,19 @@ This will download and install the latest version of Sesh. Make sure that your G
 
 ## How to use
 
-`sesh list` will list all your sessions, and `sesh connect {session}` will connect to a session (automatically creating it if it doesn't exist yet). It is best used by integrating it into your sehll and tmux.
+### tmux for sessions
 
-### fzf
+[tmux](https://github.com/tmux/tmux) is a powerful terminal multiplexer that allows you to create and manage multiple terminal sessions. Sesh is designed to make managing tmux sessions easier.
+
+### zoxide for directories
+
+[zoxide](https://github.com/ajeetdsouza/zoxide) is a blazing fast alternative to `cd` that tracks your most used directories. Sesh uses zoxide to manage your projects. You'll have to set up zoxide first, but once you do, you can use it to quickly jump to your most used directories.
+
+### Basic usage
+
+Once tmux and zoxide are setup, `sesh list` will list all your tmux sessions and zoxide results, and `sesh connect {session}` will connect to a session (automatically creating it if it doesn't exist yet). It is best used by integrating it into your shell and tmux.
+
+#### fzf
 
 The easiest way to integrate sesh into your workflow is to use [fzf](https://github.com/junegunn/fzf). You can use it to select a session to connect to:
 
@@ -52,7 +62,7 @@ The easiest way to integrate sesh into your workflow is to use [fzf](https://git
 sesh connect $(sesh list | fzf)
 ```
 
-### tmux + fzf
+#### tmux + fzf
 
 In order to integrate with tmux, you can add a binding to your tmux config (`tmux.conf`). For example, the following will bind `ctrl-a T` to open a fzf prompt as a tmux popup (using `fzf-tmux`) and using different commands to list sessions (`sesh list -t`), zoxide directories (`sesh list -z`), and find directories (`fd...`).
 
