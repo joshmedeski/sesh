@@ -5,11 +5,11 @@ import (
 )
 
 func zoxideCmd(args []string) ([]byte, error) {
-	tmux, err := exec.LookPath("zoxide")
+	zoxide, err := exec.LookPath("zoxide")
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command(tmux, args...)
+	cmd := exec.Command(zoxide, args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
