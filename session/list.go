@@ -11,6 +11,7 @@ import (
 
 type Options struct {
 	HideAttached bool
+	Json         bool
 }
 
 func checkAnyTrue(s interface{}) bool {
@@ -43,9 +44,11 @@ func List(o Options, srcs Srcs) []Session {
 			// TODO: allow support for connect as well (PrettyName?)
 			// tmuxSessionNames[i] = session.Name + " (" + convert.PathToPretty(session.Path) + ")"
 			tmuxSessionNames[i] = Session{
-				Src:  "tmux",
-				Name: session.Name,
-				Path: session.Path,
+				Src:      "tmux",
+				Name:     session.Name,
+				Path:     session.Path,
+				Attached: session.Attached,
+				Windows:  session.Windows,
 			}
 		}
 		sessions = append(sessions, tmuxSessionNames...)
@@ -60,9 +63,10 @@ func List(o Options, srcs Srcs) []Session {
 		zoxideResultNames := make([]Session, len(results))
 		for i, result := range results {
 			zoxideResultNames[i] = Session{
-				Src:  "zoxide",
-				Name: result.Name,
-				Path: result.Path,
+				Src:   "zoxide",
+				Name:  result.Name,
+				Path:  result.Path,
+				Score: result.Score,
 			}
 		}
 		sessions = append(sessions, zoxideResultNames...)
