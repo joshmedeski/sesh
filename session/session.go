@@ -1,30 +1,15 @@
 package session
 
-import (
-	"reflect"
-)
-
 type Session struct {
-	// tmux or zoxide
-	Src string
-	// The display name
-	Name string
-	// The absolute directory path
-	Path string
+	Src      string  // tmux or zoxide
+	Name     string  // The display name
+	Path     string  // The absolute directory path
+	Score    float64 // The score of the session (from Zoxide)
+	Attached int     // Whether the session is currently attached
+	Windows  int     // The number of windows in the session
 }
 
 type Srcs struct {
 	Tmux   bool
 	Zoxide bool
-}
-
-func checkAnyTrue(s interface{}) bool {
-	val := reflect.ValueOf(s)
-	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		if field.Kind() == reflect.Bool && field.Bool() {
-			return true
-		}
-	}
-	return false
 }

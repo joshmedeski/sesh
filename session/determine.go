@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/joshmedeski/sesh/config"
+	"github.com/joshmedeski/sesh/name"
 )
 
 func Determine(choice string, config *config.Config) (s Session, err error) {
@@ -18,15 +19,15 @@ func Determine(choice string, config *config.Config) (s Session, err error) {
 	}
 	s.Path = path
 
-	name := DetermineName(path, config)
-	if name == "" {
+	sessionName := name.DetermineName(path)
+	if sessionName == "" {
 		log.Fatal("Couldn't determine the session name", err)
 		return s, fmt.Errorf(
 			"couldn't determine the session name for %q",
 			choice,
 		)
 	}
-	s.Name = name
+	s.Name = sessionName
 
 	return s, nil
 }
