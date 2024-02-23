@@ -1,11 +1,10 @@
-package session
+package name
 
 import (
 	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/git"
 )
 
@@ -48,7 +47,7 @@ func nameFromGit(result string) string {
 	return nameFromGit
 }
 
-func DetermineName(result string, config *config.Config) string {
+func DetermineName(result string) string {
 	name := result
 	// TODO: parent directory config option detection
 	pathName := nameFromPath(result)
