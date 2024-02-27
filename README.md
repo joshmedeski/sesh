@@ -40,6 +40,15 @@ This will download and install the latest version of Sesh. Make sure that your G
 
 **Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
 
+## Raycast Extension
+
+The [sesh companion extension](https://www.raycast.com/joshmedeski/sesh) for [Raycast](https://www.raycast.com/) makes it easy to use sesh outside of the terminal.
+
+Here are limitations to keep in mind:
+
+- tmux has to be running before you can use the extension
+- The extension caches results for a few seconds, so it may not always be up to date
+
 ## How to use
 
 ### tmux for sessions
