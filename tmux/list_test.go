@@ -7,14 +7,14 @@ import (
 )
 
 func TestFormat(t *testing.T) {
-	want := "#{session_activity} #{session_alerts} #{session_attached}" +
-		" #{session_attached_list} #{session_created} #{session_format} " +
-		"#{session_group} #{session_group_attached} " +
-		"#{session_group_attached_list} #{session_group_list} " +
-		"#{session_group_many_attached} #{session_group_size} " +
-		"#{session_grouped} #{session_id} #{session_last_attached} " +
-		"#{session_many_attached} #{session_marked} #{session_name} " +
-		"#{session_path} #{session_stack} #{session_windows}"
+	want := "#{session_activity}::#{session_alerts}::#{session_attached}::" +
+		"#{session_attached_list}::#{session_created}::#{session_format}::" +
+		"#{session_group}::#{session_group_attached}::" +
+		"#{session_group_attached_list}::#{session_group_list}::" +
+		"#{session_group_many_attached}::#{session_group_size}::" +
+		"#{session_grouped}::#{session_id}::#{session_last_attached}::" +
+		"#{session_many_attached}::#{session_marked}::#{session_name}::" +
+		"#{session_path}::#{session_stack}::#{session_windows}"
 	got := format()
 	require.Equal(t, want, got)
 }
