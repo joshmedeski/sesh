@@ -30,9 +30,16 @@ func DeterminePath(choice string) (string, error) {
 		return fullPath, nil
 	}
 
-	isSession, sessionPath := tmux.IsSession(fullPath)
-	if isSession && sessionPath != "" {
-		return sessionPath, nil
+	session, err := tmux.FindSession(fullPath)
+	if err != nil {
+		return "", fmt.Errorf(
+			"couldn't determine the path for %q: %w",
+			choice,
+			err,
+		)
+	}
+	if session != nil {
+		return session.Path, nil
 	}
 
 	zoxideResult, err := zoxide.Query(fullPath)

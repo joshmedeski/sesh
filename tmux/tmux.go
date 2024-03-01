@@ -68,18 +68,18 @@ func isAttached() bool {
 	return len(os.Getenv("TMUX")) > 0
 }
 
-func IsSession(session string) (bool, string) {
+func FindSession(session string) (*TmuxSession, error) {
 	sessions, err := List(Options{})
 	if err != nil {
-		return false, ""
+		return nil, err
 	}
 
 	for _, s := range sessions {
 		if s.Name == session {
-			return true, s.Path
+			return s, nil
 		}
 	}
-	return false, ""
+	return nil, nil
 }
 
 func attachSession(session string) error {
@@ -146,8 +146,8 @@ func Connect(
 	sessionPath string,
 	config *config.Config,
 ) error {
-	isSession, _ := IsSession(s.Name)
-	if !isSession {
+	session, _ := FindSession(s.Name)
+	if session == nil {
 		_, err := NewSession(s)
 		if err != nil {
 			return fmt.Errorf(

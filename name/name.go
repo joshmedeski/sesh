@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/joshmedeski/sesh/git"
+	"github.com/joshmedeski/sesh/tmux"
 )
 
 func convertToValidName(name string) string {
@@ -47,12 +48,17 @@ func nameFromGit(result string) string {
 	return nameFromGit
 }
 
-func DetermineName(result string) string {
-	name := result
-	// TODO: parent directory config option detection
-	pathName := nameFromPath(result)
-	if pathName != "" {
-		name = pathName
+func DetermineName(choice string, path string) string {
+	session, _ := tmux.FindSession(choice)
+	if session != nil {
+		return session.Name
 	}
-	return convertToValidName(name)
+
+	// TODO: parent directory config option detection
+	pathName := nameFromPath(path)
+	if pathName != "" {
+		return convertToValidName(pathName)
+	}
+
+	return convertToValidName(choice)
 }
