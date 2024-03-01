@@ -76,7 +76,7 @@ sesh connect $(sesh list | fzf)
 In order to integrate with tmux, you can add a binding to your tmux config (`tmux.conf`). For example, the following will bind `ctrl-a T` to open a fzf prompt as a tmux popup (using `fzf-tmux`) and using different commands to list sessions (`sesh list -t`), zoxide directories (`sesh list -z`), and find directories (`fd...`).
 
 ```sh
- bind-key "T" run-shell "sesh connect $(
+bind-key "T" run-shell "sesh connect \"$(
 	sesh list -tz | fzf-tmux -p 55%,60% \
 		--no-sort --border-label ' sesh ' --prompt '⚡  ' \
 		--header '  ^a all ^t tmux ^x zoxide ^f find' \
@@ -85,7 +85,7 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 		--bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
 		--bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
 		--bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)'
-)"
+)\""
 ```
 
 You can customize this however you want, see `man fzf` for more info on the different options.
