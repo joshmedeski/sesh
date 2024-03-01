@@ -32,6 +32,8 @@ type TmuxSession struct {
 	Marked            bool       // 1 if this session contains the marked pane
 }
 
+var separator = "::"
+
 func format() string {
 	variables := []string{
 		"#{session_activity}",
@@ -57,7 +59,7 @@ func format() string {
 		"#{session_windows}",
 	}
 
-	return strings.Join(variables, " ")
+	return strings.Join(variables, separator)
 }
 
 type Options struct {
@@ -67,7 +69,7 @@ type Options struct {
 func processSessions(o Options, sessionList []string) []*TmuxSession {
 	sessions := make([]*TmuxSession, 0, len(sessionList))
 	for _, line := range sessionList {
-		fields := strings.Split(line, " ") // Strings split by single space
+		fields := strings.Split(line, separator) // Strings split by single space
 
 		if len(fields) != 21 {
 			continue
