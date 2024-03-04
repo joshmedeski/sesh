@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/joshmedeski/sesh/config"
@@ -132,7 +133,8 @@ func execStartupScript(name string, scriptPath string) error {
 
 func getStartupScript(sessionPath string, config *config.Config) string {
 	for _, script := range config.StartupScripts {
-		if dir.FullPath(script.SessionPath) == sessionPath {
+		match, _ := filepath.Match(dir.FullPath(script.SessionPath), sessionPath)
+		if match {
 			return dir.FullPath(script.ScriptPath)
 		}
 	}
