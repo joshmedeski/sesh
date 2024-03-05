@@ -16,7 +16,7 @@
   </a>
 </p>
 
-**BETA:** This project is in active development. Please check out the issues and contribute if you're interested in helping out.
+Sesh is a CLI that helps you create and manage tmux sessions quickly and easily using zoxide.
 
 ## How to install
 
