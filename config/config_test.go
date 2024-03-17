@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -26,8 +27,9 @@ func prepareSeshConfig(t *testing.T) string {
 		t.Fatal(err)
 	}
 	tempConfigPath := path.Join(userConfigPath, "sesh", "sesh.toml")
+	secondTempConfigPath := path.Join(userConfigPath, "sesh", "sesh2.toml")
 
-	err = os.WriteFile(tempConfigPath, []byte(`
+	err = os.WriteFile(tempConfigPath, []byte(fmt.Sprintf(`
 		default_startup_script = "default"
 
 		[[startup_scripts]]
@@ -37,7 +39,20 @@ func prepareSeshConfig(t *testing.T) string {
 		[[startup_scripts]]
 		session_path = "~/dev/second_session"
 		script_path = "~/.config/sesh/scripts/second_script"
-		`), fs.ModePerm)
+
+		[[included_paths]]
+		path = "%s"
+		`, secondTempConfigPath),
+	), fs.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.WriteFile(secondTempConfigPath, []byte(`
+		[[startup_scripts]]
+		session_path = "~/dev/third_session"
+		script_path = "~/.config/sesh/scripts/third_script"
+	`), fs.ModePerm)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,6 +61,8 @@ func prepareSeshConfig(t *testing.T) string {
 }
 
 func TestParseConfigFile(t *testing.T) {
+	t.Parallel()
+
 	userConfigPath := prepareSeshConfig(t)
 	defer os.Remove(userConfigPath)
 
@@ -56,8 +73,16 @@ func TestParseConfigFile(t *testing.T) {
 		if config.DefaultStartupScript != "default" {
 			t.Errorf("Expected %s, got %s", "default", config.DefaultStartupScript)
 		}
-		if len(config.StartupScripts) != 2 {
-			t.Errorf("Expected %d, got %d", 2, len(config.StartupScripts))
+
+		if len(config.IncludedPaths) != 1 {
+			t.Errorf("Expected %d, got %d", 1, len(config.IncludedPaths))
+		}
+		if config.IncludedPaths[0].Path != path.Join(userConfigPath, "sesh", "sesh2.toml") {
+			t.Errorf("Expected %s, got %s", path.Join(userConfigPath, "sesh", "sesh2.toml"), config.IncludedPaths[0].Path)
+		}
+
+		if len(config.StartupScripts) != 3 {
+			t.Errorf("Expected %d, got %d", 3, len(config.StartupScripts))
 		}
 		if config.StartupScripts[0].SessionPath != "~/dev/first_session" {
 			t.Errorf("Expected %s, got %s", "~/dev/first_session", config.StartupScripts[0].SessionPath)
@@ -70,6 +95,12 @@ func TestParseConfigFile(t *testing.T) {
 		}
 		if config.StartupScripts[1].ScriptPath != "~/.config/sesh/scripts/second_script" {
 			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/second_script", config.StartupScripts[1].ScriptPath)
+		}
+		if config.StartupScripts[2].SessionPath != "~/dev/third_session" {
+			t.Errorf("Expected %s, got %s", "~/dev/third_session", config.StartupScripts[2].SessionPath)
+		}
+		if config.StartupScripts[2].ScriptPath != "~/.config/sesh/scripts/third_script" {
+			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/third_script", config.StartupScripts[2].ScriptPath)
 		}
 	})
 }

@@ -15,9 +15,13 @@ type (
 		SessionPath string `toml:"session_path"`
 		ScriptPath  string `toml:"script_path"`
 	}
+	IncludePath struct {
+		Path string `toml:"path"`
+	}
 	Config struct {
-		StartupScripts       []Script `toml:"startup_scripts"`
-		DefaultStartupScript string   `toml:"default_startup_script"`
+		IncludedPaths        []IncludePath `toml:"included_paths"`
+		StartupScripts       []Script      `toml:"startup_scripts"`
+		DefaultStartupScript string        `toml:"default_startup_script"`
 	}
 )
 
@@ -43,6 +47,29 @@ func (d *DefaultConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 	}
 }
 
+func parseConfigFromFile(configPath string, config *Config) error {
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil
+	}
+	err = toml.Unmarshal(data, config)
+	if err != nil {
+		return fmt.Errorf("Error parsing config file: %s", err)
+	}
+
+	if len(config.IncludedPaths) > 0 {
+		for _, includePath := range config.IncludedPaths {
+			includeConfig := Config{}
+			if err := parseConfigFromFile(includePath.Path, &includeConfig); err != nil {
+				return fmt.Errorf("Error parsing included config file: %s", err)
+			}
+			config.StartupScripts = append(config.StartupScripts, includeConfig.StartupScripts...)
+		}
+	}
+
+	return nil
+}
+
 func ParseConfigFile(fetcher ConfigDirectoryFetcher) Config {
 	config := Config{}
 	configDir, err := fetcher.GetUserConfigDir()
@@ -54,17 +81,12 @@ func ParseConfigFile(fetcher ConfigDirectoryFetcher) Config {
 		return config
 	}
 	configPath := filepath.Join(configDir, "sesh", "sesh.toml")
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return config
-	}
-	err = toml.Unmarshal(data, &config)
-	if err != nil {
+
+	if err := parseConfigFromFile(configPath, &config); err != nil {
 		fmt.Printf(
 			"Error parsing config file: %s\nUsing default config instead",
 			err,
 		)
-		return config
 	}
 	return config
 }
