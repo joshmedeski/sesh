@@ -62,3 +62,16 @@ brews:
     dependencies:
       - tmux
       - zoxide
+
+nfpms:
+  - id: default
+    builds:
+      - default
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
+    package_name: "{{ .ProjectName }}"
+    vendor: Josh Medeski
+    homepage: "https://github.com/joshmedeski/sesh"
+    maintainer: Josh Medeski <josh.medeski@gmail.com>
+    description: "Smart terminal session manager"
+    formats:
+      - deb
