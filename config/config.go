@@ -21,7 +21,15 @@ type (
 	}
 )
 
-func getUserConfigDir() (string, error) {
+type ConfigDirectoryFetcher interface {
+	GetUserConfigDir() (string, error)
+}
+
+type DefaultConfigDirectoryFetcher struct{}
+
+var _ ConfigDirectoryFetcher = (*DefaultConfigDirectoryFetcher)(nil)
+
+func (d *DefaultConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
 		// typically ~/Library/Application Support, but we want to use ~/.config
@@ -35,9 +43,9 @@ func getUserConfigDir() (string, error) {
 	}
 }
 
-func ParseConfigFile() Config {
+func ParseConfigFile(fetcher ConfigDirectoryFetcher) Config {
 	config := Config{}
-	configDir, err := getUserConfigDir()
+	configDir, err := fetcher.GetUserConfigDir()
 	if err != nil {
 		fmt.Printf(
 			"Error determining the user config directory: %s\nUsing default config instead",

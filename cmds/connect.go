@@ -32,7 +32,7 @@ func Connect() *cli.Command {
 			if session == "" {
 				return cli.Exit("No session provided", 0)
 			}
-			config := config.ParseConfigFile()
+			config := config.ParseConfigFile(&config.DefaultConfigDirectoryFetcher{})
 			return connect.Connect(session, alwaysSwitch, command, &config)
 		},
 	}

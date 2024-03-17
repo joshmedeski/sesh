@@ -33,7 +33,7 @@ func Clone() *cli.Command {
 			if err != nil {
 				return cli.Exit(err, 1)
 			}
-			config := config.ParseConfigFile()
+			config := config.ParseConfigFile(&config.DefaultConfigDirectoryFetcher{})
 			return connect.Connect(c.Path, false, "", &config)
 		},
 	}
