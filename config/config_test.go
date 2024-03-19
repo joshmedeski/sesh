@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/joshmedeski/sesh/config"
@@ -103,4 +104,84 @@ func TestParseConfigFile(t *testing.T) {
 			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/third_script", config.StartupScripts[2].ScriptPath)
 		}
 	})
+}
+
+func prepareSeshConfigForBench(b *testing.B, extended_configs_count int) string {
+	userConfigPath, err := os.MkdirTemp(os.TempDir(), "config")
+	if err != nil {
+		b.Fatal(err)
+	}
+	if err := os.MkdirAll(path.Join(userConfigPath, "sesh"), fs.ModePerm); err != nil {
+		b.Fatal(err)
+	}
+	tempConfigPath := path.Join(userConfigPath, "sesh", "sesh.toml")
+
+	extendedConfigsStringBuilder := strings.Builder{}
+	extendedConfigs := make([]string, extended_configs_count)
+	for i := 0; i < extended_configs_count; i++ {
+		configPath := path.Join(userConfigPath, "sesh", fmt.Sprintf("sesh%d.toml", i))
+		extendedConfigs[i] = configPath
+		extendedConfigsStringBuilder.WriteString(fmt.Sprintf(`
+		[[extended_configs]]
+		path = "%s"
+		`, configPath))
+	}
+
+	err = os.WriteFile(tempConfigPath, []byte(fmt.Sprintf(`
+		default_startup_script = "default"
+
+		[[startup_scripts]]
+		session_path = "~/dev/first_session"
+		script_path = "~/.config/sesh/scripts/first_script"
+
+		[[startup_scripts]]
+		session_path = "~/dev/second_session"
+		script_path = "~/.config/sesh/scripts/second_script"
+
+		%s
+		`, extendedConfigsStringBuilder.String()),
+	), fs.ModePerm)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	for i, configPath := range extendedConfigs {
+		err = os.WriteFile(configPath, []byte(fmt.Sprintf(`
+		[[startup_scripts]]
+		session_path = "~/dev/session_%d"
+		script_path = "~/.config/sesh/scripts/script"
+		`, i),
+		), fs.ModePerm)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	return userConfigPath
+}
+
+func BenchmarkParseConfigFile(b *testing.B) {
+	var table = []struct {
+		input int
+	}{
+		{input: 1},
+		{input: 10},
+		{input: 100},
+		{input: 1000},
+		{input: 10000},
+	}
+
+	for _, test := range table {
+
+		b.Run(fmt.Sprintf("ParseConfigFile_%d", test.input), func(b *testing.B) {
+			userConfigPath := prepareSeshConfigForBench(b, test.input)
+			defer os.Remove(userConfigPath)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				fetcher := &mockConfigDirectoryFetcher{dir: userConfigPath}
+				config.ParseConfigFile(fetcher)
+			}
+		})
+	}
 }
