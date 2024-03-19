@@ -40,7 +40,7 @@ func prepareSeshConfig(t *testing.T) string {
 		session_path = "~/dev/second_session"
 		script_path = "~/.config/sesh/scripts/second_script"
 
-		[[included_paths]]
+		[[extended_configs]]
 		path = "%s"
 		`, secondTempConfigPath),
 	), fs.ModePerm)
@@ -74,11 +74,11 @@ func TestParseConfigFile(t *testing.T) {
 			t.Errorf("Expected %s, got %s", "default", config.DefaultStartupScript)
 		}
 
-		if len(config.IncludedPaths) != 1 {
-			t.Errorf("Expected %d, got %d", 1, len(config.IncludedPaths))
+		if len(config.ExtendedConfigs) != 1 {
+			t.Errorf("Expected %d, got %d", 1, len(config.ExtendedConfigs))
 		}
-		if config.IncludedPaths[0].Path != path.Join(userConfigPath, "sesh", "sesh2.toml") {
-			t.Errorf("Expected %s, got %s", path.Join(userConfigPath, "sesh", "sesh2.toml"), config.IncludedPaths[0].Path)
+		if config.ExtendedConfigs[0].Path != path.Join(userConfigPath, "sesh", "sesh2.toml") {
+			t.Errorf("Expected %s, got %s", path.Join(userConfigPath, "sesh", "sesh2.toml"), config.ExtendedConfigs[0].Path)
 		}
 
 		if len(config.StartupScripts) != 3 {

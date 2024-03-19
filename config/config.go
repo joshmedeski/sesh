@@ -15,13 +15,13 @@ type (
 		SessionPath string `toml:"session_path"`
 		ScriptPath  string `toml:"script_path"`
 	}
-	IncludePath struct {
+	ExtendedConfig struct {
 		Path string `toml:"path"`
 	}
 	Config struct {
-		IncludedPaths        []IncludePath `toml:"included_paths"`
-		StartupScripts       []Script      `toml:"startup_scripts"`
-		DefaultStartupScript string        `toml:"default_startup_script"`
+		ExtendedConfigs      []ExtendedConfig `toml:"extended_configs"`
+		StartupScripts       []Script         `toml:"startup_scripts"`
+		DefaultStartupScript string           `toml:"default_startup_script"`
 	}
 )
 
@@ -57,13 +57,13 @@ func parseConfigFromFile(configPath string, config *Config) error {
 		return fmt.Errorf("Error parsing config file: %s", err)
 	}
 
-	if len(config.IncludedPaths) > 0 {
-		for _, includePath := range config.IncludedPaths {
-			includeConfig := Config{}
-			if err := parseConfigFromFile(includePath.Path, &includeConfig); err != nil {
-				return fmt.Errorf("Error parsing included config file: %s", err)
+	if len(config.ExtendedConfigs) > 0 {
+		for _, item := range config.ExtendedConfigs {
+			extendedConfig := Config{}
+			if err := parseConfigFromFile(item.Path, &extendedConfig); err != nil {
+				return fmt.Errorf("Error parsing extended config file: %s", err)
 			}
-			config.StartupScripts = append(config.StartupScripts, includeConfig.StartupScripts...)
+			config.StartupScripts = append(config.StartupScripts, extendedConfig.StartupScripts...)
 		}
 	}
 
