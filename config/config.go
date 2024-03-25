@@ -50,7 +50,7 @@ func (d *DefaultConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 func parseConfigFromFile(configPath string, config *Config) error {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil
+		return fmt.Errorf("Error reading config file: %s", err)
 	}
 	err = toml.Unmarshal(data, config)
 	if err != nil {
