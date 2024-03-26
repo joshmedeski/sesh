@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/joshmedeski/sesh/dir"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -15,13 +16,25 @@ type (
 		SessionPath string `toml:"session_path"`
 		ScriptPath  string `toml:"script_path"`
 	}
+	ExtendedConfig struct {
+		Path string `toml:"path"`
+	}
 	Config struct {
-		StartupScripts       []Script `toml:"startup_scripts"`
-		DefaultStartupScript string   `toml:"default_startup_script"`
+		ExtendedConfigs      []ExtendedConfig `toml:"extended_configs"`
+		StartupScripts       []Script         `toml:"startup_scripts"`
+		DefaultStartupScript string           `toml:"default_startup_script"`
 	}
 )
 
-func getUserConfigDir() (string, error) {
+type ConfigDirectoryFetcher interface {
+	GetUserConfigDir() (string, error)
+}
+
+type DefaultConfigDirectoryFetcher struct{}
+
+var _ ConfigDirectoryFetcher = (*DefaultConfigDirectoryFetcher)(nil)
+
+func (d *DefaultConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
 		// typically ~/Library/Application Support, but we want to use ~/.config
@@ -35,9 +48,33 @@ func getUserConfigDir() (string, error) {
 	}
 }
 
-func ParseConfigFile() Config {
+func parseConfigFromFile(configPath string, config *Config) error {
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("Error reading config file: %s", err)
+	}
+	err = toml.Unmarshal(data, config)
+	if err != nil {
+		return fmt.Errorf("Error parsing config file: %s", err)
+	}
+
+	if len(config.ExtendedConfigs) > 0 {
+		for _, item := range config.ExtendedConfigs {
+			extendedConfig := Config{}
+			extendedConfigPath := dir.FullPath(item.Path)
+			if err := parseConfigFromFile(extendedConfigPath, &extendedConfig); err != nil {
+				return fmt.Errorf("Error parsing extended config file: %s", err)
+			}
+			config.StartupScripts = append(config.StartupScripts, extendedConfig.StartupScripts...)
+		}
+	}
+
+	return nil
+}
+
+func ParseConfigFile(fetcher ConfigDirectoryFetcher) Config {
 	config := Config{}
-	configDir, err := getUserConfigDir()
+	configDir, err := fetcher.GetUserConfigDir()
 	if err != nil {
 		fmt.Printf(
 			"Error determining the user config directory: %s\nUsing default config instead",
@@ -46,17 +83,12 @@ func ParseConfigFile() Config {
 		return config
 	}
 	configPath := filepath.Join(configDir, "sesh", "sesh.toml")
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return config
-	}
-	err = toml.Unmarshal(data, &config)
-	if err != nil {
+
+	if err := parseConfigFromFile(configPath, &config); err != nil {
 		fmt.Printf(
 			"Error parsing config file: %s\nUsing default config instead",
 			err,
 		)
-		return config
 	}
 	return config
 }
