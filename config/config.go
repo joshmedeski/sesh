@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/joshmedeski/sesh/dir"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -60,7 +61,8 @@ func parseConfigFromFile(configPath string, config *Config) error {
 	if len(config.ExtendedConfigs) > 0 {
 		for _, item := range config.ExtendedConfigs {
 			extendedConfig := Config{}
-			if err := parseConfigFromFile(item.Path, &extendedConfig); err != nil {
+			extendedConfigPath := dir.FullPath(item.Path)
+			if err := parseConfigFromFile(extendedConfigPath, &extendedConfig); err != nil {
 				return fmt.Errorf("Error parsing extended config file: %s", err)
 			}
 			config.StartupScripts = append(config.StartupScripts, extendedConfig.StartupScripts...)
