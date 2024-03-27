@@ -1,6 +1,8 @@
 package cmds
 
 import (
+	"strings"
+
 	cli "github.com/urfave/cli/v2"
 
 	"github.com/joshmedeski/sesh/config"
@@ -26,7 +28,7 @@ func Connect() *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			session := cCtx.Args().First()
+			session := strings.Trim(cCtx.Args().First(), "\"'")
 			alwaysSwitch := cCtx.Bool("switch")
 			command := cCtx.String("command")
 			if session == "" {
