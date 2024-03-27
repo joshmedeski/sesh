@@ -5,10 +5,31 @@ import (
 	"log"
 
 	"github.com/joshmedeski/sesh/config"
+	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/name"
 )
 
+func isConfigSession(choice string) *Session {
+	config := config.ParseConfigFile(&config.DefaultConfigDirectoryFetcher{})
+	for _, sessionConfig := range config.SessionConfigs {
+		if sessionConfig.Name == choice {
+			return &Session{
+				Src:  "config",
+				Name: sessionConfig.Name,
+				Path: dir.AlternatePath(sessionConfig.Path),
+			}
+		}
+	}
+	return nil
+}
+
 func Determine(choice string, config *config.Config) (s Session, err error) {
+	configSession := isConfigSession(choice)
+	if configSession != nil {
+		fmt.Println("configSession.Path", configSession.Path)
+		return *configSession, nil
+	}
+
 	path, err := DeterminePath(choice)
 	if err != nil {
 		return s, fmt.Errorf(
