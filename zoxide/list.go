@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/joshmedeski/sesh/convert"
-	"github.com/joshmedeski/sesh/tmux"
 )
 
 type ZoxideResult struct {
@@ -15,7 +14,7 @@ type ZoxideResult struct {
 	Score float64
 }
 
-func List(tmuxSessions []*tmux.TmuxSession) ([]*ZoxideResult, error) {
+func List() ([]*ZoxideResult, error) {
 	output, err := zoxideCmd([]string{"query", "-ls"})
 	if err != nil {
 		return []*ZoxideResult{}, nil
@@ -28,11 +27,6 @@ func List(tmuxSessions []*tmux.TmuxSession) ([]*ZoxideResult, error) {
 	}
 
 	results := make([]*ZoxideResult, 0, listLen)
-	tmuxSessionPaths := make(map[string]struct{})
-	for _, session := range tmuxSessions {
-		tmuxSessionPaths[session.Path] = struct{}{}
-	}
-
 	for _, line := range list {
 		trimmed := strings.Trim(line, "[]")
 		trimmed = strings.Trim(trimmed, " ")
@@ -42,13 +36,11 @@ func List(tmuxSessions []*tmux.TmuxSession) ([]*ZoxideResult, error) {
 			os.Exit(1)
 		}
 		path := fields[1]
-		if _, exists := tmuxSessionPaths[path]; !exists {
-			results = append(results, &ZoxideResult{
-				Score: convert.StringToFloat(fields[0]),
-				Name:  convert.PathToPretty(path),
-				Path:  path,
-			})
-		}
+		results = append(results, &ZoxideResult{
+			Score: convert.StringToFloat(fields[0]),
+			Name:  convert.PathToPretty(path),
+			Path:  path,
+		})
 	}
 
 	return results, nil

@@ -10,6 +10,7 @@ import (
 var (
 	ZoxideIcon string = ""
 	TmuxIcon   string = ""
+	ConfigIcon string = ""
 )
 
 func ansiString(code int, s string) string {
@@ -22,6 +23,10 @@ func PrintWithIcon(s session.Session) string {
 	if s.Src == "tmux" {
 		icon = TmuxIcon
 		colorCode = 34 // blue
+	}
+	if s.Src == "config" {
+		icon = ConfigIcon
+		colorCode = 90 // gray
 	}
 	return fmt.Sprintf("%s %s", ansiString(colorCode, icon), s.Name)
 }

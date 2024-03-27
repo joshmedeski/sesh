@@ -6,6 +6,7 @@ import (
 
 	cli "github.com/urfave/cli/v2"
 
+	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/icons"
 	"github.com/joshmedeski/sesh/json"
 	"github.com/joshmedeski/sesh/session"
@@ -18,6 +19,11 @@ func List() *cli.Command {
 		Usage:                  "List sessions",
 		UseShortOptionHandling: true,
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "config",
+				Aliases: []string{"c"},
+				Usage:   "show configured sessions",
+			},
 			&cli.BoolFlag{
 				Name:    "json",
 				Aliases: []string{"j"},
@@ -48,10 +54,12 @@ func List() *cli.Command {
 			o := session.Options{
 				HideAttached: cCtx.Bool("hide-attached"),
 			}
+			config := config.ParseConfigFile(&config.DefaultConfigDirectoryFetcher{})
 			sessions := session.List(o, session.Srcs{
+				Config: cCtx.Bool("config"),
 				Tmux:   cCtx.Bool("tmux"),
 				Zoxide: cCtx.Bool("zoxide"),
-			})
+			}, &config)
 
 			useIcons := cCtx.Bool("icons")
 			result := make([]string, len(sessions))
