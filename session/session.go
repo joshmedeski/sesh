@@ -10,6 +10,7 @@ type Session struct {
 }
 
 type Srcs struct {
+	Config bool
 	Tmux   bool
 	Zoxide bool
 }

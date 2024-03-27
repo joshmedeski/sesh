@@ -12,14 +12,33 @@ import (
 )
 
 type (
+	DefaultSessionConfig struct {
+		StartupScript  string `toml:"startup_script"`
+		StartupCommand string `toml:"startup_command"`
+		Tmuxp          string `toml:"tmuxp"`
+		Tmuxinator     string `toml:"tmuxinator"`
+	}
+
+	SessionConfig struct {
+		Name string `toml:"name"`
+		Path string `toml:"path"`
+		DefaultSessionConfig
+	}
+
 	Script struct {
 		SessionPath string `toml:"session_path"`
 		ScriptPath  string `toml:"script_path"`
 	}
 	Config struct {
-		ImportPaths          []string `toml:"import"`
-		StartupScripts       []Script `toml:"startup_scripts"`
-		DefaultStartupScript string   `toml:"default_startup_script"`
+		ImportPaths []string `toml:"import"`
+		// TODO: drop
+		// Deprecated: DefaultStartupScript should not be used.
+		DefaultStartupScript string               `toml:"default_startup_script"`
+		DefaultSession       DefaultSessionConfig `toml:"default_session"`
+		SessionConfigs       []SessionConfig      `toml:"session"`
+		// TODO: drop
+		// Deprecated: StartupScripts should not be used.
+		StartupScripts []Script `toml:"startup_scripts"`
 	}
 )
 
@@ -48,11 +67,11 @@ func (d *DefaultConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 func parseConfigFromFile(configPath string, config *Config) error {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return fmt.Errorf("Error reading config file: %s", err)
+		return fmt.Errorf("error reading config file: %s", err)
 	}
 	err = toml.Unmarshal(data, config)
 	if err != nil {
-		return fmt.Errorf("Error parsing config file: %s", err)
+		return fmt.Errorf("error parsing config file: %s", err)
 	}
 
 	if len(config.ImportPaths) > 0 {
@@ -69,6 +88,7 @@ func parseConfigFromFile(configPath string, config *Config) error {
 	return nil
 }
 
+// TODO: add error handling (return error)
 func ParseConfigFile(fetcher ConfigDirectoryFetcher) Config {
 	config := Config{}
 	configDir, err := fetcher.GetUserConfigDir()
