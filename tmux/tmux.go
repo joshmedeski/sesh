@@ -132,10 +132,11 @@ func execStartupScript(name string, scriptPath string) error {
 }
 
 func getStartupScript(sessionPath string, config *config.Config) string {
-	for _, script := range config.StartupScripts {
-		match, _ := filepath.Match(dir.FullPath(script.SessionPath), sessionPath)
+	for _, sessionConfig := range config.SessionConfigs {
+		scriptFullPath := dir.FullPath(sessionConfig.Path)
+		match, _ := filepath.Match(scriptFullPath, sessionPath)
 		if match {
-			return dir.FullPath(script.ScriptPath)
+			return sessionConfig.StartupScript
 		}
 	}
 	return ""
@@ -160,8 +161,8 @@ func Connect(
 		}
 		if command != "" {
 			runPersistentCommand(s.Name, command)
-		} else if scriptPath := getStartupScript(sessionPath, config); scriptPath != "" {
-			err := execStartupScript(s.Name, scriptPath)
+		} else if startupScript := getStartupScript(sessionPath, config); startupScript != "" {
+			err := execStartupScript(s.Name, startupScript)
 			if err != nil {
 				log.Fatal(err)
 			}
