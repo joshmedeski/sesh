@@ -25,20 +25,10 @@ type (
 		DefaultSessionConfig
 	}
 
-	Script struct {
-		SessionPath string `toml:"session_path"`
-		ScriptPath  string `toml:"script_path"`
-	}
 	Config struct {
-		ImportPaths []string `toml:"import"`
-		// TODO: drop
-		// Deprecated: DefaultStartupScript should not be used.
-		DefaultStartupScript string               `toml:"default_startup_script"`
-		DefaultSession       DefaultSessionConfig `toml:"default_session"`
+		ImportPaths          []string             `toml:"import"`
+		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
 		SessionConfigs       []SessionConfig      `toml:"session"`
-		// TODO: drop
-		// Deprecated: StartupScripts should not be used.
-		StartupScripts []Script `toml:"startup_scripts"`
 	}
 )
 
@@ -65,26 +55,24 @@ func (d *DefaultConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 }
 
 func parseConfigFromFile(configPath string, config *Config) error {
-	data, err := os.ReadFile(configPath)
+	file, err := os.ReadFile(configPath)
 	if err != nil {
-		return fmt.Errorf("error reading config file: %s", err)
+		return fmt.Errorf("parseConfigFromFile - error reading config file (%s): %v", configPath, err)
 	}
-	err = toml.Unmarshal(data, config)
+	err = toml.Unmarshal(file, config)
 	if err != nil {
-		return fmt.Errorf("error parsing config file: %s", err)
+		return fmt.Errorf(": %s", err)
 	}
-
 	if len(config.ImportPaths) > 0 {
 		for _, path := range config.ImportPaths {
 			importConfig := Config{}
 			importConfigPath := dir.FullPath(path)
 			if err := parseConfigFromFile(importConfigPath, &importConfig); err != nil {
-				return fmt.Errorf("Error parsing import config file: %s", err)
+				return fmt.Errorf("parse config from import file failed: %s", err)
 			}
-			config.StartupScripts = append(config.StartupScripts, importConfig.StartupScripts...)
+			config.SessionConfigs = append(config.SessionConfigs, importConfig.SessionConfigs...)
 		}
 	}
-
 	return nil
 }
 
