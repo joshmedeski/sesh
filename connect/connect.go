@@ -17,7 +17,7 @@ func Connect(
 	command string,
 	config *config.Config,
 ) error {
-	if strings.HasPrefix(choice, icons.TmuxIcon) || strings.HasPrefix(choice, icons.ZoxideIcon) {
+	if strings.HasPrefix(choice, icons.TmuxIcon) || strings.HasPrefix(choice, icons.ZoxideIcon) || strings.HasPrefix(choice, icons.ConfigIcon) {
 		choice = choice[4:]
 	}
 
