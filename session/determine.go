@@ -26,7 +26,6 @@ func isConfigSession(choice string) *Session {
 func Determine(choice string, config *config.Config) (s Session, err error) {
 	configSession := isConfigSession(choice)
 	if configSession != nil {
-		fmt.Println("configSession.Path", configSession.Path)
 		return *configSession, nil
 	}
 
