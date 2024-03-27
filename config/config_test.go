@@ -31,6 +31,7 @@ func prepareSeshConfig(t *testing.T) string {
 	secondTempConfigPath := path.Join(userConfigPath, "sesh", "sesh2.toml")
 
 	err = os.WriteFile(tempConfigPath, []byte(fmt.Sprintf(`
+		import = ["%s"]
 		default_startup_script = "default"
 
 		[[startup_scripts]]
@@ -40,9 +41,6 @@ func prepareSeshConfig(t *testing.T) string {
 		[[startup_scripts]]
 		session_path = "~/dev/second_session"
 		script_path = "~/.config/sesh/scripts/second_script"
-
-		[[extended_configs]]
-		path = "%s"
 		`, secondTempConfigPath),
 	), fs.ModePerm)
 	if err != nil {
@@ -75,11 +73,11 @@ func TestParseConfigFile(t *testing.T) {
 			t.Errorf("Expected %s, got %s", "default", config.DefaultStartupScript)
 		}
 
-		if len(config.ExtendedConfigs) != 1 {
-			t.Errorf("Expected %d, got %d", 1, len(config.ExtendedConfigs))
+		if len(config.ImportPaths) != 1 {
+			t.Errorf("Expected %d, got %d", 1, len(config.ImportPaths))
 		}
-		if config.ExtendedConfigs[0].Path != path.Join(userConfigPath, "sesh", "sesh2.toml") {
-			t.Errorf("Expected %s, got %s", path.Join(userConfigPath, "sesh", "sesh2.toml"), config.ExtendedConfigs[0].Path)
+		if config.ImportPaths[0] != path.Join(userConfigPath, "sesh", "sesh2.toml") {
+			t.Errorf("Expected %s, got %s", path.Join(userConfigPath, "sesh", "sesh2.toml"), config.ImportPaths[0])
 		}
 
 		if len(config.StartupScripts) != 3 {
@@ -116,18 +114,18 @@ func prepareSeshConfigForBench(b *testing.B, extended_configs_count int) string 
 	}
 	tempConfigPath := path.Join(userConfigPath, "sesh", "sesh.toml")
 
-	extendedConfigsStringBuilder := strings.Builder{}
-	extendedConfigs := make([]string, extended_configs_count)
+	importPathsStringBuilder := strings.Builder{}
+	importPathsStringBuilder.WriteString("import = [")
+	importPaths := make([]string, extended_configs_count)
 	for i := 0; i < extended_configs_count; i++ {
 		configPath := path.Join(userConfigPath, "sesh", fmt.Sprintf("sesh%d.toml", i))
-		extendedConfigs[i] = configPath
-		extendedConfigsStringBuilder.WriteString(fmt.Sprintf(`
-		[[extended_configs]]
-		path = "%s"
-		`, configPath))
+		importPaths[i] = configPath
+		importPathsStringBuilder.WriteString(fmt.Sprintf(`"%s",`, configPath))
 	}
+	importPathsStringBuilder.WriteString("]")
 
 	err = os.WriteFile(tempConfigPath, []byte(fmt.Sprintf(`
+		%s
 		default_startup_script = "default"
 
 		[[startup_scripts]]
@@ -136,16 +134,14 @@ func prepareSeshConfigForBench(b *testing.B, extended_configs_count int) string 
 
 		[[startup_scripts]]
 		session_path = "~/dev/second_session"
-		script_path = "~/.config/sesh/scripts/second_script"
-
-		%s
-		`, extendedConfigsStringBuilder.String()),
+		script_path = "~/.config/sesh/scripts/second_script"	
+		`, importPathsStringBuilder.String()),
 	), fs.ModePerm)
 	if err != nil {
 		b.Fatal(err)
 	}
 
-	for i, configPath := range extendedConfigs {
+	for i, configPath := range importPaths {
 		err = os.WriteFile(configPath, []byte(fmt.Sprintf(`
 		[[startup_scripts]]
 		session_path = "~/dev/session_%d"
