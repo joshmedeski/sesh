@@ -65,7 +65,7 @@ func listConfigSessions(c *config.Config, existingSessions []Session) (sessions 
 	sessionMap := makeSessionsMap(existingSessions)
 	for _, sessionConfig := range c.SessionConfigs {
 		path := dir.AlternatePath(sessionConfig.Path)
-		if !isInSessionMap(sessionMap, path) {
+		if !isInSessionMap(sessionMap, path) && sessionConfig.Name != "" {
 			configSessions = append(configSessions, Session{
 				Src:  "config",
 				Name: sessionConfig.Name,
