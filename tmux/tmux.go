@@ -3,7 +3,6 @@ package tmux
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -139,8 +138,17 @@ func execStartupCommand(name string, command string) error {
 	return nil
 }
 
+func execTmuxp(name string, command string) error {
+	err := runPersistentCommand(name, command)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func getStartupScript(sessionPath string, config *config.Config) string {
 	for _, sessionConfig := range config.SessionConfigs {
+		// TODO: get working with /* again
 		scriptFullPath := dir.FullPath(sessionConfig.Path)
 		match, _ := filepath.Match(scriptFullPath, sessionPath)
 		if match {
@@ -161,47 +169,13 @@ func getStartupCommand(sessionPath string, config *config.Config) string {
 	return ""
 }
 
-func Connect(
-	s TmuxSession,
-	alwaysSwitch bool,
-	command string,
-	sessionPath string,
-	config *config.Config,
-) error {
-	session, _ := FindSession(s.Name)
-	if session == nil {
-		_, err := NewSession(s)
-		if err != nil {
-			return fmt.Errorf(
-				"unable to connect to tmux session %q: %w",
-				s.Name,
-				err,
-			)
-		}
-		if command != "" {
-			runPersistentCommand(s.Name, command)
-		} else if startupScript := getStartupScript(sessionPath, config); startupScript != "" {
-			err := execStartupScript(s.Name, startupScript)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else if startupCommand := getStartupCommand(sessionPath, config); startupCommand != "" {
-			err := execStartupCommand(s.Name, startupCommand)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else if config.DefaultStartupScript != "" {
-			err := execStartupScript(s.Name, config.DefaultStartupScript)
-			if err != nil {
-				log.Fatal(err)
-			}
+func getTmuxp(sessionPath string, config *config.Config) string {
+	for _, sessionConfig := range config.SessionConfigs {
+		scriptFullPath := dir.FullPath(sessionConfig.Path)
+		match, _ := filepath.Match(scriptFullPath, sessionPath)
+		if match {
+			return sessionConfig.Tmuxp
 		}
 	}
-	isAttached := isAttached()
-	if isAttached || alwaysSwitch {
-		switchSession(s.Name)
-	} else {
-		attachSession(s.Name)
-	}
-	return nil
+	return ""
 }
