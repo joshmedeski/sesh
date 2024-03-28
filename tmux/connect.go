@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/joshmedeski/sesh/config"
-	"github.com/joshmedeski/sesh/tmuxp"
 )
 
 func Connect(
@@ -18,43 +17,35 @@ func Connect(
 	session, _ := FindSession(s.Name)
 	// TODO: load tmup if exists
 	if session == nil {
-		if tmuxpWorkspacePath := getTmuxp(sessionPath, config); tmuxpWorkspacePath != "" {
-			err := tmuxp.Load(s.Name, tmuxpWorkspacePath)
+		_, err := NewSession(s)
+		if err != nil {
+			return fmt.Errorf(
+				"unable to connect to tmux session %q: %w",
+				s.Name,
+				err,
+			)
+		}
+		if command != "" {
+			runPersistentCommand(s.Name, command)
+		} else if startupScript := getStartupScript(sessionPath, config); startupScript != "" {
+			err := execStartupScript(s.Name, startupScript)
 			if err != nil {
-				fmt.Println("tmuxp.Load error", err)
 				log.Fatal(err)
 			}
-		} else {
-			_, err := NewSession(s)
+		} else if startupCommand := getStartupCommand(sessionPath, config); startupCommand != "" {
+			err := execStartupCommand(s.Name, startupCommand)
 			if err != nil {
-				return fmt.Errorf(
-					"unable to connect to tmux session %q: %w",
-					s.Name,
-					err,
-				)
+				log.Fatal(err)
 			}
-			if command != "" {
-				runPersistentCommand(s.Name, command)
-			} else if startupScript := getStartupScript(sessionPath, config); startupScript != "" {
-				err := execStartupScript(s.Name, startupScript)
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else if startupCommand := getStartupCommand(sessionPath, config); startupCommand != "" {
-				err := execStartupCommand(s.Name, startupCommand)
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else if config.DefaultSessionConfig.StartupCommand != "" {
-				err := execStartupCommand(s.Name, config.DefaultSessionConfig.StartupCommand)
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else if config.DefaultSessionConfig.StartupScript != "" {
-				err := execStartupScript(s.Name, config.DefaultSessionConfig.StartupScript)
-				if err != nil {
-					log.Fatal(err)
-				}
+		} else if config.DefaultSessionConfig.StartupCommand != "" {
+			err := execStartupCommand(s.Name, config.DefaultSessionConfig.StartupCommand)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else if config.DefaultSessionConfig.StartupScript != "" {
+			err := execStartupScript(s.Name, config.DefaultSessionConfig.StartupScript)
+			if err != nil {
+				log.Fatal(err)
 			}
 		}
 	}
