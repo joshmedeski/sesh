@@ -111,8 +111,7 @@ set -g detach-on-destroy off  # don't exit from tmux when closing a session
 You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/sesh` or `$HOME/.config/sesh` directory.
 
 ```sh
-mkdir -p ~/.config/sesh
-touch sesh.toml
+mkdir -p ~/.config/sesh && touch ~/.config/sesh/sesh.toml
 ```
 
 ### Default Session
