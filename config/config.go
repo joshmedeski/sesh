@@ -81,19 +81,9 @@ func ParseConfigFile(fetcher ConfigDirectoryFetcher) Config {
 	config := Config{}
 	configDir, err := fetcher.GetUserConfigDir()
 	if err != nil {
-		fmt.Printf(
-			"Error determining the user config directory: %s\nUsing default config instead",
-			err,
-		)
 		return config
 	}
 	configPath := filepath.Join(configDir, "sesh", "sesh.toml")
-
-	if err := parseConfigFromFile(configPath, &config); err != nil {
-		fmt.Printf(
-			"Error parsing config file: %s\nUsing default config instead",
-			err,
-		)
-	}
+	parseConfigFromFile(configPath, &config)
 	return config
 }
