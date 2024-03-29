@@ -13,7 +13,7 @@ func AlternatePath(s string) (altPath string) {
 	}
 
 	if filepath.IsAbs(s) {
-		return ""
+		return s
 	}
 
 	if strings.HasPrefix(s, "~/") {
