@@ -7,6 +7,11 @@ import (
 )
 
 func AlternatePath(s string) (altPath string) {
+	if s == "~/" || s == "~" {
+		homeDir, _ := os.UserHomeDir()
+		altPath = homeDir
+	}
+
 	if filepath.IsAbs(s) {
 		return ""
 	}
