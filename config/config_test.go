@@ -32,15 +32,16 @@ func prepareSeshConfig(t *testing.T) string {
 
 	err = os.WriteFile(tempConfigPath, []byte(fmt.Sprintf(`
 		import = ["%s"]
-		default_startup_script = "default"
+    [default_session]
+		startup_script = "default"
 
-		[[startup_scripts]]
-		session_path = "~/dev/first_session"
-		script_path = "~/.config/sesh/scripts/first_script"
+		[[session]]
+		path = "~/dev/first_session"
+		startup_script = "~/.config/sesh/scripts/first_script"
 
-		[[startup_scripts]]
-		session_path = "~/dev/second_session"
-		script_path = "~/.config/sesh/scripts/second_script"
+		[[session]]
+		path = "~/dev/second_session"
+		startup_script = "~/.config/sesh/scripts/second_script"
 		`, secondTempConfigPath),
 	), fs.ModePerm)
 	if err != nil {
@@ -48,9 +49,9 @@ func prepareSeshConfig(t *testing.T) string {
 	}
 
 	err = os.WriteFile(secondTempConfigPath, []byte(`
-		[[startup_scripts]]
-		session_path = "~/dev/third_session"
-		script_path = "~/.config/sesh/scripts/third_script"
+		[[session]]
+		path = "~/dev/third_session"
+		startup_script = "~/.config/sesh/scripts/third_script"
 	`), fs.ModePerm)
 	if err != nil {
 		t.Fatal(err)
@@ -69,8 +70,8 @@ func TestParseConfigFile(t *testing.T) {
 		fetcher := &mockConfigDirectoryFetcher{dir: userConfigPath}
 		config := config.ParseConfigFile(fetcher)
 
-		if config.DefaultStartupScript != "default" {
-			t.Errorf("Expected %s, got %s", "default", config.DefaultStartupScript)
+		if config.DefaultSessionConfig.StartupScript != "default" {
+			t.Errorf("Expected %s, got %s", "default", config.DefaultSessionConfig.StartupScript)
 		}
 
 		if len(config.ImportPaths) != 1 {
@@ -80,26 +81,26 @@ func TestParseConfigFile(t *testing.T) {
 			t.Errorf("Expected %s, got %s", path.Join(userConfigPath, "sesh", "sesh2.toml"), config.ImportPaths[0])
 		}
 
-		if len(config.StartupScripts) != 3 {
-			t.Errorf("Expected %d, got %d", 3, len(config.StartupScripts))
+		if len(config.SessionConfigs) != 3 {
+			t.Errorf("Expected %d, got %d", 3, len(config.SessionConfigs))
 		}
-		if config.StartupScripts[0].SessionPath != "~/dev/first_session" {
-			t.Errorf("Expected %s, got %s", "~/dev/first_session", config.StartupScripts[0].SessionPath)
+		if config.SessionConfigs[0].Path != "~/dev/first_session" {
+			t.Errorf("Expected %s, got %s", "~/dev/first_session", config.SessionConfigs[0].Path)
 		}
-		if config.StartupScripts[0].ScriptPath != "~/.config/sesh/scripts/first_script" {
-			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/first_script", config.StartupScripts[0].ScriptPath)
+		if config.SessionConfigs[0].StartupScript != "~/.config/sesh/scripts/first_script" {
+			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/first_script", config.SessionConfigs[0].StartupScript)
 		}
-		if config.StartupScripts[1].SessionPath != "~/dev/second_session" {
-			t.Errorf("Expected %s, got %s", "~/dev/second_session", config.StartupScripts[1].SessionPath)
+		if config.SessionConfigs[1].Path != "~/dev/second_session" {
+			t.Errorf("Expected %s, got %s", "~/dev/second_session", config.SessionConfigs[1].Path)
 		}
-		if config.StartupScripts[1].ScriptPath != "~/.config/sesh/scripts/second_script" {
-			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/second_script", config.StartupScripts[1].ScriptPath)
+		if config.SessionConfigs[1].StartupScript != "~/.config/sesh/scripts/second_script" {
+			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/second_script", config.SessionConfigs[1].StartupScript)
 		}
-		if config.StartupScripts[2].SessionPath != "~/dev/third_session" {
-			t.Errorf("Expected %s, got %s", "~/dev/third_session", config.StartupScripts[2].SessionPath)
+		if config.SessionConfigs[2].Path != "~/dev/third_session" {
+			t.Errorf("Expected %s, got %s", "~/dev/third_session", config.SessionConfigs[2].Path)
 		}
-		if config.StartupScripts[2].ScriptPath != "~/.config/sesh/scripts/third_script" {
-			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/third_script", config.StartupScripts[2].ScriptPath)
+		if config.SessionConfigs[2].StartupScript != "~/.config/sesh/scripts/third_script" {
+			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/third_script", config.SessionConfigs[2].StartupScript)
 		}
 	})
 }
@@ -158,7 +159,7 @@ func prepareSeshConfigForBench(b *testing.B, extended_configs_count int) string 
 
 func BenchmarkParseConfigFile(b *testing.B) {
 	b.Skip("Skipping benchmark because it will be failing on CI")
-	var table = []struct {
+	table := []struct {
 		input int
 	}{
 		{input: 1},
@@ -169,7 +170,6 @@ func BenchmarkParseConfigFile(b *testing.B) {
 	}
 
 	for _, test := range table {
-
 		b.Run(fmt.Sprintf("ParseConfigFile_%d", test.input), func(b *testing.B) {
 			userConfigPath := prepareSeshConfigForBench(b, test.input)
 			defer os.Remove(userConfigPath)
