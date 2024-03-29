@@ -38,6 +38,10 @@ go install github.com/joshmedeski/sesh@latest
 
 This will download and install the latest version of Sesh. Make sure that your Go environment is properly set up.
 
+### Nix
+
+See the [nix package directory](https://search.nixos.org/packages?channel=unstable&show=sesh&from=0&size=50&sort=relevance&type=packages&query=sesh) for instructions on how to install sesh through the nix platform.
+
 **Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
 
 ## Raycast Extension
@@ -77,7 +81,7 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 
 ```sh
 bind-key "T" run-shell "sesh connect \"$(
-	sesh list -tz | fzf-tmux -p 55%,60% \
+	sesh list | fzf-tmux -p 55%,60% \
 		--no-sort --border-label ' sesh ' --prompt '⚡  ' \
 		--header '  ^a all ^t tmux ^x zoxide ^d tmux kill ^f find' \
 		--bind 'tab:down,btab:up' \
@@ -111,38 +115,47 @@ mkdir -p ~/.config/sesh
 touch sesh.toml
 ```
 
-### Startup Scripts
+### Default Session
+
+The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
+
+```toml
+[default_session]
+startup_command = "nvim -c ':Telescope find_files'"
+```
+
+You can also use the `startup_script` property to run a script when connecting to a session.
+
+```toml
+[default_session]
+startup_script = "nvim -c ':Telescope find_files'"
+```
+
+**Note:** To learn how to write startup scripts, see the [startup script section](#startup-script).
+
+### Session Configuration
 
 A startup script is a script that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server.
 
 **Note:** If you use the `--command/-c` flag, then the startup script will not be run.
 
-The default startup will run on every project that doesn't have a specific startup script. You can configure the default startup script by setting the `default_startup_script` property in your `sesh.toml` file.
-
-```toml
-default_startup_script = "~/.config/sesh/scripts/default"
-```
-
 I like to use a script that opens nvim on session startup:
 
-```sh
-#!/usr/bin/env bash
-tmux send-keys "nvim" Enter
-```
-
-The set a specific startup script for a project, you can add a `startup_script` property to your `sesh.toml` file.
-
 ```toml
-[[startup_scripts]]
-session_path = "~/code/sesh"
-script_path = "~/.config/sesh/scripts/go"
+[[session]]
+name = "Downloads 📥"
+path = "~/Downloads"
+startup_command = "ls"
 
-[[startup_scripts]]
-session_path = "~/code/joshmedeski.com"
-script_path = "~/.config/sesh/scripts/node_dev"
+[[session]]
+name = "tmux config"
+path = "~/c/dotfiles/.config/tmux"
+startup_command = "nvim tmux.conf"
 ```
 
-The script can execute tmux commands to create panes, additional windows and trigger commands. Here is an example of a script (node_dev) that creates a pane for a dev server and opens a new pane with nvim:
+### Startup Script
+
+A startup script is a simple shell script that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server and open neovim in a split pane.
 
 ```sh
 #!/usr/bin/env bash
