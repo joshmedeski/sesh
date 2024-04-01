@@ -77,7 +77,7 @@ sesh connect $(sesh list | fzf)
 
 #### tmux + fzf
 
-In order to integrate with tmux, you can add a binding to your tmux config (`tmux.conf`). For example, the following will bind `ctrl-a T` to open a fzf prompt as a tmux popup (using `fzf-tmux`) and using different commands to list sessions (`sesh list -t`), zoxide directories (`sesh list -z`), and find directories (`fd...`).
+In order to integrate with tmux, you can add a binding to your tmux config (`tmux.conf`). For example, the following will bind `ctrl-a T` to open a fzf prompt as a tmux popup (using `fzf-tmux`) and using different commands to list active sessions (`sesh list -t`), configured sessions (`sesh list -c`), zoxide directories (`sesh list -z`), and find directories (`fd...`).
 
 ```sh
 bind-key "T" run-shell "sesh connect \"$(
@@ -87,7 +87,7 @@ bind-key "T" run-shell "sesh connect \"$(
 		--bind 'tab:down,btab:up' \
 		--bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
 		--bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
-		--bind 'ctrl-x:change-prompt(⚙️  )+reload(sesh list -g)' \
+		--bind 'ctrl-g:change-prompt(⚙️  )+reload(sesh list -c)' \
 		--bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
 		--bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
 		--bind 'ctrl-d:execute(tmux kill-session -t {})+change-prompt(⚡  )+reload(sesh list)'
@@ -151,6 +151,14 @@ startup_command = "ls"
 name = "tmux config"
 path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
+```
+
+### Listing Configurations
+
+Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
+
+```sh
+sesh list -c
 ```
 
 ### Startup Script
