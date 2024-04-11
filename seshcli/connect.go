@@ -1,12 +1,7 @@
-package cmds
+package seshcli
 
 import (
-	"strings"
-
 	cli "github.com/urfave/cli/v2"
-
-	"github.com/joshmedeski/sesh/config"
-	"github.com/joshmedeski/sesh/connect"
 )
 
 func Connect() *cli.Command {
@@ -28,14 +23,7 @@ func Connect() *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			session := strings.Trim(cCtx.Args().First(), "\"'")
-			alwaysSwitch := cCtx.Bool("switch")
-			command := cCtx.String("command")
-			if session == "" {
-				return cli.Exit("No session provided", 0)
-			}
-			config := config.ParseConfigFile(&config.DefaultConfigDirectoryFetcher{})
-			return connect.Connect(session, alwaysSwitch, command, &config)
+			return nil
 		},
 	}
 }

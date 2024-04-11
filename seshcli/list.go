@@ -1,15 +1,7 @@
-package cmds
+package seshcli
 
 import (
-	"fmt"
-	"strings"
-
 	cli "github.com/urfave/cli/v2"
-
-	"github.com/joshmedeski/sesh/config"
-	"github.com/joshmedeski/sesh/icons"
-	"github.com/joshmedeski/sesh/json"
-	"github.com/joshmedeski/sesh/session"
 )
 
 func List() *cli.Command {
@@ -51,32 +43,6 @@ func List() *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			o := session.Options{
-				HideAttached: cCtx.Bool("hide-attached"),
-			}
-			config := config.ParseConfigFile(&config.DefaultConfigDirectoryFetcher{})
-			sessions := session.List(o, session.Srcs{
-				Config: cCtx.Bool("config"),
-				Tmux:   cCtx.Bool("tmux"),
-				Zoxide: cCtx.Bool("zoxide"),
-			}, &config)
-
-			useIcons := cCtx.Bool("icons")
-			result := make([]string, len(sessions))
-			for i, session := range sessions {
-				if useIcons {
-					result[i] = icons.PrintWithIcon(session)
-				} else {
-					result[i] = session.Name
-				}
-			}
-
-			useJson := cCtx.Bool("json")
-			if useJson {
-				fmt.Println(json.List(sessions))
-			} else {
-				fmt.Println(strings.Join(result, "\n"))
-			}
 			return nil
 		},
 	}
