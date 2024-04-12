@@ -10,8 +10,8 @@ type Shell struct {
 	exec execwrap.Exec
 }
 
-func New(exec execwrap.Exec) *Shell {
-	return &Shell{exec: exec}
+func NewShell(exec execwrap.Exec) *Shell {
+	return &Shell{exec}
 }
 
 func (c *Shell) Cmd(cmd string, args ...string) (string, error) {

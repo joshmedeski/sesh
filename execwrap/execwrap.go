@@ -18,7 +18,7 @@ type Exec interface {
 
 type OsExec struct{}
 
-func New() Exec {
+func NewExec() Exec {
 	return &OsExec{}
 }
 
