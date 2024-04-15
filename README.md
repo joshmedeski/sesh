@@ -53,6 +53,8 @@ Here are limitations to keep in mind:
 - tmux has to be running before you can use the extension
 - The extension caches results for a few seconds, so it may not always be up to date
 
+<a title="Install sesh Raycast Extension" href="https://www.raycast.com/joshmedeski/sesh"><img src="https://www.raycast.com/joshmedeski/sesh/install_button@2x.png?v=1.1" height="64" alt="" style="height: 64px;"></a>
+
 ## How to use
 
 ### tmux for sessions
