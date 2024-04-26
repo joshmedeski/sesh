@@ -13,7 +13,7 @@ type ExecCmd interface {
 
 type Exec interface {
 	LookPath(executable string) (string, error)
-	Command(name string, arg ...string) ExecCmd
+	Command(name string, args ...string) ExecCmd
 }
 
 type OsExec struct{}
@@ -26,8 +26,8 @@ func (e *OsExec) LookPath(executable string) (string, error) {
 	return exec.LookPath(executable)
 }
 
-func (e *OsExec) Command(name string, arg ...string) ExecCmd {
-	return exec.Command(name, arg...)
+func (e *OsExec) Command(name string, args ...string) ExecCmd {
+	return exec.Command(name, args...)
 }
 
 type MockExec struct {

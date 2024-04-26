@@ -12,9 +12,8 @@ func TestShellCmd(t *testing.T) {
 	t.Run("run should succeed", func(t *testing.T) {
 		mockExec := &execwrap.MockExec{}
 		mockCmd := new(execwrap.MockExecCmd)
-		shell := &Shell{exec: mockExec}
+		shell := &RealShell{exec: mockExec}
 		mockCmd.On("CombinedOutput").Return([]byte("hello"), nil)
-
 		mockExec.On("Command", "echo", mock.Anything).Return(mockCmd)
 		out, err := shell.Cmd("echo", "hello")
 		assert.Nil(t, err)
@@ -26,7 +25,7 @@ func TestShellListCmd(t *testing.T) {
 	t.Run("run should succeed", func(t *testing.T) {
 		mockExec := &execwrap.MockExec{}
 		mockCmd := new(execwrap.MockExecCmd)
-		shell := &Shell{exec: mockExec}
+		shell := &RealShell{exec: mockExec}
 		dirListingActual := []byte(`total 9720
 drwxr-xr-x  17 joshmedeski  staff      544 Apr 11 21:40 ./
 drwxr-xr-x   8 joshmedeski  staff      256 Apr 11 19:05 ../
