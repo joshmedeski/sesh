@@ -1,6 +1,12 @@
 package seshcli
 
 import (
+	"fmt"
+
+	"github.com/joshmedeski/sesh/execwrap"
+	"github.com/joshmedeski/sesh/session"
+	"github.com/joshmedeski/sesh/shell"
+	"github.com/joshmedeski/sesh/tmux"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -43,7 +49,27 @@ func List() *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			// TODO: implement
+			ew := execwrap.NewExec()
+			sh := shell.NewShell(ew)
+			tx := tmux.NewTmux(sh)
+			s := session.NewSession(tx)
+
+			sessions, err := s.List(session.ListOptions{
+				Config:       cCtx.Bool("config"),
+				HideAttached: cCtx.Bool("hide-attached"),
+				Icons:        cCtx.Bool("icons"),
+				Json:         cCtx.Bool("json"),
+				Tmux:         cCtx.Bool("tmux"),
+				Zoxide:       cCtx.Bool("zoxide"),
+			})
+			if err != nil {
+				return fmt.Errorf("couldn't list sessions: %q", err)
+			}
+
+			for _, session := range sessions {
+				fmt.Println(session.Name)
+			}
+
 			return nil
 		},
 	}
