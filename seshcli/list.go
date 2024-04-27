@@ -7,6 +7,7 @@ import (
 	"github.com/joshmedeski/sesh/session"
 	"github.com/joshmedeski/sesh/shell"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/zoxide"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -52,7 +53,8 @@ func List() *cli.Command {
 			ew := execwrap.NewExec()
 			sh := shell.NewShell(ew)
 			tx := tmux.NewTmux(sh)
-			s := session.NewSession(tx)
+			z := zoxide.NewZoxide(sh)
+			s := session.NewSession(tx, z)
 
 			sessions, err := s.List(session.ListOptions{
 				Config:       cCtx.Bool("config"),

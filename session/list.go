@@ -5,6 +5,7 @@ import (
 
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/zoxide"
 )
 
 type ListOptions struct {
@@ -14,6 +15,38 @@ type ListOptions struct {
 	Json         bool
 	Tmux         bool
 	Zoxide       bool
+}
+
+func (s *RealSession) List(opts ListOptions) ([]model.SeshSession, error) {
+	list := []model.SeshSession{}
+	srcs := srcs(opts)
+
+	if srcs["tmux"] {
+		tmuxList, err := listTmuxSessions(s.tmux)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, tmuxList...)
+	}
+
+	if srcs["zoxide"] {
+		zoxideList, err := listZoxideResults(s.zoxide)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, zoxideList...)
+	}
+
+	return list, nil
+}
+
+func srcs(opts ListOptions) map[string]bool {
+	if !opts.Config && !opts.Tmux && !opts.Zoxide {
+		// show all sources by default
+		return map[string]bool{"config": true, "tmux": true, "zoxide": true}
+	} else {
+		return map[string]bool{"config": opts.Config, "tmux": opts.Tmux, "zoxide": opts.Zoxide}
+	}
 }
 
 func listTmuxSessions(t tmux.Tmux) ([]model.SeshSession, error) {
@@ -34,6 +67,20 @@ func listTmuxSessions(t tmux.Tmux) ([]model.SeshSession, error) {
 	return sessions, nil
 }
 
-func (s *RealSession) List(opts ListOptions) ([]model.SeshSession, error) {
-	return listTmuxSessions(s.tmux)
+func listZoxideResults(z zoxide.Zoxide) ([]model.SeshSession, error) {
+	zoxideResults, err := z.ListResults()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't list zoxide results: %q", err)
+	}
+	sessions := make([]model.SeshSession, len(zoxideResults))
+	for i, r := range zoxideResults {
+		sessions[i] = model.SeshSession{
+			Src: "zoxide",
+			// TODO: convert to display name
+			Name:  r.Path,
+			Path:  r.Path,
+			Score: r.Score,
+		}
+	}
+	return sessions, nil
 }
