@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/path"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 )
@@ -30,7 +31,7 @@ func (s *RealSession) List(opts ListOptions) ([]model.SeshSession, error) {
 	}
 
 	if srcs["zoxide"] {
-		zoxideList, err := listZoxideResults(s.zoxide)
+		zoxideList, err := listZoxideResults(s.zoxide, s.path)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +58,8 @@ func listTmuxSessions(t tmux.Tmux) ([]model.SeshSession, error) {
 	sessions := make([]model.SeshSession, len(tmuxSessions))
 	for i, session := range tmuxSessions {
 		sessions[i] = model.SeshSession{
-			Src:      "tmux",
+			Src: "tmux",
+			// TODO: prepend icon if configured
 			Name:     session.Name,
 			Path:     session.Path,
 			Attached: session.Attached,
@@ -67,17 +69,21 @@ func listTmuxSessions(t tmux.Tmux) ([]model.SeshSession, error) {
 	return sessions, nil
 }
 
-func listZoxideResults(z zoxide.Zoxide) ([]model.SeshSession, error) {
+func listZoxideResults(z zoxide.Zoxide, p path.Path) ([]model.SeshSession, error) {
 	zoxideResults, err := z.ListResults()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't list zoxide results: %q", err)
 	}
 	sessions := make([]model.SeshSession, len(zoxideResults))
 	for i, r := range zoxideResults {
+		name, err := p.ShortenHome(r.Path)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't shorten path: %q", err)
+		}
 		sessions[i] = model.SeshSession{
 			Src: "zoxide",
-			// TODO: convert to display name
-			Name:  r.Path,
+			// TODO: prepend icon if configured
+			Name:  name,
 			Path:  r.Path,
 			Score: r.Score,
 		}
