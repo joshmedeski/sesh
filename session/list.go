@@ -3,6 +3,7 @@ package session
 import (
 	"fmt"
 
+	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
@@ -28,6 +29,14 @@ func (s *RealSession) List(opts ListOptions) ([]model.SeshSession, error) {
 			return nil, err
 		}
 		list = append(list, tmuxList...)
+	}
+
+	if srcs["config"] {
+		configList, err := listConfigSessions(s.config)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, configList...)
 	}
 
 	if srcs["zoxide"] {
@@ -67,6 +76,24 @@ func listTmuxSessions(t tmux.Tmux) ([]model.SeshSession, error) {
 		}
 	}
 	return sessions, nil
+}
+
+func listConfigSessions(c config.Config) ([]model.SeshSession, error) {
+	config, err := c.GetConfig()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't list config sessions: %q", err)
+	}
+	var configSessions []model.SeshSession
+	for _, session := range config.SessionConfigs {
+		if session.Name != "" {
+			configSessions = append(configSessions, model.SeshSession{
+				Src:  "config",
+				Name: session.Name,
+				Path: session.Path,
+			})
+		}
+	}
+	return configSessions, nil
 }
 
 func listZoxideResults(z zoxide.Zoxide, h home.Home) ([]model.SeshSession, error) {

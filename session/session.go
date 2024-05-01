@@ -1,6 +1,7 @@
 package session
 
 import (
+	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
@@ -12,11 +13,12 @@ type Session interface {
 }
 
 type RealSession struct {
+	config config.Config
 	home   home.Home
 	tmux   tmux.Tmux
 	zoxide zoxide.Zoxide
 }
 
-func NewSession(home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide) Session {
-	return &RealSession{home, tmux, zoxide}
+func NewSession(config config.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide) Session {
+	return &RealSession{config, home, tmux, zoxide}
 }
