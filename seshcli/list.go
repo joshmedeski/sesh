@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/execwrap"
+	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/oswrap"
-	"github.com/joshmedeski/sesh/path"
 	"github.com/joshmedeski/sesh/session"
 	"github.com/joshmedeski/sesh/shell"
 	"github.com/joshmedeski/sesh/tmux"
@@ -55,10 +55,10 @@ func List() *cli.Command {
 			ew := execwrap.NewExec()
 			sh := shell.NewShell(ew)
 			os := oswrap.NewOs()
-			p := path.NewPath(os)
+			h := home.NewHome(os)
 			tx := tmux.NewTmux(sh)
 			z := zoxide.NewZoxide(sh)
-			s := session.NewSession(p, tx, z)
+			s := session.NewSession(h, tx, z)
 
 			sessions, err := s.List(session.ListOptions{
 				Config:       cCtx.Bool("config"),

@@ -1,4 +1,4 @@
-package path
+package home
 
 import (
 	"strings"
@@ -6,20 +6,20 @@ import (
 	"github.com/joshmedeski/sesh/oswrap"
 )
 
-type Path interface {
+type Home interface {
 	ShortenHome(path string) (string, error)
 	ExpandHome(path string) (string, error)
 }
 
-type RealPath struct {
+type RealHome struct {
 	os oswrap.Os
 }
 
-func NewPath(os oswrap.Os) Path {
-	return &RealPath{os}
+func NewHome(os oswrap.Os) Home {
+	return &RealHome{os}
 }
 
-func (p *RealPath) ShortenHome(path string) (string, error) {
+func (p *RealHome) ShortenHome(path string) (string, error) {
 	home, err := p.os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -32,7 +32,7 @@ func (p *RealPath) ShortenHome(path string) (string, error) {
 	return path, nil
 }
 
-func (p *RealPath) ExpandHome(path string) (string, error) {
+func (p *RealHome) ExpandHome(path string) (string, error) {
 	home, err := p.os.UserHomeDir()
 	if err != nil {
 		return "", err
