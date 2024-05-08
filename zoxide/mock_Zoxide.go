@@ -21,23 +21,23 @@ func (_m *MockZoxide) EXPECT() *MockZoxide_Expecter {
 }
 
 // ListResults provides a mock function with given fields:
-func (_m *MockZoxide) ListResults() ([]model.ZoxideResult, error) {
+func (_m *MockZoxide) ListResults() ([]*model.ZoxideResult, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListResults")
 	}
 
-	var r0 []model.ZoxideResult
+	var r0 []*model.ZoxideResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func() ([]model.ZoxideResult, error)); ok {
+	if rf, ok := ret.Get(0).(func() ([]*model.ZoxideResult, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() []model.ZoxideResult); ok {
+	if rf, ok := ret.Get(0).(func() []*model.ZoxideResult); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.ZoxideResult)
+			r0 = ret.Get(0).([]*model.ZoxideResult)
 		}
 	}
 
@@ -67,12 +67,12 @@ func (_c *MockZoxide_ListResults_Call) Run(run func()) *MockZoxide_ListResults_C
 	return _c
 }
 
-func (_c *MockZoxide_ListResults_Call) Return(_a0 []model.ZoxideResult, _a1 error) *MockZoxide_ListResults_Call {
+func (_c *MockZoxide_ListResults_Call) Return(_a0 []*model.ZoxideResult, _a1 error) *MockZoxide_ListResults_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockZoxide_ListResults_Call) RunAndReturn(run func() ([]model.ZoxideResult, error)) *MockZoxide_ListResults_Call {
+func (_c *MockZoxide_ListResults_Call) RunAndReturn(run func() ([]*model.ZoxideResult, error)) *MockZoxide_ListResults_Call {
 	_c.Call.Return(run)
 	return _c
 }

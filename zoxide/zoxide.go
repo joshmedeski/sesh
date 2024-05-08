@@ -6,7 +6,7 @@ import (
 )
 
 type Zoxide interface {
-	ListResults() ([]model.ZoxideResult, error)
+	ListResults() ([]*model.ZoxideResult, error)
 }
 
 type RealZoxide struct {

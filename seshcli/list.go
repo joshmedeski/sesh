@@ -3,11 +3,11 @@ package seshcli
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/session"
+	"github.com/joshmedeski/sesh/lister"
 	cli "github.com/urfave/cli/v2"
 )
 
-func List(s session.Session) *cli.Command {
+func List(s lister.Lister) *cli.Command {
 	return &cli.Command{
 		Name:                   "list",
 		Aliases:                []string{"l"},
@@ -46,7 +46,7 @@ func List(s session.Session) *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			sessions, err := s.List(session.ListOptions{
+			sessions, err := s.List(lister.ListOptions{
 				Config:       cCtx.Bool("config"),
 				HideAttached: cCtx.Bool("hide-attached"),
 				Icons:        cCtx.Bool("icons"),

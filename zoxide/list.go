@@ -7,12 +7,12 @@ import (
 	"github.com/joshmedeski/sesh/model"
 )
 
-func (z *RealZoxide) ListResults() ([]model.ZoxideResult, error) {
+func (z *RealZoxide) ListResults() ([]*model.ZoxideResult, error) {
 	list, err := z.shell.ListCmd("zoxide", "query", "--list", "--score")
 	if err != nil {
 		return nil, err
 	}
-	results := make([]model.ZoxideResult, 0, len(list))
+	results := make([]*model.ZoxideResult, 0, len(list))
 	for _, result := range list {
 		if result == "" {
 			break
@@ -23,7 +23,7 @@ func (z *RealZoxide) ListResults() ([]model.ZoxideResult, error) {
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, model.ZoxideResult{
+		results = append(results, &model.ZoxideResult{
 			Score: score,
 			Path:  fields[1],
 		})

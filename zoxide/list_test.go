@@ -10,7 +10,7 @@ import (
 
 func TestListResults(t *testing.T) {
 	t.Run("ListResults", func(t *testing.T) {
-		mockShell := &shell.MockShell{}
+		mockShell := new(shell.MockShell)
 		zoxide := &RealZoxide{shell: mockShell}
 		mockShell.EXPECT().ListCmd("zoxide", "query", "--list", "--score").Return([]string{
 			"100.0 /Users/joshmedeski/Downloads",
@@ -20,7 +20,7 @@ func TestListResults(t *testing.T) {
 			" 51.5 /Users/joshmedeski/c/dotfiles/.config/sesh",
 			" 48.0 /Users/joshmedeski/c/sesh/main",
 		}, nil)
-		expected := []model.ZoxideResult{
+		expected := []*model.ZoxideResult{
 			{Path: "/Users/joshmedeski/Downloads", Score: 100.0},
 			{Path: "/Users/joshmedeski/c/dotfiles/.config/fish", Score: 82.0},
 			{Path: "/Users/joshmedeski/c/dotfiles/.config/tmux", Score: 73.5},

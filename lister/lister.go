@@ -1,4 +1,4 @@
-package session
+package lister
 
 import (
 	"fmt"
@@ -10,6 +10,21 @@ import (
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
+type Lister interface {
+	List(opts ListOptions) ([]model.SeshSession, error)
+}
+
+type RealLister struct {
+	config config.Config
+	home   home.Home
+	tmux   tmux.Tmux
+	zoxide zoxide.Zoxide
+}
+
+func NewLister(config config.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide) Lister {
+	return &RealLister{config, home, tmux, zoxide}
+}
+
 type ListOptions struct {
 	Config       bool
 	HideAttached bool
@@ -19,7 +34,7 @@ type ListOptions struct {
 	Zoxide       bool
 }
 
-func (s *RealSession) List(opts ListOptions) ([]model.SeshSession, error) {
+func (s *RealLister) List(opts ListOptions) ([]model.SeshSession, error) {
 	list := []model.SeshSession{}
 	srcs := srcs(opts)
 
