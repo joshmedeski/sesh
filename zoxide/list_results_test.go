@@ -6,14 +6,13 @@ import (
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/shell"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestListResults(t *testing.T) {
 	t.Run("ListResults", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
 		zoxide := &RealZoxide{shell: mockShell}
-		mockShell.On("ListCmd", "zoxide", mock.Anything).Return([]string{
+		mockShell.EXPECT().ListCmd("zoxide", "query", "--list", "--score").Return([]string{
 			"100.0 /Users/joshmedeski/Downloads",
 			" 82.0 /Users/joshmedeski/c/dotfiles/.config/fish",
 			" 73.5 /Users/joshmedeski/c/dotfiles/.config/tmux",
