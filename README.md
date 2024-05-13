@@ -106,6 +106,18 @@ bind-key "T" run-shell "sesh connect \"$(
 
 You can customize this however you want, see `man fzf` for more info on the different options.
 
+## gum + tmux
+
+If you prefer to use [charmblacelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
+
+```sh
+bind-key "K" display-popup -E -w 40% "sesh connect \"$(
+	sesh list -i | gum filter --limit 1 --placeholder 'Pick a sesh' --height 50 --prompt='⚡'
+)\""
+```
+
+**Note:** There are less features available with gum compared to fzf, but I found its matching algorithm is faster and it ha a more modern feel.
+
 See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
 
 ## Recommended tmux Settings
