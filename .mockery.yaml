@@ -1,3 +1,12 @@
-inpackage: True
 with-expecter: True
+inpackage: True
 testonly: False
+dir: "{{.InterfaceDir}}"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "{{.PackageName}}"
+filename: "mock_{{.InterfaceName}}.go"
+all: True
+packages:
+  github.com/joshmedeski/sesh:
+    config:
+      recursive: True
