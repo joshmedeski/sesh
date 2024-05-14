@@ -2,6 +2,7 @@ package seshcli
 
 import (
 	"github.com/joshmedeski/sesh/configurator"
+	"github.com/joshmedeski/sesh/connector"
 	"github.com/joshmedeski/sesh/execwrap"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/lister"
@@ -26,18 +27,19 @@ func App(version string) cli.App {
 	home := home.NewHome(os)
 
 	// resource dependencies
-	tmux := tmux.NewTmux(shell)
+	tmux := tmux.NewTmux(os, shell)
 	zoxide := zoxide.NewZoxide(shell)
-	configurator := configurator.NewConfigurator(os, path, runtime)
 
-	// configuration
-	config, err := configurator.GetConfig()
+	// config
+	config, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
+	// TODO: make sure to ignore the error if the config doesn't exist
 	if err != nil {
 		panic(err)
 	}
 
 	// core dependencies
 	lister := lister.NewLister(config, home, tmux, zoxide)
+	connector := connector.NewConnector(config, home, lister, tmux)
 
 	return cli.App{
 		Name:    "sesh",
@@ -45,7 +47,7 @@ func App(version string) cli.App {
 		Usage:   "Smart session manager for the terminal",
 		Commands: []*cli.Command{
 			List(lister),
-			Connect(),
+			Connect(connector),
 			Clone(),
 		},
 	}

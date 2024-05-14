@@ -133,6 +133,63 @@ func (_c *MockTmux_ListSessions_Call) RunAndReturn(run func() ([]*model.TmuxSess
 	return _c
 }
 
+// NewSession provides a mock function with given fields: sessionName, startDir
+func (_m *MockTmux) NewSession(sessionName string, startDir string) (string, error) {
+	ret := _m.Called(sessionName, startDir)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewSession")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
+		return rf(sessionName, startDir)
+	}
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(sessionName, startDir)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(sessionName, startDir)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockTmux_NewSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewSession'
+type MockTmux_NewSession_Call struct {
+	*mock.Call
+}
+
+// NewSession is a helper method to define mock.On call
+//   - sessionName string
+//   - startDir string
+func (_e *MockTmux_Expecter) NewSession(sessionName interface{}, startDir interface{}) *MockTmux_NewSession_Call {
+	return &MockTmux_NewSession_Call{Call: _e.mock.On("NewSession", sessionName, startDir)}
+}
+
+func (_c *MockTmux_NewSession_Call) Run(run func(sessionName string, startDir string)) *MockTmux_NewSession_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockTmux_NewSession_Call) Return(_a0 string, _a1 error) *MockTmux_NewSession_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockTmux_NewSession_Call) RunAndReturn(run func(string, string) (string, error)) *MockTmux_NewSession_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SwitchClient provides a mock function with given fields: targetSession
 func (_m *MockTmux) SwitchClient(targetSession string) (string, error) {
 	ret := _m.Called(targetSession)

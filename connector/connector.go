@@ -8,7 +8,7 @@ import (
 )
 
 type Connector interface {
-	Connect(name string, opts ConnectOpts) (string, error)
+	Connect(name string, opts model.ConnectOpts) (string, error)
 }
 
 type RealConnector struct {

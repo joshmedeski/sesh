@@ -1,6 +1,8 @@
 package model
 
 type (
+	SeshSessionMap map[string]SeshSession
+
 	SeshSession struct {
 		Src  string // The source of the session (config, tmux, zoxide)
 		Name string // The display name

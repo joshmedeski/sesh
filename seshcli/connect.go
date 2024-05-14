@@ -1,10 +1,15 @@
 package seshcli
 
 import (
+	"errors"
+	"fmt"
+
+	"github.com/joshmedeski/sesh/connector"
+	"github.com/joshmedeski/sesh/model"
 	cli "github.com/urfave/cli/v2"
 )
 
-func Connect() *cli.Command {
+func Connect(c connector.Connector) *cli.Command {
 	return &cli.Command{
 		Name:                   "connect",
 		Aliases:                []string{"cn"},
@@ -14,7 +19,7 @@ func Connect() *cli.Command {
 			&cli.BoolFlag{
 				Name:    "switch",
 				Aliases: []string{"s"},
-				Usage:   "Always switch the session (and never attach). This is useful for third-party tools like Raycast.",
+				Usage:   "Switch the session (rather than attach). This is useful for actions triggered outside the terminal.",
 			},
 			&cli.StringFlag{
 				Name:    "command",
@@ -23,7 +28,18 @@ func Connect() *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			return nil
+			if cCtx.NArg() == 0 {
+				return errors.New("please provide a session name")
+			}
+			name := cCtx.Args().First()
+			opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command")}
+			if connection, err := c.Connect(name, opts); err != nil {
+				return err
+			} else {
+				// TODO: create a message that is helpful to the end user
+				fmt.Println(connection)
+				return nil
+			}
 		},
 	}
 }

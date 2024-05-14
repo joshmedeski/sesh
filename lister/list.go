@@ -5,7 +5,6 @@ import (
 
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
@@ -18,16 +17,19 @@ type ListOptions struct {
 	Zoxide       bool
 }
 
-func (s *RealLister) List(opts ListOptions) ([]model.SeshSession, error) {
-	list := []model.SeshSession{}
+func (s *RealLister) List(opts ListOptions) (model.SeshSessionMap, error) {
+	allSessions := make(model.SeshSessionMap)
 	srcs := srcs(opts)
 
 	if srcs["tmux"] {
-		tmuxList, err := listTmuxSessions(s.tmux)
+		tmuxSessions, err := listTmuxSessions(s.tmux)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, tmuxList...)
+		for _, s := range tmuxSessions {
+			key := fmt.Sprintf("tmux:%s", s.Name)
+			allSessions[key] = s
+		}
 	}
 
 	if srcs["config"] {
@@ -35,7 +37,12 @@ func (s *RealLister) List(opts ListOptions) ([]model.SeshSession, error) {
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, configList...)
+		for _, s := range configList {
+			if s.Name != "" {
+				key := fmt.Sprintf("config:%s", s.Name)
+				allSessions[key] = s
+			}
+		}
 	}
 
 	if srcs["zoxide"] {
@@ -43,10 +50,13 @@ func (s *RealLister) List(opts ListOptions) ([]model.SeshSession, error) {
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, zoxideList...)
+		for _, s := range zoxideList {
+			key := fmt.Sprintf("zoxide:%s", s.Name)
+			allSessions[key] = s
+		}
 	}
 
-	return list, nil
+	return allSessions, nil
 }
 
 func srcs(opts ListOptions) map[string]bool {
@@ -56,25 +66,6 @@ func srcs(opts ListOptions) map[string]bool {
 	} else {
 		return map[string]bool{"config": opts.Config, "tmux": opts.Tmux, "zoxide": opts.Zoxide}
 	}
-}
-
-func listTmuxSessions(t tmux.Tmux) ([]model.SeshSession, error) {
-	tmuxSessions, err := t.ListSessions()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't list tmux sessions: %q", err)
-	}
-	sessions := make([]model.SeshSession, len(tmuxSessions))
-	for i, session := range tmuxSessions {
-		sessions[i] = model.SeshSession{
-			Src: "tmux",
-			// TODO: prepend icon if configured
-			Name:     session.Name,
-			Path:     session.Path,
-			Attached: session.Attached,
-			Windows:  session.Windows,
-		}
-	}
-	return sessions, nil
 }
 
 func listConfigSessions(c model.Config) ([]model.SeshSession, error) {

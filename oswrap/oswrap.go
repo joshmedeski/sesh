@@ -8,6 +8,7 @@ type Os interface {
 	UserConfigDir() (string, error)
 	UserHomeDir() (string, error)
 	ReadFile(name string) ([]byte, error)
+	Getenv(key string) string
 }
 
 type RealOs struct{}
@@ -26,4 +27,8 @@ func (o *RealOs) UserHomeDir() (string, error) {
 
 func (o *RealOs) ReadFile(name string) ([]byte, error) {
 	return os.ReadFile(name)
+}
+
+func (o *RealOs) Getenv(key string) string {
+	return os.Getenv(key)
 }
