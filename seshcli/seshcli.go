@@ -1,7 +1,7 @@
 package seshcli
 
 import (
-	"github.com/joshmedeski/sesh/config"
+	"github.com/joshmedeski/sesh/configurator"
 	"github.com/joshmedeski/sesh/execwrap"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/lister"
@@ -25,10 +25,18 @@ func App(version string) cli.App {
 	shell := shell.NewShell(exec)
 	home := home.NewHome(os)
 
-	// core dependencies
+	// resource dependencies
 	tmux := tmux.NewTmux(shell)
 	zoxide := zoxide.NewZoxide(shell)
-	config := config.NewConfig(os, path, runtime)
+	configurator := configurator.NewConfigurator(os, path, runtime)
+
+	// configuration
+	config, err := configurator.GetConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	// core dependencies
 	lister := lister.NewLister(config, home, tmux, zoxide)
 
 	return cli.App{

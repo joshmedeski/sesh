@@ -3,27 +3,11 @@ package lister
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/config"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 )
-
-type Lister interface {
-	List(opts ListOptions) ([]model.SeshSession, error)
-}
-
-type RealLister struct {
-	config config.Config
-	home   home.Home
-	tmux   tmux.Tmux
-	zoxide zoxide.Zoxide
-}
-
-func NewLister(config config.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide) Lister {
-	return &RealLister{config, home, tmux, zoxide}
-}
 
 type ListOptions struct {
 	Config       bool
@@ -93,13 +77,9 @@ func listTmuxSessions(t tmux.Tmux) ([]model.SeshSession, error) {
 	return sessions, nil
 }
 
-func listConfigSessions(c config.Config) ([]model.SeshSession, error) {
-	config, err := c.GetConfig()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't list config sessions: %q", err)
-	}
+func listConfigSessions(c model.Config) ([]model.SeshSession, error) {
 	var configSessions []model.SeshSession
-	for _, session := range config.SessionConfigs {
+	for _, session := range c.SessionConfigs {
 		if session.Name != "" {
 			configSessions = append(configSessions, model.SeshSession{
 				Src:  "config",

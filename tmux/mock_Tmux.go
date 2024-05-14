@@ -20,6 +20,62 @@ func (_m *MockTmux) EXPECT() *MockTmux_Expecter {
 	return &MockTmux_Expecter{mock: &_m.Mock}
 }
 
+// AttachSession provides a mock function with given fields: targetSession
+func (_m *MockTmux) AttachSession(targetSession string) (string, error) {
+	ret := _m.Called(targetSession)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AttachSession")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
+		return rf(targetSession)
+	}
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(targetSession)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(targetSession)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockTmux_AttachSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AttachSession'
+type MockTmux_AttachSession_Call struct {
+	*mock.Call
+}
+
+// AttachSession is a helper method to define mock.On call
+//   - targetSession string
+func (_e *MockTmux_Expecter) AttachSession(targetSession interface{}) *MockTmux_AttachSession_Call {
+	return &MockTmux_AttachSession_Call{Call: _e.mock.On("AttachSession", targetSession)}
+}
+
+func (_c *MockTmux_AttachSession_Call) Run(run func(targetSession string)) *MockTmux_AttachSession_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockTmux_AttachSession_Call) Return(_a0 string, _a1 error) *MockTmux_AttachSession_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockTmux_AttachSession_Call) RunAndReturn(run func(string) (string, error)) *MockTmux_AttachSession_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListSessions provides a mock function with given fields:
 func (_m *MockTmux) ListSessions() ([]*model.TmuxSession, error) {
 	ret := _m.Called()
@@ -73,6 +129,62 @@ func (_c *MockTmux_ListSessions_Call) Return(_a0 []*model.TmuxSession, _a1 error
 }
 
 func (_c *MockTmux_ListSessions_Call) RunAndReturn(run func() ([]*model.TmuxSession, error)) *MockTmux_ListSessions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SwitchClient provides a mock function with given fields: targetSession
+func (_m *MockTmux) SwitchClient(targetSession string) (string, error) {
+	ret := _m.Called(targetSession)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SwitchClient")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
+		return rf(targetSession)
+	}
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(targetSession)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(targetSession)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockTmux_SwitchClient_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SwitchClient'
+type MockTmux_SwitchClient_Call struct {
+	*mock.Call
+}
+
+// SwitchClient is a helper method to define mock.On call
+//   - targetSession string
+func (_e *MockTmux_Expecter) SwitchClient(targetSession interface{}) *MockTmux_SwitchClient_Call {
+	return &MockTmux_SwitchClient_Call{Call: _e.mock.On("SwitchClient", targetSession)}
+}
+
+func (_c *MockTmux_SwitchClient_Call) Run(run func(targetSession string)) *MockTmux_SwitchClient_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockTmux_SwitchClient_Call) Return(_a0 string, _a1 error) *MockTmux_SwitchClient_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockTmux_SwitchClient_Call) RunAndReturn(run func(string) (string, error)) *MockTmux_SwitchClient_Call {
 	_c.Call.Return(run)
 	return _c
 }

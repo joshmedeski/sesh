@@ -1,4 +1,4 @@
-package config
+package configurator
 
 import (
 	"fmt"
@@ -10,25 +10,25 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
-type Config interface {
+type Configurator interface {
 	GetConfig() (model.Config, error)
 }
 
-type RealConfig struct {
+type RealConfigurator struct {
 	os      oswrap.Os
 	path    pathwrap.Path
 	runtime runtimewrap.Runtime
 }
 
-func NewConfig(os oswrap.Os, path pathwrap.Path, runtime runtimewrap.Runtime) Config {
-	return &RealConfig{os, path, runtime}
+func NewConfigurator(os oswrap.Os, path pathwrap.Path, runtime runtimewrap.Runtime) Configurator {
+	return &RealConfigurator{os, path, runtime}
 }
 
-func (c *RealConfig) configFilePath(rootDir string) string {
+func (c *RealConfigurator) configFilePath(rootDir string) string {
 	return c.path.Join(rootDir, "sesh", "sesh.toml")
 }
 
-func (c *RealConfig) getConfigFileFromUserConfigDir() (model.Config, error) {
+func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error) {
 	config := model.Config{}
 
 	userConfigDir, err := c.os.UserConfigDir()
@@ -62,7 +62,7 @@ func (c *RealConfig) getConfigFileFromUserConfigDir() (model.Config, error) {
 	// }
 }
 
-func (c *RealConfig) GetConfig() (model.Config, error) {
+func (c *RealConfigurator) GetConfig() (model.Config, error) {
 	config, err := c.getConfigFileFromUserConfigDir()
 	if err != nil {
 		return model.Config{}, err

@@ -7,6 +7,8 @@ import (
 
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
+	AttachSession(targetSession string) (string, error)
+	SwitchClient(targetSession string) (string, error)
 }
 
 type RealTmux struct {
