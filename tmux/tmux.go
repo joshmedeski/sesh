@@ -146,10 +146,14 @@ func execTmuxp(name string, command string) error {
 	return nil
 }
 
+func removeTrailingSlash(path string) string {
+	return strings.TrimRight(path, "/")
+}
+
 func getStartupScript(sessionPath string, config *config.Config) string {
 	for _, sessionConfig := range config.SessionConfigs {
 		// TODO: get working with /* again
-		scriptFullPath := dir.FullPath(sessionConfig.Path)
+		scriptFullPath := removeTrailingSlash(dir.FullPath(sessionConfig.Path))
 		match, _ := filepath.Match(scriptFullPath, sessionPath)
 		if match {
 			return sessionConfig.StartupScript
@@ -160,7 +164,7 @@ func getStartupScript(sessionPath string, config *config.Config) string {
 
 func getStartupCommand(sessionPath string, config *config.Config) string {
 	for _, sessionConfig := range config.SessionConfigs {
-		scriptFullPath := dir.FullPath(sessionConfig.Path)
+		scriptFullPath := removeTrailingSlash(dir.FullPath(sessionConfig.Path))
 		match, _ := filepath.Match(scriptFullPath, sessionPath)
 		if match {
 			return sessionConfig.StartupCommand
