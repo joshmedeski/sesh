@@ -28,7 +28,8 @@ func Connect() *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			session := strings.Trim(cCtx.Args().First(), "\"'")
+			joinedArgs := strings.Join(cCtx.Args().Slice(), " ")
+			session := strings.Trim(joinedArgs, "\"'")
 			alwaysSwitch := cCtx.Bool("switch")
 			command := cCtx.String("command")
 			if session == "" {
