@@ -9,6 +9,7 @@ type Os interface {
 	UserHomeDir() (string, error)
 	ReadFile(name string) ([]byte, error)
 	Getenv(key string) string
+	Stat(name string) (os.FileInfo, error)
 }
 
 type RealOs struct{}
@@ -31,4 +32,8 @@ func (o *RealOs) ReadFile(name string) ([]byte, error) {
 
 func (o *RealOs) Getenv(key string) string {
 	return os.Getenv(key)
+}
+
+func (o *RealOs) Stat(name string) (os.FileInfo, error) {
+	return os.Stat(name)
 }
