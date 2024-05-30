@@ -41,6 +41,7 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 		return config, fmt.Errorf("couldn't read config file: %q", err)
 	}
 	err = toml.Unmarshal(file, &config)
+	// TODO: convert array into map (create an array of keys)
 	if err != nil {
 		return config, fmt.Errorf("couldn't unmarshal config file: %q", err)
 	}
