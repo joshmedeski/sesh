@@ -10,6 +10,7 @@ import (
 type Lister interface {
 	List(opts ListOptions) (model.SeshSessionMap, error)
 	FindTmuxSession(name string) (model.SeshSession, bool)
+	FindConfigSession(name string) (model.SeshSession, bool)
 }
 
 type RealLister struct {
