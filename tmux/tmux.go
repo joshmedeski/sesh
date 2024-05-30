@@ -12,6 +12,7 @@ type Tmux interface {
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SwitchClient(targetSession string) (string, error)
+	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 }
 
 type RealTmux struct {
