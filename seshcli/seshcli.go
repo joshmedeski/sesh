@@ -3,6 +3,7 @@ package seshcli
 import (
 	"github.com/joshmedeski/sesh/configurator"
 	"github.com/joshmedeski/sesh/connector"
+	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/execwrap"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/lister"
@@ -23,6 +24,7 @@ func App(version string) cli.App {
 	runtime := runtimewrap.NewRunTime()
 
 	// base dependencies
+	dir := dir.NewDir(os, path)
 	shell := shell.NewShell(exec)
 	home := home.NewHome(os)
 
@@ -39,7 +41,7 @@ func App(version string) cli.App {
 
 	// core dependencies
 	lister := lister.NewLister(config, home, tmux, zoxide)
-	connector := connector.NewConnector(config, home, lister, tmux)
+	connector := connector.NewConnector(config, dir, home, lister, tmux, zoxide)
 
 	return cli.App{
 		Name:    "sesh",

@@ -34,6 +34,7 @@ func Connect(c connector.Connector) *cli.Command {
 			name := cCtx.Args().First()
 			opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command")}
 			if connection, err := c.Connect(name, opts); err != nil {
+				// TODO: print to logs?
 				return err
 			} else {
 				// TODO: create a message that is helpful to the end user
