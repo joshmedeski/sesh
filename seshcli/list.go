@@ -58,8 +58,8 @@ func List(s lister.Lister) *cli.Command {
 				return fmt.Errorf("couldn't list sessions: %q", err)
 			}
 
-			for _, session := range sessions {
-				fmt.Println(session.Name)
+			for _, i := range sessions.OrderedIndex {
+				fmt.Println(sessions.Directory[i].Name)
 			}
 
 			return nil

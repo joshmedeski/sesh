@@ -13,17 +13,19 @@ type ListOptions struct {
 	Zoxide       bool
 }
 
-func (s *RealLister) List(opts ListOptions) (model.SeshSessionMap, error) {
-	allSessions := make(model.SeshSessionMap)
+func (s *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
+	fullDirectory := make(model.SeshSessionMap)
+	fullOrderedIndex := make([]string, 0)
 	srcs := srcs(opts)
 
 	if srcs["tmux"] {
-		sessions, err := listTmuxSessions(s.tmux)
+		tmuxSessions, err := listTmuxSessions(s.tmux)
 		if err != nil {
-			return nil, err
+			return model.SeshSessions{}, err
 		}
-		for k, s := range sessions {
-			allSessions[k] = s
+		fullOrderedIndex = append(fullOrderedIndex, tmuxSessions.OrderedIndex...)
+		for _, i := range tmuxSessions.OrderedIndex {
+			fullDirectory[i] = tmuxSessions.Directory[i]
 		}
 	}
 
@@ -31,7 +33,7 @@ func (s *RealLister) List(opts ListOptions) (model.SeshSessionMap, error) {
 		sessions := listConfigSessions(s.config)
 		for k, s := range sessions {
 			if s.Name != "" {
-				allSessions[k] = s
+				fullDirectory[k] = s
 			}
 		}
 	}
@@ -39,14 +41,17 @@ func (s *RealLister) List(opts ListOptions) (model.SeshSessionMap, error) {
 	if srcs["zoxide"] {
 		sessions, err := listZoxideSessions(s.zoxide, s.home)
 		if err != nil {
-			return nil, err
+			return model.SeshSessions{}, err
 		}
 		for k, s := range sessions {
-			allSessions[k] = s
+			fullDirectory[k] = s
 		}
 	}
 
-	return allSessions, nil
+	return model.SeshSessions{
+		OrderedIndex: fullOrderedIndex,
+		Directory:    fullDirectory,
+	}, nil
 }
 
 func srcs(opts ListOptions) map[string]bool {

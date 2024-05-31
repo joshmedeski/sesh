@@ -8,7 +8,7 @@ import (
 )
 
 type Lister interface {
-	List(opts ListOptions) (model.SeshSessionMap, error)
+	List(opts ListOptions) (model.SeshSessions, error)
 	FindTmuxSession(name string) (model.SeshSession, bool)
 	FindConfigSession(name string) (model.SeshSession, bool)
 }

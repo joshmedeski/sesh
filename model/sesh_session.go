@@ -1,6 +1,13 @@
 package model
 
 type (
+	SeshSessions struct {
+		// catalog of the sessions
+		Directory SeshSessionMap
+		// unique identifiers of the sessions ordered
+		OrderedIndex []string
+	}
+
 	SeshSessionMap map[string]SeshSession
 
 	SeshSession struct {
