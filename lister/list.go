@@ -30,11 +30,10 @@ func (s *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	}
 
 	if srcs["config"] {
-		sessions := listConfigSessions(s.config)
-		for k, s := range sessions {
-			if s.Name != "" {
-				fullDirectory[k] = s
-			}
+		configSessions := listConfigSessions(s.config)
+		fullOrderedIndex = append(fullOrderedIndex, configSessions.OrderedIndex...)
+		for _, i := range configSessions.OrderedIndex {
+			fullDirectory[i] = configSessions.Directory[i]
 		}
 	}
 
