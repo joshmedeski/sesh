@@ -11,7 +11,7 @@ import (
 func (t *RealTmux) ListSessions() ([]*model.TmuxSession, error) {
 	output, err := t.shell.ListCmd("tmux", "list-sessions", "-F", listsessionsformat())
 	if err != nil {
-		return nil, err
+		return []*model.TmuxSession{}, nil
 	}
 	sessions, err := parseTmuxSessionsOutput(output)
 	if err != nil {
