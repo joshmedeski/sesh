@@ -81,7 +81,7 @@ func TestListTmuxSessions(t *testing.T) {
 			log.Fatal("Cannot convert lister to *RealLister")
 		}
 
-		sessions, err := listTmuxSessions(realLister)
+		sessions, err := listTmux(realLister)
 		assert.Equal(t, "tmux:sesh/main", sessions.OrderedIndex[0])
 		assert.Equal(t, "sesh/main", sessions.Directory["tmux:sesh/main"].Name)
 		assert.Equal(t, "tmux:sesh/v2", sessions.OrderedIndex[1])
