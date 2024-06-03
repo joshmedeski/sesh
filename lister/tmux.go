@@ -4,23 +4,21 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/tmux"
 )
 
-func listTmuxSessions(t tmux.Tmux) (model.SeshSessions, error) {
-	tmuxSessions, err := t.ListSessions()
+func listTmux(l *RealLister) (model.SeshSessions, error) {
+	tmuxSessions, err := l.tmux.ListSessions()
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmux sessions: %q", err)
 	}
 	numOfSessions := len(tmuxSessions)
 	orderedIndex := make([]string, numOfSessions)
 	directory := make(model.SeshSessionMap)
-	for _, session := range tmuxSessions {
+	for i, session := range tmuxSessions {
 		key := fmt.Sprintf("tmux:%s", session.Name)
-		orderedIndex = append(orderedIndex, key)
+		orderedIndex[i] = key
 		directory[key] = model.SeshSession{
-			Src: "tmux",
-			// TODO: prepend icon if configured
+			Src:      "tmux",
 			Name:     session.Name,
 			Path:     session.Path,
 			Attached: session.Attached,
@@ -34,7 +32,7 @@ func listTmuxSessions(t tmux.Tmux) (model.SeshSessions, error) {
 }
 
 func (l *RealLister) FindTmuxSession(name string) (model.SeshSession, bool) {
-	sessions, err := listTmuxSessions(l.tmux)
+	sessions, err := listTmux(l)
 	if err != nil {
 		return model.SeshSession{}, false
 	}

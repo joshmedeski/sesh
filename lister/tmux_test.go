@@ -1,11 +1,14 @@
 package lister
 
 import (
+	"log"
 	"testing"
 	"time"
 
+	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/zoxide"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,7 +71,17 @@ func TestListTmuxSessions(t *testing.T) {
 		}
 		mockTmux.On("ListSessions").Return([]*model.TmuxSession{&firstAttached, &lastAttached}, nil)
 
-		sessions, err := listTmuxSessions(mockTmux)
+		mockConfig := model.Config{}
+		mockHome := new(home.MockHome)
+		mockZoxide := new(zoxide.MockZoxide)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide)
+
+		realLister, ok := lister.(*RealLister)
+		if !ok {
+			log.Fatal("Cannot convert lister to *RealLister")
+		}
+
+		sessions, err := listTmuxSessions(realLister)
 		assert.Equal(t, "tmux:sesh/main", sessions.OrderedIndex[0])
 		assert.Equal(t, "sesh/main", sessions.Directory["tmux:sesh/main"].Name)
 		assert.Equal(t, "tmux:sesh/v2", sessions.OrderedIndex[1])
