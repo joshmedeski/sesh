@@ -133,24 +133,22 @@ func (_c *MockLister_FindTmuxSession_Call) RunAndReturn(run func(string) (model.
 }
 
 // List provides a mock function with given fields: opts
-func (_m *MockLister) List(opts ListOptions) (model.SeshSessionMap, error) {
+func (_m *MockLister) List(opts ListOptions) (model.SeshSessions, error) {
 	ret := _m.Called(opts)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
 	}
 
-	var r0 model.SeshSessionMap
+	var r0 model.SeshSessions
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ListOptions) (model.SeshSessionMap, error)); ok {
+	if rf, ok := ret.Get(0).(func(ListOptions) (model.SeshSessions, error)); ok {
 		return rf(opts)
 	}
-	if rf, ok := ret.Get(0).(func(ListOptions) model.SeshSessionMap); ok {
+	if rf, ok := ret.Get(0).(func(ListOptions) model.SeshSessions); ok {
 		r0 = rf(opts)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(model.SeshSessionMap)
-		}
+		r0 = ret.Get(0).(model.SeshSessions)
 	}
 
 	if rf, ok := ret.Get(1).(func(ListOptions) error); ok {
@@ -180,12 +178,12 @@ func (_c *MockLister_List_Call) Run(run func(opts ListOptions)) *MockLister_List
 	return _c
 }
 
-func (_c *MockLister_List_Call) Return(_a0 model.SeshSessionMap, _a1 error) *MockLister_List_Call {
+func (_c *MockLister_List_Call) Return(_a0 model.SeshSessions, _a1 error) *MockLister_List_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockLister_List_Call) RunAndReturn(run func(ListOptions) (model.SeshSessionMap, error)) *MockLister_List_Call {
+func (_c *MockLister_List_Call) RunAndReturn(run func(ListOptions) (model.SeshSessions, error)) *MockLister_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

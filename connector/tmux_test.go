@@ -37,9 +37,9 @@ func TestEstablishTmuxConnection(t *testing.T) {
 			Name: "dotfiles",
 			Path: "/Users/joshmedeski/c/dotfiles",
 		}, true)
-		connection, err := establishTmuxConnection(c, "dotfiles", model.ConnectOpts{})
-		assert.Equal(t, nil, err)
-		assert.Equal(t, "attaching to existing tmux session: dotfiles", connection)
+		connection, err := tmuxStrategy(c, "dotfiles")
+		assert.Nil(t, err)
+		assert.Equal(t, "dotfiles", connection.Session.Name)
 	})
 
 	t.Run("should switch to tmux session", func(t *testing.T) {
@@ -48,8 +48,8 @@ func TestEstablishTmuxConnection(t *testing.T) {
 			Name: "dotfiles",
 			Path: "/Users/joshmedeski/c/dotfiles",
 		}, true)
-		connection, err := establishTmuxConnection(c, "dotfiles", model.ConnectOpts{})
-		assert.Equal(t, nil, err)
-		assert.Equal(t, "switching to existing tmux session: dotfiles", connection)
+		connection, err := tmuxStrategy(c, "dotfiles")
+		assert.Nil(t, err)
+		assert.Equal(t, "dotfiles", connection.Session.Name)
 	})
 }

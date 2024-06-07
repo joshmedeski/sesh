@@ -49,30 +49,9 @@ func TestSwitchOrAttach(t *testing.T) {
 		mockOs.ExpectedCalls = nil
 		mockShell.ExpectedCalls = nil
 		mockOs.On("Getenv", "TMUX").Return("")
-		mockShell.On("Cmd", "tmux", "attach-client", "-t", mock.Anything).Return("", nil)
+		mockShell.On("Cmd", "tmux", "attach-session", "-t", mock.Anything).Return("", nil)
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
 		assert.Equal(t, "attaching to existing tmux session: dotfiles", response)
 		assert.Equal(t, nil, error)
 	})
-
-	t.Run("errors when attaching to a missing session", func(t *testing.T) {
-		mockOs.ExpectedCalls = nil
-		mockShell.ExpectedCalls = nil
-	})
 }
-
-// func (t *RealTmux) SwitchOrAttach(name string, opts model.ConnectOpts) (string, error) {
-// 	if opts.Switch || t.IsAttached() {
-// 		if _, err := t.SwitchClient(name); err != nil {
-// 			return "", fmt.Errorf("failed to switch to tmux session: %w", err)
-// 		} else {
-// 			return fmt.Sprintf("switching to existing tmux session: %s", name), nil
-// 		}
-// 	} else {
-// 		if _, err := t.AttachSession(name); err != nil {
-// 			return "", fmt.Errorf("failed to attach to tmux session: %w", err)
-// 		} else {
-// 			return fmt.Sprintf("attaching to existing tmux session: %s", name), nil
-// 		}
-// 	}
-// }

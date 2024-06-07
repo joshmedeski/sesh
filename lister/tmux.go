@@ -6,6 +6,10 @@ import (
 	"github.com/joshmedeski/sesh/model"
 )
 
+func tmuxKey(name string) string {
+	return fmt.Sprintf("tmux:%s", name)
+}
+
 func listTmux(l *RealLister) (model.SeshSessions, error) {
 	tmuxSessions, err := l.tmux.ListSessions()
 	if err != nil {
@@ -15,7 +19,7 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 	orderedIndex := make([]string, numOfSessions)
 	directory := make(model.SeshSessionMap)
 	for i, session := range tmuxSessions {
-		key := fmt.Sprintf("tmux:%s", session.Name)
+		key := tmuxKey(session.Name)
 		orderedIndex[i] = key
 		directory[key] = model.SeshSession{
 			Src:      "tmux",
@@ -36,7 +40,8 @@ func (l *RealLister) FindTmuxSession(name string) (model.SeshSession, bool) {
 	if err != nil {
 		return model.SeshSession{}, false
 	}
-	if session, exists := sessions.Directory[name]; exists {
+	key := tmuxKey(name)
+	if session, exists := sessions.Directory[key]; exists {
 		return session, exists
 	} else {
 		return model.SeshSession{}, false

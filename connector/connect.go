@@ -52,7 +52,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 	// sesh connect --config (sesh list --config | fzf)
 	strategies := []func(*RealConnector, string) (model.Connection, error){
 		tmuxStrategy,
-		// establishConfigConnection,
+		configStrategy,
 		// establishDirConnection,
 		// establishZoxideConnection,
 	}
