@@ -120,6 +120,30 @@ bind-key "K" display-popup -E -w 40% "sesh connect \"$(
 
 See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
 
+## zsh keybind
+
+If you use zsh, you can add the following keybind to your `.zshrc` to connect to a session:
+
+```sh
+function sesh-sessions() {
+  {
+    exec </dev/tty
+    exec <&1
+    local session
+    session=$(sesh list -t -c | fzf --height 40% --reverse --border-label ' sesh ' --border --prompt '⚡  ')
+    [[ -z "$session" ]] && return
+    sesh connect $session
+  }
+}
+
+zle     -N             sesh-sessions
+bindkey -M emacs '\es' sesh-sessions
+bindkey -M vicmd '\es' sesh-sessions
+bindkey -M viins '\es' sesh-sessions
+```
+
+After adding this to your `.zshrc`, you can press `Alt-s` to open a fzf prompt to connect to a session.
+
 ## Recommended tmux Settings
 
 I recommend you add these settings to your `tmux.conf` to have a better experience with this plugin.
