@@ -92,7 +92,7 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 ```sh
 bind-key "T" run-shell "sesh connect \"$(
 	sesh list | fzf-tmux -p 55%,60% \
-		--no-sort --border-label ' sesh ' --prompt '⚡  ' \
+		--no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
 		--header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
 		--bind 'tab:down,btab:up' \
 		--bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
