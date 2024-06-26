@@ -208,47 +208,53 @@ func BenchmarkParseConfigFile(b *testing.B) {
 	}
 }
 
-//
-// func TestConfigPathsAreCleaned(t *testing.T) {
-// 	t.Parallel()
-//
-// 	mockSessions := []MockSeshConfig{
-// 		{
-// 			Name: "sesh.toml",
-// 			Contents: `
-// 			[default_session]
-// 			startup_script = "default"
-//
-// 			[[session]]
-// 			path = "~/tilde-prefixed"
-// 			name = "my-tilde-prefixed-session"
-// 			`,
-// 		},
-// 	}
-//
-// 	userConfigPath := prepareSeshConfig(t, mockSessions)
-// 	defer os.Remove(userConfigPath)
-//
-// 	fetcher := &mockConfigDirectoryFetcher{dir: userConfigPath}
-// 	cfg := config.ParseConfigFile(fetcher)
-//
-// 	err := cfg.CleanPaths()
-// 	if err != nil {
-// 		t.Fatalf("failed to clean paths: %s", err.Error())
-// 	}
-//
-// 	cleanedPath := cfg.SessionConfigs[0].Path
-//
-// 	if strings.HasPrefix(cleanedPath, "~") {
-// 		t.Fatalf("cleaned path starts with ~")
-// 	}
-//
-// 	home, err := os.UserHomeDir()
-// 	if err != nil {
-// 		t.Fatalf("failed to get home dir: %s", err.Error())
-// 	}
-//
-// 	if !strings.HasPrefix(cleanedPath, home) {
-// 		t.Fatalf("cleaned path is not absolute")
-// 	}
-// }
+func TestConfigPathsAreCleaned(t *testing.T) {
+	t.Parallel()
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("failed to get home dir: %s", err.Error())
+	}
+
+	mockSessions := []MockSeshConfig{
+		{
+			Name: "sesh.toml",
+			Contents: fmt.Sprintf(`
+			[default_session]
+			startup_script = "default"
+
+			[[session]]
+			path = "~/tilde-prefixed"
+			name = "my-tilde-prefixed-session"
+			startup_script = "~/my_script"
+
+			[[session]]
+			path = "%s/tilde-prefixed"
+			name = "my-tilde-prefixed-session"
+			startup_script = "%s/my_script"
+			`, home, home),
+		},
+	}
+
+	userConfigPath := prepareSeshConfig(t, mockSessions)
+	defer os.Remove(userConfigPath)
+
+	fetcher := &mockConfigDirectoryFetcher{dir: userConfigPath}
+	cfg := config.ParseConfigFile(fetcher)
+
+	err = cfg.CleanPaths()
+	if err != nil {
+		t.Fatalf("failed to clean paths: %s", err.Error())
+	}
+
+	// test all config sessions
+	for _, sessionConfig := range cfg.SessionConfigs {
+		if !strings.HasPrefix(sessionConfig.Path, home) {
+			t.Fatalf("config session path is not absolute")
+		}
+
+		if !strings.HasPrefix(sessionConfig.StartupScript, home) {
+			t.Fatalf("config session startup script is not absolute")
+		}
+	}
+}
