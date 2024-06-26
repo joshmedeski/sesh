@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/joshmedeski/sesh/config"
-	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 )
@@ -27,16 +26,19 @@ func checkAnyTrue(s interface{}) bool {
 	return false
 }
 
-func makeSessionsMap(sessions []Session) map[string]bool {
+// Takes as input a list of sessions and an injected mapper function
+// Returns a map using the mapper function
+// to show existing sessions
+func makeSessionsMap(sessions []Session, mapper func(s Session) string) map[string]bool {
 	sessionMap := make(map[string]bool, len(sessions))
 	for _, session := range sessions {
-		sessionMap[session.Path] = true
+		sessionMap[mapper(session)] = true
 	}
 	return sessionMap
 }
 
-func isInSessionMap(sessionMap map[string]bool, path string) bool {
-	_, exists := sessionMap[path]
+func isInSessionMap(sessionMap map[string]bool, key string) bool {
+	_, exists := sessionMap[key]
 	return exists
 }
 
@@ -62,14 +64,17 @@ func listTmuxSessions(o Options) (sessions []Session, err error) {
 
 func listConfigSessions(c *config.Config, existingSessions []Session) (sessions []Session, err error) {
 	var configSessions []Session
-	sessionMap := makeSessionsMap(existingSessions)
+	fString := "%s-%s"
+
+	// filter sessions by name+path combination
+	sessionMap := makeSessionsMap(existingSessions, func(s Session) string { return fmt.Sprintf(fString, s.Name, s.Path) })
+
 	for _, sessionConfig := range c.SessionConfigs {
-		path := dir.AlternatePath(sessionConfig.Path)
-		if !isInSessionMap(sessionMap, path) && sessionConfig.Name != "" {
+		if !isInSessionMap(sessionMap, fmt.Sprintf(fString, sessionConfig.Name, sessionConfig.Path)) && sessionConfig.Name != "" {
 			configSessions = append(configSessions, Session{
 				Src:  "config",
 				Name: sessionConfig.Name,
-				Path: path,
+				Path: sessionConfig.Path,
 			})
 		}
 	}
@@ -82,7 +87,7 @@ func listZoxideSessions(existingSessions []Session) (sessions []Session, err err
 		return nil, fmt.Errorf("couldn't list zoxide results: %q", err)
 	}
 	var zoxideSessions []Session
-	sessionMap := makeSessionsMap(existingSessions)
+	sessionMap := makeSessionsMap(existingSessions, func(s Session) string { return s.Path })
 	for _, result := range results {
 		if !isInSessionMap(sessionMap, result.Path) {
 			zoxideSessions = append(zoxideSessions, Session{

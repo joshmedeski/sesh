@@ -19,7 +19,13 @@ func (m *mockConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 	return m.dir, nil
 }
 
-func prepareSeshConfig(t *testing.T) string {
+type MockSeshConfig struct {
+	Name     string
+	Contents string
+	Imports  string
+}
+
+func prepareSeshConfig(t *testing.T, mockSeshConfigs []MockSeshConfig) string {
 	userConfigPath, err := os.MkdirTemp(os.TempDir(), "config")
 	if err != nil {
 		t.Fatal(err)
@@ -27,34 +33,22 @@ func prepareSeshConfig(t *testing.T) string {
 	if err := os.MkdirAll(path.Join(userConfigPath, "sesh"), fs.ModePerm); err != nil {
 		t.Fatal(err)
 	}
-	tempConfigPath := path.Join(userConfigPath, "sesh", "sesh.toml")
-	secondTempConfigPath := path.Join(userConfigPath, "sesh", "sesh2.toml")
 
-	err = os.WriteFile(tempConfigPath, []byte(fmt.Sprintf(`
-		import = ["%s"]
-    [default_session]
-		startup_script = "default"
+	// create a temp config file for each supplied config
+	for _, mockSesh := range mockSeshConfigs {
+		tempConfigPath := path.Join(userConfigPath, "sesh", mockSesh.Name)
 
-		[[session]]
-		path = "~/dev/first_session"
-		startup_script = "~/.config/sesh/scripts/first_script"
+		var contents string
+		if mockSesh.Imports != "" {
+			contents = fmt.Sprintf("import = [\"%s\"]\n%s", path.Join(userConfigPath, "sesh", mockSesh.Imports), mockSesh.Contents)
+		} else {
+			contents = mockSesh.Contents
+		}
+		err = os.WriteFile(tempConfigPath, []byte(contents), fs.ModePerm)
 
-		[[session]]
-		path = "~/dev/second_session"
-		startup_script = "~/.config/sesh/scripts/second_script"
-		`, secondTempConfigPath),
-	), fs.ModePerm)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = os.WriteFile(secondTempConfigPath, []byte(`
-		[[session]]
-		path = "~/dev/third_session"
-		startup_script = "~/.config/sesh/scripts/third_script"
-	`), fs.ModePerm)
-	if err != nil {
-		t.Fatal(err)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	return userConfigPath
@@ -62,8 +56,39 @@ func prepareSeshConfig(t *testing.T) string {
 
 func TestParseConfigFile(t *testing.T) {
 	t.Parallel()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal("unable to get user's home directory")
+	}
 
-	userConfigPath := prepareSeshConfig(t)
+	mockSessions := []MockSeshConfig{
+		{
+			Name: "sesh.toml",
+			Contents: fmt.Sprintf(`
+			[default_session]
+			startup_script = "default"
+
+			[[session]]
+			path = "~/dev/first_session"
+			startup_script = "~/.config/sesh/scripts/first_script"
+
+			[[session]]
+			path = "%s/dev/second_session"
+			startup_script = "%s/.config/sesh/scripts/second_script"
+			`, home, home),
+			Imports: "sesh2.toml",
+		},
+		{
+			Name: "sesh2.toml",
+			Contents: `
+			[[session]]
+			path = "~/dev/third_session"
+			startup_script = "~/.config/sesh/scripts/third_script"
+			`,
+		},
+	}
+
+	userConfigPath := prepareSeshConfig(t, mockSessions)
 	defer os.Remove(userConfigPath)
 
 	t.Run("ParseConfigFile", func(t *testing.T) {
@@ -84,23 +109,23 @@ func TestParseConfigFile(t *testing.T) {
 		if len(config.SessionConfigs) != 3 {
 			t.Errorf("Expected %d, got %d", 3, len(config.SessionConfigs))
 		}
-		if config.SessionConfigs[0].Path != "~/dev/first_session" {
-			t.Errorf("Expected %s, got %s", "~/dev/first_session", config.SessionConfigs[0].Path)
+		if config.SessionConfigs[0].Path != (home + "/dev/first_session") {
+			t.Errorf("Expected %s, got %s", home+"/dev/first_session", config.SessionConfigs[0].Path)
 		}
-		if config.SessionConfigs[0].StartupScript != "~/.config/sesh/scripts/first_script" {
-			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/first_script", config.SessionConfigs[0].StartupScript)
+		if config.SessionConfigs[0].StartupScript != (home + "/.config/sesh/scripts/first_script") {
+			t.Errorf("Expected %s, got %s", home+"/.config/sesh/scripts/first_script", config.SessionConfigs[0].StartupScript)
 		}
-		if config.SessionConfigs[1].Path != "~/dev/second_session" {
-			t.Errorf("Expected %s, got %s", "~/dev/second_session", config.SessionConfigs[1].Path)
+		if config.SessionConfigs[1].Path != (home + "/dev/second_session") {
+			t.Errorf("Expected %s, got %s", home+"/dev/second_session", config.SessionConfigs[1].Path)
 		}
-		if config.SessionConfigs[1].StartupScript != "~/.config/sesh/scripts/second_script" {
-			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/second_script", config.SessionConfigs[1].StartupScript)
+		if config.SessionConfigs[1].StartupScript != (home + "/.config/sesh/scripts/second_script") {
+			t.Errorf("Expected %s, got %s", home+"/.config/sesh/scripts/second_script", config.SessionConfigs[1].StartupScript)
 		}
-		if config.SessionConfigs[2].Path != "~/dev/third_session" {
-			t.Errorf("Expected %s, got %s", "~/dev/third_session", config.SessionConfigs[2].Path)
+		if config.SessionConfigs[2].Path != (home + "/dev/third_session") {
+			t.Errorf("Expected %s, got %s", home+"/dev/third_session", config.SessionConfigs[2].Path)
 		}
-		if config.SessionConfigs[2].StartupScript != "~/.config/sesh/scripts/third_script" {
-			t.Errorf("Expected %s, got %s", "~/.config/sesh/scripts/third_script", config.SessionConfigs[2].StartupScript)
+		if config.SessionConfigs[2].StartupScript != (home + "/.config/sesh/scripts/third_script") {
+			t.Errorf("Expected %s, got %s", home+"/.config/sesh/scripts/third_script", config.SessionConfigs[2].StartupScript)
 		}
 	})
 }
@@ -182,3 +207,48 @@ func BenchmarkParseConfigFile(b *testing.B) {
 		})
 	}
 }
+
+//
+// func TestConfigPathsAreCleaned(t *testing.T) {
+// 	t.Parallel()
+//
+// 	mockSessions := []MockSeshConfig{
+// 		{
+// 			Name: "sesh.toml",
+// 			Contents: `
+// 			[default_session]
+// 			startup_script = "default"
+//
+// 			[[session]]
+// 			path = "~/tilde-prefixed"
+// 			name = "my-tilde-prefixed-session"
+// 			`,
+// 		},
+// 	}
+//
+// 	userConfigPath := prepareSeshConfig(t, mockSessions)
+// 	defer os.Remove(userConfigPath)
+//
+// 	fetcher := &mockConfigDirectoryFetcher{dir: userConfigPath}
+// 	cfg := config.ParseConfigFile(fetcher)
+//
+// 	err := cfg.CleanPaths()
+// 	if err != nil {
+// 		t.Fatalf("failed to clean paths: %s", err.Error())
+// 	}
+//
+// 	cleanedPath := cfg.SessionConfigs[0].Path
+//
+// 	if strings.HasPrefix(cleanedPath, "~") {
+// 		t.Fatalf("cleaned path starts with ~")
+// 	}
+//
+// 	home, err := os.UserHomeDir()
+// 	if err != nil {
+// 		t.Fatalf("failed to get home dir: %s", err.Error())
+// 	}
+//
+// 	if !strings.HasPrefix(cleanedPath, home) {
+// 		t.Fatalf("cleaned path is not absolute")
+// 	}
+// }
