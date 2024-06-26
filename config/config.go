@@ -54,6 +54,23 @@ func (d *DefaultConfigDirectoryFetcher) GetUserConfigDir() (string, error) {
 	}
 }
 
+// Takes as input the user defined sessions from their config
+// and cleans all paths to be absolute
+func (c *Config) CleanPaths() error {
+	switch runtime.GOOS {
+	case "windows":
+		return nil
+
+	default:
+		for idx, sessionConfig := range c.SessionConfigs {
+			// convert user home dirs to absolute paths
+			c.SessionConfigs[idx].Path = dir.AlternatePath(sessionConfig.Path)
+			c.SessionConfigs[idx].StartupScript = dir.AlternatePath(sessionConfig.StartupScript)
+		}
+	}
+	return nil
+}
+
 func parseConfigFromFile(configPath string, config *Config) error {
 	file, err := os.ReadFile(configPath)
 	if err != nil {
@@ -63,6 +80,13 @@ func parseConfigFromFile(configPath string, config *Config) error {
 	if err != nil {
 		return fmt.Errorf(": %s", err)
 	}
+
+	// cleanup potentially messy user paths
+	err = config.CleanPaths()
+	if err != nil {
+		return err
+	}
+
 	if len(config.ImportPaths) > 0 {
 		for _, path := range config.ImportPaths {
 			importConfig := Config{}

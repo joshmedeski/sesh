@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/joshmedeski/sesh/config"
-	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/name"
 )
 
@@ -16,7 +15,7 @@ func isConfigSession(choice string) *Session {
 			return &Session{
 				Src:  "config",
 				Name: sessionConfig.Name,
-				Path: dir.AlternatePath(sessionConfig.Path),
+				Path: sessionConfig.Path,
 			}
 		}
 	}
