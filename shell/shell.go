@@ -22,7 +22,8 @@ func NewShell(exec execwrap.Exec) Shell {
 func (c *RealShell) Cmd(cmd string, arg ...string) (string, error) {
 	command := c.exec.Command(cmd, arg...)
 	output, err := command.CombinedOutput()
-	return string(output), err
+	trimmedOutput := strings.TrimSuffix(string(output), "\n")
+	return trimmedOutput, err
 }
 
 func (c *RealShell) ListCmd(cmd string, arg ...string) ([]string, error) {

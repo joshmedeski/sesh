@@ -73,6 +73,52 @@ func (_c *MockPath_Abs_Call) RunAndReturn(run func(string) (string, error)) *Moc
 	return _c
 }
 
+// Base provides a mock function with given fields: path
+func (_m *MockPath) Base(path string) string {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Base")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// MockPath_Base_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Base'
+type MockPath_Base_Call struct {
+	*mock.Call
+}
+
+// Base is a helper method to define mock.On call
+//   - path string
+func (_e *MockPath_Expecter) Base(path interface{}) *MockPath_Base_Call {
+	return &MockPath_Base_Call{Call: _e.mock.On("Base", path)}
+}
+
+func (_c *MockPath_Base_Call) Run(run func(path string)) *MockPath_Base_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockPath_Base_Call) Return(_a0 string) *MockPath_Base_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockPath_Base_Call) RunAndReturn(run func(string) string) *MockPath_Base_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Join provides a mock function with given fields: elem
 func (_m *MockPath) Join(elem ...string) string {
 	_va := make([]interface{}, len(elem))

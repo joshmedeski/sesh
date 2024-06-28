@@ -8,6 +8,7 @@ import (
 type Path interface {
 	Join(elem ...string) string
 	Abs(path string) (string, error)
+	Base(path string) string
 }
 
 type RealPath struct{}
@@ -22,4 +23,8 @@ func (p *RealPath) Join(elem ...string) string {
 
 func (p *RealPath) Abs(path string) (string, error) {
 	return filepath.Abs(path)
+}
+
+func (p *RealPath) Base(path string) string {
+	return filepath.Base(path)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 	"github.com/stretchr/testify/assert"
@@ -17,16 +18,18 @@ func TestEstablishTmuxConnection(t *testing.T) {
 	mockDir := new(dir.MockDir)
 	mockHome := new(home.MockHome)
 	mockLister := new(lister.MockLister)
+	mockNamer := new(namer.MockNamer)
 	mockTmux := new(tmux.MockTmux)
 	mockZoxide := new(zoxide.MockZoxide)
 
 	c := &RealConnector{
+		model.Config{},
 		mockDir,
 		mockHome,
 		mockLister,
+		mockNamer,
 		mockTmux,
 		mockZoxide,
-		model.Config{},
 	}
 	mockTmux.On("AttachSession", mock.Anything).Return("attaching", nil)
 	mockZoxide.On("Add", mock.Anything).Return(nil)

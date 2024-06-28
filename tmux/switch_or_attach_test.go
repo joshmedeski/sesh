@@ -21,7 +21,7 @@ func TestSwitchOrAttach(t *testing.T) {
 		mockShell.ExpectedCalls = nil
 		mockShell.On("Cmd", "tmux", "switch-client", "-t", mock.Anything).Return("", nil)
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: true})
-		assert.Equal(t, "switching to existing tmux session: dotfiles", response)
+		assert.Equal(t, "switching to tmux session: dotfiles", response)
 		assert.Equal(t, nil, error)
 	})
 
@@ -31,7 +31,7 @@ func TestSwitchOrAttach(t *testing.T) {
 		mockOs.On("Getenv", "TMUX").Return("/private/tmp/tmux-501/default,72439,4")
 		mockShell.On("Cmd", "tmux", "switch-client", "-t", mock.Anything).Return("", nil)
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
-		assert.Equal(t, "switching to existing tmux session: dotfiles", response)
+		assert.Equal(t, "switching to tmux session: dotfiles", response)
 		assert.Equal(t, nil, error)
 	})
 
@@ -51,7 +51,7 @@ func TestSwitchOrAttach(t *testing.T) {
 		mockOs.On("Getenv", "TMUX").Return("")
 		mockShell.On("Cmd", "tmux", "attach-session", "-t", mock.Anything).Return("", nil)
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
-		assert.Equal(t, "attaching to existing tmux session: dotfiles", response)
+		assert.Equal(t, "attaching to tmux session: dotfiles", response)
 		assert.Equal(t, nil, error)
 	})
 }

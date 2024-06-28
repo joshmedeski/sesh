@@ -1,8 +1,6 @@
 package tmux
 
 import (
-	"fmt"
-
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/oswrap"
 	"github.com/joshmedeski/sesh/shell"
@@ -39,7 +37,6 @@ func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
 }
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
-	fmt.Print(startDir)
 	return t.shell.Cmd("tmux", "new-session", "-d", "-s", sessionName, "-c", startDir)
 }
 

@@ -5,8 +5,10 @@ import (
 	"github.com/joshmedeski/sesh/connector"
 	"github.com/joshmedeski/sesh/dir"
 	"github.com/joshmedeski/sesh/execwrap"
+	"github.com/joshmedeski/sesh/git"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/lister"
+	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/oswrap"
 	"github.com/joshmedeski/sesh/pathwrap"
 	"github.com/joshmedeski/sesh/runtimewrap"
@@ -29,6 +31,7 @@ func App(version string) cli.App {
 	home := home.NewHome(os)
 
 	// resource dependencies
+	git := git.NewGit(shell)
 	tmux := tmux.NewTmux(os, shell)
 	zoxide := zoxide.NewZoxide(shell)
 
@@ -41,7 +44,8 @@ func App(version string) cli.App {
 
 	// core dependencies
 	lister := lister.NewLister(config, home, tmux, zoxide)
-	connector := connector.NewConnector(config, dir, home, lister, tmux, zoxide)
+	namer := namer.NewNamer(path, git)
+	connector := connector.NewConnector(config, dir, home, lister, namer, tmux, zoxide)
 
 	return cli.App{
 		Name:    "sesh",

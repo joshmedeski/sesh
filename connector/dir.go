@@ -1,6 +1,8 @@
 package connector
 
-import "github.com/joshmedeski/sesh/model"
+import (
+	"github.com/joshmedeski/sesh/model"
+)
 
 func dirStrategy(c *RealConnector, name string) (model.Connection, error) {
 	path, err := c.home.ExpandHome(name)
@@ -11,13 +13,19 @@ func dirStrategy(c *RealConnector, name string) (model.Connection, error) {
 	if !isDir {
 		return model.Connection{Found: false}, nil
 	}
+	nameFromPath, err := c.namer.FromPath(absPath)
+	if err != nil {
+		return model.Connection{}, err
+	}
 	return model.Connection{
 		Found:       true,
 		New:         true,
 		AddToZoxide: true,
 		Session: model.SeshSession{
-			Src:  "zoxide",
-			Name: name,
+			// TODO: what is the best name for this? "dir" isn't technically a source
+			// it's not used in any list command
+			Src:  "dir",
+			Name: nameFromPath,
 			Path: absPath,
 		},
 	}, nil
