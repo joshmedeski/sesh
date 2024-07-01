@@ -148,8 +148,7 @@ func (_c *MockGit_ShowTopLevel_Call) RunAndReturn(run func(string) (bool, string
 func NewMockGit(t interface {
 	mock.TestingT
 	Cleanup(func())
-},
-) *MockGit {
+}) *MockGit {
 	mock := &MockGit{}
 	mock.Mock.Test(t)
 
