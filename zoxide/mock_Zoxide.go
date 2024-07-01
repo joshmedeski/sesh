@@ -123,6 +123,64 @@ func (_c *MockZoxide_ListResults_Call) RunAndReturn(run func() ([]*model.ZoxideR
 	return _c
 }
 
+// Query provides a mock function with given fields: path
+func (_m *MockZoxide) Query(path string) (*model.ZoxideResult, error) {
+	ret := _m.Called(path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Query")
+	}
+
+	var r0 *model.ZoxideResult
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*model.ZoxideResult, error)); ok {
+		return rf(path)
+	}
+	if rf, ok := ret.Get(0).(func(string) *model.ZoxideResult); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ZoxideResult)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockZoxide_Query_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Query'
+type MockZoxide_Query_Call struct {
+	*mock.Call
+}
+
+// Query is a helper method to define mock.On call
+//   - path string
+func (_e *MockZoxide_Expecter) Query(path interface{}) *MockZoxide_Query_Call {
+	return &MockZoxide_Query_Call{Call: _e.mock.On("Query", path)}
+}
+
+func (_c *MockZoxide_Query_Call) Run(run func(path string)) *MockZoxide_Query_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockZoxide_Query_Call) Return(_a0 *model.ZoxideResult, _a1 error) *MockZoxide_Query_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockZoxide_Query_Call) RunAndReturn(run func(string) (*model.ZoxideResult, error)) *MockZoxide_Query_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockZoxide creates a new instance of MockZoxide. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockZoxide(t interface {
