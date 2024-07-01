@@ -132,6 +132,62 @@ func (_c *MockLister_FindTmuxSession_Call) RunAndReturn(run func(string) (model.
 	return _c
 }
 
+// FindZoxideSession provides a mock function with given fields: name
+func (_m *MockLister) FindZoxideSession(name string) (model.SeshSession, bool) {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindZoxideSession")
+	}
+
+	var r0 model.SeshSession
+	var r1 bool
+	if rf, ok := ret.Get(0).(func(string) (model.SeshSession, bool)); ok {
+		return rf(name)
+	}
+	if rf, ok := ret.Get(0).(func(string) model.SeshSession); ok {
+		r0 = rf(name)
+	} else {
+		r0 = ret.Get(0).(model.SeshSession)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) bool); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	return r0, r1
+}
+
+// MockLister_FindZoxideSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindZoxideSession'
+type MockLister_FindZoxideSession_Call struct {
+	*mock.Call
+}
+
+// FindZoxideSession is a helper method to define mock.On call
+//   - name string
+func (_e *MockLister_Expecter) FindZoxideSession(name interface{}) *MockLister_FindZoxideSession_Call {
+	return &MockLister_FindZoxideSession_Call{Call: _e.mock.On("FindZoxideSession", name)}
+}
+
+func (_c *MockLister_FindZoxideSession_Call) Run(run func(name string)) *MockLister_FindZoxideSession_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockLister_FindZoxideSession_Call) Return(_a0 model.SeshSession, _a1 bool) *MockLister_FindZoxideSession_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockLister_FindZoxideSession_Call) RunAndReturn(run func(string) (model.SeshSession, bool)) *MockLister_FindZoxideSession_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function with given fields: opts
 func (_m *MockLister) List(opts ListOptions) (model.SeshSessions, error) {
 	ret := _m.Called(opts)

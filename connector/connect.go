@@ -6,32 +6,6 @@ import (
 	"github.com/joshmedeski/sesh/model"
 )
 
-func establishConfigConnection(c *RealConnector, name string, opts model.ConnectOpts) (string, error) {
-	session, exists := c.lister.FindConfigSession(name)
-	if !exists {
-		return "", nil
-	}
-	if session.Path != "" {
-		return "", fmt.Errorf("found config session '%s' has no path", name)
-	}
-	// TODO: run startup command or startup script
-	c.tmux.NewSession(session.Name, session.Path)
-	c.zoxide.Add(session.Path)
-	return c.tmux.SwitchOrAttach(name, opts)
-}
-
-func establishDirConnection(c *RealConnector, name string, _ model.ConnectOpts) (string, error) {
-	isDir, absPath := c.dir.Dir(name)
-	if !isDir {
-		return "", nil
-	}
-	// TODO: get session name from directory
-	// c.tmux.NewSession(session.Name, absPath)
-	// c.zoxide.Add(session.Path)
-	// return switchOrAttach(c, name, opts)
-	return absPath, nil
-}
-
 func establishZoxideConnection(c *RealConnector, name string, _ model.ConnectOpts) (string, error) {
 	isDir, absPath := c.dir.Dir(name)
 	if !isDir {
@@ -54,7 +28,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		tmuxStrategy,
 		configStrategy,
 		dirStrategy,
-		// establishZoxideConnection,
+		zoxideStrategy,
 	}
 
 	for _, strategy := range strategies {

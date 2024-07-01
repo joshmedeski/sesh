@@ -34,14 +34,15 @@ func listZoxide(l *RealLister) (model.SeshSessions, error) {
 	}, nil
 }
 
-func (l *RealLister) FindZoxideSession(name string) (model.SeshSession, bool) {
-	sessions, err := listZoxide(l)
+func (l *RealLister) FindZoxideSession(path string) (model.SeshSession, bool) {
+	result, err := l.zoxide.Query(path)
 	if err != nil {
 		return model.SeshSession{}, false
 	}
-	if session, exists := sessions.Directory[name]; exists {
-		return session, exists
-	} else {
-		return model.SeshSession{}, false
-	}
+	return model.SeshSession{
+		Src:   "zoxide",
+		Name:  result.Path,
+		Path:  result.Path,
+		Score: result.Score,
+	}, false
 }
