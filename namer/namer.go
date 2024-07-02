@@ -1,6 +1,7 @@
 package namer
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/joshmedeski/sesh/git"
@@ -9,7 +10,7 @@ import (
 
 type Namer interface {
 	// Names a sesh session from a given path
-	FromPath(path string) (string, error)
+	Name(path string) (string, error)
 }
 
 type RealNamer struct {
@@ -30,15 +31,20 @@ func convertToValidName(name string) string {
 	return validName
 }
 
-func (n *RealNamer) FromPath(path string) (string, error) {
-	var name string
-	isGit, topLevelDir, _ := n.git.ShowTopLevel(path)
-	if isGit && topLevelDir != "" {
-		relativePath := strings.TrimPrefix(path, topLevelDir)
-		baseDir := n.pathwrap.Base(topLevelDir)
-		name = baseDir + relativePath
-	} else {
-		name = n.pathwrap.Base(path)
+func (n *RealNamer) Name(path string) (string, error) {
+	strategies := []func(*RealNamer, string) (string, error){
+		gitBareName,
+		gitName,
+		dirName,
 	}
-	return convertToValidName(name), nil
+	for _, strategy := range strategies {
+		name, err := strategy(n, path)
+		if err != nil {
+			return "", err
+		}
+		if name != "" {
+			return convertToValidName(name), nil
+		}
+	}
+	return "", fmt.Errorf("could not determine name from path: %s", path)
 }

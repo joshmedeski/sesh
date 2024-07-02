@@ -17,12 +17,12 @@ func (_m *MockNamer) EXPECT() *MockNamer_Expecter {
 	return &MockNamer_Expecter{mock: &_m.Mock}
 }
 
-// FromPath provides a mock function with given fields: path
-func (_m *MockNamer) FromPath(path string) (string, error) {
+// Name provides a mock function with given fields: path
+func (_m *MockNamer) Name(path string) (string, error) {
 	ret := _m.Called(path)
 
 	if len(ret) == 0 {
-		panic("no return value specified for FromPath")
+		panic("no return value specified for Name")
 	}
 
 	var r0 string
@@ -45,30 +45,30 @@ func (_m *MockNamer) FromPath(path string) (string, error) {
 	return r0, r1
 }
 
-// MockNamer_FromPath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FromPath'
-type MockNamer_FromPath_Call struct {
+// MockNamer_Name_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Name'
+type MockNamer_Name_Call struct {
 	*mock.Call
 }
 
-// FromPath is a helper method to define mock.On call
+// Name is a helper method to define mock.On call
 //   - path string
-func (_e *MockNamer_Expecter) FromPath(path interface{}) *MockNamer_FromPath_Call {
-	return &MockNamer_FromPath_Call{Call: _e.mock.On("FromPath", path)}
+func (_e *MockNamer_Expecter) Name(path interface{}) *MockNamer_Name_Call {
+	return &MockNamer_Name_Call{Call: _e.mock.On("Name", path)}
 }
 
-func (_c *MockNamer_FromPath_Call) Run(run func(path string)) *MockNamer_FromPath_Call {
+func (_c *MockNamer_Name_Call) Run(run func(path string)) *MockNamer_Name_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *MockNamer_FromPath_Call) Return(_a0 string, _a1 error) *MockNamer_FromPath_Call {
+func (_c *MockNamer_Name_Call) Return(_a0 string, _a1 error) *MockNamer_Name_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockNamer_FromPath_Call) RunAndReturn(run func(string) (string, error)) *MockNamer_FromPath_Call {
+func (_c *MockNamer_Name_Call) RunAndReturn(run func(string) (string, error)) *MockNamer_Name_Call {
 	_c.Call.Return(run)
 	return _c
 }

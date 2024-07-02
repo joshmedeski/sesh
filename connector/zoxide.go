@@ -7,11 +7,11 @@ func zoxideToTmuxName(c *RealConnector, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	nameFromPath, err := c.namer.FromPath(fullPath)
+	name, err := c.namer.Name(fullPath)
 	if err != nil {
 		return "", err
 	}
-	return nameFromPath, nil
+	return name, nil
 }
 
 func zoxideStrategy(c *RealConnector, path string) (model.Connection, error) {
@@ -19,11 +19,11 @@ func zoxideStrategy(c *RealConnector, path string) (model.Connection, error) {
 	if !exists {
 		return model.Connection{Found: false}, nil
 	}
-	nameFromPath, err := c.namer.FromPath(session.Path)
+	name, err := c.namer.Name(session.Path)
 	if err != nil {
 		return model.Connection{}, err
 	}
-	session.Name = nameFromPath
+	session.Name = name
 	return model.Connection{
 		Found:       true,
 		Session:     session,

@@ -13,7 +13,7 @@ func dirStrategy(c *RealConnector, name string) (model.Connection, error) {
 	if !isDir {
 		return model.Connection{Found: false}, nil
 	}
-	nameFromPath, err := c.namer.FromPath(absPath)
+	nameFromPath, err := c.namer.Name(absPath)
 	if err != nil {
 		return model.Connection{}, err
 	}
