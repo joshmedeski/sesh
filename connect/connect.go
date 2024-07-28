@@ -30,7 +30,8 @@ func Connect(
 		return fmt.Errorf("unable to connect to %q: %w", choice, err)
 	}
 	return tmux.Connect(tmux.TmuxSession{
-		Name: session.Name,
-		Path: session.Path,
+		Name:     session.Name,
+		Path:     session.Path,
+		PathList: session.PathList,
 	}, alwaysSwitch, command, session.Path, config)
 }

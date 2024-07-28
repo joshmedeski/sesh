@@ -20,8 +20,9 @@ type (
 	}
 
 	SessionConfig struct {
-		Name string `toml:"name"`
-		Path string `toml:"path"`
+		Name     string   `toml:"name"`
+		Path     string   `toml:"path"`
+		PathList []string `toml:"path_list"`
 		DefaultSessionConfig
 	}
 

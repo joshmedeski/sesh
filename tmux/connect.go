@@ -20,7 +20,7 @@ func Connect(
 		_, err := NewSession(s)
 		if err != nil {
 			return fmt.Errorf(
-				"unable to connect to tmux session %q: %w",
+				"error when creating new tmux session %q: %w",
 				s.Name,
 				err,
 			)

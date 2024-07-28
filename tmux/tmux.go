@@ -111,7 +111,33 @@ func NewSession(s TmuxSession) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	if s.PathList != nil {
+		var combinedErr error
+		for _, path := range s.PathList {
+			if err := createNewWindow(s.Name, path); err != nil {
+				combinedErr = fmt.Errorf("%w; %v", combinedErr, err)
+			}
+		}
+		if combinedErr != nil {
+			return out, combinedErr
+		}
+	}
+
 	return out, nil
+}
+
+func createNewWindow(sessionName, path string) error {
+	fullPath := dir.FullPath(path)
+	if fullPath == "" {
+		return nil
+	}
+	info, err := os.Stat(fullPath)
+	if err != nil || !info.IsDir() {
+		return nil
+	}
+	_, err = tmuxCmd([]string{"new-window", "-t", sessionName, "-c", fullPath, "-d"})
+	return err
 }
 
 func execStartupScript(name string, scriptPath string) error {

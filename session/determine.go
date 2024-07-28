@@ -14,9 +14,10 @@ func isConfigSession(choice string) *Session {
 	for _, sessionConfig := range config.SessionConfigs {
 		if sessionConfig.Name == choice {
 			return &Session{
-				Src:  "config",
-				Name: sessionConfig.Name,
-				Path: dir.AlternatePath(sessionConfig.Path),
+				Src:      "config",
+				Name:     sessionConfig.Name,
+				Path:     dir.AlternatePath(sessionConfig.Path),
+				PathList: sessionConfig.PathList,
 			}
 		}
 	}

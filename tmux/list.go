@@ -21,6 +21,7 @@ type TmuxSession struct {
 	ID                string     // Unique session ID
 	Name              string     // Name of session
 	Path              string     // Working directory of session
+	PathList          []string   // List of additional window paths in session
 	Attached          int        // Number of clients session is attached to
 	GroupAttached     int        // Number of clients sessions in group are attached to
 	GroupSize         int        // Size of session group
@@ -57,6 +58,7 @@ func format() string {
 		"#{session_path}",
 		"#{session_stack}",
 		"#{session_windows}",
+		"#{session_path_list}",
 	}
 
 	return strings.Join(variables, separator)
@@ -71,7 +73,7 @@ func processSessions(o Options, sessionList []string) []*TmuxSession {
 	for _, line := range sessionList {
 		fields := strings.Split(line, separator) // Strings split by single space
 
-		if len(fields) != 21 {
+		if len(fields) != 22 {
 			continue
 		}
 		if o.HideAttached && fields[2] == "1" {
@@ -100,6 +102,7 @@ func processSessions(o Options, sessionList []string) []*TmuxSession {
 			Path:              fields[18],
 			Stack:             convert.StringToIntSlice(fields[19]),
 			Windows:           convert.StringToInt(fields[20]),
+			PathList:          strings.Split(fields[21], ","),
 		}
 		sessions = append(sessions, session)
 	}
