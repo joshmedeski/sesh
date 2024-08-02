@@ -6,18 +6,6 @@ import (
 	"github.com/joshmedeski/sesh/model"
 )
 
-func establishZoxideConnection(c *RealConnector, name string, _ model.ConnectOpts) (string, error) {
-	isDir, absPath := c.dir.Dir(name)
-	if !isDir {
-		return "", nil
-	}
-	// TODO: get session name from directory
-	// c.tmux.NewSession(session.Name, absPath)
-	// c.zoxide.Add(session.Path)
-	// return switchOrAttach(c, name, opts)
-	return absPath, nil
-}
-
 // TODO: send to logging (local txt file?)
 func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, error) {
 	// TODO: make it configurable to change the order of connection establishments?
@@ -33,8 +21,8 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 
 	for _, strategy := range strategies {
 		if connection, err := strategy(c, name); err != nil {
-			return "", fmt.Errorf("failed to establish connection: %w", err)
 		} else if connection.Found {
+			return "", fmt.Errorf("failed to establish connection: %w", err)
 			// TODO: allow CLI flag to disable zoxide and overwrite all settings?
 			// sesh connect --ignore-zoxide "dotfiles"
 			if connection.AddToZoxide {
@@ -44,7 +32,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 				c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
 			}
 			// TODO: configure the ability to create a session in a detached way (like update)
-			// TODO: configure the ability to create a popup instead of switching
+			// TODO: configure the ability to create a popup instead of switching (with no tmux bar?)
 			return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
 		}
 	}
