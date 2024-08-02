@@ -11,6 +11,7 @@ type Tmux interface {
 	NewSession(sessionName string, startDir string) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
+	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 }
@@ -33,7 +34,7 @@ func (t *RealTmux) SwitchClient(targetSession string) (string, error) {
 }
 
 func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
-	return t.shell.Cmd("tmux", "send-keys", "-t", targetPane, keys)
+	return t.shell.Cmd("tmux", "send-keys", "-t", targetPane, keys, "Enter")
 }
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {

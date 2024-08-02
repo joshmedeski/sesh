@@ -8,6 +8,7 @@ import (
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/namer"
+	"github.com/joshmedeski/sesh/startup"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,7 @@ func TestConfigStrategy(t *testing.T) {
 	mockHome := new(home.MockHome)
 	mockLister := new(lister.MockLister)
 	mockNamer := new(namer.MockNamer)
+	mockStartup := new(startup.MockStartup)
 	mockTmux := new(tmux.MockTmux)
 	mockZoxide := new(zoxide.MockZoxide)
 
@@ -28,6 +30,7 @@ func TestConfigStrategy(t *testing.T) {
 		mockHome,
 		mockLister,
 		mockNamer,
+		mockStartup,
 		mockTmux,
 		mockZoxide,
 	}

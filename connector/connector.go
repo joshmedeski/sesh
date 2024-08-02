@@ -6,6 +6,7 @@ import (
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/namer"
+	"github.com/joshmedeski/sesh/startup"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/zoxide"
 )
@@ -15,13 +16,14 @@ type Connector interface {
 }
 
 type RealConnector struct {
-	config model.Config
-	dir    dir.Dir
-	home   home.Home
-	lister lister.Lister
-	namer  namer.Namer
-	tmux   tmux.Tmux
-	zoxide zoxide.Zoxide
+	config  model.Config
+	dir     dir.Dir
+	home    home.Home
+	lister  lister.Lister
+	namer   namer.Namer
+	startup startup.Startup
+	tmux    tmux.Tmux
+	zoxide  zoxide.Zoxide
 }
 
 func NewConnector(
@@ -30,6 +32,7 @@ func NewConnector(
 	home home.Home,
 	lister lister.Lister,
 	namer namer.Namer,
+	startup startup.Startup,
 	tmux tmux.Tmux,
 	zoxide zoxide.Zoxide,
 ) Connector {
@@ -39,6 +42,7 @@ func NewConnector(
 		home,
 		lister,
 		namer,
+		startup,
 		tmux,
 		zoxide,
 	}

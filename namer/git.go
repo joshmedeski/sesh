@@ -5,10 +5,7 @@ import "strings"
 // Gets the name from a git bare repository
 func gitBareName(n *RealNamer, path string) (string, error) {
 	var name string
-	isGit, commonDir, err := n.git.GitCommonDir(path)
-	if err != nil {
-		return "", err
-	}
+	isGit, commonDir, _ := n.git.GitCommonDir(path)
 	if isGit && strings.HasSuffix(commonDir, "/.bare") {
 		topLevelDir := strings.TrimSuffix(commonDir, "/.bare")
 		relativePath := strings.TrimPrefix(path, topLevelDir)

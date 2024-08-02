@@ -21,8 +21,8 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 
 	for _, strategy := range strategies {
 		if connection, err := strategy(c, name); err != nil {
-		} else if connection.Found {
 			return "", fmt.Errorf("failed to establish connection: %w", err)
+		} else if connection.Found {
 			// TODO: allow CLI flag to disable zoxide and overwrite all settings?
 			// sesh connect --ignore-zoxide "dotfiles"
 			if connection.AddToZoxide {
@@ -30,6 +30,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 			}
 			if connection.New {
 				c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
+				c.startup.Exec(connection.Session)
 			}
 			// TODO: configure the ability to create a session in a detached way (like update)
 			// TODO: configure the ability to create a popup instead of switching (with no tmux bar?)

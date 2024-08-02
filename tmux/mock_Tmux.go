@@ -235,6 +235,63 @@ func (_c *MockTmux_NewSession_Call) RunAndReturn(run func(string, string) (strin
 	return _c
 }
 
+// SendKeys provides a mock function with given fields: name, command
+func (_m *MockTmux) SendKeys(name string, command string) (string, error) {
+	ret := _m.Called(name, command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendKeys")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
+		return rf(name, command)
+	}
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(name, command)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(name, command)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockTmux_SendKeys_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendKeys'
+type MockTmux_SendKeys_Call struct {
+	*mock.Call
+}
+
+// SendKeys is a helper method to define mock.On call
+//   - name string
+//   - command string
+func (_e *MockTmux_Expecter) SendKeys(name interface{}, command interface{}) *MockTmux_SendKeys_Call {
+	return &MockTmux_SendKeys_Call{Call: _e.mock.On("SendKeys", name, command)}
+}
+
+func (_c *MockTmux_SendKeys_Call) Run(run func(name string, command string)) *MockTmux_SendKeys_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockTmux_SendKeys_Call) Return(_a0 string, _a1 error) *MockTmux_SendKeys_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockTmux_SendKeys_Call) RunAndReturn(run func(string, string) (string, error)) *MockTmux_SendKeys_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SwitchClient provides a mock function with given fields: targetSession
 func (_m *MockTmux) SwitchClient(targetSession string) (string, error) {
 	ret := _m.Called(targetSession)

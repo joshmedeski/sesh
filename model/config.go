@@ -8,7 +8,8 @@ type (
 	}
 
 	DefaultSessionConfig struct {
-		StartupScript  string `toml:"startup_script"`
+		// TODO: mention breaking change in v2 release notes
+		// StartupScript  string `toml:"startup_script"`
 		StartupCommand string `toml:"startup_command"`
 		Tmuxp          string `toml:"tmuxp"`
 		Tmuxinator     string `toml:"tmuxinator"`

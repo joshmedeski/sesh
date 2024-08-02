@@ -22,9 +22,10 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
 			}
 			directory[key] = model.SeshSession{
-				Src:  "config",
-				Name: session.Name,
-				Path: path,
+				Src:            "config",
+				Name:           session.Name,
+				Path:           path,
+				StartupCommand: session.StartupCommand,
 			}
 		}
 	}
