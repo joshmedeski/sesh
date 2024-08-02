@@ -2,7 +2,6 @@ package namer
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/joshmedeski/sesh/git"
 	"github.com/joshmedeski/sesh/pathwrap"
@@ -23,12 +22,6 @@ func NewNamer(pathwrap pathwrap.Path, git git.Git) Namer {
 		pathwrap: pathwrap,
 		git:      git,
 	}
-}
-
-func convertToValidName(name string) string {
-	validName := strings.ReplaceAll(name, ".", "_")
-	validName = strings.ReplaceAll(validName, ":", "_")
-	return validName
 }
 
 func (n *RealNamer) Name(path string) (string, error) {

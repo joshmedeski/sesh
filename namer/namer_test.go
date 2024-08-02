@@ -14,26 +14,47 @@ func TestFromPath(t *testing.T) {
 	mockGit := new(git.MockGit)
 	n := NewNamer(mockPathwrap, mockGit)
 
-	t.Run("returns base on git dir", func(t *testing.T) {
+	t.Run("name for git repo", func(t *testing.T) {
 		mockGit.On("ShowTopLevel", "/Users/josh/c/dotfiles/.config/neovim").Return(true, "/Users/josh/c/dotfiles", nil)
+		mockGit.On("GitCommonDir", "/Users/josh/c/dotfiles/.config/neovim").Return(true, "", nil)
 		mockPathwrap.On("Base", "/Users/josh/c/dotfiles").Return("dotfiles")
-
-		name, _ := n.FromPath("/Users/josh/c/dotfiles/.config/neovim")
-		assert.Equal(t, "dotfiles/.config/neovim", name)
+		name, _ := n.Name("/Users/josh/c/dotfiles/.config/neovim")
+		assert.Equal(t, "dotfiles/_config/neovim", name)
 	})
 
-	t.Run("returns base on git worktree dir", func(t *testing.T) {
-		mockGit.On("ShowTopLevel", "/Users/josh/c/sesh/main/namer").Return(true, "/Users/josh/c/sesh", nil)
+	t.Run("name for git worktree", func(t *testing.T) {
+		mockGit.On("ShowTopLevel", "/Users/josh/c/sesh/main").Return(true, "/Users/josh/c/sesh/main", nil)
+		mockGit.On("GitCommonDir", "/Users/josh/c/sesh/main").Return(true, "/Users/josh/c/sesh/.bare", nil)
 		mockPathwrap.On("Base", "/Users/josh/c/sesh").Return("sesh")
-
-		name, _ := n.FromPath("/Users/josh/c/sesh/main/namer")
-		assert.Equal(t, "sesh/main/namer", name)
+		name, _ := n.Name("/Users/josh/c/sesh/main")
+		assert.Equal(t, "sesh/main", name)
 	})
 
 	t.Run("returns base on non-git dir", func(t *testing.T) {
 		mockGit.On("ShowTopLevel", "/Users/josh/.config/neovim").Return(false, "", fmt.Errorf("not a git repository (or any of the parent"))
+		mockGit.On("GitCommonDir", "/Users/josh/.config/neovim").Return(false, "", fmt.Errorf("not a git repository (or any of the parent"))
 		mockPathwrap.On("Base", "/Users/josh/.config/neovim").Return("neovim")
-		name, _ := n.FromPath("/Users/josh/.config/neovim")
+		name, _ := n.Name("/Users/josh/.config/neovim")
 		assert.Equal(t, "neovim", name)
+	})
+}
+
+func TestConvertToValidName(t *testing.T) {
+	t.Run("Test with dot", func(t *testing.T) {
+		input := "test.name"
+		want := "test_name"
+		assert.Equal(t, want, convertToValidName(input))
+	})
+
+	t.Run("Test with colon", func(t *testing.T) {
+		input := "test:name"
+		want := "test_name"
+		assert.Equal(t, want, convertToValidName(input))
+	})
+
+	t.Run("Test with multiple special characters", func(t *testing.T) {
+		input := "test.name:with.multiple"
+		want := "test_name_with_multiple"
+		assert.Equal(t, want, convertToValidName(input))
 	})
 }
