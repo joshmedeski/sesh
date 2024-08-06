@@ -7,6 +7,7 @@ import (
 	"github.com/joshmedeski/sesh/execwrap"
 	"github.com/joshmedeski/sesh/git"
 	"github.com/joshmedeski/sesh/home"
+	"github.com/joshmedeski/sesh/icon"
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/oswrap"
@@ -48,14 +49,15 @@ func App(version string) cli.App {
 	startup := startup.NewStartup(config, lister, tmux)
 	namer := namer.NewNamer(path, git)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide)
+	icon := icon.NewIcon(config)
 
 	return cli.App{
 		Name:    "sesh",
 		Version: version,
 		Usage:   "Smart session manager for the terminal",
 		Commands: []*cli.Command{
-			List(lister),
-			Connect(connector),
+			List(icon, lister),
+			Connect(connector, icon),
 			Clone(),
 		},
 	}

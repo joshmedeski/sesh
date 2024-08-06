@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/connector"
+	"github.com/joshmedeski/sesh/icon"
 	"github.com/joshmedeski/sesh/model"
 	cli "github.com/urfave/cli/v2"
 )
 
-func Connect(c connector.Connector) *cli.Command {
+func Connect(c connector.Connector, i icon.Icon) *cli.Command {
 	return &cli.Command{
 		Name:                   "connect",
 		Aliases:                []string{"cn"},
@@ -36,7 +37,9 @@ func Connect(c connector.Connector) *cli.Command {
 				return nil
 			}
 			opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command")}
-			if connection, err := c.Connect(name, opts); err != nil {
+			trimmedName := i.RemoveIcon(name)
+			fmt.Println(trimmedName)
+			if connection, err := c.Connect(trimmedName, opts); err != nil {
 				// TODO: print to logs?
 				return err
 			} else {

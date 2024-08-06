@@ -1,0 +1,58 @@
+package icon
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/joshmedeski/sesh/model"
+)
+
+type Icon interface {
+	AddIcon(session model.SeshSession) string
+	RemoveIcon(name string) string
+}
+
+type RealIcon struct {
+	config model.Config
+}
+
+func NewIcon(config model.Config) Icon {
+	return &RealIcon{config}
+}
+
+var (
+	zoxideIcon string = ""
+	tmuxIcon   string = ""
+	configIcon string = ""
+)
+
+func ansiString(code int, s string) string {
+	return fmt.Sprintf("\033[%dm%s\033[39m", code, s)
+}
+
+func (i *RealIcon) AddIcon(s model.SeshSession) string {
+	var icon string
+	var colorCode int
+	switch s.Src {
+	case "tmux":
+		icon = tmuxIcon
+		colorCode = 34 // blue
+	case "zoxide":
+		icon = zoxideIcon
+		colorCode = 36 // cyan
+	case "config":
+		icon = configIcon
+		colorCode = 90 // gray
+	}
+	if icon != "" {
+		return fmt.Sprintf("%s %s", ansiString(colorCode, icon), s.Name)
+	}
+	return s.Name
+}
+
+func (i *RealIcon) RemoveIcon(name string) string {
+	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) {
+		return name[4:]
+	}
+	return name
+}

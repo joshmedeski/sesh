@@ -3,11 +3,12 @@ package seshcli
 import (
 	"fmt"
 
+	"github.com/joshmedeski/sesh/icon"
 	"github.com/joshmedeski/sesh/lister"
 	cli "github.com/urfave/cli/v2"
 )
 
-func List(s lister.Lister) *cli.Command {
+func List(icon icon.Icon, list lister.Lister) *cli.Command {
 	return &cli.Command{
 		Name:                   "list",
 		Aliases:                []string{"l"},
@@ -42,11 +43,11 @@ func List(s lister.Lister) *cli.Command {
 			&cli.BoolFlag{
 				Name:    "icons",
 				Aliases: []string{"i"},
-				Usage:   "show Nerd Font icons",
+				Usage:   "show icons",
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			sessions, err := s.List(lister.ListOptions{
+			sessions, err := list.List(lister.ListOptions{
 				Config:       cCtx.Bool("config"),
 				HideAttached: cCtx.Bool("hide-attached"),
 				Icons:        cCtx.Bool("icons"),
@@ -59,7 +60,11 @@ func List(s lister.Lister) *cli.Command {
 			}
 
 			for _, i := range sessions.OrderedIndex {
-				fmt.Println(sessions.Directory[i].Name)
+				name := sessions.Directory[i].Name
+				if cCtx.Bool("icons") {
+					name = icon.AddIcon(sessions.Directory[i])
+				}
+				fmt.Println(name)
 			}
 
 			return nil
