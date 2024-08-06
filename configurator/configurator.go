@@ -37,10 +37,11 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 	}
 	userConfigDir := path.Join(userHomeDir, ".config")
 	configFilePath := c.configFilePath(userConfigDir)
-	file, err := c.os.ReadFile(configFilePath)
-	if err != nil {
-		return config, fmt.Errorf("couldn't read config file: %q", err)
-	}
+	file, _ := c.os.ReadFile(configFilePath)
+	// TODO: add to debugging logs
+	// if err != nil {
+	// 	return config, fmt.Errorf("couldn't read config file: %q", err)
+	// }
 	err = toml.Unmarshal(file, &config)
 	if err != nil {
 		return config, fmt.Errorf("couldn't unmarshal config file: %q", err)
