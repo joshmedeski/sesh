@@ -32,6 +32,9 @@ func Connect(c connector.Connector) *cli.Command {
 				return errors.New("please provide a session name")
 			}
 			name := cCtx.Args().First()
+			if name == "" {
+				return nil
+			}
 			opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command")}
 			if connection, err := c.Connect(name, opts); err != nil {
 				// TODO: print to logs?
