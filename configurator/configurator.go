@@ -2,6 +2,7 @@ package configurator
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/oswrap"
@@ -30,37 +31,21 @@ func (c *RealConfigurator) configFilePath(rootDir string) string {
 
 func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error) {
 	config := model.Config{}
-
-	userConfigDir, err := c.os.UserConfigDir()
+	userHomeDir, err := c.os.UserHomeDir()
 	if err != nil {
 		return config, fmt.Errorf("couldn't get user config dir: %q", err)
 	}
+	userConfigDir := path.Join(userHomeDir, ".config")
 	configFilePath := c.configFilePath(userConfigDir)
 	file, err := c.os.ReadFile(configFilePath)
 	if err != nil {
 		return config, fmt.Errorf("couldn't read config file: %q", err)
 	}
 	err = toml.Unmarshal(file, &config)
-	// TODO: convert array into map (create an array of keys)
 	if err != nil {
 		return config, fmt.Errorf("couldn't unmarshal config file: %q", err)
 	}
 	return config, nil
-
-	// TODO: look for config file in `~/.config`
-
-	// switch c.runtime.GOOS() {
-	// case "darwin":
-	// 	// TODO: support both
-	// 	// typically ~/Library/Application Support, but we want to use ~/.config
-	// 	homeDir, err := os.UserHomeDir()
-	// 	if err != nil {
-	// 		return model.Config{}, err
-	// 	}
-	// 	return path.Join(homeDir, ".config"), nil
-	// default:
-	// 	return os.UserConfigDir()
-	// }
 }
 
 func (c *RealConfigurator) GetConfig() (model.Config, error) {
