@@ -3,6 +3,7 @@ package seshcli
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/joshmedeski/sesh/connector"
 	"github.com/joshmedeski/sesh/icon"
@@ -62,7 +63,7 @@ func Connect(c connector.Connector, i icon.Icon) *cli.Command {
 			if cCtx.NArg() == 0 {
 				return errors.New("please provide a session name")
 			}
-			name := cCtx.Args().First()
+			name := strings.Join(cCtx.Args().Slice(), " ")
 			if name == "" {
 				return nil
 			}
