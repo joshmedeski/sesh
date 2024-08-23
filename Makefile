@@ -7,4 +7,3 @@ test:
 
 build: 
 	@go build -ldflags ${BUILD_FLAGS} -o $(shell echo $$GOPATH)/bin/sesh-dev
-
