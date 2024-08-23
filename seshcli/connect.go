@@ -2,7 +2,6 @@ package seshcli
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/joshmedeski/sesh/connector"
@@ -39,12 +38,11 @@ func Connect(c connector.Connector, i icon.Icon) *cli.Command {
 			}
 			opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command")}
 			trimmedName := i.RemoveIcon(name)
-			if connection, err := c.Connect(trimmedName, opts); err != nil {
-				// TODO: print to logs?
+			if _, err := c.Connect(trimmedName, opts); err != nil {
+				// TODO: add to logging
 				return err
 			} else {
-				// TODO: create a message that is helpful to the end user
-				fmt.Println(connection)
+				// TODO: add to logging
 				return nil
 			}
 		},
