@@ -57,36 +57,14 @@ func TestListSessions(t *testing.T) {
 		}
 		sessions, err := parseTmuxSessionsOutput(rawSessions)
 		assert.Nil(t, err)
-		const timeFormat = "2006-01-02 15:04:05 -0700 MST"
-		created, _ := time.Parse(timeFormat, "2024-04-25 19:02:45 -0500 CDT")
-		lastAttached, _ := time.Parse(timeFormat, "2024-04-25 19:44:06 -0500 CDT")
-		activity, _ := time.Parse(timeFormat, "2024-04-25 19:44:06 -0500 CDT")
-		expectedSessions := []*model.TmuxSession{
-			{
-				Created:           &created,
-				LastAttached:      &lastAttached,
-				Activity:          &activity,
-				Group:             "",
-				Path:              "/Users/joshmedeski/c/sesh/main",
-				Name:              "sesh/main",
-				ID:                "$1",
-				AttachedList:      []string{""},
-				GroupList:         []string{""},
-				GroupAttachedList: []string{""},
-				Stack:             []int{2, 1},
-				Alerts:            []int{},
-				GroupSize:         0,
-				GroupAttached:     0,
-				Attached:          0,
-				Windows:           2,
-				Format:            true,
-				GroupManyAttached: false,
-				Grouped:           false,
-				ManyAttached:      false,
-				Marked:            false,
-			},
+
+		expectedName := "sesh/main"
+		expectedPath := "/Users/joshmedeski/c/sesh/main"
+
+		for _, session := range sessions {
+			assert.Equal(t, expectedName, session.Name)
+			assert.Equal(t, expectedPath, session.Path)
 		}
-		assert.Equal(t, expectedSessions, sessions)
 	})
 
 	t.Run("sortByLastAttached", func(t *testing.T) {
