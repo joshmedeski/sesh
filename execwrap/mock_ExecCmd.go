@@ -131,39 +131,6 @@ func (_c *MockExecCmd_Output_Call) RunAndReturn(run func() ([]byte, error)) *Moc
 	return _c
 }
 
-// SetEnv provides a mock function with given fields: _a0
-func (_m *MockExecCmd) SetEnv(_a0 []string) {
-	_m.Called(_a0)
-}
-
-// MockExecCmd_SetEnv_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetEnv'
-type MockExecCmd_SetEnv_Call struct {
-	*mock.Call
-}
-
-// SetEnv is a helper method to define mock.On call
-//   - _a0 []string
-func (_e *MockExecCmd_Expecter) SetEnv(_a0 interface{}) *MockExecCmd_SetEnv_Call {
-	return &MockExecCmd_SetEnv_Call{Call: _e.mock.On("SetEnv", _a0)}
-}
-
-func (_c *MockExecCmd_SetEnv_Call) Run(run func(_a0 []string)) *MockExecCmd_SetEnv_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string))
-	})
-	return _c
-}
-
-func (_c *MockExecCmd_SetEnv_Call) Return() *MockExecCmd_SetEnv_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *MockExecCmd_SetEnv_Call) RunAndReturn(run func([]string)) *MockExecCmd_SetEnv_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewMockExecCmd creates a new instance of MockExecCmd. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockExecCmd(t interface {
