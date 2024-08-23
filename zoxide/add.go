@@ -1,22 +1,9 @@
 package zoxide
 
-import (
-	"fmt"
-	"os/exec"
-	"path/filepath"
-)
-
-func Add(result string) error {
-	p, err := filepath.Abs(result)
+func (z *RealZoxide) Add(path string) error {
+	_, err := z.shell.Cmd("zoxide", "add", path)
 	if err != nil {
-		return fmt.Errorf("can't add %q path to zoxide", result)
+		return err
 	}
-
-	cmd := exec.Command("zoxide", "add", p)
-	_, err = cmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to add %q to zoxide: %w", p, err)
-	}
-
 	return nil
 }

@@ -1,32 +1,36 @@
 package dir
 
 import (
-	"fmt"
-	"os"
-	"strings"
+	"github.com/joshmedeski/sesh/oswrap"
+	"github.com/joshmedeski/sesh/pathwrap"
 )
 
-func PrettyPath(path string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	if strings.HasPrefix(path, home) {
-		return strings.Replace(path, home, "~", 1), nil
-	}
-
-	return path, nil
+type Dir interface {
+	Dir(name string) (isDir bool, absPath string)
 }
 
-func FullPath(path string) string {
-	home, err := os.UserHomeDir()
+type RealDir struct {
+	os   oswrap.Os
+	path pathwrap.Path
+}
+
+func NewDir(os oswrap.Os, path pathwrap.Path) Dir {
+	return &RealDir{os, path}
+}
+
+func (d *RealDir) Dir(path string) (isDir bool, absPath string) {
+	absPath, err := d.path.Abs(path)
 	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
+		return false, ""
 	}
-	if strings.HasPrefix(path, "~") {
-		return strings.Replace(path, "~", home, 1)
+
+	info, err := d.os.Stat(absPath)
+	if err != nil {
+		return false, ""
 	}
-	return path
+	if !info.IsDir() {
+		return false, ""
+	}
+
+	return true, absPath
 }

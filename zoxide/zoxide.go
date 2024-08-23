@@ -1,18 +1,20 @@
 package zoxide
 
 import (
-	"os/exec"
+	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/shell"
 )
 
-func zoxideCmd(args []string) ([]byte, error) {
-	zoxide, err := exec.LookPath("zoxide")
-	if err != nil {
-		return nil, err
-	}
-	cmd := exec.Command(zoxide, args...)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	return output, nil
+type Zoxide interface {
+	ListResults() ([]*model.ZoxideResult, error)
+	Add(path string) error
+	Query(path string) (*model.ZoxideResult, error)
+}
+
+type RealZoxide struct {
+	shell shell.Shell
+}
+
+func NewZoxide(shell shell.Shell) Zoxide {
+	return &RealZoxide{shell}
 }

@@ -3,38 +3,27 @@ package tmux
 import (
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/joshmedeski/sesh/convert"
+	"github.com/joshmedeski/sesh/model"
 )
 
-type TmuxSession struct {
-	Activity          *time.Time // Time of session last activity
-	Created           *time.Time // Time session created
-	LastAttached      *time.Time // Time session last attached
-	Alerts            []int      // List of window indexes with alerts
-	Stack             []int      // Window indexes in most recent order
-	AttachedList      []string   // List of clients session is attached to
-	GroupAttachedList []string   // List of clients sessions in group are attached to
-	GroupList         []string   // List of sessions in group
-	Group             string     // Name of session group
-	ID                string     // Unique session ID
-	Name              string     // Name of session
-	Path              string     // Working directory of session
-	Attached          int        // Number of clients session is attached to
-	GroupAttached     int        // Number of clients sessions in group are attached to
-	GroupSize         int        // Size of session group
-	Windows           int        // Number of windows in session
-	Format            bool       // 1 if format is for a session
-	GroupManyAttached bool       // 1 if multiple clients attached to sessions in group
-	Grouped           bool       // 1 if session in a group
-	ManyAttached      bool       // 1 if multiple clients attached
-	Marked            bool       // 1 if this session contains the marked pane
+func (t *RealTmux) ListSessions() ([]*model.TmuxSession, error) {
+	output, err := t.shell.ListCmd("tmux", "list-sessions", "-F", listsessionsformat())
+	if err != nil {
+		return []*model.TmuxSession{}, nil
+	}
+	sessions, err := parseTmuxSessionsOutput(output)
+	if err != nil {
+		return nil, err
+	}
+	sortedSessions := sortByLastAttached(sessions)
+	return sortedSessions, nil
 }
 
 var separator = "::"
 
-func format() string {
+func listsessionsformat() string {
 	variables := []string{
 		"#{session_activity}",
 		"#{session_alerts}",
@@ -58,27 +47,19 @@ func format() string {
 		"#{session_stack}",
 		"#{session_windows}",
 	}
-
 	return strings.Join(variables, separator)
 }
 
-type Options struct {
-	HideAttached bool
-}
-
-func processSessions(o Options, sessionList []string) []*TmuxSession {
-	sessions := make([]*TmuxSession, 0, len(sessionList))
-	for _, line := range sessionList {
-		fields := strings.Split(line, separator) // Strings split by single space
+func parseTmuxSessionsOutput(rawList []string) ([]*model.TmuxSession, error) {
+	sessions := make([]*model.TmuxSession, 0, len(rawList))
+	for _, line := range rawList {
+		fields := strings.Split(line, separator)
 
 		if len(fields) != 21 {
 			continue
 		}
-		if o.HideAttached && fields[2] == "1" {
-			continue
-		}
 
-		session := &TmuxSession{
+		session := &model.TmuxSession{
 			Activity:          convert.StringToTime(fields[0]),
 			Alerts:            convert.StringToIntSlice(fields[1]),
 			Attached:          convert.StringToInt(fields[2]),
@@ -104,27 +85,12 @@ func processSessions(o Options, sessionList []string) []*TmuxSession {
 		sessions = append(sessions, session)
 	}
 
-	return sessions
+	return sessions, nil
 }
 
-func sortSessions(sessions []*TmuxSession) []*TmuxSession {
+func sortByLastAttached(sessions []*model.TmuxSession) []*model.TmuxSession {
 	sort.Slice(sessions, func(i, j int) bool {
 		return sessions[j].LastAttached.Before(*sessions[i].LastAttached)
 	})
-
 	return sessions
-}
-
-func List(o Options) ([]*TmuxSession, error) {
-	format := format()
-	output, err := tmuxCmd([]string{"list-sessions", "-F", format})
-	cleanOutput := strings.TrimSpace(output)
-	if err != nil || strings.HasPrefix(cleanOutput, "no server running on") {
-		return nil, nil
-	}
-	sessionList := strings.TrimSpace(string(output))
-	lines := strings.Split(sessionList, "\n")
-	sessions := processSessions(o, lines)
-
-	return sortSessions(sessions), nil
 }

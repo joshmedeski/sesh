@@ -51,11 +51,10 @@ func StringToInt(s string) int {
 	return i
 }
 
-func StringToFloat(s string) float64 {
-	f, err := strconv.ParseFloat(s, 32)
+func StringToFloat(s string) (float64, error) {
+	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
+		return 0.0, fmt.Errorf("couldn't convert %q to float: %q", s, err)
 	}
-	return f
+	return f, nil
 }

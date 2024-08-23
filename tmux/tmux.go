@@ -1,185 +1,46 @@
 package tmux
 
 import (
-	"bytes"
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-
-	"github.com/joshmedeski/sesh/config"
-	"github.com/joshmedeski/sesh/dir"
+	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/oswrap"
+	"github.com/joshmedeski/sesh/shell"
 )
 
-func GetSession(s string) (TmuxSession, error) {
-	sessionList, err := List(Options{})
-	if err != nil {
-		return TmuxSession{}, fmt.Errorf("unable to get tmux sessions: %w", err)
-	}
-
-	altPath := dir.AlternatePath(s)
-
-	for _, session := range sessionList {
-		if session.Name == s {
-			return *session, nil
-		}
-
-		if session.Path == s {
-			return *session, nil
-		}
-
-		if altPath != "" && session.Path == altPath {
-			return *session, nil
-		}
-	}
-
-	return TmuxSession{}, fmt.Errorf(
-		"no tmux session found with name or path matching %q",
-		s,
-	)
+type Tmux interface {
+	ListSessions() ([]*model.TmuxSession, error)
+	NewSession(sessionName string, startDir string) (string, error)
+	IsAttached() bool
+	AttachSession(targetSession string) (string, error)
+	SendKeys(name string, command string) (string, error)
+	SwitchClient(targetSession string) (string, error)
+	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 }
 
-func tmuxCmd(args []string) (string, error) {
-	tmux, err := exec.LookPath("tmux")
-	if err != nil {
-		return "", err
-	}
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(tmux, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = &stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stderr = &stderr
-	if err := cmd.Start(); err != nil {
-		return "", err
-	}
-	if err := cmd.Wait(); err != nil {
-		errString := strings.TrimSpace(stderr.String())
-		if strings.HasPrefix(errString, "no server running on") {
-			return "", nil
-		}
-		return "", err
-	}
-	return stdout.String(), nil
+type RealTmux struct {
+	os    oswrap.Os
+	shell shell.Shell
 }
 
-func isAttached() bool {
-	return len(os.Getenv("TMUX")) > 0
+func NewTmux(os oswrap.Os, shell shell.Shell) Tmux {
+	return &RealTmux{os, shell}
 }
 
-func FindSession(session string) (*TmuxSession, error) {
-	sessions, err := List(Options{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, s := range sessions {
-		if s.Name == session {
-			return s, nil
-		}
-	}
-	return nil, nil
+func (t *RealTmux) AttachSession(targetSession string) (string, error) {
+	return t.shell.Cmd("tmux", "attach-session", "-t", targetSession)
 }
 
-func attachSession(session string) error {
-	if _, err := tmuxCmd([]string{"attach", "-t", session}); err != nil {
-		return err
-	}
-	return nil
+func (t *RealTmux) SwitchClient(targetSession string) (string, error) {
+	return t.shell.Cmd("tmux", "switch-client", "-t", targetSession)
 }
 
-func switchSession(session string) error {
-	if _, err := tmuxCmd([]string{"switch-client", "-t", session}); err != nil {
-		return err
-	}
-	return nil
+func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
+	return t.shell.Cmd("tmux", "send-keys", "-t", targetPane, keys, "Enter")
 }
 
-func runPersistentCommand(session string, command string) error {
-	finalCmd := []string{"send-keys", "-t", session, command, "Enter"}
-	if _, err := tmuxCmd(finalCmd); err != nil {
-		return err
-	}
-	return nil
+func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
+	return t.shell.Cmd("tmux", "new-session", "-d", "-s", sessionName, "-c", startDir)
 }
 
-func NewSession(s TmuxSession) (string, error) {
-	out, err := tmuxCmd(
-		[]string{"new-session", "-d", "-s", s.Name, "-c", s.Path},
-	)
-	if err != nil {
-		return "", err
-	}
-	return out, nil
-}
-
-func execStartupScript(name string, scriptPath string) error {
-	bash, err := exec.LookPath("bash")
-	if err != nil {
-		return err
-	}
-	cmd := strings.Join(
-		[]string{bash, "-c", fmt.Sprintf("\"source %s\"", scriptPath)},
-		" ",
-	)
-	err = runPersistentCommand(name, cmd)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func execStartupCommand(name string, command string) error {
-	err := runPersistentCommand(name, command)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func execTmuxp(name string, command string) error {
-	err := runPersistentCommand(name, command)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func removeTrailingSlash(path string) string {
-	return strings.TrimRight(path, "/")
-}
-
-func getStartupScript(sessionPath string, config *config.Config) string {
-	for _, sessionConfig := range config.SessionConfigs {
-		// TODO: get working with /* again
-		scriptFullPath := removeTrailingSlash(dir.FullPath(sessionConfig.Path))
-		match, _ := filepath.Match(scriptFullPath, sessionPath)
-		if match {
-			return sessionConfig.StartupScript
-		}
-	}
-	return ""
-}
-
-func getStartupCommand(sessionPath string, config *config.Config) string {
-	for _, sessionConfig := range config.SessionConfigs {
-		scriptFullPath := removeTrailingSlash(dir.FullPath(sessionConfig.Path))
-		match, _ := filepath.Match(scriptFullPath, sessionPath)
-		if match {
-			return sessionConfig.StartupCommand
-		}
-	}
-	return ""
-}
-
-func getTmuxp(sessionPath string, config *config.Config) string {
-	for _, sessionConfig := range config.SessionConfigs {
-		scriptFullPath := dir.FullPath(sessionConfig.Path)
-		match, _ := filepath.Match(scriptFullPath, sessionPath)
-		if match {
-			return sessionConfig.Tmuxp
-		}
-	}
-	return ""
+func (t *RealTmux) IsAttached() bool {
+	return len(t.os.Getenv("TMUX")) > 0
 }

@@ -2,95 +2,105 @@ package tmux
 
 import (
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/shell"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestFormat(t *testing.T) {
-	want := "#{session_activity}::#{session_alerts}::#{session_attached}::" +
-		"#{session_attached_list}::#{session_created}::#{session_format}::" +
-		"#{session_group}::#{session_group_attached}::" +
-		"#{session_group_attached_list}::#{session_group_list}::" +
-		"#{session_group_many_attached}::#{session_group_size}::" +
-		"#{session_grouped}::#{session_id}::#{session_last_attached}::" +
-		"#{session_many_attached}::#{session_marked}::#{session_name}::" +
-		"#{session_path}::#{session_stack}::#{session_windows}"
-	got := format()
-	require.Equal(t, want, got)
-}
+func TestListSessions(t *testing.T) {
+	t.Run("List tmux session", func(t *testing.T) {
+		mockShell := &shell.MockShell{}
+		tmux := &RealTmux{shell: mockShell}
+		mockShell.EXPECT().ListCmd("tmux", "list-sessions", "-F", mock.Anything).Return([]string{"1714092246::::0::::1714089765::1::::::::::::::0::$1::1714092246::0::0::sesh/main::/Users/joshmedeski/c/sesh/main::2,1::2"},
+			nil,
+		)
+		sessions, err := tmux.ListSessions()
+		assert.Nil(t, err)
+		for _, session := range sessions {
+			assert.Equal(t, "sesh/main", session.Name)
+			assert.Equal(t, "/Users/joshmedeski/c/sesh/main", session.Path)
+		}
+	})
 
-func BenchmarkFormat(i *testing.B) {
-	for n := 0; n < i.N; n++ {
-		format()
-	}
-}
+	t.Run("parseTmuxSessionsOutput", func(t *testing.T) {
+		rawSessions := []string{
+			"1714092246::::0::::1714089765::1::::::::::::::0::$1::1714092246::0::0::sesh/main::/Users/joshmedeski/c/sesh/main::2,1::2",
+		}
+		sessions, err := parseTmuxSessionsOutput(rawSessions)
+		assert.Nil(t, err)
 
-func TestProcessSessions(t *testing.T) {
-	testCases := map[string]struct {
-		Input    []string
-		Options  Options
-		Expected []*TmuxSession
-	}{
-		"Single active session": {
-			Input: []string{
-				"1705879337::::1::/dev/ttys000::1705878987::1::::::::::::::0::$2::1705879328::0::0::session-1::/some/test/path::1::1",
-			},
-			Expected: make([]*TmuxSession, 1),
-		},
-		"Hide single active session": {
-			Input: []string{
-				"1705879337::::1::/dev/ttys000::1705878987::1::::::::::::::0::$2::1705879328::0::0::session-1::/some/test/path::1::1",
-			},
-			Options: Options{
-				HideAttached: true,
-			},
-			Expected: make([]*TmuxSession, 0),
-		},
-		"Single inactive session": {
-			Input: []string{
-				"1705879002::::0::::1705878987::1::::::::::::::0::$2::1705878987::0::0::session-1::/some/test/path::1::1",
-			},
-			Expected: make([]*TmuxSession, 1),
-		},
-		"Two inactive session": {
-			Input: []string{
-				"1705879002::::0::::1705878987::1::::::::::::::0::$2::1705878987::0::0::session-1::/some/test/path::1::1",
-				"1705879063::::0::::1705879002::1::::::::::::::0::$3::1705879002::0::0::session-2::/some/other/test/path::1::1",
-			},
-			Expected: make([]*TmuxSession, 2),
-		},
-		"Two active session": {
-			Input: []string{
-				"1705879337::::1::/dev/ttys000::1705878987::1::::::::::::::0::$2::1705879328::0::0::session-1::/some/test/path::1::1",
-				"1705879337::::1::/dev/ttys000::1705878987::1::::::::::::::0::$2::1705879328::0::0::session-1::/some/test/path::1::1",
-			},
-			Expected: make([]*TmuxSession, 2),
-		},
-		"No sessions": {
-			Expected: []*TmuxSession{},
-		},
-		"Invalid LastAttached (Issue 34)": {
-			Input: []string{
-				"1705879002::::0::::1705878987::1::::::::::::::0::$2::1705878987::0::0::session-1::/some/test/path::1::1",
-				"1705879063::::0::::1705879002::1::::::::::::::0::$3::::0::0::session-2::/some/other/test/path::1::1",
-			},
-			Expected: make([]*TmuxSession, 2),
-		},
-	}
+		expectedName := "sesh/main"
+		expectedPath := "/Users/joshmedeski/c/sesh/main"
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			got := processSessions(tc.Options, tc.Input)
-			require.Equal(t, len(tc.Expected), len(got))
-		})
-	}
-}
+		for _, session := range sessions {
+			assert.Equal(t, expectedName, session.Name)
+			assert.Equal(t, expectedPath, session.Path)
+		}
+	})
 
-func BenchmarkProcessSessions(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		processSessions(Options{}, []string{
-			"1705879337::::1::/dev/ttys000::1705878987::1::::::::::::::0::$2::1705879328::0::0::session-1::/some/test/path::1::1",
-			"1705879337::::1::/dev/ttys000::1705878987::1::::::::::::::0::$2::1705879328::0::0::session-1::/some/test/path::1::1",
-		})
-	}
+	t.Run("sortByLastAttached", func(t *testing.T) {
+		const timeFormat = "2006-01-02 15:04:05 -0700 MST"
+		createdFA, _ := time.Parse(timeFormat, "2024-04-25 19:02:45 -0500 CDT")
+		lastAttachedFA, _ := time.Parse(timeFormat, "2024-04-25 19:30:06 -0500 CDT")
+		activityFA, _ := time.Parse(timeFormat, "2024-04-25 19:44:06 -0500 CDT")
+		firstAttached := model.TmuxSession{
+			Created:           &createdFA,
+			LastAttached:      &lastAttachedFA,
+			Activity:          &activityFA,
+			Group:             "",
+			Path:              "/Users/joshmedeski/c/sesh/main",
+			Name:              "sesh/main",
+			ID:                "$1",
+			AttachedList:      []string{""},
+			GroupList:         []string{""},
+			GroupAttachedList: []string{""},
+			Stack:             []int{2, 1},
+			Alerts:            []int{},
+			GroupSize:         0,
+			GroupAttached:     0,
+			Attached:          0,
+			Windows:           2,
+			Format:            true,
+			GroupManyAttached: false,
+			Grouped:           false,
+			ManyAttached:      false,
+			Marked:            false,
+		}
+
+		createdLA, _ := time.Parse(timeFormat, "2024-04-25 19:02:45 -0500 CDT")
+		lastAttachedLA, _ := time.Parse(timeFormat, "2024-04-25 19:44:06 -0500 CDT")
+		activityLA, _ := time.Parse(timeFormat, "2024-04-25 19:44:06 -0500 CDT")
+		lastAttached := model.TmuxSession{
+			Created:           &createdLA,
+			LastAttached:      &lastAttachedLA,
+			Activity:          &activityLA,
+			Group:             "",
+			Path:              "/Users/joshmedeski/c/sesh/main",
+			Name:              "sesh/main",
+			ID:                "$1",
+			AttachedList:      []string{""},
+			GroupList:         []string{""},
+			GroupAttachedList: []string{""},
+			Stack:             []int{2, 1},
+			Alerts:            []int{},
+			GroupSize:         0,
+			GroupAttached:     0,
+			Attached:          0,
+			Windows:           2,
+			Format:            true,
+			GroupManyAttached: false,
+			Grouped:           false,
+			ManyAttached:      false,
+			Marked:            false,
+		}
+
+		expectedSortedSessions := []*model.TmuxSession{&lastAttached, &firstAttached}
+		actualSortedSessionsOutOfOrder := sortByLastAttached([]*model.TmuxSession{&firstAttached, &lastAttached})
+		assert.Equal(t, expectedSortedSessions, actualSortedSessionsOutOfOrder)
+		actualSortedSessionsInOrder := sortByLastAttached([]*model.TmuxSession{&lastAttached, &firstAttached})
+		assert.Equal(t, expectedSortedSessions, actualSortedSessionsInOrder)
+	})
 }

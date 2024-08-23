@@ -1,48 +1,43 @@
 package git
 
 import (
-	"os/exec"
-	"regexp"
-	"strings"
+	"github.com/joshmedeski/sesh/shell"
 )
 
-func gitCmd(args []string) ([]byte, error) {
-	tmux, err := exec.LookPath("git")
-	if err != nil {
-		return nil, err
-	}
-	cmd := exec.Command(tmux, args...)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	return output, nil
+type Git interface {
+	ShowTopLevel(name string) (bool, string, error)
+	GitCommonDir(name string) (bool, string, error)
+	Clone(name string) (string, error)
 }
 
-func RootPath(path string) string {
-	gitRootPathCmd := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel")
-	gitRootPathByteOutput, err := gitRootPathCmd.CombinedOutput()
-	if err != nil {
-		return ""
-	}
-	gitRootPath := strings.TrimSpace(string(gitRootPathByteOutput))
-	return gitRootPath
+type RealGit struct {
+	shell shell.Shell
 }
 
-func WorktreePath(path string) string {
-	gitWorktreePathCmd := exec.Command("git", "-C", path, "rev-parse", "--git-common-dir")
-	gitWorktreePathByteOutput, err := gitWorktreePathCmd.CombinedOutput()
+func NewGit(shell shell.Shell) Git {
+	return &RealGit{shell}
+}
+
+func (g *RealGit) ShowTopLevel(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--show-toplevel")
 	if err != nil {
-		return ""
+		return false, "", err
 	}
-	gitWorktreePath := strings.TrimSpace(string(gitWorktreePathByteOutput))
-	match, _ := regexp.MatchString(`^(\.\./)*\.git$`, gitWorktreePath)
-	if match {
-		return ""
+	return true, out, nil
+}
+
+func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--git-common-dir")
+	if err != nil {
+		return false, "", err
 	}
-	suffixes := []string{"/.git", "/.bare"}
-	for _, suffix := range suffixes {
-		gitWorktreePath = strings.TrimSuffix(gitWorktreePath, suffix)
+	return true, out, nil
+}
+
+func (g *RealGit) Clone(name string) (string, error) {
+	out, err := g.shell.Cmd("git", "clone", name)
+	if err != nil {
+		return "", err
 	}
-	return gitWorktreePath
+	return out, nil
 }

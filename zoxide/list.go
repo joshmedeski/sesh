@@ -1,47 +1,32 @@
 package zoxide
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/joshmedeski/sesh/convert"
+	"github.com/joshmedeski/sesh/model"
 )
 
-type ZoxideResult struct {
-	Name  string
-	Path  string
-	Score float64
-}
-
-func List() ([]*ZoxideResult, error) {
-	output, err := zoxideCmd([]string{"query", "-ls"})
+func (z *RealZoxide) ListResults() ([]*model.ZoxideResult, error) {
+	list, err := z.shell.ListCmd("zoxide", "query", "--list", "--score")
 	if err != nil {
-		return []*ZoxideResult{}, nil
+		return nil, err
 	}
-	cleanOutput := strings.TrimSpace(string(output))
-	list := strings.Split(cleanOutput, "\n")
-	listLen := len(list)
-	if listLen == 1 && list[0] == "" {
-		return []*ZoxideResult{}, nil
-	}
-
-	results := make([]*ZoxideResult, 0, listLen)
-	for _, line := range list {
-		trimmed := strings.Trim(line, "[]")
-		trimmed = strings.Trim(trimmed, " ")
-		fields := strings.SplitN(trimmed, " ", 2)
-		if len(fields) != 2 {
-			fmt.Println("Zoxide entry has invalid number of fields (expected 2)")
-			os.Exit(1)
+	results := make([]*model.ZoxideResult, 0, len(list))
+	for _, result := range list {
+		if result == "" {
+			break
 		}
-		path := fields[1]
-		results = append(results, &ZoxideResult{
-			Score: convert.StringToFloat(fields[0]),
-			Name:  convert.PathToPretty(path),
-			Path:  path,
+		trimmedResult := strings.TrimSpace(result)
+		fields := strings.SplitN(trimmedResult, " ", 2)
+		score, err := convert.StringToFloat(fields[0])
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, &model.ZoxideResult{
+			Score: score,
+			Path:  fields[1],
 		})
 	}
-
 	return results, nil
 }
