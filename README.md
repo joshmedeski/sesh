@@ -170,22 +170,13 @@ The default session can be configured to run a command when connecting to a sess
 startup_command = "nvim -c ':Telescope find_files'"
 ```
 
-You can also use the `startup_script` property to run a script when connecting to a session.
-
-```toml
-[default_session]
-startup_script = "nvim -c ':Telescope find_files'"
-```
-
-**Note:** To learn how to write startup scripts, see the [startup script section](#startup-script).
-
 ### Session Configuration
 
-A startup script is a script that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server.
+A startup command is a command that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server.
 
 **Note:** If you use the `--command/-c` flag, then the startup script will not be run.
 
-I like to use a script that opens nvim on session startup:
+I like to use a command that opens nvim on session startup:
 
 ```toml
 [[session]]
@@ -205,17 +196,6 @@ Session configurations will load by default if no flags are provided (the return
 
 ```sh
 sesh list -c
-```
-
-### Startup Script
-
-A startup script is a simple shell script that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server and open neovim in a split pane.
-
-```sh
-#!/usr/bin/env bash
-tmux split-window -v -p 30 "npm run dev"
-tmux select-pane -t :.+
-tmux send-keys "nvim" Enter
 ```
 
 Set the file as an executable and it will be run when you connect to the specified session.
