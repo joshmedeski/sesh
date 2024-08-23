@@ -18,6 +18,14 @@
 
 Sesh is a CLI that helps you create and manage tmux sessions quickly and easily using zoxide.
 
+<div style="width:50%">
+  <a href="https://youtu.be/-yX3GjZfb5Y?si=iFG8qNro1hmZjJFY" target="_blank">
+    <img src="./smart-tmux-sessions-with-sesh.jpeg" alt="Smart tmux sessions with sesh">
+  </a>
+</div>
+
+Watch the video to learn more about how to use sesh to manage your tmux sessions.
+
 ## How to install
 
 ### Homebrew
@@ -53,6 +61,8 @@ Here are limitations to keep in mind:
 - tmux has to be running before you can use the extension
 - The extension caches results for a few seconds, so it may not always be up to date
 
+<a title="Install sesh Raycast Extension" href="https://www.raycast.com/joshmedeski/sesh"><img src="https://www.raycast.com/joshmedeski/sesh/install_button@2x.png?v=1.1" height="64" alt="" style="height: 64px;"></a>
+
 ## How to use
 
 ### tmux for sessions
@@ -82,7 +92,7 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 ```sh
 bind-key "T" run-shell "sesh connect \"$(
 	sesh list | fzf-tmux -p 55%,60% \
-		--no-sort --border-label ' sesh ' --prompt '⚡  ' \
+		--no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
 		--header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
 		--bind 'tab:down,btab:up' \
 		--bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
@@ -96,7 +106,43 @@ bind-key "T" run-shell "sesh connect \"$(
 
 You can customize this however you want, see `man fzf` for more info on the different options.
 
+## gum + tmux
+
+If you prefer to use [charmblacelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
+
+```sh
+bind-key "K" display-popup -E -w 40% "sesh connect \"$(
+	sesh list -i | gum filter --limit 1 --placeholder 'Pick a sesh' --height 50 --prompt='⚡'
+)\""
+```
+
+**Note:** There are less features available with gum compared to fzf, but I found its matching algorithm is faster and it ha a more modern feel.
+
 See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
+
+## zsh keybind
+
+If you use zsh, you can add the following keybind to your `.zshrc` to connect to a session:
+
+```sh
+function sesh-sessions() {
+  {
+    exec </dev/tty
+    exec <&1
+    local session
+    session=$(sesh list -t -c | fzf --height 40% --reverse --border-label ' sesh ' --border --prompt '⚡  ')
+    [[ -z "$session" ]] && return
+    sesh connect $session
+  }
+}
+
+zle     -N             sesh-sessions
+bindkey -M emacs '\es' sesh-sessions
+bindkey -M vicmd '\es' sesh-sessions
+bindkey -M viins '\es' sesh-sessions
+```
+
+After adding this to your `.zshrc`, you can press `Alt-s` to open a fzf prompt to connect to a session.
 
 ## Recommended tmux Settings
 
