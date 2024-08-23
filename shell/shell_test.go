@@ -11,6 +11,7 @@ import (
 func TestShellCmd(t *testing.T) {
 	t.Run("run should succeed", func(t *testing.T) {
 		mockExec := new(execwrap.MockExec)
+		mockExec.On("LookPath", "echo", mock.Anything).Return("echo", nil)
 		mockCmd := new(execwrap.MockExecCmd)
 		shell := &RealShell{exec: mockExec}
 		mockCmd.On("CombinedOutput").Return([]byte("hello"), nil)
