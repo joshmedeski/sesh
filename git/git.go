@@ -7,6 +7,7 @@ import (
 type Git interface {
 	ShowTopLevel(name string) (bool, string, error)
 	GitCommonDir(name string) (bool, string, error)
+	Clone(name string) (string, error)
 }
 
 type RealGit struct {
@@ -31,4 +32,12 @@ func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
 		return false, "", err
 	}
 	return true, out, nil
+}
+
+func (g *RealGit) Clone(name string) (string, error) {
+	out, err := g.shell.Cmd("git", "clone", name)
+	if err != nil {
+		return "", err
+	}
+	return out, nil
 }
