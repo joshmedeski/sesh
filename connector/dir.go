@@ -9,7 +9,6 @@ func dirStrategy(c *RealConnector, name string) (model.Connection, error) {
 	if err != nil {
 		return model.Connection{}, err
 	}
-
 	isDir, absPath := c.dir.Dir(path)
 	if !isDir {
 		return model.Connection{Found: false}, nil
