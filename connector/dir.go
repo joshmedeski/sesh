@@ -1,6 +1,8 @@
 package connector
 
 import (
+	"path/filepath"
+
 	"github.com/joshmedeski/sesh/model"
 )
 
@@ -9,7 +11,13 @@ func dirStrategy(c *RealConnector, name string) (model.Connection, error) {
 	if err != nil {
 		return model.Connection{}, err
 	}
-	isDir, absPath := c.dir.Dir(path)
+
+	fullPath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return model.Connection{}, err
+	}
+
+	isDir, absPath := c.dir.Dir(fullPath)
 	if !isDir {
 		return model.Connection{Found: false}, nil
 	}
