@@ -19,7 +19,12 @@ func NewDir(os oswrap.Os, path pathwrap.Path) Dir {
 }
 
 func (d *RealDir) Dir(path string) (isDir bool, absPath string) {
-	absPath, err := d.path.Abs(path)
+	fullPath, err := d.path.EvalSymlinks(path)
+	if err != nil {
+		return false, ""
+	}
+
+	absPath, err = d.path.Abs(fullPath)
 	if err != nil {
 		return false, ""
 	}

@@ -9,6 +9,7 @@ type Path interface {
 	Join(elem ...string) string
 	Abs(path string) (string, error)
 	Base(path string) string
+	EvalSymlinks(path string) (string, error)
 }
 
 type RealPath struct{}
@@ -27,4 +28,8 @@ func (p *RealPath) Abs(path string) (string, error) {
 
 func (p *RealPath) Base(path string) string {
 	return filepath.Base(path)
+}
+
+func (p *RealPath) EvalSymlinks(path string) (string, error) {
+	return filepath.EvalSymlinks(path)
 }
