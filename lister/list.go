@@ -18,10 +18,10 @@ type (
 )
 
 var srcStrategies = map[string]srcStrategy{
-	"tmux":         listTmux,
-	"config":       listConfig,
-	"zoxide":       listZoxide,
-  "tmuxinator":   listTmuxinator,
+	"tmux":       listTmux,
+	"config":     listConfig,
+	"zoxide":     listZoxide,
+	"tmuxinator": listTmuxinator,
 }
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {

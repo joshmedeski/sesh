@@ -17,11 +17,11 @@ type Lister interface {
 }
 
 type RealLister struct {
-	home   home.Home
-	tmux   tmux.Tmux
-	tmuxinator   tmuxinator.Tmuxinator
-	zoxide zoxide.Zoxide
-	config model.Config
+	home       home.Home
+	tmux       tmux.Tmux
+	tmuxinator tmuxinator.Tmuxinator
+	zoxide     zoxide.Zoxide
+	config     model.Config
 }
 
 func NewLister(config model.Config, home home.Home, tmux tmux.Tmux, tmuxinator tmuxinator.Tmuxinator, zoxide zoxide.Zoxide) Lister {

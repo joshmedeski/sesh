@@ -17,15 +17,15 @@ type Connector interface {
 }
 
 type RealConnector struct {
-	config  model.Config
-	dir     dir.Dir
-	home    home.Home
-	lister  lister.Lister
-	namer   namer.Namer
-	startup startup.Startup
-	tmux    tmux.Tmux
-  tmuxinator  tmuxinator.Tmuxinator
-	zoxide  zoxide.Zoxide
+	config     model.Config
+	dir        dir.Dir
+	home       home.Home
+	lister     lister.Lister
+	namer      namer.Namer
+	startup    startup.Startup
+	tmux       tmux.Tmux
+	tmuxinator tmuxinator.Tmuxinator
+	zoxide     zoxide.Zoxide
 }
 
 func NewConnector(
@@ -47,7 +47,7 @@ func NewConnector(
 		namer,
 		startup,
 		tmux,
-    tmuxinator,
+		tmuxinator,
 		zoxide,
 	}
 }

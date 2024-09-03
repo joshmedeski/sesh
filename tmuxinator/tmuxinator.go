@@ -19,6 +19,5 @@ func NewTmuxinator(shell shell.Shell) Tmuxinator {
 }
 
 func (t *RealTmuxinator) CreateSession(targetSession string) (string, error) {
-  return t.shell.Cmd("tmuxinator", "start", targetSession)
+	return t.shell.Cmd("tmuxinator", "start", targetSession)
 }
-
