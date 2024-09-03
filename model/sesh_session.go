@@ -23,8 +23,9 @@ type (
 	}
 
 	SeshSrcs struct {
-		Config bool
-		Tmux   bool
-		Zoxide bool
+		Config      bool
+		Tmux        bool
+		Tmuxinator  bool
+		Zoxide      bool
 	}
 )
