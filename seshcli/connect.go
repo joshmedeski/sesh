@@ -27,6 +27,11 @@ func Connect(c connector.Connector, i icon.Icon) *cli.Command {
 				Aliases: []string{"c"},
 				Usage:   "Execute a command when connecting to a new session. Will be ignored if the session exists.",
 			},
+			&cli.BoolFlag{
+				Name:    "tmuxinator",
+				Aliases: []string{"T"},
+				Usage:   "Use tmuxinator to start session if it doesnt exist",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			if cCtx.NArg() == 0 {
@@ -36,7 +41,7 @@ func Connect(c connector.Connector, i icon.Icon) *cli.Command {
 			if name == "" {
 				return nil
 			}
-			opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command")}
+      opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command"), Tmuxinator: cCtx.Bool("tmuxinator")}
 			trimmedName := i.RemoveIcon(name)
 			if _, err := c.Connect(trimmedName, opts); err != nil {
 				// TODO: add to logging

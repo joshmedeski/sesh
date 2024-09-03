@@ -11,15 +11,17 @@ type (
 		Icons        bool
 		Json         bool
 		Tmux         bool
+		Tmuxinator   bool
 		Zoxide       bool
 	}
 	srcStrategy func(*RealLister) (model.SeshSessions, error)
 )
 
 var srcStrategies = map[string]srcStrategy{
-	"tmux":   listTmux,
-	"config": listConfig,
-	"zoxide": listZoxide,
+	"tmux":         listTmux,
+	"config":       listConfig,
+	"zoxide":       listZoxide,
+  "tmuxinator":   listTmuxinator,
 }
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {

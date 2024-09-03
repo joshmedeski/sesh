@@ -8,6 +8,7 @@ import (
 	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/startup"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/tmuxinator"
 	"github.com/joshmedeski/sesh/zoxide"
 )
 
@@ -23,6 +24,7 @@ type RealConnector struct {
 	namer   namer.Namer
 	startup startup.Startup
 	tmux    tmux.Tmux
+  tmuxinator  tmuxinator.Tmuxinator
 	zoxide  zoxide.Zoxide
 }
 
@@ -34,6 +36,7 @@ func NewConnector(
 	namer namer.Namer,
 	startup startup.Startup,
 	tmux tmux.Tmux,
+	tmuxinator tmuxinator.Tmuxinator,
 	zoxide zoxide.Zoxide,
 ) Connector {
 	return &RealConnector{
@@ -44,6 +47,7 @@ func NewConnector(
 		namer,
 		startup,
 		tmux,
+    tmuxinator,
 		zoxide,
 	}
 }
