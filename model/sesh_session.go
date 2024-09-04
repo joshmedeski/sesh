@@ -16,6 +16,7 @@ type (
 		Path string // The absolute directory path
 
 		StartupCommand string  // The command to run when the session is started
+		Tmuxinator     string  // Name of the tmuxinator config
 		Attached       int     // Whether the session is currently attached
 		Windows        int     // The number of windows in the session
 		Score          float64 // The score of the session (from Zoxide)
@@ -24,7 +25,6 @@ type (
 	SeshSrcs struct {
 		Config     bool
 		Tmux       bool
-		Tmuxinator bool
 		Zoxide     bool
 	}
 )

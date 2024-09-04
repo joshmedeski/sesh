@@ -24,7 +24,7 @@ type RealConnector struct {
 	namer      namer.Namer
 	startup    startup.Startup
 	tmux       tmux.Tmux
-	tmuxinator tmuxinator.Tmuxinator
+  tmuxinator tmuxinator.Tmuxinator
 	zoxide     zoxide.Zoxide
 }
 
@@ -36,7 +36,7 @@ func NewConnector(
 	namer namer.Namer,
 	startup startup.Startup,
 	tmux tmux.Tmux,
-	tmuxinator tmuxinator.Tmuxinator,
+  tmuxinator tmuxinator.Tmuxinator,
 	zoxide zoxide.Zoxide,
 ) Connector {
 	return &RealConnector{

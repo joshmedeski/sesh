@@ -14,21 +14,9 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 	// sesh connect --config (sesh list --config | fzf)
 	strategies := []func(*RealConnector, string) (model.Connection, error){
 		tmuxStrategy,
-		tmuxinatorStrategy,
 		configStrategy,
 		dirStrategy,
 		zoxideStrategy,
-	}
-
-	if opts.Tmuxinator {
-		connection, err := tmuxinatorStrategy(c, name)
-		if err != nil {
-			return "", fmt.Errorf("failed to establish connection: %w", err)
-		}
-		if !connection.Found {
-			return "", fmt.Errorf("could not find tmuxinator config with that name")
-		}
-		return c.tmuxinator.CreateSession(connection.Session.Name)
 	}
 
 	for _, strategy := range strategies {
@@ -37,6 +25,10 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		} else if connection.Found {
 			// TODO: allow CLI flag to disable zoxide and overwrite all settings?
 			// sesh connect --ignore-zoxide "dotfiles"
+      if len(connection.Session.Tmuxinator) > 0 {
+        c.tmuxinator.CreateSession(connection.Session.Tmuxinator)
+      }
+
 			if connection.AddToZoxide {
 				c.zoxide.Add(connection.Session.Path)
 			}
