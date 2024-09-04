@@ -1,6 +1,6 @@
 package model
 
 type ConnectOpts struct {
-	Command    string
-	Switch     bool
+	Command string
+	Switch  bool
 }

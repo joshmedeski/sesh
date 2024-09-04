@@ -25,9 +25,9 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		} else if connection.Found {
 			// TODO: allow CLI flag to disable zoxide and overwrite all settings?
 			// sesh connect --ignore-zoxide "dotfiles"
-      if len(connection.Session.Tmuxinator) > 0 {
-        c.tmuxinator.CreateSession(connection.Session.Tmuxinator)
-      }
+			if len(connection.Session.Tmuxinator) > 0 {
+				c.tmuxinator.CreateSession(connection.Session.Tmuxinator)
+			}
 
 			if connection.AddToZoxide {
 				c.zoxide.Add(connection.Session.Path)
