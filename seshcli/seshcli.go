@@ -8,6 +8,7 @@ import (
 	"github.com/joshmedeski/sesh/git"
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/icon"
+	"github.com/joshmedeski/sesh/json"
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/oswrap"
@@ -31,6 +32,7 @@ func App(version string) cli.App {
 	dir := dir.NewDir(os, path)
 	shell := shell.NewShell(exec)
 	home := home.NewHome(os)
+	json := json.NewJson()
 
 	// resource dependencies
 	git := git.NewGit(shell)
@@ -56,7 +58,7 @@ func App(version string) cli.App {
 		Version: version,
 		Usage:   "Smart session manager for the terminal",
 		Commands: []*cli.Command{
-			List(icon, lister),
+			List(icon, json, lister),
 			Connect(connector, icon),
 			Clone(),
 		},
