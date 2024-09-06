@@ -62,7 +62,7 @@ func parseTmuxSessionsOutput(rawList []string) ([]*model.TmuxSession, error) {
 		session := &model.TmuxSession{
 			Activity:          convert.StringToTime(fields[0]),
 			Alerts:            convert.StringToIntSlice(fields[1]),
-			Attached:          convert.StringToInt(fields[2]),
+			Attached:          1, // revert if attached means only the currently active session, convert.StringToInt(fields[2]),
 			AttachedList:      strings.Split(fields[3], ","),
 			Created:           convert.StringToTime(fields[4]),
 			Format:            convert.StringToBool(fields[5]),

@@ -2,6 +2,7 @@ package lister
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/joshmedeski/sesh/model"
 )
@@ -11,6 +12,8 @@ func configKey(name string) string {
 }
 
 func listConfig(l *RealLister) (model.SeshSessions, error) {
+	activeSessions, _ := listTmux(l)
+
 	orderedIndex := make([]string, 0)
 	directory := make(model.SeshSessionMap)
 	for _, session := range l.config.SessionConfigs {
@@ -21,8 +24,18 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 			if err != nil {
 				return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
 			}
+			// check if session is attached
+			isAttached := 0
+			for _, activeSession := range activeSessions.OrderedIndex {
+				configSession := strings.Replace(activeSession, "tmux:", "config:", 1)
+				if key == configSession {
+					isAttached = 1 // or if isAttached means only the currently focused session, use activeSessions.Directory[activeSession].Attached
+					break
+				}
+			}
 			directory[key] = model.SeshSession{
 				Src:            "config",
+				Attached:       isAttached,
 				Name:           session.Name,
 				Path:           path,
 				StartupCommand: session.StartupCommand,
@@ -44,3 +57,4 @@ func (l *RealLister) FindConfigSession(name string) (model.SeshSession, bool) {
 		return model.SeshSession{}, false
 	}
 }
+
