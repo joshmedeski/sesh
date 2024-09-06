@@ -29,7 +29,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 			for _, activeSession := range activeSessions.OrderedIndex {
 				configSession := strings.Replace(activeSession, "tmux:", "config:", 1)
 				if key == configSession {
-					isAttached = 1 // or if isAttached means only the currently focused session, use activeSessions.Directory[activeSession].Attached
+					isAttached = activeSessions.Directory[activeSession].Attached
 					break
 				}
 			}
