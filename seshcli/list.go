@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/icon"
+	"github.com/joshmedeski/sesh/json"
 	"github.com/joshmedeski/sesh/lister"
+	"github.com/joshmedeski/sesh/model"
 	cli "github.com/urfave/cli/v2"
 )
 
-func List(icon icon.Icon, list lister.Lister) *cli.Command {
+func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 	return &cli.Command{
 		Name:                   "list",
 		Aliases:                []string{"l"},
@@ -63,6 +65,15 @@ func List(icon icon.Icon, list lister.Lister) *cli.Command {
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)
+			}
+
+			if cCtx.Bool("json") {
+				var sessionsArray []model.SeshSession
+				for _, i := range sessions.OrderedIndex {
+					sessionsArray = append(sessionsArray, sessions.Directory[i])
+				}
+				fmt.Println(json.EncodeSessions(sessionsArray))
+				return nil
 			}
 
 			for _, i := range sessions.OrderedIndex {
