@@ -26,12 +26,10 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 			}
 			// check if session is attached
 			isAttached := 0
-			for _, activeSession := range activeSessions.OrderedIndex {
-				configSession := strings.Replace(activeSession, "tmux:", "config:", 1)
-				if key == configSession {
-					isAttached = activeSessions.Directory[activeSession].Attached
-					break
-				}
+			tmuxKey := strings.Replace(key, "config:", "tmux:", 1)
+			tmuxSession := activeSessions.Directory[tmuxKey]
+			if tmuxSession != (model.SeshSession{}) {
+				isAttached = tmuxSession.Attached
 			}
 			directory[key] = model.SeshSession{
 				Src:            "config",
@@ -57,4 +55,3 @@ func (l *RealLister) FindConfigSession(name string) (model.SeshSession, bool) {
 		return model.SeshSession{}, false
 	}
 }
-
