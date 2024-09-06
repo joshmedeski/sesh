@@ -44,5 +44,5 @@ func (l *RealLister) FindZoxideSession(path string) (model.SeshSession, bool) {
 		Name:  result.Path,
 		Path:  result.Path,
 		Score: result.Score,
-	}, false
+	}, true
 }
