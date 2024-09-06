@@ -36,9 +36,16 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 			return model.SeshSessions{}, err
 		}
 		fullOrderedIndex = append(fullOrderedIndex, sessions.OrderedIndex...)
+		filteredIndex := fullOrderedIndex[:0] // Create a slice with the same underlying array but length 0
 		for _, i := range sessions.OrderedIndex {
+			if opts.HideAttached && sessions.Directory[i].Attached == 1 {
+				// TODO: remove the item from the fullOrderedIndex
+				continue
+			}
+			filteredIndex = append(filteredIndex, i)
 			fullDirectory[i] = sessions.Directory[i]
 		}
+		fullOrderedIndex = filteredIndex
 	}
 
 	return model.SeshSessions{
