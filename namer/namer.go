@@ -25,6 +25,11 @@ func NewNamer(pathwrap pathwrap.Path, git git.Git) Namer {
 }
 
 func (n *RealNamer) Name(path string) (string, error) {
+	path, err := n.pathwrap.EvalSymlinks(path)
+	if err != nil {
+		return "", err
+	}
+
 	strategies := []func(*RealNamer, string) (string, error){
 		gitBareName,
 		gitName,
