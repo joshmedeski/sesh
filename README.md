@@ -153,6 +153,18 @@ bind-key x kill-pane # skip "kill-pane 1? (y/n)" prompt
 set -g detach-on-destroy off  # don't exit from tmux when closing a session
 ```
 
+## Bonus: sesh last
+
+The default `<prefix>+L` command will "Switch the attached client back to the last session." However, if you close a session while `detach-on-destroy off` is set, the last session will not be found. To fix this, I have a `sesh last` command that will always switch the client to the second to last session that has been attached.
+
+Add the following to your `tmux.conf` to overwrite the default `last-session` command:
+
+```sh
+bind -N "last-session (via sesh) " L run-shell "sesh-dev last"
+```
+
+````
+
 ## Configuration
 
 You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/sesh` or `$HOME/.config/sesh` directory.
