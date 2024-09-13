@@ -163,8 +163,6 @@ Add the following to your `tmux.conf` to overwrite the default `last-session` co
 bind -N "last-session (via sesh) " L run-shell "sesh last"
 ```
 
-````
-
 ## Configuration
 
 You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/sesh` or `$HOME/.config/sesh` directory.
@@ -227,4 +225,3 @@ The first step is to build a CLI that can interact with tmux and be a drop-in re
 </a>
 
 Made with [contrib.rocks](https://contrib.rocks).
-````
