@@ -47,3 +47,15 @@ func (l *RealLister) FindTmuxSession(name string) (model.SeshSession, bool) {
 		return model.SeshSession{}, false
 	}
 }
+
+func (l *RealLister) GetLastTmuxSession() (model.SeshSession, bool) {
+	sessions, err := listTmux(l)
+	if err != nil {
+		return model.SeshSession{}, false
+	}
+	if len(sessions.OrderedIndex) < 2 {
+		return model.SeshSession{}, false
+	}
+	secondSessionIndex := sessions.OrderedIndex[1]
+	return sessions.Directory[secondSessionIndex], true
+}
