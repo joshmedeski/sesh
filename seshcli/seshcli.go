@@ -61,6 +61,7 @@ func App(version string) cli.App {
 		Usage:   "Smart session manager for the terminal",
 		Commands: []*cli.Command{
 			List(icon, json, lister),
+			Last(lister, tmux),
 			Connect(connector, icon),
 			Clone(),
 		},
