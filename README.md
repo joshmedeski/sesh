@@ -160,10 +160,8 @@ The default `<prefix>+L` command will "Switch the attached client back to the la
 Add the following to your `tmux.conf` to overwrite the default `last-session` command:
 
 ```sh
-bind -N "last-session (via sesh) " L run-shell "sesh-dev last"
+bind -N "last-session (via sesh) " L run-shell "sesh last"
 ```
-
-````
 
 ## Configuration
 
