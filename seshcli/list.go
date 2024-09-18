@@ -33,11 +33,6 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Usage:   "show tmux sessions",
 			},
 			&cli.BoolFlag{
-				Name:    "tmuxinator",
-				Aliases: []string{"T"},
-				Usage:   "show tmuxinator configs",
-			},
-			&cli.BoolFlag{
 				Name:    "zoxide",
 				Aliases: []string{"z"},
 				Usage:   "show zoxide results",
@@ -65,7 +60,6 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Icons:        cCtx.Bool("icons"),
 				Json:         cCtx.Bool("json"),
 				Tmux:         cCtx.Bool("tmux"),
-				Tmuxinator:   cCtx.Bool("tmuxinator"),
 				Zoxide:       cCtx.Bool("zoxide"),
 				Tmuxinator:   cCtx.Bool("tmuxinator"),
 			})

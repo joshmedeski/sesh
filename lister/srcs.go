@@ -6,9 +6,6 @@ func srcs(opts ListOptions) []string {
 	if opts.Tmux {
 		count++
 	}
-	if opts.Tmuxinator {
-		count++
-	}
 	if opts.Config {
 		count++
 	}
@@ -25,10 +22,6 @@ func srcs(opts ListOptions) []string {
 	i := 0
 	if opts.Tmux {
 		srcs[i] = "tmux"
-		i++
-	}
-	if opts.Tmuxinator {
-		srcs[i] = "tmuxinator"
 		i++
 	}
 	if opts.Config {

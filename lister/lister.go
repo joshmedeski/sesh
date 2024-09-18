@@ -11,20 +11,20 @@ import (
 type Lister interface {
 	List(opts ListOptions) (model.SeshSessions, error)
 	FindTmuxSession(name string) (model.SeshSession, bool)
-	FindTmuxinatorSession(name string) (model.SeshSession, bool)
+	GetLastTmuxSession() (model.SeshSession, bool)
 	FindConfigSession(name string) (model.SeshSession, bool)
 	FindZoxideSession(name string) (model.SeshSession, bool)
 	FindTmuxinatorConfig(name string) (model.SeshSession, bool)
 }
 
 type RealLister struct {
+	config     model.Config
 	home       home.Home
 	tmux       tmux.Tmux
 	zoxide     zoxide.Zoxide
-	config     model.Config
 	tmuxinator tmuxinator.Tmuxinator
 }
 
 func NewLister(config model.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide, tmuxinator tmuxinator.Tmuxinator) Lister {
-	return &RealLister{home, tmux, zoxide, config, tmuxinator}
+	return &RealLister{config, home, tmux, zoxide, tmuxinator}
 }

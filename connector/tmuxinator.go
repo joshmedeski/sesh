@@ -5,7 +5,7 @@ import (
 )
 
 func tmuxinatorStrategy(c *RealConnector, name string) (model.Connection, error) {
-	session, exists := c.lister.FindTmuxinatorSession(name)
+	session, exists := c.lister.FindTmuxinatorConfig(name)
 	if !exists {
 		return model.Connection{Found: false}, nil
 	}

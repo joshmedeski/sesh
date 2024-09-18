@@ -41,7 +41,7 @@ func Connect(c connector.Connector, i icon.Icon) *cli.Command {
 			if name == "" {
 				return nil
 			}
-      opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command"), Tmuxinator: cCtx.Bool("tmuxinator")}
+			opts := model.ConnectOpts{Switch: cCtx.Bool("switch"), Command: cCtx.String("command"), Tmuxinator: cCtx.Bool("tmuxinator")}
 			trimmedName := i.RemoveIcon(name)
 			if _, err := c.Connect(trimmedName, opts); err != nil {
 				// TODO: add to logging
