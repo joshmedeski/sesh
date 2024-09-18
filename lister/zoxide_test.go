@@ -7,6 +7,7 @@ import (
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/tmuxinator"
 	"github.com/joshmedeski/sesh/zoxide"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,6 +18,7 @@ func TestListZoxideSessions(t *testing.T) {
 		mockHome := new(home.MockHome)
 		mockZoxide := new(zoxide.MockZoxide)
 		mockTmux := new(tmux.MockTmux)
+		mockTmuxinator := new(tmuxinator.MockTmuxinator)
 		mockHome.On("ShortenHome", "/Users/joshmedeski/.config/sesh").Return("~/.config/sesh", nil)
 		mockHome.On("ShortenHome", "/Users/joshmedeski/.config/fish").Return("~/.config/fish", nil)
 		mockZoxide.On("ListResults").Return([]*model.ZoxideResult{
@@ -30,7 +32,7 @@ func TestListZoxideSessions(t *testing.T) {
 			},
 		}, nil)
 
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {

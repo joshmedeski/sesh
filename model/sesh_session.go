@@ -11,7 +11,7 @@ type (
 	SeshSessionMap map[string]SeshSession
 
 	SeshSession struct {
-		Src  string // The source of the session (config, tmux, tmuxinator, zoxide)
+		Src  string // The source of the session (config, tmux, zoxide, tmuxinator)
 		Name string // The display name
 		Path string // The absolute directory path
 

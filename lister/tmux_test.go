@@ -8,6 +8,7 @@ import (
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/tmuxinator"
 	"github.com/joshmedeski/sesh/zoxide"
 	"github.com/stretchr/testify/assert"
 )
@@ -74,7 +75,8 @@ func TestListTmuxSessions(t *testing.T) {
 		mockConfig := model.Config{}
 		mockHome := new(home.MockHome)
 		mockZoxide := new(zoxide.MockZoxide)
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide)
+		mockTmuxinator := new(tmuxinator.MockTmuxinator)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {

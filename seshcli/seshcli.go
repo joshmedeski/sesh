@@ -36,8 +36,8 @@ func App(version string) cli.App {
 	// resource dependencies
 	git := git.NewGit(shell)
 	tmux := tmux.NewTmux(os, shell)
-	tmuxinator := tmuxinator.NewTmuxinator(shell)
 	zoxide := zoxide.NewZoxide(shell)
+	tmuxinator := tmuxinator.NewTmuxinator(shell)
 
 	// config
 	config, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
@@ -47,10 +47,10 @@ func App(version string) cli.App {
 	}
 
 	// core dependencies
-	lister := lister.NewLister(config, home, tmux, zoxide)
+	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
 	startup := startup.NewStartup(config, lister, tmux)
 	namer := namer.NewNamer(path, git)
-	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, tmuxinator, zoxide)
+	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
 
 	return cli.App{

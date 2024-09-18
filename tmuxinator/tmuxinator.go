@@ -1,10 +1,12 @@
 package tmuxinator
 
 import (
+	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/shell"
 )
 
 type Tmuxinator interface {
+	ListConfigs() ([]*model.TmuxinatorConfig, error)
 	CreateSession(targetSession string) (string, error)
 }
 

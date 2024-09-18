@@ -15,7 +15,7 @@ func TestSrcs(t *testing.T) {
 		{
 			name:     "All options are false",
 			opts:     ListOptions{},
-			expected: []string{"tmux", "config", "zoxide"},
+			expected: []string{"tmux", "config", "zoxide", "tmuxinator"},
 		},
 		{
 			name:     "Only Tmux is true",
