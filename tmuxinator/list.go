@@ -9,7 +9,8 @@ import (
 func (t *RealTmuxinator) List() ([]*model.TmuxinatorConfig, error) {
 	res, err := t.shell.ListCmd("tmuxinator", "list")
 	if err != nil {
-		return []*model.TmuxinatorConfig{}, err
+		// NOTE: return empty list if error
+		return []*model.TmuxinatorConfig{}, nil
 	}
 	return parseTmuxinatorConfigsOutput(res)
 }
