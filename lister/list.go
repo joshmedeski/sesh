@@ -12,14 +12,16 @@ type (
 		Json         bool
 		Tmux         bool
 		Zoxide       bool
+		Tmuxinator   bool
 	}
 	srcStrategy func(*RealLister) (model.SeshSessions, error)
 )
 
 var srcStrategies = map[string]srcStrategy{
-	"tmux":   listTmux,
-	"config": listConfig,
-	"zoxide": listZoxide,
+	"tmux":       listTmux,
+	"config":     listConfig,
+	"tmuxinator": listTmuxinator,
+	"zoxide":     listZoxide,
 }
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {

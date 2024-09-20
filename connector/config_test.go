@@ -10,6 +10,7 @@ import (
 	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/startup"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/tmuxinator"
 	"github.com/joshmedeski/sesh/zoxide"
 	"github.com/stretchr/testify/assert"
 	mock "github.com/stretchr/testify/mock"
@@ -23,6 +24,7 @@ func TestConfigStrategy(t *testing.T) {
 	mockStartup := new(startup.MockStartup)
 	mockTmux := new(tmux.MockTmux)
 	mockZoxide := new(zoxide.MockZoxide)
+	mockTmuxinator := new(tmuxinator.MockTmuxinator)
 
 	c := &RealConnector{
 		model.Config{},
@@ -33,6 +35,7 @@ func TestConfigStrategy(t *testing.T) {
 		mockStartup,
 		mockTmux,
 		mockZoxide,
+		mockTmuxinator,
 	}
 	mockTmux.On("AttachSession", mock.Anything).Return("attaching", nil)
 	mockZoxide.On("Add", mock.Anything).Return(nil)

@@ -14,9 +14,17 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 	// sesh connect --config (sesh list --config | fzf)
 	strategies := []func(*RealConnector, string) (model.Connection, error){
 		tmuxStrategy,
+		tmuxinatorStrategy,
 		configStrategy,
 		dirStrategy,
 		zoxideStrategy,
+	}
+
+	connectStrategy := map[string]func(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error){
+		"tmux":       connectToTmux,
+		"tmuxinator": connectToTmuxinator,
+		"config":     connectToTmux,
+		"zoxide":     connectToTmux,
 	}
 
 	for _, strategy := range strategies {
@@ -28,13 +36,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 			if connection.AddToZoxide {
 				c.zoxide.Add(connection.Session.Path)
 			}
-			if connection.New {
-				c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
-				c.startup.Exec(connection.Session)
-			}
-			// TODO: configure the ability to create a session in a detached way (like update)
-			// TODO: configure the ability to create a popup instead of switching (with no tmux bar?)
-			return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
+			return connectStrategy[connection.Session.Src](c, connection, opts)
 		}
 	}
 

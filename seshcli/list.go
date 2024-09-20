@@ -47,6 +47,11 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Aliases: []string{"i"},
 				Usage:   "show icons",
 			},
+			&cli.BoolFlag{
+				Name:    "tmuxinator",
+				Aliases: []string{"T"},
+				Usage:   "show tmuxinator configs",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			sessions, err := list.List(lister.ListOptions{
@@ -56,6 +61,7 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Json:         cCtx.Bool("json"),
 				Tmux:         cCtx.Bool("tmux"),
 				Zoxide:       cCtx.Bool("zoxide"),
+				Tmuxinator:   cCtx.Bool("tmuxinator"),
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)

@@ -7,6 +7,7 @@ import (
 	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/tmuxinator"
 	"github.com/joshmedeski/sesh/zoxide"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,6 +17,7 @@ func TestListConfigSessions(t *testing.T) {
 	mockHome.On("ExpandHome", "/Users/joshmedeski/.config/sesh").Return("/Users/joshmedeski/.config/sesh", nil)
 	mockZoxide := new(zoxide.MockZoxide)
 	mockTmux := new(tmux.MockTmux)
+	mockTmuxinator := new(tmuxinator.MockTmuxinator)
 	config := model.Config{
 		SessionConfigs: []model.SessionConfig{
 			{
@@ -24,7 +26,7 @@ func TestListConfigSessions(t *testing.T) {
 			},
 		},
 	}
-	lister := NewLister(config, mockHome, mockTmux, mockZoxide)
+	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 	realLister, ok := lister.(*RealLister)
 	if !ok {

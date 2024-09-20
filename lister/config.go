@@ -26,6 +26,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				Name:           session.Name,
 				Path:           path,
 				StartupCommand: session.StartupCommand,
+				Tmuxinator:     session.Tmuxinator,
 			}
 		}
 	}
@@ -36,8 +37,8 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 }
 
 func (l *RealLister) FindConfigSession(name string) (model.SeshSession, bool) {
-	sessions, _ := listConfig(l)
 	key := configKey(name)
+	sessions, _ := listConfig(l)
 	if session, exists := sessions.Directory[key]; exists {
 		return session, exists
 	} else {

@@ -21,9 +21,10 @@ func NewIcon(config model.Config) Icon {
 }
 
 var (
-	zoxideIcon string = ""
-	tmuxIcon   string = ""
-	configIcon string = ""
+	zoxideIcon     string = ""
+	tmuxIcon       string = ""
+	configIcon     string = ""
+	tmuxinatorIcon string = ""
 )
 
 func ansiString(code int, s string) string {
@@ -37,6 +38,9 @@ func (i *RealIcon) AddIcon(s model.SeshSession) string {
 	case "tmux":
 		icon = tmuxIcon
 		colorCode = 34 // blue
+	case "tmuxinator":
+		icon = tmuxinatorIcon
+		colorCode = 33 // yellow
 	case "zoxide":
 		icon = zoxideIcon
 		colorCode = 36 // cyan
@@ -51,7 +55,7 @@ func (i *RealIcon) AddIcon(s model.SeshSession) string {
 }
 
 func (i *RealIcon) RemoveIcon(name string) string {
-	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) {
+	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) || strings.HasPrefix(name, tmuxinatorIcon) {
 		return name[4:]
 	}
 	return name
