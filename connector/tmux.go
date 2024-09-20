@@ -12,15 +12,13 @@ func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 		Session:     session,
 		New:         false,
 		AddToZoxide: true,
-		// Switch: true
 	}, nil
 }
 
 func connectToTmux(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
 	if connection.New {
-		return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
+		c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
+		c.startup.Exec(connection.Session)
 	}
-	c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
-	c.startup.Exec(connection.Session)
 	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
 }
