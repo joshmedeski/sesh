@@ -21,7 +21,7 @@ func TestListConfigs(t *testing.T) {
 			{Name: "sesh"},
 			{Name: "home"},
 		}
-		actual, err := tmuxinator.ListConfigs()
+		actual, err := tmuxinator.List()
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual)
 	})

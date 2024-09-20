@@ -19,7 +19,7 @@ func TestListTmuxinatorConfigs(t *testing.T) {
 		mockZoxide := new(zoxide.MockZoxide)
 		mockTmux := new(tmux.MockTmux)
 		mockTmuxinator := new(tmuxinator.MockTmuxinator)
-		mockTmuxinator.On("ListConfigs").Return([]*model.TmuxinatorConfig{
+		mockTmuxinator.On("List").Return([]*model.TmuxinatorConfig{
 			{Name: "sesh"},
 			{Name: "dotfiles"},
 		}, nil)

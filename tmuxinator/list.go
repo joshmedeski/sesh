@@ -1,7 +1,6 @@
 package tmuxinator
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/joshmedeski/sesh/model"
@@ -20,7 +19,6 @@ func parseTmuxinatorConfigsOutput(rawList []string) ([]*model.TmuxinatorConfig, 
 	sessions := make([]*model.TmuxinatorConfig, 0, len(cleanedList))
 	for _, line := range cleanedList {
 		if len(line) > 0 {
-			fmt.Println("line: ", line)
 			session := &model.TmuxinatorConfig{
 				Name: strings.TrimSpace(line),
 			}
