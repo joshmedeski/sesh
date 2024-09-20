@@ -24,6 +24,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		"tmux":       connectToTmux,
 		"tmuxinator": connectToTmuxinator,
 		"config":     connectToTmux,
+		"dir":        connectToTmux,
 		"zoxide":     connectToTmux,
 	}
 
