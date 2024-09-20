@@ -37,7 +37,6 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 			if connection.AddToZoxide {
 				c.zoxide.Add(connection.Session.Path)
 			}
-			fmt.Println("src", connection.Session.Src)
 			return connectStrategy[connection.Session.Src](c, connection, opts)
 		}
 	}
