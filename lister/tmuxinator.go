@@ -11,7 +11,7 @@ func tmuxinatorKey(name string) string {
 }
 
 func listTmuxinator(l *RealLister) (model.SeshSessions, error) {
-	tmuxinatorResults, err := l.tmuxinator.ListConfigs()
+	tmuxinatorResults, err := l.tmuxinator.List()
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmuxinator sessions: %q", err)
 	}

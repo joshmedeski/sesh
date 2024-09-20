@@ -6,8 +6,8 @@ import (
 )
 
 type Tmuxinator interface {
-	ListConfigs() ([]*model.TmuxinatorConfig, error)
-	CreateSession(targetSession string) (string, error)
+	List() ([]*model.TmuxinatorConfig, error)
+	Start(targetSession string) (string, error)
 }
 
 type RealTmuxinator struct {
@@ -18,6 +18,6 @@ func NewTmuxinator(shell shell.Shell) Tmuxinator {
 	return &RealTmuxinator{shell}
 }
 
-func (t *RealTmuxinator) CreateSession(targetSession string) (string, error) {
+func (t *RealTmuxinator) Start(targetSession string) (string, error) {
 	return t.shell.Cmd("tmuxinator", "start", targetSession)
 }

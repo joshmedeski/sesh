@@ -20,15 +20,11 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		zoxideStrategy,
 	}
 
-	if opts.Tmuxinator {
-		connection, err := tmuxinatorStrategy(c, name)
-		if err != nil {
-			return "", fmt.Errorf("failed to establish connection: %w", err)
-		}
-		if !connection.Found {
-			return "", fmt.Errorf("could not find tmuxinator config with that name")
-		}
-		return c.tmuxinator.CreateSession(connection.Session.Name)
+	connectStrategy := map[string]func(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error){
+		"tmux":       connectToTmux,
+		"tmuxinator": connectToTmuxinator,
+		"config":     connectToTmux,
+		"zoxide":     connectToTmux,
 	}
 
 	for _, strategy := range strategies {
@@ -37,20 +33,10 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		} else if connection.Found {
 			// TODO: allow CLI flag to disable zoxide and overwrite all settings?
 			// sesh connect --ignore-zoxide "dotfiles"
-			if len(connection.Session.Tmuxinator) > 0 {
-				c.tmuxinator.CreateSession(connection.Session.Tmuxinator)
-			}
-
 			if connection.AddToZoxide {
 				c.zoxide.Add(connection.Session.Path)
 			}
-			if connection.New {
-				c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
-				c.startup.Exec(connection.Session)
-			}
-			// TODO: configure the ability to create a session in a detached way (like update)
-			// TODO: configure the ability to create a popup instead of switching (with no tmux bar?)
-			return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
+			return connectStrategy[connection.Session.Src](c, connection, opts)
 		}
 	}
 

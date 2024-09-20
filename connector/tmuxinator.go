@@ -13,7 +13,11 @@ func tmuxinatorStrategy(c *RealConnector, name string) (model.Connection, error)
 	return model.Connection{
 		Found:       true,
 		Session:     session,
-		New:         false,
-		AddToZoxide: true,
+		New:         true,
+		AddToZoxide: false,
 	}, nil
+}
+
+func connectToTmuxinator(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
+	return c.tmuxinator.Start(connection.Session.Name)
 }
