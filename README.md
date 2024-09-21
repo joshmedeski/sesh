@@ -36,6 +36,14 @@ To install sesh, run the following [homebrew](https://brew.sh/) command:
 brew install joshmedeski/sesh/sesh
 ```
 
+### ArchLinux AUR
+
+To install sesh using, run the following [yay](https://aur.archlinux.org/packages/yay) command:
+
+```sh
+yay -S sesh-bin
+```
+
 ### Go
 
 Alternatively, you can install Sesh using Go's go install command:
