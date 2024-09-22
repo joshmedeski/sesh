@@ -66,7 +66,8 @@ brews:
 aurs:
   - name: sesh-bin
     description: "Smart session manager for the terminal"
-    maintainers: "Josh Medeski"
+    maintainers:
+      - "Josh Medeski <josh.medeski@gmail.com>"
     license: "MIT"
     git_url: "https://github.com/joshmedeski/sesh"
     depends:
