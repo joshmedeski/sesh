@@ -62,3 +62,19 @@ brews:
     dependencies:
       - tmux
       - zoxide
+
+aurs:
+  - name: sesh-bin
+    description: "Smart session manager for the terminal"
+    maintainers: "Josh Medeski"
+    license: "MIT"
+    git_url: "https://github.com/joshmedeski/sesh"
+    depends:
+      - zoxide
+        tmux
+    package: |-
+      # bin
+      install -Dm755 $_pkgname "$pkgdir/usr/bin/$_pkgname"
+      
+      # license
+      install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
