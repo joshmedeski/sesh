@@ -76,6 +76,6 @@ aurs:
     package: |-
       # bin
       install -Dm755 $_pkgname "$pkgdir/usr/bin/$_pkgname"
-      
+
       # license
       install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
