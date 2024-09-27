@@ -30,13 +30,13 @@ func App(version string) cli.App {
 	runtime := runtimewrap.NewRunTime()
 
 	// base dependencies
-	dir := dir.NewDir(os, path)
 	shell := shell.NewShell(exec)
 	home := home.NewHome(os)
 	json := json.NewJson()
 
 	// resource dependencies
 	git := git.NewGit(shell)
+	dir := dir.NewDir(os, git, path)
 	tmux := tmux.NewTmux(os, shell)
 	zoxide := zoxide.NewZoxide(shell)
 	tmuxinator := tmuxinator.NewTmuxinator(shell)
@@ -62,7 +62,7 @@ func App(version string) cli.App {
 		Commands: []*cli.Command{
 			List(icon, json, lister),
 			Last(lister, tmux),
-			Connect(connector, icon),
+			Connect(connector, icon, dir),
 			Clone(),
 		},
 	}
