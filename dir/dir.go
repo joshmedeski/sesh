@@ -41,8 +41,20 @@ func (d *RealDir) Dir(path string) (isDir bool, absPath string) {
 }
 
 func (d *RealDir) RootDir(path string) (hasRootDir bool, absPath string) {
-	isGit, commonDir, _ := d.git.GitCommonDir(path)
-	if isGit && strings.HasSuffix(commonDir, "/.bare") {
+	isGitBare, absPath := gitBareRootDir(d, path)
+	if isGitBare {
+		return true, absPath
+	}
+	isGit, absPath := gitRootDir(d, path)
+	if isGit {
+		return true, absPath
+	}
+	return false, ""
+}
+
+func gitBareRootDir(d *RealDir, path string) (hasRootDir bool, absPath string) {
+	isGitBare, commonDir, _ := d.git.GitCommonDir(path)
+	if isGitBare && strings.HasSuffix(commonDir, "/.bare") {
 		topLevelDir := strings.TrimSuffix(commonDir, "/.bare")
 		relativePath := strings.TrimPrefix(path, topLevelDir)
 		firstDir := strings.Split(relativePath, string("/"))[1]
@@ -51,6 +63,15 @@ func (d *RealDir) RootDir(path string) (hasRootDir bool, absPath string) {
 			return false, ""
 		}
 		return true, name
+	} else {
+		return false, ""
+	}
+}
+
+func gitRootDir(d *RealDir, path string) (hasDir bool, absPath string) {
+	isGit, topLevelDir, _ := d.git.ShowTopLevel(path)
+	if isGit && topLevelDir != "" {
+		return true, topLevelDir
 	} else {
 		return false, ""
 	}
