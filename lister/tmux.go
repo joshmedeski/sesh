@@ -59,3 +59,22 @@ func (l *RealLister) GetLastTmuxSession() (model.SeshSession, bool) {
 	secondSessionIndex := sessions.OrderedIndex[1]
 	return sessions.Directory[secondSessionIndex], true
 }
+
+func GetAttachedTmuxSession(l *RealLister) (model.SeshSession, bool) {
+	tmuxSessions, err := l.tmux.ListSessions()
+	if err != nil {
+		return model.SeshSession{}, false
+	}
+	for _, session := range tmuxSessions {
+		if session.Attached != 0 {
+			return model.SeshSession{
+				Src:      "tmux",
+				Name:     session.Name,
+				Path:     session.Path,
+				Attached: session.Attached,
+				Windows:  session.Windows,
+			}, true
+		}
+	}
+	return model.SeshSession{}, false
+}
