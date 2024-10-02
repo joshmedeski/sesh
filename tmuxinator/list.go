@@ -17,7 +17,7 @@ func (t *RealTmuxinator) List() ([]*model.TmuxinatorConfig, error) {
 
 func parseTmuxinatorConfigsOutput(rawList []string) ([]*model.TmuxinatorConfig, error) {
 	cleanedList := slices.Delete(rawList, 0, 1)
-	cleanedList = slices.Delete(cleanedList, 8, 8)
+	cleanedList = cleanedList[:len(cleanedList)-1]
 	sessions := make([]*model.TmuxinatorConfig, 0, len(cleanedList))
 	for _, line := range cleanedList {
 		if len(line) > 0 {

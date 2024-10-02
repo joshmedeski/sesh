@@ -12,9 +12,12 @@ func TestListConfigs(t *testing.T) {
 	t.Run("List Tmuxinator Configs", func(t *testing.T) {
 		mockShell := new(shell.MockShell)
 		tmuxinator := &RealTmuxinator{shell: mockShell}
-		mockShell.EXPECT().ListCmd("tmuxinator", "list").Return([]string{
+		mockShell.EXPECT().ListCmd("tmuxinator", "list", "-n").Return([]string{
 			"tmuxinator projects:",
-			"dotfiles  sesh  home",
+			"dotfiles",
+			"sesh",
+			"home",
+			"",
 		}, nil)
 		expected := []*model.TmuxinatorConfig{
 			{Name: "dotfiles"},
