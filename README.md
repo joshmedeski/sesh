@@ -202,6 +202,8 @@ The default session can be configured to run a command when connecting to a sess
 startup_command = "nvim -c ':Telescope find_files'"
 ```
 
+If you want to disable the default start command on a specific session, you can set `disable_startup_command = true`.
+
 ### Session Configuration
 
 A startup command is a command that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server.

@@ -16,8 +16,9 @@ type (
 	}
 
 	SessionConfig struct {
-		Name string `toml:"name"`
-		Path string `toml:"path"`
+		Name                string `toml:"name"`
+		Path                string `toml:"path"`
+		DisableStartCommand bool   `toml:"disable_startup_command"`
 		DefaultSessionConfig
 	}
 )
