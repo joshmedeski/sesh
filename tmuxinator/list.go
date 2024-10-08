@@ -1,13 +1,13 @@
 package tmuxinator
 
 import (
-	"strings"
+	"slices"
 
 	"github.com/joshmedeski/sesh/model"
 )
 
 func (t *RealTmuxinator) List() ([]*model.TmuxinatorConfig, error) {
-	res, err := t.shell.ListCmd("tmuxinator", "list")
+	res, err := t.shell.ListCmd("tmuxinator", "list", "-n")
 	if err != nil {
 		// NOTE: return empty list if error
 		return []*model.TmuxinatorConfig{}, nil
@@ -16,12 +16,13 @@ func (t *RealTmuxinator) List() ([]*model.TmuxinatorConfig, error) {
 }
 
 func parseTmuxinatorConfigsOutput(rawList []string) ([]*model.TmuxinatorConfig, error) {
-	cleanedList := strings.Split(rawList[1], "  ")
+	cleanedList := slices.Delete(rawList, 0, 1)
+	cleanedList = cleanedList[:len(cleanedList)-1]
 	sessions := make([]*model.TmuxinatorConfig, 0, len(cleanedList))
 	for _, line := range cleanedList {
 		if len(line) > 0 {
 			session := &model.TmuxinatorConfig{
-				Name: strings.TrimSpace(line),
+				Name: line,
 			}
 			sessions = append(sessions, session)
 		}

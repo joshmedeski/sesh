@@ -21,12 +21,18 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 			if err != nil {
 				return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
 			}
+
+			if session.StartupCommand != "" && session.DisableStartCommand {
+				return model.SeshSessions{}, fmt.Errorf("startup_command and disable_start_command are mutually exclusive")
+			}
+
 			directory[key] = model.SeshSession{
-				Src:            "config",
-				Name:           session.Name,
-				Path:           path,
-				StartupCommand: session.StartupCommand,
-				Tmuxinator:     session.Tmuxinator,
+				Src:                   "config",
+				Name:                  session.Name,
+				Path:                  path,
+				StartupCommand:        session.StartupCommand,
+				DisableStartupCommand: session.DisableStartCommand,
+				Tmuxinator:            session.Tmuxinator,
 			}
 		}
 	}

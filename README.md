@@ -161,7 +161,9 @@ bind-key x kill-pane # skip "kill-pane 1? (y/n)" prompt
 set -g detach-on-destroy off  # don't exit from tmux when closing a session
 ```
 
-## Bonus: sesh last
+## Bonus
+
+### Last
 
 The default `<prefix>+L` command will "Switch the attached client back to the last session." However, if you close a session while `detach-on-destroy off` is set, the last session will not be found. To fix this, I have a `sesh last` command that will always switch the client to the second to last session that has been attached.
 
@@ -170,6 +172,18 @@ Add the following to your `tmux.conf` to overwrite the default `last-session` co
 ```sh
 bind -N "last-session (via sesh) " L run-shell "sesh last"
 ```
+
+### Connect to root
+
+While working in a nested session, you may way to connect to the root session of a git worktree or git repository. To do this, you can use the `--root` flag with the `sesh connect` command.
+
+I recommend adding this to your `tmux.conf`:
+
+```sh
+bind -N "switch to root session (via sesh) " 9 run-shell "sesh connect --root \'$(pwd)\'"
+```
+
+**Note:** This will only work if you are in a git worktree or git repository. For now, git worktrees expect a `.bare` folder.
 
 ## Configuration
 
@@ -187,6 +201,8 @@ The default session can be configured to run a command when connecting to a sess
 [default_session]
 startup_command = "nvim -c ':Telescope find_files'"
 ```
+
+If you want to disable the default start command on a specific session, you can set `disable_startup_command = true`.
 
 ### Session Configuration
 
