@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"io" // This is used to enable the multiwritter and be able to write to the log file and the console at the same time
 	"log/slog"
 	"os"
-	"path"
+	"path"    // This is used to create the path where the log files will be stored
 	"strings" // This is required to conpare the evironment variables
 	"time"    // This is used to get the current date and create the log file
 
