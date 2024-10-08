@@ -1,6 +1,10 @@
 package seshcli
 
 import (
+	"log/slog"
+
+	"github.com/urfave/cli/v2"
+
 	"github.com/joshmedeski/sesh/configurator"
 	"github.com/joshmedeski/sesh/connector"
 	"github.com/joshmedeski/sesh/dir"
@@ -19,7 +23,6 @@ import (
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/joshmedeski/sesh/tmuxinator"
 	"github.com/joshmedeski/sesh/zoxide"
-	"github.com/urfave/cli/v2"
 )
 
 func App(version string) cli.App {
@@ -45,8 +48,11 @@ func App(version string) cli.App {
 	config, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
 	// TODO: make sure to ignore the error if the config doesn't exist
 	if err != nil {
+		slog.Error("seshcli/seshcli.go: App", "error", err)
 		panic(err)
 	}
+
+	slog.Debug("seshcli/seshcli.go: App", "version", version, "config", config)
 
 	// core dependencies
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
