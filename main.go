@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"os"
 	"path"
-	"strings"
-	"time"
+	"strings" // This is required to conpare the evironment variables
+	"time"    // This is used to get the current date and create the log file
 
 	"github.com/joshmedeski/sesh/seshcli"
 )
@@ -23,7 +22,8 @@ func main() {
 
 	app := seshcli.App(version)
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		slog.Error("main file: ", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -33,14 +33,11 @@ func init() {
 	fileOnly := false
 
 	if f, err = createLoggerFile(); err != nil {
-		log.Fatalf("Unable to create logger file: %v", err)
-	}
-	if f == nil {
-		log.Println("init: no file")
+		slog.Error("Unable to create logger file", "error", err)
+		os.Exit(1)
 	}
 
 	env := os.Getenv("ENV")
-
 	handlerOptions := &slog.HandlerOptions{}
 
 	switch strings.ToLower(env) {
@@ -68,23 +65,24 @@ func init() {
 func createLoggerFile() (*os.File, error) {
 	now := time.Now()
 	date := fmt.Sprintf("%s.log", now.Format("2006-01-02"))
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
+
+	// TempDir returns the default directory to use for temporary files.
+	//
+	// On Unix systems, it returns $TMPDIR if non-empty, else /tmp.
+	// On Windows, it uses GetTempPath, returning the first non-empty
+	// value from %TMP%, %TEMP%, %USERPROFILE%, or the Windows directory.
+	// On Plan 9, it returns /tmp.
+	userTempDir := os.TempDir()
+	slog.Debug("createLoggerFile:", "userTempDir", userTempDir)
+
+	if err := os.MkdirAll(path.Join(userTempDir, "sesh"), 0755); err != nil {
 		return nil, err
 	}
 
-	if err := os.MkdirAll(path.Join(userHomeDir, ".config", "sesh"), 0755); err != nil {
-		return nil, err
-	}
-
-	fileFullPath := path.Join(userHomeDir, ".config", "sesh", date)
+	fileFullPath := path.Join(userTempDir, "sesh", date)
 	file, err := os.OpenFile(fileFullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, err
-	}
-
-	if file == nil {
-		log.Println("createLoggerFle: nil file")
 	}
 
 	return file, nil
