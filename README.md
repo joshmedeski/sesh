@@ -38,7 +38,7 @@ brew install joshmedeski/sesh/sesh
 
 ### ArchLinux AUR
 
-To install sesh using, run the following [yay](https://aur.archlinux.org/packages/yay) command:
+To install sesh, run the following [yay](https://aur.archlinux.org/packages/yay) command:
 
 ```sh
 yay -S sesh-bin
