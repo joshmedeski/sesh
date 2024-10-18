@@ -57,7 +57,7 @@ func App(version string) cli.App {
 	// core dependencies
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
 	startup := startup.NewStartup(config, lister, tmux)
-	namer := namer.NewNamer(path, git)
+	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
 
@@ -70,6 +70,7 @@ func App(version string) cli.App {
 			Last(lister, tmux),
 			Connect(connector, icon, dir),
 			Clone(),
+			Root(lister, namer),
 		},
 	}
 }

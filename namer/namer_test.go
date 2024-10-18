@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/joshmedeski/sesh/git"
+	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/pathwrap"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,7 +14,8 @@ func TestFromPath(t *testing.T) {
 	t.Run("when path does not contain a symlink", func(t *testing.T) {
 		mockPathwrap := new(pathwrap.MockPath)
 		mockGit := new(git.MockGit)
-		n := NewNamer(mockPathwrap, mockGit)
+		mockHome := new(home.MockHome)
+		n := NewNamer(mockPathwrap, mockGit, mockHome)
 
 		t.Run("name for git repo", func(t *testing.T) {
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/config/dotfiles/.config/neovim").Return("/Users/josh/config/dotfiles/.config/neovim", nil)
@@ -46,7 +48,8 @@ func TestFromPath(t *testing.T) {
 	t.Run("when path contains a symlink", func(t *testing.T) {
 		mockPathwrap := new(pathwrap.MockPath)
 		mockGit := new(git.MockGit)
-		n := NewNamer(mockPathwrap, mockGit)
+		mockHome := new(home.MockHome)
+		n := NewNamer(mockPathwrap, mockGit, mockHome)
 
 		t.Run("name for symlinked file in symlinked git repo", func(t *testing.T) {
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/d/.c/neovim").Return("/Users/josh/dotfiles/.config/neovim", nil)
