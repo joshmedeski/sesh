@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/git"
+	"github.com/joshmedeski/sesh/home"
 	"github.com/joshmedeski/sesh/pathwrap"
 )
 
@@ -16,12 +17,14 @@ type Namer interface {
 type RealNamer struct {
 	pathwrap pathwrap.Path
 	git      git.Git
+	home     home.Home
 }
 
-func NewNamer(pathwrap pathwrap.Path, git git.Git) Namer {
+func NewNamer(pathwrap pathwrap.Path, git git.Git, home home.Home) Namer {
 	return &RealNamer{
 		pathwrap: pathwrap,
 		git:      git,
+		home:     home,
 	}
 }
 
@@ -55,7 +58,6 @@ func (n *RealNamer) RootName(path string) (string, error) {
 	}
 
 	strategies := []func(*RealNamer, string) (string, error){
-		gitBareRootName,
 		gitRootName,
 		dirName,
 	}

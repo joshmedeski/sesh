@@ -1,14 +1,18 @@
 package namer
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 func gitBareRootName(n *RealNamer, path string) (string, error) {
-	var name string
 	isGit, commonDir, _ := n.git.GitCommonDir(path)
 	if isGit && strings.HasSuffix(commonDir, "/.bare") {
 		topLevelDir := strings.TrimSuffix(commonDir, "/.bare")
-		baseDir := n.pathwrap.Base(topLevelDir)
-		name = baseDir
+		name, err := n.home.ShortenHome(topLevelDir)
+		if err != nil {
+			return "", fmt.Errorf("couldn't shorten path: %q", err)
+		}
 		return name, nil
 	} else {
 		return "", nil
@@ -33,8 +37,10 @@ func gitBareName(n *RealNamer, path string) (string, error) {
 func gitRootName(n *RealNamer, path string) (string, error) {
 	isGit, topLevelDir, _ := n.git.ShowTopLevel(path)
 	if isGit && topLevelDir != "" {
-		baseDir := n.pathwrap.Base(topLevelDir)
-		name := baseDir
+		name, err := n.home.ShortenHome(topLevelDir)
+		if err != nil {
+			return "", fmt.Errorf("couldn't shorten path: %q", err)
+		}
 		return name, nil
 	} else {
 		return "", nil
