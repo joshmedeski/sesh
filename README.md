@@ -184,6 +184,18 @@ I recommend adding this to your `tmux.conf`:
 bind -N "switch to root session (via sesh) " 9 run-shell "sesh connect --root \'$(pwd)\'"
 ```
 
+### Filter by root
+
+If you want to filter your search by the root of the active project, you can modify your piker by using the `sesh root` command:
+
+```sh
+bind-key "R" display-popup -E -w 40% "sesh connect \"$(
+  sesh list -i -H | gum filter --value \"$(sesh root)\" --limit 1 --fuzzy --no-sort --placeholder 'Pick a sesh' --prompt='⚡'
+)\""
+```
+
+I have this bound to `<prefix>+R` so I can use an alternative binding.
+
 **Note:** This will only work if you are in a git worktree or git repository. For now, git worktrees expect a `.bare` folder.
 
 ## Configuration
