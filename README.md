@@ -99,16 +99,16 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 
 ```sh
 bind-key "T" run-shell "sesh connect \"$(
-	sesh list | fzf-tmux -p 55%,60% \
-		--no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
-		--header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
-		--bind 'tab:down,btab:up' \
-		--bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
-		--bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
-		--bind 'ctrl-g:change-prompt(⚙️  )+reload(sesh list -c)' \
-		--bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
-		--bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
-		--bind 'ctrl-d:execute(tmux kill-session -t {})+change-prompt(⚡  )+reload(sesh list)'
+ sesh list | fzf-tmux -p 55%,60% \
+  --no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
+  --header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
+  --bind 'tab:down,btab:up' \
+  --bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
+  --bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
+  --bind 'ctrl-g:change-prompt(⚙️  )+reload(sesh list -c)' \
+  --bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
+  --bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
+  --bind 'ctrl-d:execute(tmux kill-session -t {})+change-prompt(⚡  )+reload(sesh list)'
 )\""
 ```
 
@@ -120,7 +120,7 @@ If you prefer to use [charmblacelet's gum](https://github.com/charmbracelet/gum)
 
 ```sh
 bind-key "K" display-popup -E -w 40% "sesh connect \"$(
-	sesh list -i | gum filter --limit 1 --placeholder 'Pick a sesh' --height 50 --prompt='⚡'
+ sesh list -i | gum filter --limit 1 --no-sort --fuzzy --placeholder 'Pick a sesh' --height 50 --prompt='⚡'
 )\""
 ```
 
@@ -190,7 +190,7 @@ If you want to filter your search by the root of the active project, you can mod
 
 ```sh
 bind-key "R" display-popup -E -w 40% "sesh connect \"$(
-  sesh list -i -H | gum filter --value \"$(sesh root)\" --limit 1 --fuzzy --no-sort --placeholder 'Pick a sesh' --prompt='⚡'
+  sesh list -i -H | gum filter --value \"$(sesh root)\" --limit 1 --fuzzy --no-sort --placeholder 'Pick a sesh' --prompt='⚡'readme
 )\""
 ```
 
