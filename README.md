@@ -28,7 +28,8 @@ Watch the video to learn more about how to use sesh to manage your tmux sessions
 
 ## How to install
 
-### Homebrew
+<details>
+  <summary>Homebrew</summary>
 
 To install sesh, run the following [homebrew](https://brew.sh/) command:
 
@@ -36,7 +37,10 @@ To install sesh, run the following [homebrew](https://brew.sh/) command:
 brew install joshmedeski/sesh/sesh
 ```
 
-### ArchLinux AUR
+</details>
+
+<details>
+  <summary>Arch Linux AUR</summary>
 
 To install sesh, run the following [yay](https://aur.archlinux.org/packages/yay) command:
 
@@ -44,7 +48,10 @@ To install sesh, run the following [yay](https://aur.archlinux.org/packages/yay)
 yay -S sesh-bin
 ```
 
-### Go
+</details>
+
+<details>
+  <summary>Go</summary>
 
 Alternatively, you can install Sesh using Go's go install command:
 
@@ -54,9 +61,14 @@ go install github.com/joshmedeski/sesh@latest
 
 This will download and install the latest version of Sesh. Make sure that your Go environment is properly set up.
 
-### Nix
+</details>
+
+<details>
+  <summary>Nix</summary>
 
 See the [nix package directory](https://search.nixos.org/packages?channel=unstable&show=sesh&from=0&size=50&sort=relevance&type=packages&query=sesh) for instructions on how to install sesh through the nix platform.
+
+</details>
 
 **Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
 
