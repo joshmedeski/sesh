@@ -70,7 +70,7 @@ func App(version string) cli.App {
 			Last(lister, tmux),
 			Connect(connector, icon, dir),
 			Clone(),
-			Root(lister, namer),
+			Root(lister, namer, git),
 		},
 	}
 }

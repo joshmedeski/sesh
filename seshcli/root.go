@@ -5,10 +5,11 @@ import (
 
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/namer"
+	"github.com/joshmedeski/sesh/git"
 	cli "github.com/urfave/cli/v2"
 )
 
-func Root(l lister.Lister, n namer.Namer) *cli.Command {
+func Root(l lister.Lister, n namer.Namer, git git.Git) *cli.Command {
 	return &cli.Command{
 		Name:                   "root",
 		Aliases:                []string{"r"},
@@ -20,7 +21,8 @@ func Root(l lister.Lister, n namer.Namer) *cli.Command {
 			if !exists {
 				return cli.Exit("No root found for session", 1)
 			}
-			root, err := n.RootName(session.Path)
+			_, path, err := git.GitMainWorktree(session.Path)
+			root, err := n.RootName(path)
 			if err != nil {
 				return cli.Exit(err, 1)
 			}
