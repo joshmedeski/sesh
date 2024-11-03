@@ -1,12 +1,15 @@
 package git
 
 import (
+	"strings"
+
 	"github.com/joshmedeski/sesh/shell"
 )
 
 type Git interface {
 	ShowTopLevel(name string) (bool, string, error)
 	GitCommonDir(name string) (bool, string, error)
+	GitMainWorktree(name string) (bool, string, error)
 	Clone(name string) (string, error)
 }
 
@@ -32,6 +35,16 @@ func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
 		return false, "", err
 	}
 	return true, out, nil
+}
+
+func (g *RealGit) GitMainWorktree(path string) (bool, string, error) {
+	out, err := g.shell.CmdFromDir(path, "git", "worktree", "list")
+	if err != nil {
+		return false, "", err
+	}
+	main := strings.Fields(out)[0]
+	// TODO: does strings.Fields need err handling too?
+	return true, main, nil
 }
 
 func (g *RealGit) Clone(name string) (string, error) {
