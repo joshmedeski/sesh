@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/git"
+	"github.com/joshmedeski/sesh/home"
 	cli "github.com/urfave/cli/v2"
 )
 
-func Root(l lister.Lister, n namer.Namer, git git.Git) *cli.Command {
+func Root(l lister.Lister, git git.Git, home home.Home) *cli.Command {
 	return &cli.Command{
 		Name:                   "root",
 		Aliases:                []string{"r"},
@@ -19,10 +19,13 @@ func Root(l lister.Lister, n namer.Namer, git git.Git) *cli.Command {
 		Action: func(cCtx *cli.Context) error {
 			session, exists := l.GetAttachedTmuxSession()
 			if !exists {
-				return cli.Exit("No root found for session", 1)
+				return cli.Exit("Not attached to tmux session", 1)
 			}
 			_, path, err := git.GitMainWorktree(session.Path)
-			root, err := n.RootName(path)
+			if err != nil {
+				return cli.Exit(err, 1)
+			}
+			root, err := home.ShortenHome(path)
 			if err != nil {
 				return cli.Exit(err, 1)
 			}
