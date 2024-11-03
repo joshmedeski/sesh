@@ -11,6 +11,7 @@ import (
 
 type Shell interface {
 	Cmd(cmd string, arg ...string) (string, error)
+	CmdFromDir(dir string, cmd string, arg ...string) (string, error)
 	ListCmd(cmd string, arg ...string) ([]string, error)
 }
 
@@ -29,6 +30,32 @@ func (c *RealShell) Cmd(cmd string, args ...string) (string, error) {
 	}
 	var stdout, stderr bytes.Buffer
 	command := exec.Command(foundCmd, args...)
+	command.Stdin = os.Stdin
+	command.Stdout = &stdout
+	command.Stderr = os.Stderr
+	command.Stderr = &stderr
+	if err := command.Start(); err != nil {
+		return "", err
+	}
+	if err := command.Wait(); err != nil {
+		errString := strings.TrimSpace(stderr.String())
+		if strings.HasPrefix(errString, "no server running on") {
+			return "", nil
+		}
+		return "", err
+	}
+	trimmedOutput := strings.TrimSuffix(string(stdout.String()), "\n")
+	return trimmedOutput, nil
+}
+
+func (c *RealShell) CmdFromDir(dir string, cmd string, args ...string) (string, error) {
+	foundCmd, err := c.exec.LookPath(cmd)
+	if err != nil {
+		return "", err
+	}
+	var stdout, stderr bytes.Buffer
+	command := exec.Command(foundCmd, args...)
+	command.Dir = dir
 	command.Stdin = os.Stdin
 	command.Stdout = &stdout
 	command.Stderr = os.Stderr
