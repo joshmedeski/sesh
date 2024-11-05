@@ -38,7 +38,7 @@ func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
 }
 
 func (g *RealGit) GitMainWorktree(path string) (bool, string, error) {
-	out, err := g.shell.CmdFromDir(path, "git", "worktree", "list")
+	out, err := g.shell.Cmd("git", "-C", path, "worktree", "list")
 	if err != nil {
 		return false, "", err
 	}
