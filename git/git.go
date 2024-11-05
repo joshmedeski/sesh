@@ -43,7 +43,6 @@ func (g *RealGit) GitMainWorktree(path string) (bool, string, error) {
 		return false, "", err
 	}
 	main := strings.Fields(out)[0]
-	// TODO: does strings.Fields need err handling too?
 	return true, main, nil
 }
 
