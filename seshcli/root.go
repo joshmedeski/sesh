@@ -13,7 +13,7 @@ func Root(l lister.Lister, git git.Git, home home.Home) *cli.Command {
 	return &cli.Command{
 		Name:                   "root",
 		Aliases:                []string{"r"},
-		Usage:                  "Show the root from the active session",
+		Usage:                  "Show the root for the active session",
 		UseShortOptionHandling: true,
 		Flags:                  []cli.Flag{},
 		Action: func(cCtx *cli.Context) error {
@@ -21,7 +21,7 @@ func Root(l lister.Lister, git git.Git, home home.Home) *cli.Command {
 			if !exists {
 				return cli.Exit("Not attached to tmux session", 1)
 			}
-			_, path, err := git.GitMainWorktree(session.Path)
+			_, path, err := git.GitRoot(session.Path)
 			if err != nil {
 				return cli.Exit(err, 1)
 			}
