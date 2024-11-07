@@ -73,12 +73,12 @@ func (_c *MockGit_Clone_Call) RunAndReturn(run func(string) (string, error)) *Mo
 	return _c
 }
 
-// GitCommonDir provides a mock function with given fields: name
-func (_m *MockGit) GitCommonDir(name string) (bool, string, error) {
+// GitRoot provides a mock function with given fields: name
+func (_m *MockGit) GitRoot(name string) (bool, string, error) {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GitCommonDir")
+		panic("no return value specified for GitRoot")
 	}
 
 	var r0 bool
@@ -108,156 +108,30 @@ func (_m *MockGit) GitCommonDir(name string) (bool, string, error) {
 	return r0, r1, r2
 }
 
-// MockGit_GitCommonDir_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GitCommonDir'
-type MockGit_GitCommonDir_Call struct {
+// MockGit_GitRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GitRoot'
+type MockGit_GitRoot_Call struct {
 	*mock.Call
 }
 
-// GitCommonDir is a helper method to define mock.On call
+// GitRoot is a helper method to define mock.On call
 //   - name string
-func (_e *MockGit_Expecter) GitCommonDir(name interface{}) *MockGit_GitCommonDir_Call {
-	return &MockGit_GitCommonDir_Call{Call: _e.mock.On("GitCommonDir", name)}
+func (_e *MockGit_Expecter) GitRoot(name interface{}) *MockGit_GitRoot_Call {
+	return &MockGit_GitRoot_Call{Call: _e.mock.On("GitRoot", name)}
 }
 
-func (_c *MockGit_GitCommonDir_Call) Run(run func(name string)) *MockGit_GitCommonDir_Call {
+func (_c *MockGit_GitRoot_Call) Run(run func(name string)) *MockGit_GitRoot_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *MockGit_GitCommonDir_Call) Return(_a0 bool, _a1 string, _a2 error) *MockGit_GitCommonDir_Call {
+func (_c *MockGit_GitRoot_Call) Return(_a0 bool, _a1 string, _a2 error) *MockGit_GitRoot_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *MockGit_GitCommonDir_Call) RunAndReturn(run func(string) (bool, string, error)) *MockGit_GitCommonDir_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GitMainWorktree provides a mock function with given fields: name
-func (_m *MockGit) GitMainWorktree(name string) (bool, string, error) {
-	ret := _m.Called(name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GitMainWorktree")
-	}
-
-	var r0 bool
-	var r1 string
-	var r2 error
-	if rf, ok := ret.Get(0).(func(string) (bool, string, error)); ok {
-		return rf(name)
-	}
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(name)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	if rf, ok := ret.Get(1).(func(string) string); ok {
-		r1 = rf(name)
-	} else {
-		r1 = ret.Get(1).(string)
-	}
-
-	if rf, ok := ret.Get(2).(func(string) error); ok {
-		r2 = rf(name)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockGit_GitMainWorktree_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GitMainWorktree'
-type MockGit_GitMainWorktree_Call struct {
-	*mock.Call
-}
-
-// GitMainWorktree is a helper method to define mock.On call
-//   - name string
-func (_e *MockGit_Expecter) GitMainWorktree(name interface{}) *MockGit_GitMainWorktree_Call {
-	return &MockGit_GitMainWorktree_Call{Call: _e.mock.On("GitMainWorktree", name)}
-}
-
-func (_c *MockGit_GitMainWorktree_Call) Run(run func(name string)) *MockGit_GitMainWorktree_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *MockGit_GitMainWorktree_Call) Return(_a0 bool, _a1 string, _a2 error) *MockGit_GitMainWorktree_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *MockGit_GitMainWorktree_Call) RunAndReturn(run func(string) (bool, string, error)) *MockGit_GitMainWorktree_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ShowTopLevel provides a mock function with given fields: name
-func (_m *MockGit) ShowTopLevel(name string) (bool, string, error) {
-	ret := _m.Called(name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ShowTopLevel")
-	}
-
-	var r0 bool
-	var r1 string
-	var r2 error
-	if rf, ok := ret.Get(0).(func(string) (bool, string, error)); ok {
-		return rf(name)
-	}
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(name)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	if rf, ok := ret.Get(1).(func(string) string); ok {
-		r1 = rf(name)
-	} else {
-		r1 = ret.Get(1).(string)
-	}
-
-	if rf, ok := ret.Get(2).(func(string) error); ok {
-		r2 = rf(name)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockGit_ShowTopLevel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ShowTopLevel'
-type MockGit_ShowTopLevel_Call struct {
-	*mock.Call
-}
-
-// ShowTopLevel is a helper method to define mock.On call
-//   - name string
-func (_e *MockGit_Expecter) ShowTopLevel(name interface{}) *MockGit_ShowTopLevel_Call {
-	return &MockGit_ShowTopLevel_Call{Call: _e.mock.On("ShowTopLevel", name)}
-}
-
-func (_c *MockGit_ShowTopLevel_Call) Run(run func(name string)) *MockGit_ShowTopLevel_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *MockGit_ShowTopLevel_Call) Return(_a0 bool, _a1 string, _a2 error) *MockGit_ShowTopLevel_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *MockGit_ShowTopLevel_Call) RunAndReturn(run func(string) (bool, string, error)) *MockGit_ShowTopLevel_Call {
+func (_c *MockGit_GitRoot_Call) RunAndReturn(run func(string) (bool, string, error)) *MockGit_GitRoot_Call {
 	_c.Call.Return(run)
 	return _c
 }
