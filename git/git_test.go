@@ -36,11 +36,11 @@ func TestGitRoot(t *testing.T) {
 
 	t.Run("run should fail when not in git repo", func(t *testing.T) {
 		mockShell := new(shell.MockShell)
-		mockShell.On("Cmd", "git", "-C", "~/.dotfiles/nvim", "worktree", "list").Return("", errors.New(`
+		mockShell.On("Cmd", "git", "-C", "~/not-a-repo", "worktree", "list").Return("", errors.New(`
 fatal: not a git repository (or any of the parent directories): .git
 `))
 		git := &RealGit{shell: mockShell}
-		isGit, out, _ := git.GitRoot("~/.dotfiles/nvim")
+		isGit, out, _ := git.GitRoot("~/not-a-repo")
 		assert.False(t, isGit)
 		assert.Equal(t, "", out)
 	})
