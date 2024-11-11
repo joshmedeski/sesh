@@ -1,13 +1,16 @@
 package cloner
 
 import (
+	// "fmt"
+
 	"github.com/joshmedeski/sesh/connector"
 	"github.com/joshmedeski/sesh/git"
+	"github.com/joshmedeski/sesh/model"
 )
 
 type Cloner interface {
 	// Clones a git repository
-	Clone(path string) (string, error)
+	Clone(opts model.GitCloneOptions) (string, error)
 }
 
 type RealCloner struct {
@@ -22,9 +25,13 @@ func NewCloner(connector connector.Connector, git git.Git) Cloner {
 	}
 }
 
-func (c *RealCloner) Clone(path string) (string, error) {
-	// TODO: clone
+func (c *RealCloner) Clone(opts model.GitCloneOptions) (string, error) {
+	if _, err := c.git.Clone(opts.Repo, opts.CmdDir, opts.Dir); err != nil {
+		return "", err
+	} else {
+		return "", nil
+	}
+
 	// TODO: get name of directory
 	// TODO: connect to that directory
-	return "", nil
 }
