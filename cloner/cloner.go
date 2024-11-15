@@ -1,9 +1,6 @@
 package cloner
 
 import (
-	// "fmt"
-
-	"fmt"
 	"os"
 	"strings"
 
