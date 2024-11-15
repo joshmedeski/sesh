@@ -1,8 +1,6 @@
 package git
 
 import (
-	// "fmt"
-
 	"github.com/joshmedeski/sesh/shell"
 )
 

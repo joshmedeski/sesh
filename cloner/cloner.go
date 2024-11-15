@@ -3,6 +3,10 @@ package cloner
 import (
 	// "fmt"
 
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/joshmedeski/sesh/connector"
 	"github.com/joshmedeski/sesh/git"
 	"github.com/joshmedeski/sesh/model"
@@ -28,10 +32,34 @@ func NewCloner(connector connector.Connector, git git.Git) Cloner {
 func (c *RealCloner) Clone(opts model.GitCloneOptions) (string, error) {
 	if _, err := c.git.Clone(opts.Repo, opts.CmdDir, opts.Dir); err != nil {
 		return "", err
-	} else {
-		return "", nil
 	}
 
-	// TODO: get name of directory
-	// TODO: connect to that directory
+	var path string
+	if opts.CmdDir != "" {
+		path = opts.CmdDir
+	} else {
+		path, _ = os.Getwd()
+	}
+
+	if opts.Dir != "" {
+		path = path + "/" + opts.Dir
+	} else {
+		repoName := getRepoName(opts.Repo)
+		path = path + "/" + repoName
+	}
+
+	newOpts := model.ConnectOpts{}
+	if _, err := c.connector.Connect(path, newOpts); err != nil {
+		return "", err
+	}
+
+	return "", nil
+
+}
+
+func getRepoName(url string) string {
+	parts := strings.Split(url, "/")
+	lastPart := parts[len(parts)-1]
+	repoName := strings.TrimSuffix(lastPart, ".git")
+	return repoName
 }
