@@ -31,6 +31,18 @@ func (c *RealCloner) Clone(opts model.GitCloneOptions) (string, error) {
 		return "", err
 	}
 
+	path := getPath(opts)
+
+	newOpts := model.ConnectOpts{}
+	if _, err := c.connector.Connect(path, newOpts); err != nil {
+		return "", err
+	}
+
+	return "", nil
+
+}
+
+func getPath(opts model.GitCloneOptions) string {
 	var path string
 	if opts.CmdDir != "" {
 		path = opts.CmdDir
@@ -44,14 +56,7 @@ func (c *RealCloner) Clone(opts model.GitCloneOptions) (string, error) {
 		repoName := getRepoName(opts.Repo)
 		path = path + "/" + repoName
 	}
-
-	newOpts := model.ConnectOpts{}
-	if _, err := c.connector.Connect(path, newOpts); err != nil {
-		return "", err
-	}
-
-	return "", nil
-
+	return path
 }
 
 func getRepoName(url string) string {
