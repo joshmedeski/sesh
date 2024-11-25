@@ -4,23 +4,28 @@ import (
 	"fmt"
 
 	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/namer"
+	"github.com/joshmedeski/sesh/git"
+	"github.com/joshmedeski/sesh/home"
 	cli "github.com/urfave/cli/v2"
 )
 
-func Root(l lister.Lister, n namer.Namer) *cli.Command {
+func Root(l lister.Lister, git git.Git, home home.Home) *cli.Command {
 	return &cli.Command{
 		Name:                   "root",
 		Aliases:                []string{"r"},
-		Usage:                  "Show the root from the active session",
+		Usage:                  "Show the root for the active session",
 		UseShortOptionHandling: true,
 		Flags:                  []cli.Flag{},
 		Action: func(cCtx *cli.Context) error {
 			session, exists := l.GetAttachedTmuxSession()
 			if !exists {
-				return cli.Exit("No root found for session", 1)
+				return cli.Exit("Not attached to tmux session", 1)
 			}
-			root, err := n.RootName(session.Path)
+			_, path, err := git.GitRoot(session.Path)
+			if err != nil {
+				return cli.Exit(err, 1)
+			}
+			root, err := home.ShortenHome(path)
 			if err != nil {
 				return cli.Exit(err, 1)
 			}
