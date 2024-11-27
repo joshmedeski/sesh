@@ -17,9 +17,9 @@ func (_m *MockGit) EXPECT() *MockGit_Expecter {
 	return &MockGit_Expecter{mock: &_m.Mock}
 }
 
-// Clone provides a mock function with given fields: name
-func (_m *MockGit) Clone(name string) (string, error) {
-	ret := _m.Called(name)
+// Clone provides a mock function with given fields: url, cmdDir, dir
+func (_m *MockGit) Clone(url string, cmdDir string, dir string) (string, error) {
+	ret := _m.Called(url, cmdDir, dir)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Clone")
@@ -27,17 +27,17 @@ func (_m *MockGit) Clone(name string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(name)
+	if rf, ok := ret.Get(0).(func(string, string, string) (string, error)); ok {
+		return rf(url, cmdDir, dir)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(name)
+	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
+		r0 = rf(url, cmdDir, dir)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(name)
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(url, cmdDir, dir)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -51,14 +51,16 @@ type MockGit_Clone_Call struct {
 }
 
 // Clone is a helper method to define mock.On call
-//   - name string
-func (_e *MockGit_Expecter) Clone(name interface{}) *MockGit_Clone_Call {
-	return &MockGit_Clone_Call{Call: _e.mock.On("Clone", name)}
+//   - url string
+//   - cmdDir string
+//   - dir string
+func (_e *MockGit_Expecter) Clone(url interface{}, cmdDir interface{}, dir interface{}) *MockGit_Clone_Call {
+	return &MockGit_Clone_Call{Call: _e.mock.On("Clone", url, cmdDir, dir)}
 }
 
-func (_c *MockGit_Clone_Call) Run(run func(name string)) *MockGit_Clone_Call {
+func (_c *MockGit_Clone_Call) Run(run func(url string, cmdDir string, dir string)) *MockGit_Clone_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(string), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -68,7 +70,7 @@ func (_c *MockGit_Clone_Call) Return(_a0 string, _a1 error) *MockGit_Clone_Call 
 	return _c
 }
 
-func (_c *MockGit_Clone_Call) RunAndReturn(run func(string) (string, error)) *MockGit_Clone_Call {
+func (_c *MockGit_Clone_Call) RunAndReturn(run func(string, string, string) (string, error)) *MockGit_Clone_Call {
 	_c.Call.Return(run)
 	return _c
 }

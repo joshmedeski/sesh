@@ -3,7 +3,7 @@
 package oswrap
 
 import (
-	os "os"
+	fs "io/fs"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -126,23 +126,23 @@ func (_c *MockOs_ReadFile_Call) RunAndReturn(run func(string) ([]byte, error)) *
 }
 
 // Stat provides a mock function with given fields: name
-func (_m *MockOs) Stat(name string) (os.FileInfo, error) {
+func (_m *MockOs) Stat(name string) (fs.FileInfo, error) {
 	ret := _m.Called(name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stat")
 	}
 
-	var r0 os.FileInfo
+	var r0 fs.FileInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (os.FileInfo, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (fs.FileInfo, error)); ok {
 		return rf(name)
 	}
-	if rf, ok := ret.Get(0).(func(string) os.FileInfo); ok {
+	if rf, ok := ret.Get(0).(func(string) fs.FileInfo); ok {
 		r0 = rf(name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(os.FileInfo)
+			r0 = ret.Get(0).(fs.FileInfo)
 		}
 	}
 
@@ -173,12 +173,12 @@ func (_c *MockOs_Stat_Call) Run(run func(name string)) *MockOs_Stat_Call {
 	return _c
 }
 
-func (_c *MockOs_Stat_Call) Return(_a0 os.FileInfo, _a1 error) *MockOs_Stat_Call {
+func (_c *MockOs_Stat_Call) Return(_a0 fs.FileInfo, _a1 error) *MockOs_Stat_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockOs_Stat_Call) RunAndReturn(run func(string) (os.FileInfo, error)) *MockOs_Stat_Call {
+func (_c *MockOs_Stat_Call) RunAndReturn(run func(string) (fs.FileInfo, error)) *MockOs_Stat_Call {
 	_c.Call.Return(run)
 	return _c
 }

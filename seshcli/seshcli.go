@@ -5,6 +5,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/joshmedeski/sesh/cloner"
 	"github.com/joshmedeski/sesh/configurator"
 	"github.com/joshmedeski/sesh/connector"
 	"github.com/joshmedeski/sesh/dir"
@@ -60,6 +61,7 @@ func App(version string) cli.App {
 	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
+	cloner := cloner.NewCloner(connector, git)
 
 	return cli.App{
 		Name:    "sesh",
@@ -69,7 +71,7 @@ func App(version string) cli.App {
 			List(icon, json, lister),
 			Last(lister, tmux),
 			Connect(connector, icon, dir),
-			Clone(),
+			Clone(cloner),
 			Root(lister, namer),
 		},
 	}
