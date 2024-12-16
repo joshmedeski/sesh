@@ -15,9 +15,11 @@ import (
 	"github.com/joshmedeski/sesh/icon"
 	"github.com/joshmedeski/sesh/json"
 	"github.com/joshmedeski/sesh/lister"
+	"github.com/joshmedeski/sesh/ls"
 	"github.com/joshmedeski/sesh/namer"
 	"github.com/joshmedeski/sesh/oswrap"
 	"github.com/joshmedeski/sesh/pathwrap"
+	"github.com/joshmedeski/sesh/previewer"
 	"github.com/joshmedeski/sesh/runtimewrap"
 	"github.com/joshmedeski/sesh/shell"
 	"github.com/joshmedeski/sesh/startup"
@@ -56,11 +58,13 @@ func App(version string) cli.App {
 	slog.Debug("seshcli/seshcli.go: App", "version", version, "config", config)
 
 	// core dependencies
+	ls := ls.NewLs(config, shell)
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
 	startup := startup.NewStartup(config, lister, tmux)
 	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
+	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls)
 	cloner := cloner.NewCloner(connector, git)
 
 	return cli.App{
@@ -73,6 +77,7 @@ func App(version string) cli.App {
 			Connect(connector, icon, dir),
 			Clone(cloner),
 			Root(lister, namer),
+			Preview(previewer),
 		},
 	}
 }
