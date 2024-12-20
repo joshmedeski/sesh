@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/joshmedeski/sesh/execwrap"
+	"github.com/joshmedeski/sesh/home"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -42,5 +43,16 @@ drwxr-xr-x   8 joshmedeski  staff      256 Apr 11 19:05 ../
 		list, err := shell.ListCmd("ls", "-la")
 		assert.Nil(t, err)
 		assert.Equal(t, dirListingExpected, list)
+	})
+}
+
+func TestShellPrepareCmd(t *testing.T) {
+	t.Run("should succeed with correct replacements and expansions", func(t *testing.T) {
+		mockHome := new(home.MockHome)
+		shell := &RealShell{home: mockHome}
+		mockHome.On("ExpandHome", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		cmdParts, err := shell.PrepareCmd("~/.local/bin/rat {}", map[string]string{"{}": "hello"})
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"/home/test/.local/bin/rat", "hello"}, cmdParts)
 	})
 }

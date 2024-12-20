@@ -13,6 +13,7 @@ type (
 		StartupCommand string `toml:"startup_command"`
 		Tmuxp          string `toml:"tmuxp"`
 		Tmuxinator     string `toml:"tmuxinator"`
+		PreviewCommand string `toml:"preview_command"`
 	}
 
 	SessionConfig struct {
