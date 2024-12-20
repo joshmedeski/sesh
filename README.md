@@ -224,9 +224,14 @@ mkdir -p ~/.config/sesh && touch ~/.config/sesh/sesh.toml
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
 
+Additionally, you can define a preview command that runs when previewing the session's directory. This can be handy for displaying files with tools like [eza](https://github.com/eza-community/eza) or [lsd](https://github.com/lsd-rs/lsd).
+
+Note: The `{}` will be automatically replaced with the session's path.
+
 ```toml
 [default_session]
 startup_command = "nvim -c ':Telescope find_files'"
+preview_command = "eza --all --git --icons --color=always {}"
 ```
 
 If you want to disable the default start command on a specific session, you can set `disable_startup_command = true`.
@@ -237,7 +242,9 @@ A startup command is a command that is run when a session is created. It is usef
 
 **Note:** If you use the `--command/-c` flag, then the startup script will not be run.
 
-I like to use a command that opens nvim on session startup:
+I like to use a command that opens nvim on session startup.
+
+You can also define a preview command to display the contents of a specific file using [bat](https://github.com/sharkdp/bat) or any another file previewer of your choice.
 
 ```toml
 [[session]]
@@ -249,6 +256,7 @@ startup_command = "ls"
 name = "tmux config"
 path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
+preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
 
 ### Listing Configurations
