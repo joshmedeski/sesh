@@ -9,6 +9,7 @@ import (
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/ls"
 	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/shell"
 	"github.com/joshmedeski/sesh/tmux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,13 +23,15 @@ const (
 
 type PreviewerTestSuite struct {
 	suite.Suite
-	mockLister *lister.MockLister
-	mockTmux   *tmux.MockTmux
-	mockIcon   *icon.MockIcon
-	mockDir    *dir.MockDir
-	mockHome   *home.MockHome
-	mockLs     *ls.MockLs
-	previewer  Previewer
+	mockLister  *lister.MockLister
+	mockTmux    *tmux.MockTmux
+	mockIcon    *icon.MockIcon
+	mockDir     *dir.MockDir
+	mockHome    *home.MockHome
+	mockLs      *ls.MockLs
+	mockShell   *shell.MockShell
+	mockConnfig *model.Config
+	previewer   Previewer
 }
 
 func (suite *PreviewerTestSuite) SetupTest() {
@@ -43,6 +46,7 @@ func (suite *PreviewerTestSuite) TearDownTest() {
 	suite.mockDir.AssertExpectations(suite.T())
 	suite.mockHome.AssertExpectations(suite.T())
 	suite.mockLs.AssertExpectations(suite.T())
+	suite.mockShell.AssertExpectations(suite.T())
 }
 
 func (suite *PreviewerTestSuite) initializeMocks() {
@@ -52,6 +56,7 @@ func (suite *PreviewerTestSuite) initializeMocks() {
 	suite.mockDir = new(dir.MockDir)
 	suite.mockHome = new(home.MockHome)
 	suite.mockLs = new(ls.MockLs)
+	suite.mockShell = new(shell.MockShell)
 }
 
 func (suite *PreviewerTestSuite) initializePreviewer() {
@@ -62,6 +67,8 @@ func (suite *PreviewerTestSuite) initializePreviewer() {
 		suite.mockDir,
 		suite.mockHome,
 		suite.mockLs,
+		model.Config{},
+		suite.mockShell,
 	)
 }
 
@@ -88,7 +95,7 @@ func (suite *PreviewerTestSuite) TestPreview_TmuxStrategy() {
 	assert.Equal(suite.T(), testCase.expectedOutput, output)
 }
 
-func (suite *PreviewerTestSuite) TestPreview_ConfigStrategy() {
+func (suite *PreviewerTestSuite) TestPreview_DefaultConfigStrategy() {
 	testCase := struct {
 		inputName      string
 		trimmedName    string
@@ -104,7 +111,34 @@ func (suite *PreviewerTestSuite) TestPreview_ConfigStrategy() {
 drwxrwxr-x    - test 16 dic 18:37 'Learning Go.pdf'`,
 	}
 
-	suite.setupConfigMocks(testCase.inputName, testCase.trimmedName, testCase.expectedPath, testCase.expectedOutput)
+	suite.setupDefaultConfigMocks(testCase.inputName, testCase.trimmedName, testCase.expectedPath, testCase.expectedOutput)
+
+	output, err := suite.previewer.Preview(testCase.inputName)
+
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), testCase.expectedOutput, output)
+}
+
+func (suite *PreviewerTestSuite) TestPreview_ConfigStrategy() {
+	testCase := struct {
+		inputName           string
+		trimmedName         string
+		previewCommand      string
+		previewCommandParts []string
+		expectedPath        string
+		expectedOutput      string
+	}{
+		inputName:           "📁 JSXQL",
+		trimmedName:         "JSXQL",
+		previewCommand:      "ls -la",
+		previewCommandParts: []string{"ls", "-la"},
+		expectedPath:        testCodePath,
+		expectedOutput: `.rw-rw-r--   299 test 15 dic 16:17 -- global.d.ts
+.rw-rw-r--   251 test 15 dic 16:17 -- index.tsx
+.rw-rw-r-- 1,7Ki test 15 dic 16:17 -- jsxql.ts`,
+	}
+
+	suite.setupConfigMocks(testCase.inputName, testCase.trimmedName, testCase.previewCommand, testCase.previewCommandParts, testCase.expectedPath, testCase.expectedOutput)
 
 	output, err := suite.previewer.Preview(testCase.inputName)
 
@@ -161,7 +195,7 @@ func (suite *PreviewerTestSuite) setupTmuxMocks(inputName, trimmedName, expected
 	suite.mockTmux.On("CapturePane", trimmedName).Return(expectedOutput, nil)
 }
 
-func (suite *PreviewerTestSuite) setupConfigMocks(inputName, trimmedName, expectedPath, expectedOutput string) {
+func (suite *PreviewerTestSuite) setupDefaultConfigMocks(inputName, trimmedName, expectedPath, expectedOutput string) {
 	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
 	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{
@@ -169,6 +203,18 @@ func (suite *PreviewerTestSuite) setupConfigMocks(inputName, trimmedName, expect
 		Path: expectedPath,
 	}, true)
 	suite.mockLs.On("ListDirectory", expectedPath).Return(expectedOutput, nil)
+}
+
+func (suite *PreviewerTestSuite) setupConfigMocks(inputName string, trimmedName string, previewCommand string, previewCommandParts []string, expectedPath string, expectedOutput string) {
+	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
+	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
+	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{
+		Name:           trimmedName,
+		Path:           expectedPath,
+		PreviewCommand: previewCommand,
+	}, true)
+	suite.mockShell.On("PrepareCmd", previewCommand, map[string]string{"{}": expectedPath}).Return(previewCommandParts, nil)
+	suite.mockShell.On("Cmd", "ls", "-la").Return(expectedOutput, nil)
 }
 
 func (suite *PreviewerTestSuite) setupDirectoryMocks(inputName, trimmedName, expectedPath, expectedOutput string) {

@@ -16,6 +16,7 @@ type (
 		Path string // The absolute directory path
 
 		StartupCommand        string  // The command to run when the session is started
+		PreviewCommand        string  // The command to run when the session is previewed
 		DisableStartupCommand bool    // Ignore the default startup command if present
 		Tmuxinator            string  // Name of the tmuxinator config
 		Attached              int     // Whether the session is currently attached

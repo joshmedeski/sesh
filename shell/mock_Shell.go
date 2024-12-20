@@ -161,6 +161,65 @@ func (_c *MockShell_ListCmd_Call) RunAndReturn(run func(string, ...string) ([]st
 	return _c
 }
 
+// PrepareCmd provides a mock function with given fields: cmd, replacements
+func (_m *MockShell) PrepareCmd(cmd string, replacements map[string]string) ([]string, error) {
+	ret := _m.Called(cmd, replacements)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PrepareCmd")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, map[string]string) ([]string, error)); ok {
+		return rf(cmd, replacements)
+	}
+	if rf, ok := ret.Get(0).(func(string, map[string]string) []string); ok {
+		r0 = rf(cmd, replacements)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, map[string]string) error); ok {
+		r1 = rf(cmd, replacements)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockShell_PrepareCmd_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PrepareCmd'
+type MockShell_PrepareCmd_Call struct {
+	*mock.Call
+}
+
+// PrepareCmd is a helper method to define mock.On call
+//   - cmd string
+//   - replacements map[string]string
+func (_e *MockShell_Expecter) PrepareCmd(cmd interface{}, replacements interface{}) *MockShell_PrepareCmd_Call {
+	return &MockShell_PrepareCmd_Call{Call: _e.mock.On("PrepareCmd", cmd, replacements)}
+}
+
+func (_c *MockShell_PrepareCmd_Call) Run(run func(cmd string, replacements map[string]string)) *MockShell_PrepareCmd_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *MockShell_PrepareCmd_Call) Return(_a0 []string, _a1 error) *MockShell_PrepareCmd_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockShell_PrepareCmd_Call) RunAndReturn(run func(string, map[string]string) ([]string, error)) *MockShell_PrepareCmd_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockShell creates a new instance of MockShell. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockShell(t interface {

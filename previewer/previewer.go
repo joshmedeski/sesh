@@ -6,6 +6,8 @@ import (
 	"github.com/joshmedeski/sesh/icon"
 	"github.com/joshmedeski/sesh/lister"
 	"github.com/joshmedeski/sesh/ls"
+	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/shell"
 	"github.com/joshmedeski/sesh/tmux"
 )
 
@@ -26,13 +28,15 @@ func NewPreviewer(
 	dir dir.Dir,
 	home home.Home,
 	ls ls.Ls,
+	config model.Config,
+	shell shell.Shell,
 ) Previewer {
-	strategies := make([]PreviewStrategy, 0, 3)
-	strategies = append(strategies,
+	strategies := []PreviewStrategy{
 		NewTmuxStrategy(lister, tmux),
-		NewConfigStrategy(lister, ls),
+		NewConfigStrategy(lister, shell),
+		NewDefaultConfigStrategy(lister, config, ls),
 		NewDirectoryStrategy(home, dir, ls),
-	)
+	}
 
 	return &RealPreviewer{
 		icon:       icon,

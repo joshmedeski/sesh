@@ -1,8 +1,6 @@
 package ls
 
 import (
-	"strings"
-
 	"github.com/joshmedeski/sesh/model"
 	"github.com/joshmedeski/sesh/shell"
 )
@@ -21,17 +19,19 @@ func NewLs(config model.Config, shell shell.Shell) Ls {
 }
 
 func (g *RealLs) ListDirectory(path string) (string, error) {
-	command := g.config.DefaultSessionConfig.LsCommand
+	command := g.config.DefaultSessionConfig.PreviewCommand
 	if command == "" {
-		command = "ls"
+		command = "ls {}"
 	}
 
-	cmd := strings.Split(command, " ")
-	cmd = append(cmd, path)
-
-	out, err := g.shell.Cmd(cmd[0], cmd[1:]...)
+	cmdParts, err := g.shell.PrepareCmd(command, map[string]string{"{}": path})
 	if err != nil {
 		return "", err
 	}
-	return out, nil
+
+	cmdOutput, err := g.shell.Cmd(cmdParts[0], cmdParts[1:]...)
+	if err != nil {
+		return "", err
+	}
+	return cmdOutput, nil
 }

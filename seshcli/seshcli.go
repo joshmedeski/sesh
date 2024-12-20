@@ -36,8 +36,8 @@ func App(version string) cli.App {
 	runtime := runtimewrap.NewRunTime()
 
 	// base dependencies
-	shell := shell.NewShell(exec)
 	home := home.NewHome(os)
+	shell := shell.NewShell(exec, home)
 	json := json.NewJson()
 
 	// resource dependencies
@@ -64,7 +64,7 @@ func App(version string) cli.App {
 	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
-	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls)
+	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
 
 	return cli.App{

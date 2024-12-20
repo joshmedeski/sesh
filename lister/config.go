@@ -31,6 +31,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				Name:                  session.Name,
 				Path:                  path,
 				StartupCommand:        session.StartupCommand,
+				PreviewCommand:        session.PreviewCommand,
 				DisableStartupCommand: session.DisableStartCommand,
 				Tmuxinator:            session.Tmuxinator,
 			}
