@@ -1,7 +1,10 @@
 package lister
 
 import (
+	"sort"
+
 	"github.com/joshmedeski/sesh/model"
+	"github.com/samber/lo"
 )
 
 type (
@@ -24,35 +27,35 @@ var srcStrategies = map[string]srcStrategy{
 	"zoxide":     listZoxide,
 }
 
+
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
-	fullDirectory := make(model.SeshSessionMap)
-	fullOrderedIndex := make([]string, 0)
-
-	srcsOrderedIndex := srcs(opts)
-
-	for _, src := range srcsOrderedIndex {
+	allSessions := lo.FlatMap(srcs(opts), func(src string, i int) []model.SeshSession {
 		sessions, err := srcStrategies[src](l)
 		if err != nil {
-			return model.SeshSessions{}, err
+			return nil
 		}
-		if opts.HideAttached {
-			attachedSession, _ := GetAttachedTmuxSession(l)
-			sessionsCopy := sessions.OrderedIndex
-			for i, ses := range sessionsCopy {
-				if attachedSession.Name == sessions.Directory[ses].Name {
-					sessions.OrderedIndex = append(sessions.OrderedIndex[:i],
-						sessions.OrderedIndex[i+1:]...)
-				}
-			}
-		}
-		fullOrderedIndex = append(fullOrderedIndex, sessions.OrderedIndex...)
-		for _, i := range sessions.OrderedIndex {
-			fullDirectory[i] = sessions.Directory[i]
-		}
+
+		return lo.Map(lo.Values(sessions.Directory), func(session model.SeshSession, j int) model.SeshSession {
+			return session
+		})
+	})
+
+	if opts.HideAttached {
+		attachedSession, _ := GetAttachedTmuxSession(l)
+		allSessions = lo.Filter(allSessions, func(s model.SeshSession, _ int) bool {
+			return s.Name != attachedSession.Name
+		})
 	}
 
+	orderedIndex := lo.Map(allSessions, func(s model.SeshSession, _ int) string {
+		return s.Src + s.Name
+	})
+	directory := lo.KeyBy(allSessions, func(s model.SeshSession) string {
+		return s.Src + s.Name
+	})
+
 	return model.SeshSessions{
-		OrderedIndex: fullOrderedIndex,
-		Directory:    fullDirectory,
+		OrderedIndex: orderedIndex,
+		Directory:    directory,
 	}, nil
 }
