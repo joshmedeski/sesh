@@ -1,6 +1,8 @@
 package lister
 
 import (
+	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/joshmedeski/sesh/model"
@@ -57,6 +59,14 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		return lo.MaxBy(sessions, func(a, b model.SeshSession) bool {
 			return a.Score > b.Score
 		})
+	})
+
+	runningSessionNames := lo.FilterMap(allSessions, func(s model.SeshSession, _ int) (string, bool) {
+		return s.Name, s.Src == "tmux"
+	})
+
+	allSessions = lo.Filter(allSessions, func(s model.SeshSession, _ int) bool {
+		return s.Src != "zoxide" || !slices.Contains(runningSessionNames, filepath.Base(s.Path))
 	})
 
 	if opts.HideAttached {
