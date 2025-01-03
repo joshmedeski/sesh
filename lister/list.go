@@ -27,6 +27,10 @@ var srcStrategies = map[string]srcStrategy{
 	"zoxide":     listZoxide,
 }
 
+const (
+	srcOffset = 1000000
+	srcFactor = 10000
+)
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	allSessions := lo.FlatMap(srcs(opts), func(src string, i int) []model.SeshSession {
@@ -36,6 +40,11 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		}
 
 		return lo.Map(lo.Values(sessions.Directory), func(session model.SeshSession, j int) model.SeshSession {
+			if session.Src != "zoxide" {
+				srcDownrank := float64(i) * srcFactor
+				sessionDownrank := float64(j)
+				session.Score = session.Score + srcOffset - srcDownrank - sessionDownrank
+			}
 			return session
 		})
 	})
@@ -46,6 +55,10 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 			return s.Name != attachedSession.Name
 		})
 	}
+
+	sort.Slice(allSessions, func(i, j int) bool {
+		return allSessions[i].Score > allSessions[j].Score
+	})
 
 	orderedIndex := lo.Map(allSessions, func(s model.SeshSession, _ int) string {
 		return s.Src + s.Name
