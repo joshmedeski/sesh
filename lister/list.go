@@ -35,6 +35,19 @@ const (
 )
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
+	allSessions := sessionFromSources(opts, l)
+
+	allSessions = removeConfigDuplicates(allSessions)
+	allSessions = removeZoxideDuplicates(allSessions)
+
+	if opts.HideAttached {
+		allSessions = removeAttachedSession(l, allSessions)
+	}
+
+	return createSeshSessions(allSessions)
+}
+
+func sessionFromSources(opts ListOptions, l *RealLister) []model.SeshSession {
 	allSessions := lo.FlatMap(srcs(opts), func(src string, i int) []model.SeshSession {
 		sessions, err := srcStrategies[src](l)
 		if err != nil {
@@ -51,31 +64,40 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		})
 	})
 
-	grouped := lo.GroupBy(allSessions, func(s model.SeshSession) string {
+	return allSessions
+}
+
+func removeConfigDuplicates(allSessions []model.SeshSession) []model.SeshSession {
+	configDuplicates := lo.GroupBy(allSessions, func(s model.SeshSession) string {
 		return s.Name
 	})
 
-	allSessions = lo.MapToSlice(grouped, func(_ string, sessions []model.SeshSession) model.SeshSession {
+	return lo.MapToSlice(configDuplicates, func(_ string, sessions []model.SeshSession) model.SeshSession {
 		return lo.MaxBy(sessions, func(a, b model.SeshSession) bool {
 			return a.Score > b.Score
 		})
 	})
+}
 
+func removeZoxideDuplicates(allSessions []model.SeshSession) []model.SeshSession {
 	runningSessionNames := lo.FilterMap(allSessions, func(s model.SeshSession, _ int) (string, bool) {
 		return s.Name, s.Src == "tmux"
 	})
 
-	allSessions = lo.Filter(allSessions, func(s model.SeshSession, _ int) bool {
+	return lo.Filter(allSessions, func(s model.SeshSession, _ int) bool {
 		return s.Src != "zoxide" || !slices.Contains(runningSessionNames, filepath.Base(s.Path))
 	})
+}
 
-	if opts.HideAttached {
-		attachedSession, _ := GetAttachedTmuxSession(l)
-		allSessions = lo.Filter(allSessions, func(s model.SeshSession, _ int) bool {
-			return s.Name != attachedSession.Name
-		})
-	}
+func removeAttachedSession(l *RealLister, allSessions []model.SeshSession) []model.SeshSession {
+	attachedSession, _ := GetAttachedTmuxSession(l)
+	allSessions = lo.Filter(allSessions, func(s model.SeshSession, _ int) bool {
+		return s.Name != attachedSession.Name
+	})
+	return allSessions
+}
 
+func createSeshSessions(allSessions []model.SeshSession) (model.SeshSessions, error) {
 	sort.Slice(allSessions, func(i, j int) bool {
 		return allSessions[i].Score > allSessions[j].Score
 	})
