@@ -49,6 +49,16 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		})
 	})
 
+	grouped := lo.GroupBy(allSessions, func(s model.SeshSession) string {
+		return s.Name
+	})
+
+	allSessions = lo.MapToSlice(grouped, func(_ string, sessions []model.SeshSession) model.SeshSession {
+		return lo.MaxBy(sessions, func(a, b model.SeshSession) bool {
+			return a.Score > b.Score
+		})
+	})
+
 	if opts.HideAttached {
 		attachedSession, _ := GetAttachedTmuxSession(l)
 		allSessions = lo.Filter(allSessions, func(s model.SeshSession, _ int) bool {
