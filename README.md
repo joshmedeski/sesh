@@ -34,7 +34,7 @@ Watch the video to learn more about how to use sesh to manage your tmux sessions
 To install sesh, run the following [homebrew](https://brew.sh/) command:
 
 ```sh
-brew install joshmedeski/sesh/sesh
+brew install sesh
 ```
 
 </details>
