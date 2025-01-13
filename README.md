@@ -140,6 +140,9 @@ bind-key "K" display-popup -E -w 40% "sesh connect \"$(
 
 **Note:** There are less features available with gum compared to fzf, but I found its matching algorithm is faster and it has a more modern feel.
 
+> [!WARNING]
+> As of [gum v0.15.0](https://github.com/charmbracelet/gum/releases/tag/v0.15.0) you have to add the `--no-strip-ansi` in order to display the icons correctly.
+
 See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
 
 ## zsh keybind
