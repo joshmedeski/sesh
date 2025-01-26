@@ -52,6 +52,11 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Aliases: []string{"T"},
 				Usage:   "show tmuxinator configs",
 			},
+			&cli.BoolFlag{
+				Name:    "debug",
+				Aliases: []string{"d"},
+				Usage:   "show ranking in results",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			sessions, err := list.List(lister.ListOptions{
@@ -80,6 +85,9 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				name := sessions.Directory[i].Name
 				if cCtx.Bool("icons") {
 					name = icon.AddIcon(sessions.Directory[i])
+				}
+				if cCtx.Bool("debug") {
+					name = fmt.Sprintf("%s (%f)", name, sessions.Directory[i].Score)
 				}
 				fmt.Println(name)
 			}
