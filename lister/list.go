@@ -1,6 +1,7 @@
 package lister
 
 import (
+	"math"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -29,7 +30,20 @@ var srcStrategies = map[string]srcStrategy{
 	"zoxide":     listZoxide,
 }
 
-const zoxideFactor = 100
+var strategyOrder = []string{
+	"tmux",
+	"config",
+	"tmuxinator",
+	"zoxide",
+}
+
+// We want to determine a weight for each strategy type that determines the
+// order of the strategies in the result list.
+// Because we derive the score of tmux sessions by the last attached time in Unix
+// timestamp, we need a factor in the order of magnitude of the current Unix
+// timestamp. This factor will work until the year 2038, when the Unix timestamp
+// overflows a 32-bit integer.
+const offsetFactor = 1000000
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	allSessions := sessionFromSources(opts, l)
@@ -45,15 +59,18 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 }
 
 func sessionFromSources(opts ListOptions, l *RealLister) []model.SeshSession {
-	allSessions := lo.FlatMap(srcs(opts), func(src string, i int) []model.SeshSession {
+	allSessions := lo.FlatMap(srcs(opts), func(src string, _ int) []model.SeshSession {
 		sessions, err := srcStrategies[src](l)
 		if err != nil {
 			return nil
 		}
 
-		return lo.Map(lo.Values(sessions.Directory), func(session model.SeshSession, j int) model.SeshSession {
-			if session.Src != "zoxide" {
-				session.Score = session.Score * zoxideFactor
+		strategyIndex := slices.Index(strategyOrder, src)
+		return lo.Map(lo.Values(sessions.Directory), func(session model.SeshSession, lineIndex int) model.SeshSession {
+			if session.Src == "config" || session.Src == "tmuxinator" {
+				// This formula allows us to configure the position of the non-zoxide strategies in the result
+				// list by adjusting their position in the strategyOrder list.
+				session.Score = offsetFactor*math.Pow(10, float64(len(srcStrategies)-strategyIndex)) - float64(lineIndex)
 			}
 			return session
 		})
