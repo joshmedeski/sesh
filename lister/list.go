@@ -29,10 +29,7 @@ var srcStrategies = map[string]srcStrategy{
 	"zoxide":     listZoxide,
 }
 
-const (
-	srcOffset = 1000000
-	srcFactor = 10000
-)
+const zoxideFactor = 100
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	allSessions := sessionFromSources(opts, l)
@@ -56,9 +53,7 @@ func sessionFromSources(opts ListOptions, l *RealLister) []model.SeshSession {
 
 		return lo.Map(lo.Values(sessions.Directory), func(session model.SeshSession, j int) model.SeshSession {
 			if session.Src != "zoxide" {
-				srcDownrank := float64(i) * srcFactor
-				sessionDownrank := float64(j)
-				session.Score = session.Score + srcOffset - srcDownrank - sessionDownrank
+				session.Score = session.Score * zoxideFactor
 			}
 			return session
 		})

@@ -26,6 +26,7 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 			Name:     session.Name,
 			Path:     session.Path,
 			Attached: session.Attached,
+			Score:    float64(session.LastAttached.Unix()),
 			Windows:  session.Windows,
 		}
 	}
@@ -76,6 +77,7 @@ func GetAttachedTmuxSession(l *RealLister) (model.SeshSession, bool) {
 				Name:     session.Name,
 				Path:     session.Path,
 				Attached: session.Attached,
+				Score:    float64(session.LastAttached.Unix()),
 				Windows:  session.Windows,
 			}, true
 		}
