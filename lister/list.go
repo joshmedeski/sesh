@@ -56,10 +56,10 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		directoryHash := make(map[string]int)
 		destIndex := 0
 		for _, index := range fullOrderedIndex {
-			directory := fullDirectory[index]
-			if _, exists := directoryHash[directory.Path]; !exists {
+			directoryPath := fullDirectory[index].Path
+			if _, exists := directoryHash[directoryPath]; !exists {
 				fullOrderedIndex[destIndex] = index
-				directoryHash[directory.Path] = 1
+				directoryHash[directoryPath] = 1
 				destIndex = destIndex + 1
 			}
 		}
