@@ -6,13 +6,14 @@ import (
 
 type (
 	ListOptions struct {
-		Config       bool
-		HideAttached bool
-		Icons        bool
-		Json         bool
-		Tmux         bool
-		Zoxide       bool
-		Tmuxinator   bool
+		Config         bool
+		HideAttached   bool
+		Icons          bool
+		Json           bool
+		Tmux           bool
+		Zoxide         bool
+		Tmuxinator     bool
+		HideDuplicates bool
 	}
 	srcStrategy func(*RealLister) (model.SeshSessions, error)
 )
@@ -51,17 +52,19 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		}
 	}
 
-	directoryHash := make(map[string]int)
-	destIndex := 0
-	for _, index := range fullOrderedIndex {
-		directory := fullDirectory[index]
-		if _, exists := directoryHash[directory.Path]; !exists {
-			fullOrderedIndex[destIndex] = index
-			directoryHash[directory.Path] = 1
-			destIndex = destIndex + 1
+	if opts.HideDuplicates {
+		directoryHash := make(map[string]int)
+		destIndex := 0
+		for _, index := range fullOrderedIndex {
+			directory := fullDirectory[index]
+			if _, exists := directoryHash[directory.Path]; !exists {
+				fullOrderedIndex[destIndex] = index
+				directoryHash[directory.Path] = 1
+				destIndex = destIndex + 1
+			}
 		}
+		fullOrderedIndex = fullOrderedIndex[:destIndex]
 	}
-	fullOrderedIndex = fullOrderedIndex[:destIndex]
 
 	return model.SeshSessions{
 		OrderedIndex: fullOrderedIndex,
