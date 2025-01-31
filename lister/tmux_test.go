@@ -1,6 +1,7 @@
 package lister
 
 import (
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -88,6 +89,29 @@ func TestListTmuxSessions(t *testing.T) {
 		assert.Equal(t, "sesh/main", sessions.Directory["tmux:sesh/main"].Name)
 		assert.Equal(t, "tmux:sesh/v2", sessions.OrderedIndex[1])
 		assert.Equal(t, nil, err)
+	})
+}
+
+func TestListTmuxSessionsError(t *testing.T) {
+	mockTmux := new(tmux.MockTmux)
+	t.Run("should return error when unable to list tmux sessions", func(t *testing.T) {
+		mockTmux.On("ListSessions").Return(nil, fmt.Errorf("some error"))
+
+		mockConfig := model.Config{}
+		mockHome := new(home.MockHome)
+		mockZoxide := new(zoxide.MockZoxide)
+		mockTmuxinator := new(tmuxinator.MockTmuxinator)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+
+		realLister, ok := lister.(*RealLister)
+		if !ok {
+			log.Fatal("Cannot convert lister to *RealLister")
+		}
+
+		sessions, err := listTmux(realLister)
+		assert.Equal(t, model.SeshSessions{}, sessions)
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "couldn't list tmux sessions")
 	})
 }
 
