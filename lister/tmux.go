@@ -2,12 +2,22 @@ package lister
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/joshmedeski/sesh/model"
 )
 
 func tmuxKey(name string) string {
 	return fmt.Sprintf("tmux:%s", name)
+}
+
+func isBlacklisted(blacklist []string, name string) bool {
+	for _, blacklistedName := range blacklist {
+		if strings.EqualFold(blacklistedName, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func listTmux(l *RealLister) (model.SeshSessions, error) {
@@ -29,9 +39,17 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 			Windows:  session.Windows,
 		}
 	}
+
+	finalOrderedIndex := []string{}
+	for _, key := range orderedIndex {
+		if !isBlacklisted(l.config.Blacklist, directory[key].Name) {
+			finalOrderedIndex = append(finalOrderedIndex, key)
+		}
+	}
+
 	return model.SeshSessions{
 		Directory:    directory,
-		OrderedIndex: orderedIndex,
+		OrderedIndex: finalOrderedIndex,
 	}, nil
 }
 
