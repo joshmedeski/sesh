@@ -4,6 +4,7 @@ type (
 	Config struct {
 		ImportPaths          []string             `toml:"import"`
 		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
+		Blacklist            []string             `toml:"blacklist"`
 		SessionConfigs       []SessionConfig      `toml:"session"`
 	}
 
