@@ -20,36 +20,41 @@ func isBlacklisted(blacklist []string, name string) bool {
 	return false
 }
 
+func createBlacklistSet(blacklist []string) map[string]struct{} {
+	blacklistSet := make(map[string]struct{}, len(blacklist))
+	for _, name := range blacklist {
+		blacklistSet[name] = struct{}{}
+	}
+	return blacklistSet
+}
+
 func listTmux(l *RealLister) (model.SeshSessions, error) {
 	tmuxSessions, err := l.tmux.ListSessions()
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmux sessions: %q", err)
 	}
-	numOfSessions := len(tmuxSessions)
-	orderedIndex := make([]string, numOfSessions)
-	directory := make(model.SeshSessionMap)
-	for i, session := range tmuxSessions {
-		key := tmuxKey(session.Name)
-		orderedIndex[i] = key
-		directory[key] = model.SeshSession{
-			Src:      "tmux",
-			Name:     session.Name,
-			Path:     session.Path,
-			Attached: session.Attached,
-			Windows:  session.Windows,
-		}
-	}
 
-	finalOrderedIndex := []string{}
-	for _, key := range orderedIndex {
-		if !isBlacklisted(l.config.Blacklist, directory[key].Name) {
-			finalOrderedIndex = append(finalOrderedIndex, key)
+	blacklistSet := createBlacklistSet(l.config.Blacklist)
+	directory := make(map[string]model.SeshSession)
+	orderedIndex := []string{}
+
+	for _, session := range tmuxSessions {
+		if _, blacklisted := blacklistSet[session.Name]; !blacklisted {
+			key := tmuxKey(session.Name)
+			orderedIndex = append(orderedIndex, key)
+			directory[key] = model.SeshSession{
+				Src:      "tmux",
+				Name:     session.Name,
+				Path:     session.Path,
+				Attached: session.Attached,
+				Windows:  session.Windows,
+			}
 		}
 	}
 
 	return model.SeshSessions{
 		Directory:    directory,
-		OrderedIndex: finalOrderedIndex,
+		OrderedIndex: orderedIndex,
 	}, nil
 }
 
