@@ -223,6 +223,17 @@ You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/
 mkdir -p ~/.config/sesh && touch ~/.config/sesh/sesh.toml
 ```
 
+### Blacklist
+
+You may want to blacklist certain tmux sessions from showing up in the results. For example, you may want to exclude your `scratch` directory from the results.
+
+```sh
+blacklist = ["scratch"]
+```
+
+> [!NOTE] 
+> Works great with [tmux-floatx](https://github.com/omerxx/tmux-floax)
+
 ### Default Session
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
