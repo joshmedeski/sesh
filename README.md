@@ -273,6 +273,10 @@ startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
 
+### Environment Variables
+
+When creating a new tmux session, sesh now automatically sets the `SESH_SESSION_NAME` environment variable to the name of the session. This can be useful for scripts or programs that need to know the current session name.
+
 ### Listing Configurations
 
 Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
@@ -308,3 +312,4 @@ Made with [contrib.rocks](https://contrib.rocks).
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date" />
  </picture>
 </a>
+
