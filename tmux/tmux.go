@@ -1,9 +1,9 @@
 package tmux
 
 import (
-	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/oswrap"
-	"github.com/joshmedeski/sesh/shell"
+	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/oswrap"
+	"github.com/joshmedeski/sesh/v2/shell"
 )
 
 type Tmux interface {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/joshmedeski/sesh/previewer"
+	"github.com/joshmedeski/sesh/v2/previewer"
 	cli "github.com/urfave/cli/v2"
 )
 

@@ -1,7 +1,7 @@
 package git
 
 import (
-	"github.com/joshmedeski/sesh/shell"
+	"github.com/joshmedeski/sesh/v2/shell"
 )
 
 type Git interface {

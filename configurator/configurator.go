@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/oswrap"
-	"github.com/joshmedeski/sesh/pathwrap"
-	"github.com/joshmedeski/sesh/runtimewrap"
+	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/oswrap"
+	"github.com/joshmedeski/sesh/v2/pathwrap"
+	"github.com/joshmedeski/sesh/v2/runtimewrap"
 	"github.com/pelletier/go-toml/v2"
 )
 

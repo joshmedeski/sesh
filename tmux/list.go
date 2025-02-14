@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/joshmedeski/sesh/convert"
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/convert"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func (t *RealTmux) ListSessions() ([]*model.TmuxSession, error) {

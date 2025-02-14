@@ -1,6 +1,6 @@
 package lister
 
-import "github.com/joshmedeski/sesh/model"
+import "github.com/joshmedeski/sesh/v2/model"
 
 func exists(key string, sessions map[string]model.SeshSession) (model.SeshSession, bool) {
 	if session, exists := sessions[key]; exists {

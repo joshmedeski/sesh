@@ -3,7 +3,7 @@ package tmux
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func (t *RealTmux) SwitchOrAttach(name string, opts model.ConnectOpts) (string, error) {

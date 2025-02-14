@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/joshmedeski/sesh/execwrap"
-	"github.com/joshmedeski/sesh/home"
+	"github.com/joshmedeski/sesh/v2/execwrap"
+	"github.com/joshmedeski/sesh/v2/home"
 )
 
 type Shell interface {

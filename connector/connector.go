@@ -1,15 +1,15 @@
 package connector
 
 import (
-	"github.com/joshmedeski/sesh/dir"
-	"github.com/joshmedeski/sesh/home"
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/namer"
-	"github.com/joshmedeski/sesh/startup"
-	"github.com/joshmedeski/sesh/tmux"
-	"github.com/joshmedeski/sesh/tmuxinator"
-	"github.com/joshmedeski/sesh/zoxide"
+	"github.com/joshmedeski/sesh/v2/dir"
+	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/namer"
+	"github.com/joshmedeski/sesh/v2/startup"
+	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
 type Connector interface {

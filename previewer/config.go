@@ -1,8 +1,8 @@
 package previewer
 
 import (
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/shell"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/shell"
 )
 
 type ConfigPreviewStrategy struct {

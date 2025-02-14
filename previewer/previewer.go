@@ -1,14 +1,14 @@
 package previewer
 
 import (
-	"github.com/joshmedeski/sesh/dir"
-	"github.com/joshmedeski/sesh/home"
-	"github.com/joshmedeski/sesh/icon"
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/ls"
-	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/shell"
-	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/v2/dir"
+	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/shell"
+	"github.com/joshmedeski/sesh/v2/tmux"
 )
 
 type Previewer interface {

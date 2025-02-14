@@ -3,7 +3,7 @@ package lister
 import (
 	"testing"
 
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/stretchr/testify/assert"
 )
 

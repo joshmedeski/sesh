@@ -3,10 +3,10 @@ package seshcli
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/icon"
-	"github.com/joshmedeski/sesh/json"
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/json"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
 	cli "github.com/urfave/cli/v2"
 )
 
