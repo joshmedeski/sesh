@@ -3,8 +3,8 @@ package shell
 import (
 	"testing"
 
-	"github.com/joshmedeski/sesh/execwrap"
-	"github.com/joshmedeski/sesh/home"
+	"github.com/joshmedeski/sesh/v2/execwrap"
+	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

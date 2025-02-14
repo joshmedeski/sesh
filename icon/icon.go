@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 type Icon interface {

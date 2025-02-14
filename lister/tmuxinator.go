@@ -3,7 +3,7 @@ package lister
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func tmuxinatorKey(name string) string {

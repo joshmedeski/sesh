@@ -3,8 +3,8 @@ package seshcli
 import (
 	"errors"
 
-	"github.com/joshmedeski/sesh/cloner"
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/cloner"
+	"github.com/joshmedeski/sesh/v2/model"
 	cli "github.com/urfave/cli/v2"
 )
 

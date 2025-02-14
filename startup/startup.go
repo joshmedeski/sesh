@@ -3,9 +3,9 @@ package startup
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/tmux"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/tmux"
 )
 
 type Startup interface {

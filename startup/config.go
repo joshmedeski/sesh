@@ -1,6 +1,6 @@
 package startup
 
-import "github.com/joshmedeski/sesh/model"
+import "github.com/joshmedeski/sesh/v2/model"
 
 func configStrategy(s *RealStartup, session model.SeshSession) (string, error) {
 	config, exists := s.lister.FindConfigSession(session.Name)

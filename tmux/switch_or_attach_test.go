@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/oswrap"
-	"github.com/joshmedeski/sesh/shell"
+	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/oswrap"
+	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/stretchr/testify/assert"
 	mock "github.com/stretchr/testify/mock"
 )

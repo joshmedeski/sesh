@@ -3,8 +3,8 @@ package seshcli
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/namer"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/namer"
 	cli "github.com/urfave/cli/v2"
 )
 

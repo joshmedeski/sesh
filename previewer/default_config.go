@@ -1,9 +1,9 @@
 package previewer
 
 import (
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/ls"
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 type DefaultConfigPreviewStrategy struct {

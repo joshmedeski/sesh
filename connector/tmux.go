@@ -1,6 +1,6 @@
 package connector
 
-import "github.com/joshmedeski/sesh/model"
+import "github.com/joshmedeski/sesh/v2/model"
 
 func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 	session, exists := c.lister.FindTmuxSession(name)

@@ -3,7 +3,7 @@
 package cloner
 
 import (
-	model "github.com/joshmedeski/sesh/model"
+	model "github.com/joshmedeski/sesh/v2/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
