@@ -1,15 +1,15 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/v2/blob/main/sesh-icon.png" />
+  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
 </p>
 
 <h1 align="center">Sesh, the smart terminal session manager</h1>
 
 <p align="center">
-  <a href="https://github.com/joshmedeski/sesh/v2/actions/workflows/ci-cd.yml">
-    <img alt="tests" src="https://github.com/joshmedeski/sesh/v2/actions/workflows/ci-cd.yml/badge.svg" />
+  <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml">
+    <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml/badge.svg" />
   </a>
-  <a href="https://goreportcard.com/report/github.com/joshmedeski/sesh/v2">
-    <img alt="goreport" src="https://goreportcard.com/badge/github.com/joshmedeski/sesh/v2" />
+  <a href="https://goreportcard.com/report/github.com/joshmedeski/sesh">
+    <img alt="goreport" src="https://goreportcard.com/badge/github.com/joshmedeski/sesh" />
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
@@ -70,7 +70,7 @@ See the [nix package directory](https://search.nixos.org/packages?channel=unstab
 
 </details>
 
-**Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/v2/issues/new) and let me know!
+**Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
 
 ## Raycast Extension
 
@@ -293,7 +293,7 @@ The first step is to build a CLI that can interact with tmux and be a drop-in re
 
 ## Contributors
 
-<a href="https://github.com/joshmedeski/sesh/v2/graphs/contributors">
+<a href="https://github.com/joshmedeski/sesh/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=joshmedeski/sesh" />
 </a>
 
