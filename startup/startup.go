@@ -25,6 +25,7 @@ func NewStartup(config model.Config, lister lister.Lister, tmux tmux.Tmux) Start
 func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 	strategies := []func(*RealStartup, model.SeshSession) (string, error){
 		configSessionStrategy,
+		configWildcardStrategy,
 		defaultConfigStrategy,
 	}
 

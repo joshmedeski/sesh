@@ -35,11 +35,11 @@ func TestListConfigSessions(t *testing.T) {
 
 	// TODO: make sure Path has home expanded
 	t.Run("should list config sessions", func(t *testing.T) {
-		sessions, err := listConfig(realLister)
+		sessions, err := listConfigSessions(realLister)
 		assert.Nil(t, err)
-		assert.Equal(t, "config:sesh config", sessions.OrderedIndex[0])
-		assert.Equal(t, "/Users/joshmedeski/.config/sesh", sessions.Directory["config:sesh config"].Path)
-		assert.Equal(t, "sesh config", sessions.Directory["config:sesh config"].Name)
+		assert.Equal(t, "config_session:sesh config", sessions.OrderedIndex[0])
+		assert.Equal(t, "/Users/joshmedeski/.config/sesh", sessions.Directory["config_session:sesh config"].Path)
+		assert.Equal(t, "sesh config", sessions.Directory["config_session:sesh config"].Name)
 	})
 
 	t.Run("should find config session", func(t *testing.T) {

@@ -6,6 +6,7 @@ type (
 		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
 		Blacklist            []string             `toml:"blacklist"`
 		SessionConfigs       []SessionConfig      `toml:"session"`
+		WildcardConfigs      []WildcardConfig     `toml:"wildcard"`
 	}
 
 	DefaultSessionConfig struct {
@@ -22,5 +23,12 @@ type (
 		Path                string `toml:"path"`
 		DisableStartCommand bool   `toml:"disable_startup_command"`
 		DefaultSessionConfig
+	}
+
+	WildcardConfig struct {
+		Pattern             string `toml:"pattern"`
+		StartupCommand      string `toml:"startup_command"`
+		DisableStartCommand bool   `toml:"disable_startup_command"`
+		PreviewCommand      string `toml:"preview_command"`
 	}
 )

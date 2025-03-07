@@ -76,6 +76,62 @@ func (_c *MockLister_FindConfigSession_Call) RunAndReturn(run func(string) (mode
 	return _c
 }
 
+// FindConfigWildcard provides a mock function with given fields: pattern
+func (_m *MockLister) FindConfigWildcard(pattern string) (model.SeshWildcard, bool) {
+	ret := _m.Called(pattern)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindConfigWildcard")
+	}
+
+	var r0 model.SeshWildcard
+	var r1 bool
+	if rf, ok := ret.Get(0).(func(string) (model.SeshWildcard, bool)); ok {
+		return rf(pattern)
+	}
+	if rf, ok := ret.Get(0).(func(string) model.SeshWildcard); ok {
+		r0 = rf(pattern)
+	} else {
+		r0 = ret.Get(0).(model.SeshWildcard)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) bool); ok {
+		r1 = rf(pattern)
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	return r0, r1
+}
+
+// MockLister_FindConfigWildcard_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindConfigWildcard'
+type MockLister_FindConfigWildcard_Call struct {
+	*mock.Call
+}
+
+// FindConfigWildcard is a helper method to define mock.On call
+//   - pattern string
+func (_e *MockLister_Expecter) FindConfigWildcard(pattern interface{}) *MockLister_FindConfigWildcard_Call {
+	return &MockLister_FindConfigWildcard_Call{Call: _e.mock.On("FindConfigWildcard", pattern)}
+}
+
+func (_c *MockLister_FindConfigWildcard_Call) Run(run func(pattern string)) *MockLister_FindConfigWildcard_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockLister_FindConfigWildcard_Call) Return(_a0 model.SeshWildcard, _a1 bool) *MockLister_FindConfigWildcard_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockLister_FindConfigWildcard_Call) RunAndReturn(run func(string) (model.SeshWildcard, bool)) *MockLister_FindConfigWildcard_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindTmuxSession provides a mock function with given fields: name
 func (_m *MockLister) FindTmuxSession(name string) (model.SeshSession, bool) {
 	ret := _m.Called(name)

@@ -16,6 +16,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		tmuxStrategy,
 		tmuxinatorStrategy,
 		configSessionStrategy,
+		configWildcardStrategy,
 		dirStrategy,
 		zoxideStrategy,
 	}
