@@ -15,7 +15,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 	strategies := []func(*RealConnector, string) (model.Connection, error){
 		tmuxStrategy,
 		tmuxinatorStrategy,
-		configStrategy,
+		configSessionStrategy,
 		dirStrategy,
 		zoxideStrategy,
 	}

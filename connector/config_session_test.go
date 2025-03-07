@@ -46,7 +46,7 @@ func TestConfigStrategy(t *testing.T) {
 			Name: "tmux config",
 			Path: "/Users/joshmedeski/c/dotfiles/.config/tmux",
 		}, true)
-		connection, err := configStrategy(c, "tmux config")
+		connection, err := configSessionStrategy(c, "tmux config")
 		assert.Nil(t, err)
 		assert.Equal(t, "tmux config", connection.Session.Name)
 	})
