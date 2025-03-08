@@ -1,7 +1,7 @@
 package connector
 
 import (
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func tmuxinatorStrategy(c *RealConnector, name string) (model.Connection, error) {

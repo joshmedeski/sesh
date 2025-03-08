@@ -1,9 +1,9 @@
 package tmux
 
 import (
-	"github.com/joshmedeski/sesh/model"
-	"github.com/joshmedeski/sesh/oswrap"
-	"github.com/joshmedeski/sesh/shell"
+	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/oswrap"
+	"github.com/joshmedeski/sesh/v2/shell"
 )
 
 type Tmux interface {
@@ -13,6 +13,7 @@ type Tmux interface {
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
+	CapturePane(targetSession string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 }
 
@@ -39,6 +40,10 @@ func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
 	return t.shell.Cmd("tmux", "new-session", "-d", "-s", sessionName, "-c", startDir)
+}
+
+func (t *RealTmux) CapturePane(targetSession string) (string, error) {
+	return t.shell.Cmd("tmux", "capture-pane", "-e", "-p", "-t", targetSession)
 }
 
 func (t *RealTmux) IsAttached() bool {

@@ -9,7 +9,7 @@ import (
 	"strings" // This is required to conpare the evironment variables
 	"time"    // This is used to get the current date and create the log file
 
-	"github.com/joshmedeski/sesh/seshcli"
+	"github.com/joshmedeski/sesh/v2/seshcli"
 )
 
 var version = "dev"

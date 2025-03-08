@@ -3,8 +3,8 @@ package zoxide
 import (
 	"strings"
 
-	"github.com/joshmedeski/sesh/convert"
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/convert"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func (z *RealZoxide) ListResults() ([]*model.ZoxideResult, error) {

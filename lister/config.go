@@ -3,7 +3,7 @@ package lister
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func configKey(name string) string {
@@ -31,6 +31,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				Name:                  session.Name,
 				Path:                  path,
 				StartupCommand:        session.StartupCommand,
+				PreviewCommand:        session.PreviewCommand,
 				DisableStartupCommand: session.DisableStartCommand,
 				Tmuxinator:            session.Tmuxinator,
 			}

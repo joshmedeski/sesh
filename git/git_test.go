@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/joshmedeski/sesh/shell"
+	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,24 +5,27 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/joshmedeski/sesh/configurator"
-	"github.com/joshmedeski/sesh/connector"
-	"github.com/joshmedeski/sesh/dir"
-	"github.com/joshmedeski/sesh/execwrap"
-	"github.com/joshmedeski/sesh/git"
-	"github.com/joshmedeski/sesh/home"
-	"github.com/joshmedeski/sesh/icon"
-	"github.com/joshmedeski/sesh/json"
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/namer"
-	"github.com/joshmedeski/sesh/oswrap"
-	"github.com/joshmedeski/sesh/pathwrap"
-	"github.com/joshmedeski/sesh/runtimewrap"
-	"github.com/joshmedeski/sesh/shell"
-	"github.com/joshmedeski/sesh/startup"
-	"github.com/joshmedeski/sesh/tmux"
-	"github.com/joshmedeski/sesh/tmuxinator"
-	"github.com/joshmedeski/sesh/zoxide"
+	"github.com/joshmedeski/sesh/v2/cloner"
+	"github.com/joshmedeski/sesh/v2/configurator"
+	"github.com/joshmedeski/sesh/v2/connector"
+	"github.com/joshmedeski/sesh/v2/dir"
+	"github.com/joshmedeski/sesh/v2/execwrap"
+	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/json"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/joshmedeski/sesh/v2/namer"
+	"github.com/joshmedeski/sesh/v2/oswrap"
+	"github.com/joshmedeski/sesh/v2/pathwrap"
+	"github.com/joshmedeski/sesh/v2/previewer"
+	"github.com/joshmedeski/sesh/v2/runtimewrap"
+	"github.com/joshmedeski/sesh/v2/shell"
+	"github.com/joshmedeski/sesh/v2/startup"
+	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
 func App(version string) cli.App {
@@ -33,8 +36,8 @@ func App(version string) cli.App {
 	runtime := runtimewrap.NewRunTime()
 
 	// base dependencies
-	shell := shell.NewShell(exec)
 	home := home.NewHome(os)
+	shell := shell.NewShell(exec, home)
 	json := json.NewJson()
 
 	// resource dependencies
@@ -55,11 +58,14 @@ func App(version string) cli.App {
 	slog.Debug("seshcli/seshcli.go: App", "version", version, "config", config)
 
 	// core dependencies
+	ls := ls.NewLs(config, shell)
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
 	startup := startup.NewStartup(config, lister, tmux)
 	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
+	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
+	cloner := cloner.NewCloner(connector, git)
 
 	return cli.App{
 		Name:    "sesh",
@@ -69,8 +75,9 @@ func App(version string) cli.App {
 			List(icon, json, lister),
 			Last(lister, tmux),
 			Connect(connector, icon, dir),
-			Clone(),
+			Clone(cloner),
 			Root(lister, git, home),
+			Preview(previewer),
 		},
 	}
 }

@@ -34,7 +34,7 @@ Watch the video to learn more about how to use sesh to manage your tmux sessions
 To install sesh, run the following [homebrew](https://brew.sh/) command:
 
 ```sh
-brew install joshmedeski/sesh/sesh
+brew install sesh
 ```
 
 </details>
@@ -56,7 +56,7 @@ yay -S sesh-bin
 Alternatively, you can install Sesh using Go's go install command:
 
 ```sh
-go install github.com/joshmedeski/sesh@latest
+go install github.com/joshmedeski/sesh/v2@latest
 ```
 
 This will download and install the latest version of Sesh. Make sure that your Go environment is properly set up.
@@ -111,7 +111,7 @@ In order to integrate with tmux, you can add a binding to your tmux config (`tmu
 
 ```sh
 bind-key "T" run-shell "sesh connect \"$(
-  sesh list --icons | fzf-tmux -p 55%,60% \
+  sesh list --icons | fzf-tmux -p 80%,70% \
     --no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
     --header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
     --bind 'tab:down,btab:up' \
@@ -121,6 +121,8 @@ bind-key "T" run-shell "sesh connect \"$(
     --bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z --icons)' \
     --bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
     --bind 'ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(⚡  )+reload(sesh list --icons)' \
+    --preview-window 'right:55%' \
+    --preview 'sesh preview {}'
 )\""
 ```
 
@@ -137,6 +139,9 @@ bind-key "K" display-popup -E -w 40% "sesh connect \"$(
 ```
 
 **Note:** There are less features available with gum compared to fzf, but I found its matching algorithm is faster and it has a more modern feel.
+
+> [!WARNING]
+> As of [gum v0.15.0](https://github.com/charmbracelet/gum/releases/tag/v0.15.0) you have to add the `--no-strip-ansi` in order to display the icons correctly.
 
 See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
 
@@ -218,13 +223,29 @@ You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/
 mkdir -p ~/.config/sesh && touch ~/.config/sesh/sesh.toml
 ```
 
+### Blacklist
+
+You may want to blacklist certain tmux sessions from showing up in the results. For example, you may want to exclude your `scratch` directory from the results.
+
+```sh
+blacklist = ["scratch"]
+```
+
+> [!NOTE] 
+> Works great with [tmux-floatx](https://github.com/omerxx/tmux-floax)
+
 ### Default Session
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
 
+Additionally, you can define a preview command that runs when previewing the session's directory. This can be handy for displaying files with tools like [eza](https://github.com/eza-community/eza) or [lsd](https://github.com/lsd-rs/lsd).
+
+Note: The `{}` will be automatically replaced with the session's path.
+
 ```toml
 [default_session]
 startup_command = "nvim -c ':Telescope find_files'"
+preview_command = "eza --all --git --icons --color=always {}"
 ```
 
 If you want to disable the default start command on a specific session, you can set `disable_startup_command = true`.
@@ -235,7 +256,9 @@ A startup command is a command that is run when a session is created. It is usef
 
 **Note:** If you use the `--command/-c` flag, then the startup script will not be run.
 
-I like to use a command that opens nvim on session startup:
+I like to use a command that opens nvim on session startup.
+
+You can also define a preview command to display the contents of a specific file using [bat](https://github.com/sharkdp/bat) or any another file previewer of your choice.
 
 ```toml
 [[session]]
@@ -247,6 +270,7 @@ startup_command = "ls"
 name = "tmux config"
 path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
+preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
 
 ### Listing Configurations
@@ -274,3 +298,13 @@ The first step is to build a CLI that can interact with tmux and be a drop-in re
 </a>
 
 Made with [contrib.rocks](https://contrib.rocks).
+
+## Star History
+
+<a href="https://star-history.com/#joshmedeski/sesh&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date" />
+ </picture>
+</a>

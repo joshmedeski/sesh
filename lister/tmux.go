@@ -3,7 +3,7 @@ package lister
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func tmuxKey(name string) string {
@@ -15,20 +15,25 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmux sessions: %q", err)
 	}
-	numOfSessions := len(tmuxSessions)
-	orderedIndex := make([]string, numOfSessions)
-	directory := make(model.SeshSessionMap)
-	for i, session := range tmuxSessions {
-		key := tmuxKey(session.Name)
-		orderedIndex[i] = key
-		directory[key] = model.SeshSession{
-			Src:      "tmux",
-			Name:     session.Name,
-			Path:     session.Path,
-			Attached: session.Attached,
-			Windows:  session.Windows,
+
+	blacklistSet := createBlacklistSet(l.config.Blacklist)
+	directory := make(map[string]model.SeshSession)
+	orderedIndex := []string{}
+
+	for _, session := range tmuxSessions {
+		if _, blacklisted := blacklistSet[session.Name]; !blacklisted {
+			key := tmuxKey(session.Name)
+			orderedIndex = append(orderedIndex, key)
+			directory[key] = model.SeshSession{
+				Src:      "tmux",
+				Name:     session.Name,
+				Path:     session.Path,
+				Attached: session.Attached,
+				Windows:  session.Windows,
+			}
 		}
 	}
+
 	return model.SeshSessions{
 		Directory:    directory,
 		OrderedIndex: orderedIndex,

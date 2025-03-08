@@ -3,7 +3,7 @@ package connector
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 // TODO: send to logging (local txt file?)

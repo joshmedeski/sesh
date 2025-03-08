@@ -4,10 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/joshmedeski/sesh/connector"
-	"github.com/joshmedeski/sesh/dir"
-	"github.com/joshmedeski/sesh/icon"
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/connector"
+	"github.com/joshmedeski/sesh/v2/dir"
+	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/model"
 	cli "github.com/urfave/cli/v2"
 )
 

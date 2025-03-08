@@ -3,10 +3,10 @@ package seshcli
 import (
 	"fmt"
 
-	"github.com/joshmedeski/sesh/icon"
-	"github.com/joshmedeski/sesh/json"
-	"github.com/joshmedeski/sesh/lister"
-	"github.com/joshmedeski/sesh/model"
+	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/json"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -52,16 +52,22 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Aliases: []string{"T"},
 				Usage:   "show tmuxinator configs",
 			},
+			&cli.BoolFlag{
+				Name:    "hide-duplicates",
+				Aliases: []string{"d"},
+				Usage:   "hide duplicate entries",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			sessions, err := list.List(lister.ListOptions{
-				Config:       cCtx.Bool("config"),
-				HideAttached: cCtx.Bool("hide-attached"),
-				Icons:        cCtx.Bool("icons"),
-				Json:         cCtx.Bool("json"),
-				Tmux:         cCtx.Bool("tmux"),
-				Zoxide:       cCtx.Bool("zoxide"),
-				Tmuxinator:   cCtx.Bool("tmuxinator"),
+				Config:         cCtx.Bool("config"),
+				HideAttached:   cCtx.Bool("hide-attached"),
+				Icons:          cCtx.Bool("icons"),
+				Json:           cCtx.Bool("json"),
+				Tmux:           cCtx.Bool("tmux"),
+				Zoxide:         cCtx.Bool("zoxide"),
+				Tmuxinator:     cCtx.Bool("tmuxinator"),
+				HideDuplicates: cCtx.Bool("hide-duplicates"),
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)

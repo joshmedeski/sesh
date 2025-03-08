@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/joshmedeski/sesh/git"
-	"github.com/joshmedeski/sesh/home"
-	"github.com/joshmedeski/sesh/pathwrap"
+	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/stretchr/testify/assert"
 )
 

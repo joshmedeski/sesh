@@ -1,6 +1,8 @@
 with-expecter: True
 inpackage: True
 testonly: False
+issue-845-fix: True
+resolve-type-alias: False
 dir: "{{.InterfaceDir}}"
 mockname: "Mock{{.InterfaceName}}"
 outpkg: "{{.PackageName}}"
