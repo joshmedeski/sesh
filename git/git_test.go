@@ -22,6 +22,19 @@ func TestGitRoot(t *testing.T) {
 		assert.Equal(t, "/Users/hansolo/code/project/sesh", out)
 	})
 
+	t.Run("run should find worktree root with .bare folder convention", func(t *testing.T) {
+		mockShell := new(shell.MockShell)
+		mockShell.On("Cmd", "git", "-C", "~/code/project/sesh/main", "worktree", "list").Return(`
+/Users/hansolo/code/project/sesh/.bare       (bare)
+/Users/hansolo/code/project/sesh/main        ba04ca494 [5.x]
+`, nil)
+		git := &RealGit{shell: mockShell}
+		isGit, out, err := git.GitRoot("~/code/project/sesh/main")
+		assert.True(t, isGit)
+		assert.Nil(t, err)
+		assert.Equal(t, "/Users/hansolo/code/project/sesh", out)
+	})
+
 	t.Run("run should find non-worktree root", func(t *testing.T) {
 		mockShell := new(shell.MockShell)
 		mockShell.On("Cmd", "git", "-C", "~/.dotfiles/nvim", "worktree", "list").Return(`
