@@ -24,8 +24,13 @@ func (g *RealGit) GitRoot(path string) (bool, string, error) {
 	if err != nil {
 		return false, "", err
 	}
-	main := strings.Fields(out)[0]
-	return true, main, nil
+
+	root := strings.Fields(out)[0]
+	if strings.HasSuffix(root, "/.bare") {
+		root = strings.TrimSuffix(root, "/.bare")
+	}
+
+	return true, root, nil
 }
 
 func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
