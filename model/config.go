@@ -6,6 +6,7 @@ type (
 		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
 		Blacklist            []string             `toml:"blacklist"`
 		SessionConfigs       []SessionConfig      `toml:"session"`
+		WindowConfigs        []WindowConfig       `toml:"window"`
 	}
 
 	DefaultSessionConfig struct {
@@ -15,6 +16,7 @@ type (
 		Tmuxp          string `toml:"tmuxp"`
 		Tmuxinator     string `toml:"tmuxinator"`
 		PreviewCommand string `toml:"preview_command"`
+		Windows        string `toml:"preview_command"`
 	}
 
 	SessionConfig struct {
@@ -22,5 +24,12 @@ type (
 		Path                string `toml:"path"`
 		DisableStartCommand bool   `toml:"disable_startup_command"`
 		DefaultSessionConfig
+	}
+
+	WindowConfig struct {
+		Name                string `toml:"name"`
+		StartupScript       string `toml:"startup_script"`
+		Path                string `toml:"path"`
+		DisableStartCommand bool   `toml:"disable_startup_command"`
 	}
 )
