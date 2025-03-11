@@ -16,7 +16,7 @@ type (
 		Tmuxp          string   `toml:"tmuxp"`
 		Tmuxinator     string   `toml:"tmuxinator"`
 		PreviewCommand string   `toml:"preview_command"`
-		Windows        []string `toml:"preview_command"`
+		Windows        []string `toml:"windows"`
 	}
 
 	SessionConfig struct {
