@@ -27,9 +27,8 @@ type (
 	}
 
 	WindowConfig struct {
-		Name                string `toml:"name"`
 		StartupScript       string `toml:"startup_script"`
 		Path                string `toml:"path"`
-		DisableStartCommand bool   `toml:"disable_startup_command"`
+		DisableStartScript bool   `toml:"disable_startup_script"`
 	}
 )

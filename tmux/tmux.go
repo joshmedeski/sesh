@@ -9,6 +9,7 @@ import (
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
 	NewSession(sessionName string, startDir string) (string, error)
+    NewWindow(startDir string) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)
@@ -40,6 +41,10 @@ func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
 	return t.shell.Cmd("tmux", "new-session", "-d", "-s", sessionName, "-c", startDir)
+}
+
+func (t *RealTmux) NewWindow(startDir string) (string, error) {
+	return t.shell.Cmd("tmux", "new-session", "-d", "-c", startDir)
 }
 
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {
