@@ -12,11 +12,11 @@ type (
 	DefaultSessionConfig struct {
 		// TODO: mention breaking change in v2 release notes
 		// StartupScript  string `toml:"startup_script"`
-		StartupCommand string `toml:"startup_command"`
-		Tmuxp          string `toml:"tmuxp"`
-		Tmuxinator     string `toml:"tmuxinator"`
-		PreviewCommand string `toml:"preview_command"`
-		Windows        string `toml:"preview_command"`
+		StartupCommand string   `toml:"startup_command"`
+		Tmuxp          string   `toml:"tmuxp"`
+		Tmuxinator     string   `toml:"tmuxinator"`
+		PreviewCommand string   `toml:"preview_command"`
+		Windows        []string `toml:"preview_command"`
 	}
 
 	SessionConfig struct {
@@ -27,8 +27,9 @@ type (
 	}
 
 	WindowConfig struct {
-		StartupScript       string `toml:"startup_script"`
-		Path                string `toml:"path"`
+		Name               string `toml:"name"`
+		StartupScript      string `toml:"startup_script"`
+		Path               string `toml:"path"`
 		DisableStartScript bool   `toml:"disable_startup_script"`
 	}
 )
