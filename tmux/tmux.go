@@ -44,7 +44,7 @@ func (t *RealTmux) NewSession(sessionName string, startDir string) (string, erro
 }
 
 func (t *RealTmux) NewWindow(startDir string) (string, error) {
-	return t.shell.Cmd("tmux", "new-session", "-d", "-c", startDir)
+	return t.shell.Cmd("tmux", "new-window", "-d", "-c", startDir)
 }
 
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {

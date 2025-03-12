@@ -264,7 +264,7 @@ func (_m *MockTmux) NewSession(sessionName string, startDir string) (string, err
 
 // NewWindow provides a mock function with given fields: startDir
 func (_m *MockTmux) NewWindow(startDir string) (string, error) {
-    // Implement test
+    // TODO: Implement test
 	return "", nil
 }
 
