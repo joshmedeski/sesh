@@ -48,9 +48,9 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 
 			windowConfigs := make([]model.WindowConfig, len(session.Windows))
 			for _, window := range session.Windows {
-				windowConfig, ok := windows[window]
+				windowConfig, ok := windows[configKey(window)]
 				if !ok {
-					return model.SeshSessions{}, fmt.Errorf("window %s does is not defined in config", window)
+					return model.SeshSessions{}, fmt.Errorf("window %s is not defined in config", window)
 				}
 				windowConfigs = append(windowConfigs, windowConfig)
 			}
