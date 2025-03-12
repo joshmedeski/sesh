@@ -46,7 +46,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				return model.SeshSessions{}, fmt.Errorf("startup_command and disable_start_command are mutually exclusive")
 			}
 
-			windowConfigs := make([]model.WindowConfig, len(session.Windows))
+			windowConfigs := []model.WindowConfig{}
 			for _, window := range session.Windows {
 				windowConfig, ok := windows[configKey(window)]
 				if !ok {
