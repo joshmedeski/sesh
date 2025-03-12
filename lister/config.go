@@ -20,7 +20,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 		}
 
 		if window.StartupScript != "" && window.DisableStartScript {
-			return model.SeshSessions{}, fmt.Errorf("startup_command and disable_start_command are mutually exclusive")
+			return model.SeshSessions{}, fmt.Errorf("startup_script and disable_start_script are mutually exclusive")
 		}
 
 		windows[key] = model.WindowConfig{
