@@ -14,9 +14,13 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 	windows := make(model.SeshWindowMap)
 	for _, window := range l.config.WindowConfigs {
 		key := configKey(window.Name)
-		path, err := l.home.ExpandHome(window.Path)
-		if err != nil {
-			return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
+		var path string = ""
+        var err error = nil
+		if window.Path != "" {
+			path, err = l.home.ExpandHome(window.Path)
+			if err != nil {
+				return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
+			}
 		}
 
 		if window.StartupScript != "" && window.DisableStartScript {
@@ -52,6 +56,9 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				if !ok {
 					return model.SeshSessions{}, fmt.Errorf("window %s is not defined in config", window)
 				}
+                if windowConfig.Path == "" {
+                    windowConfig.Path = path
+                }
 				windowConfigs = append(windowConfigs, windowConfig)
 			}
 
