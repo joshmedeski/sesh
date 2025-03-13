@@ -4,8 +4,6 @@ type (
 	SeshSessions struct {
 		// catalog of the sessions
 		Directory SeshSessionMap
-		// list of window configurations
-		Windows SeshWindowMap
 		// unique identifiers of the sessions ordered
 		OrderedIndex []string
 	}
