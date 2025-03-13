@@ -268,6 +268,12 @@ func (_m *MockTmux) NewWindow(startDir string) (string, error) {
 	return "", nil
 }
 
+// NewWindow provides a mock function with given fields: startDir
+func (_m *MockTmux) NextWindow() (string, error) {
+    // TODO: Implement test
+	return "", nil
+}
+
 // MockTmux_NewSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewSession'
 type MockTmux_NewSession_Call struct {
 	*mock.Call

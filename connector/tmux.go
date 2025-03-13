@@ -25,6 +25,7 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
                 c.tmux.SendKeys(connection.Session.Name, window.StartupScript)
             }
         }
+        c.tmux.NextWindow()
 	}
 	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
 }
