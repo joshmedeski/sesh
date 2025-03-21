@@ -5,6 +5,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/joshmedeski/sesh/v2/builder"
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/configurator"
 	"github.com/joshmedeski/sesh/v2/connector"
@@ -63,6 +64,7 @@ func App(version string) cli.App {
 	startup := startup.NewStartup(config, lister, tmux)
 	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
+	builder := builder.NewBuilder(os, shell)
 	icon := icon.NewIcon(config)
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
@@ -72,6 +74,7 @@ func App(version string) cli.App {
 		Version: version,
 		Usage:   "Smart session manager for the terminal",
 		Commands: []*cli.Command{
+			Build(lister, builder),
 			List(icon, json, lister),
 			Last(lister, tmux),
 			Connect(connector, icon, dir),
