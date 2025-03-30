@@ -1,6 +1,11 @@
 package lister
 
 import (
+	"cmp"
+	"fmt"
+	"math"
+	"slices"
+
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -25,11 +30,33 @@ var srcStrategies = map[string]srcStrategy{
 	"zoxide":     listZoxide,
 }
 
+func sortSources(sources, desiredOrder []string) {
+	m := make(map[string]int)
+	for i, s := range desiredOrder {
+		m[s] = i
+	}
+	getOrder := func(str string) int {
+		order, exists := m[str]
+		if !exists {
+			return math.MaxInt
+		}
+		return order
+	}
+	slices.SortFunc(sources, func(a, b string) int {
+		return cmp.Compare(getOrder(a), getOrder(b))
+	})
+}
+
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	fullDirectory := make(model.SeshSessionMap)
 	fullOrderedIndex := make([]string, 0)
 
 	srcsOrderedIndex := srcs(opts)
+
+	// if we have configured sorting, do so now
+	fmt.Printf("before: %v\n", srcsOrderedIndex)
+	sortSources(srcsOrderedIndex, []string{"tmuxinator", "tmux", "config", "zoxide"})
+	fmt.Printf("after: %v\n", srcsOrderedIndex)
 
 	for _, src := range srcsOrderedIndex {
 		sessions, err := srcStrategies[src](l)
