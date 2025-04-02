@@ -1,12 +1,13 @@
 package git
 
 import (
+	"strings"
+
 	"github.com/joshmedeski/sesh/v2/shell"
 )
 
 type Git interface {
-	ShowTopLevel(name string) (bool, string, error)
-	GitCommonDir(name string) (bool, string, error)
+	GitRoot(name string) (bool, string, error)
 	Clone(url string, cmdDir string, dir string) (string, error)
 }
 
@@ -18,20 +19,18 @@ func NewGit(shell shell.Shell) Git {
 	return &RealGit{shell}
 }
 
-func (g *RealGit) ShowTopLevel(path string) (bool, string, error) {
-	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--show-toplevel")
+func (g *RealGit) GitRoot(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "worktree", "list")
 	if err != nil {
 		return false, "", err
 	}
-	return true, out, nil
-}
 
-func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
-	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--git-common-dir")
-	if err != nil {
-		return false, "", err
+	root := strings.Fields(out)[0]
+	if strings.HasSuffix(root, "/.bare") {
+		root = strings.TrimSuffix(root, "/.bare")
 	}
-	return true, out, nil
+
+	return true, root, nil
 }
 
 func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
