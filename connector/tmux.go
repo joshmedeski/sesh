@@ -19,6 +19,13 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 	if connection.New {
 		c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
 		c.startup.Exec(connection.Session)
+        for _, window := range connection.Session.WindowConfigs {
+            c.tmux.NewWindow(window.Path)
+            if !window.DisableStartScript {
+                c.tmux.SendKeys(connection.Session.Name, window.StartupScript)
+            }
+        }
+        c.tmux.NextWindow()
 	}
 	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
 }

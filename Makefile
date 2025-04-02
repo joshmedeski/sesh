@@ -6,4 +6,4 @@ test:
 	@go test -cover -bench=. -benchmem -race ./... -coverprofile=coverage.out
 
 build: 
-	@go build -ldflags ${BUILD_FLAGS} -o $(shell echo $$GOPATH)/bin/sesh
+	@go build -ldflags ${BUILD_FLAGS} -o $(shell go env GOPATH)/bin/sesh
