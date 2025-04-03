@@ -1,20 +1,12 @@
 package lister
 
-import "strings"
+import "regexp"
 
 func isBlacklisted(blacklist []string, name string) bool {
 	for _, blacklistedName := range blacklist {
-		if strings.EqualFold(blacklistedName, name) {
+		if regexp.MustCompile(blacklistedName).MatchString(name) {
 			return true
 		}
 	}
 	return false
-}
-
-func createBlacklistSet(blacklist []string) map[string]struct{} {
-	blacklistSet := make(map[string]struct{}, len(blacklist))
-	for _, name := range blacklist {
-		blacklistSet[name] = struct{}{}
-	}
-	return blacklistSet
 }

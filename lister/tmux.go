@@ -16,12 +16,11 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmux sessions: %q", err)
 	}
 
-	blacklistSet := createBlacklistSet(l.config.Blacklist)
 	directory := make(map[string]model.SeshSession)
 	orderedIndex := []string{}
 
 	for _, session := range tmuxSessions {
-		if _, blacklisted := blacklistSet[session.Name]; !blacklisted {
+		if !isBlacklisted(l.config.Blacklist, session.Name) {
 			key := tmuxKey(session.Name)
 			orderedIndex = append(orderedIndex, key)
 			directory[key] = model.SeshSession{
