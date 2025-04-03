@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// In-place sorting of 'sources' based on given order of elements 'desiredOrder'
+// In-place sorting of 'sources' based on given order of elements 'sortOrder'
 //
 // # Omitted elements are placed after given elements
 //
@@ -16,15 +16,15 @@ import (
 // Example:
 //
 //	sources := []string{"a", "b", "c", "x"}
-//	desiredOrder := []string{"b", "a", "c"}
-//	sortSources(sources, desiredOrder)
+//	sortOrder := []string{"b", "a", "c"}
+//	sortSources(sources, sortOrder)
 //	// sources is now []string{"b", "a", "c", "x"}
-func sortSources(sources, desiredOrder []string) {
-	if desiredOrder == nil || len(desiredOrder) == 0 {
+func sortSources(sources, sortOrder []string) {
+	if sortOrder == nil || len(sortOrder) == 0 {
 		return
 	}
 	m := make(map[string]int)
-	for i, s := range desiredOrder {
+	for i, s := range sortOrder {
 		m[strings.ToLower(s)] = i
 	}
 	getOrder := func(s string) int {
@@ -75,8 +75,5 @@ func srcs(opts ListOptions) []string {
 		srcs[i] = "zoxide"
 		i++
 	}
-	// TODO: if we have configured sorting, do so now
-	sortSources(srcs, []string{"tmuxinator", "tmux", "config", "zoxide"})
-
 	return srcs
 }

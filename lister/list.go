@@ -30,6 +30,10 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	fullOrderedIndex := make([]string, 0)
 
 	srcsOrderedIndex := srcs(opts)
+	sortOrder := l.config.SortOrder
+	if sortOrder != nil && len(sortOrder) > 0 {
+		sortSources(srcsOrderedIndex, sortOrder)
+	}
 
 	for _, src := range srcsOrderedIndex {
 		sessions, err := srcStrategies[src](l)
