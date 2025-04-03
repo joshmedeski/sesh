@@ -1,5 +1,44 @@
 package lister
 
+import (
+	"cmp"
+	"math"
+	"slices"
+	"strings"
+)
+
+// In-place sorting of 'sources' based on given order of elements 'sortOrder'
+//
+// # Omitted elements are placed after given elements
+//
+// # Duplicate elements use last-most given order
+//
+// Example:
+//
+//	sources := []string{"a", "b", "c", "x"}
+//	sortOrder := []string{"b", "a", "c"}
+//	sortSources(sources, sortOrder)
+//	// sources is now []string{"b", "a", "c", "x"}
+func sortSources(sources, sortOrder []string) {
+	if sortOrder == nil || len(sortOrder) == 0 {
+		return
+	}
+	m := make(map[string]int)
+	for i, s := range sortOrder {
+		m[strings.ToLower(s)] = i
+	}
+	getOrder := func(s string) int {
+		order, exists := m[strings.ToLower(s)]
+		if !exists {
+			return math.MaxInt
+		}
+		return order
+	}
+	slices.SortFunc(sources, func(a, b string) int {
+		return cmp.Compare(getOrder(a), getOrder(b))
+	})
+}
+
 func srcs(opts ListOptions) []string {
 	var srcs []string
 	count := 0
