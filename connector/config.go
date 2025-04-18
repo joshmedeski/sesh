@@ -25,15 +25,10 @@ func configStrategy(c *RealConnector, name string) (model.Connection, error) {
 			}
 		}
 
-		if window.StartupScript != "" && window.DisableStartScript {
-			return model.Connection{}, fmt.Errorf("startup_script and disable_start_script are mutually exclusive")
-		}
-
 		windows[key] = model.WindowConfig{
 			Name:               window.Name,
 			Path:               path,
 			StartupScript:      window.StartupScript,
-			DisableStartScript: window.DisableStartScript,
 		}
 	}
 

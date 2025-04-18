@@ -24,10 +24,8 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 				return ret, err
 			}
 
-			if !window.DisableStartScript {
-				if ret, err := c.tmux.SendKeys(connection.Session.Name, window.StartupScript); err != nil {
-					return ret, err
-				}
+			if ret, err := c.tmux.SendKeys(connection.Session.Name, window.StartupScript); err != nil {
+				return ret, err
 			}
 		}
 		c.tmux.NextWindow()
