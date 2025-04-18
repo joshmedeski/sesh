@@ -9,7 +9,7 @@ import (
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
 	NewSession(sessionName string, startDir string) (string, error)
-    NewWindow(startDir string) (string, error)
+	NewWindow(startDir string) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)
@@ -53,7 +53,7 @@ func (t *RealTmux) CapturePane(targetSession string) (string, error) {
 }
 
 func (t *RealTmux) NextWindow() (string, error) {
-    return t.shell.Cmd("tmux", "next-window")
+	return t.shell.Cmd("tmux", "next-window")
 }
 
 func (t *RealTmux) IsAttached() bool {

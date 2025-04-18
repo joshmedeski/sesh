@@ -15,7 +15,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 	for _, window := range l.config.WindowConfigs {
 		key := configKey(window.Name)
 		var path string = ""
-        var err error = nil
+		var err error = nil
 		if window.Path != "" {
 			path, err = l.home.ExpandHome(window.Path)
 			if err != nil {
@@ -56,9 +56,9 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				if !ok {
 					return model.SeshSessions{}, fmt.Errorf("window %s is not defined in config", window)
 				}
-                if windowConfig.Path == "" {
-                    windowConfig.Path = path
-                }
+				if windowConfig.Path == "" {
+					windowConfig.Path = path
+				}
 				windowConfigs = append(windowConfigs, windowConfig)
 			}
 
