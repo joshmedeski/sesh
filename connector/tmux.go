@@ -20,9 +20,14 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 		c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
 		c.startup.Exec(connection.Session)
         for _, window := range connection.Session.WindowConfigs {
-            c.tmux.NewWindow(window.Path)
+            if ret, err := c.tmux.NewWindow(window.Path); err != nil {
+                return ret, err
+            }
+
             if !window.DisableStartScript {
-                c.tmux.SendKeys(connection.Session.Name, window.StartupScript)
+                if ret, err := c.tmux.SendKeys(connection.Session.Name, window.StartupScript); err != nil {
+                    return ret, err
+                }
             }
         }
         c.tmux.NextWindow()
