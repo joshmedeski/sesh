@@ -1,14 +1,12 @@
 package git
 
 import (
-	"errors"
-	"strings"
-
 	"github.com/joshmedeski/sesh/v2/shell"
 )
 
 type Git interface {
-	GitRoot(name string) (bool, string, error)
+	ShowTopLevel(name string) (bool, string, error)
+	WorkTreeList(name string) (bool, string, error)
 	Clone(url string, cmdDir string, dir string) (string, error)
 }
 
@@ -20,23 +18,20 @@ func NewGit(shell shell.Shell) Git {
 	return &RealGit{shell}
 }
 
-func (g *RealGit) GitRoot(path string) (bool, string, error) {
+func (g *RealGit) ShowTopLevel(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--show-toplevel")
+	if err != nil {
+		return false, "", err
+	}
+	return true, out, nil
+}
+
+func (g *RealGit) WorkTreeList(path string) (bool, string, error) {
 	out, err := g.shell.Cmd("git", "-C", path, "worktree", "list")
 	if err != nil {
 		return false, "", err
 	}
-
-	fields := strings.Fields(out)
-	if len(fields) == 0 {
-		return false, "", errors.New("error parsing git worktree fields")
-	}
-
-	root := fields[0]
-	if strings.HasSuffix(root, "/.bare") {
-		root = strings.TrimSuffix(root, "/.bare")
-	}
-
-	return true, root, nil
+	return true, out, nil
 }
 
 func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
