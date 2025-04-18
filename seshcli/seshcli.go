@@ -60,7 +60,7 @@ func App(version string) cli.App {
 	// core dependencies
 	ls := ls.NewLs(config, shell)
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
-	startup := startup.NewStartup(config, lister, tmux)
+	startup := startup.NewStartup(config, lister, tmux, home)
 	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
