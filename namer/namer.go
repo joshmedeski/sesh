@@ -35,6 +35,7 @@ func (n *RealNamer) Name(path string) (string, error) {
 	}
 
 	strategies := []func(*RealNamer, string) (string, error){
+		gitBareName,
 		gitName,
 		dirName,
 	}
