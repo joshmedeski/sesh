@@ -53,9 +53,12 @@ func (d *RealDir) RootDir(path string) (hasRootDir bool, absPath string) {
 }
 
 func gitBareRootDir(d *RealDir, path string) (hasRootDir bool, absPath string) {
+	// TODO: Refactor from here...
 	isGitBare, commonDir, _ := d.git.GitCommonDir(path)
 	if isGitBare && strings.HasSuffix(commonDir, "/.bare") {
 		topLevelDir := strings.TrimSuffix(commonDir, "/.bare")
+		// ...to here. (We'll want to use the name parsing logic you suggested I move to the namer.)
+
 		relativePath := strings.TrimPrefix(path, topLevelDir)
 		firstDir := strings.Split(relativePath, string("/"))[1]
 		name, err := d.path.Abs(topLevelDir + "/" + firstDir)
