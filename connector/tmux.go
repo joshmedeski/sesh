@@ -19,16 +19,6 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 	if connection.New {
 		c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
 		c.startup.Exec(connection.Session)
-		for _, window := range connection.Session.WindowConfigs {
-			if ret, err := c.tmux.NewWindow(window.Path, window.Name); err != nil {
-				return ret, err
-			}
-
-			if ret, err := c.tmux.SendKeys(connection.Session.Name, window.StartupScript); err != nil {
-				return ret, err
-			}
-		}
-		c.tmux.NextWindow()
 	}
 	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
 }
