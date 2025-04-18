@@ -1,6 +1,7 @@
 package git
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/shell"
@@ -25,7 +26,12 @@ func (g *RealGit) GitRoot(path string) (bool, string, error) {
 		return false, "", err
 	}
 
-	root := strings.Fields(out)[0]
+	fields := strings.Fields(out)
+	if len(fields) == 0 {
+		return false, "", errors.New("error parsing git worktree fields")
+	}
+
+	root := fields[0]
 	if strings.HasSuffix(root, "/.bare") {
 		root = strings.TrimSuffix(root, "/.bare")
 	}
