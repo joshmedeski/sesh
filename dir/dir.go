@@ -39,7 +39,10 @@ func (d *RealDir) Dir(path string) (isDir bool, absPath string) {
 }
 
 func (d *RealDir) RootDir(path string) (hasRootDir bool, absPath string) {
-	isGit, absPath, _ := d.git.GitRoot(path)
+	isGit, absPath, err := d.git.GitRoot(path)
+	if err != nil {
+		return false, ""
+	}
 	if isGit {
 		return true, absPath
 	}
