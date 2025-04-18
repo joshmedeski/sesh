@@ -291,9 +291,9 @@ func (_c *MockTmux_NewSession_Call) RunAndReturn(run func(string, string) (strin
 	return _c
 }
 
-// NewWindow provides a mock function with given fields: startDir
-func (_m *MockTmux) NewWindow(startDir string) (string, error) {
-	ret := _m.Called(startDir)
+// NewWindow provides a mock function with given fields: startDir, name
+func (_m *MockTmux) NewWindow(startDir string, name string) (string, error) {
+	ret := _m.Called(startDir, name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NewWindow")
@@ -301,17 +301,17 @@ func (_m *MockTmux) NewWindow(startDir string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(startDir)
+	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
+		return rf(startDir, name)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(startDir)
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(startDir, name)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(startDir)
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(startDir, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -326,13 +326,14 @@ type MockTmux_NewWindow_Call struct {
 
 // NewWindow is a helper method to define mock.On call
 //   - startDir string
-func (_e *MockTmux_Expecter) NewWindow(startDir interface{}) *MockTmux_NewWindow_Call {
-	return &MockTmux_NewWindow_Call{Call: _e.mock.On("NewWindow", startDir)}
+//   - name string
+func (_e *MockTmux_Expecter) NewWindow(startDir interface{}, name interface{}) *MockTmux_NewWindow_Call {
+	return &MockTmux_NewWindow_Call{Call: _e.mock.On("NewWindow", startDir, name)}
 }
 
-func (_c *MockTmux_NewWindow_Call) Run(run func(startDir string)) *MockTmux_NewWindow_Call {
+func (_c *MockTmux_NewWindow_Call) Run(run func(startDir string, name string)) *MockTmux_NewWindow_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
@@ -342,7 +343,7 @@ func (_c *MockTmux_NewWindow_Call) Return(_a0 string, _a1 error) *MockTmux_NewWi
 	return _c
 }
 
-func (_c *MockTmux_NewWindow_Call) RunAndReturn(run func(string) (string, error)) *MockTmux_NewWindow_Call {
+func (_c *MockTmux_NewWindow_Call) RunAndReturn(run func(string, string) (string, error)) *MockTmux_NewWindow_Call {
 	_c.Call.Return(run)
 	return _c
 }
