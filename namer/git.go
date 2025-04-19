@@ -1,18 +1,17 @@
 package namer
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
 
 func gitBareRootName(n *RealNamer, path string) (string, error) {
-	isGit, bareRoot, err := gitBareRootFromWorkTreeList(n, path)
-	if err != nil {
-		return "", err
-	}
-
-	if isGit && bareRoot != "" {
+	isGit, worktreeList, _ := n.git.WorkTreeList(path)
+	if isGit && worktreeList != "" {
+		bareRoot, err := parseBareFromWorkTreeList(worktreeList)
+		if err != nil {
+			return "", err
+		}
 		name, err := n.home.ShortenHome(bareRoot)
 		if err != nil {
 			return "", fmt.Errorf("couldn't shorten path: %q", err)
@@ -25,12 +24,12 @@ func gitBareRootName(n *RealNamer, path string) (string, error) {
 
 // Gets the name from a git bare repository
 func gitBareName(n *RealNamer, path string) (string, error) {
-	isGit, bareRoot, err := gitBareRootFromWorkTreeList(n, path)
-	if err != nil {
-		return "", err
-	}
-
-	if isGit && bareRoot != "" {
+	isGit, worktreeList, _ := n.git.WorkTreeList(path)
+	if isGit && worktreeList != "" {
+		bareRoot, err := parseBareFromWorkTreeList(worktreeList)
+		if err != nil {
+			return "", err
+		}
 		relativePath := strings.TrimPrefix(path, bareRoot)
 		baseDir := n.pathwrap.Base(bareRoot)
 		name := baseDir + relativePath
@@ -64,23 +63,4 @@ func gitName(n *RealNamer, path string) (string, error) {
 	} else {
 		return "", nil
 	}
-}
-
-func gitBareRootFromWorkTreeList(n *RealNamer, path string) (bool, string, error) {
-	isGit, out, err := n.git.WorkTreeList(path)
-	if err != nil {
-		return false, "", err
-	}
-
-	fields := strings.Fields(out)
-	if len(fields) == 0 {
-		return false, "", errors.New("error parsing git worktree fields")
-	}
-
-	bareRoot := fields[0]
-	if isGit && strings.HasSuffix(bareRoot, "/.bare") {
-		bareRoot = strings.TrimSuffix(bareRoot, "/.bare")
-	}
-
-	return true, bareRoot, nil
 }
