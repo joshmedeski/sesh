@@ -6,7 +6,7 @@ import (
 
 type Git interface {
 	ShowTopLevel(name string) (bool, string, error)
-	GitCommonDir(name string) (bool, string, error)
+	WorkTreeList(name string) (bool, string, error)
 	Clone(url string, cmdDir string, dir string) (string, error)
 }
 
@@ -26,8 +26,8 @@ func (g *RealGit) ShowTopLevel(path string) (bool, string, error) {
 	return true, out, nil
 }
 
-func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
-	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--git-common-dir")
+func (g *RealGit) WorkTreeList(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "worktree", "list")
 	if err != nil {
 		return false, "", err
 	}
