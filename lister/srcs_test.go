@@ -6,6 +6,45 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSortSources(t *testing.T) {
+	defaultSources := []string{"tmux", "config", "tmuxinator", "zoxide"}
+	tests := map[string]struct {
+		sortOrder []string
+		expected  []string
+	}{
+		"a normal configuration": {
+			sortOrder: []string{"tmuxinator", "zoxide", "config", "tmux"},
+			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
+		},
+		"empty configuration": {
+			sortOrder: []string{},
+			expected:  []string{"tmux", "config", "tmuxinator", "zoxide"},
+		},
+		"partial configuration": {
+			sortOrder: []string{"tmuxinator"},
+			expected:  []string{"tmuxinator", "tmux", "config", "zoxide"},
+		},
+		"superfluous elements": {
+			sortOrder: []string{"tmuxinator", "apple", "zoxide", "banana", "config", "chocolate", "tmux"},
+			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
+		},
+		"configuration with capitalization": {
+			sortOrder: []string{"tMuxiNator", "Zoxide", "conFIg", "tmux"},
+			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
+		},
+		"configuration with duplicate elements": {
+			sortOrder: []string{"tmuxinator", "zoxide", "tmuxinator", "config", "tmuxinator", "tmux", "tmuxinator", "tmuxinator"},
+			expected:  []string{"zoxide", "config", "tmux", "tmuxinator"},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual := sortSources(defaultSources, tt.sortOrder)
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
 func TestSrcs(t *testing.T) {
 	tests := []struct {
 		name     string
