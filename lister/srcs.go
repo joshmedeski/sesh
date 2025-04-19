@@ -7,19 +7,8 @@ import (
 	"strings"
 )
 
-// In-place sorting of 'sources' based on given order of elements 'sortOrder'
-//
-// # Omitted elements are placed after given elements
-//
-// # Duplicate elements use last-most given order
-//
-// Example:
-//
-//	sources := []string{"a", "b", "c", "x"}
-//	sortOrder := []string{"b", "a", "c"}
-//	sortSources(sources, sortOrder)
-//	// sources is now []string{"b", "a", "c", "x"}
-func sortSources(sources, sortOrder []string) {
+// returns a sorted list of sources based on the provided sort order.
+func sortSources(sources, sortOrder []string) []string {
 	if sortOrder == nil || len(sortOrder) == 0 {
 		return
 	}
