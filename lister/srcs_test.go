@@ -7,46 +7,40 @@ import (
 )
 
 func TestSortSources(t *testing.T) {
+	defaultSources := []string{"tmux", "config", "tmuxinator", "zoxide"}
 	tests := map[string]struct {
-		sources   []string
 		sortOrder []string
 		expected  []string
 	}{
 		"a normal configuration": {
-			sources:   []string{"tmux", "config", "tmuxinator", "zoxide"},
 			sortOrder: []string{"tmuxinator", "zoxide", "config", "tmux"},
 			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
 		},
 		"empty configuration": {
-			sources:   []string{"tmux", "config", "tmuxinator", "zoxide"},
 			sortOrder: []string{},
 			expected:  []string{"tmux", "config", "tmuxinator", "zoxide"},
 		},
 		"partial configuration": {
-			sources:   []string{"tmux", "config", "tmuxinator", "zoxide"},
 			sortOrder: []string{"tmuxinator"},
 			expected:  []string{"tmuxinator", "tmux", "config", "zoxide"},
 		},
 		"superfluous elements": {
-			sources:   []string{"tmux", "config", "tmuxinator", "zoxide"},
 			sortOrder: []string{"tmuxinator", "apple", "zoxide", "banana", "config", "chocolate", "tmux"},
 			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
 		},
 		"configuration with capitalization": {
-			sources:   []string{"tmux", "config", "tmuxinator", "zoxide"},
 			sortOrder: []string{"tMuxiNator", "Zoxide", "conFIg", "tmux"},
 			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
 		},
 		"configuration with duplicate elements": {
-			sources:   []string{"tmux", "config", "tmuxinator", "zoxide"},
 			sortOrder: []string{"tmuxinator", "zoxide", "tmuxinator", "config", "tmuxinator", "tmux", "tmuxinator", "tmuxinator"},
 			expected:  []string{"zoxide", "config", "tmux", "tmuxinator"},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			sortSources(tt.sources, tt.sortOrder)
-			assert.Equal(t, tt.expected, tt.sources)
+			actual := sortSources(defaultSources, tt.sortOrder)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
