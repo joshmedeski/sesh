@@ -37,15 +37,6 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		if err != nil {
 			return model.SeshSessions{}, err
 		}
-		if opts.HideAttached {
-			attachedSession, _ := GetAttachedTmuxSession(l)
-			sessionsCopy := sessions.OrderedIndex
-			for i, ses := range sessionsCopy {
-				if attachedSession.Name == sessions.Directory[ses].Name {
-					sessions.OrderedIndex = slices.Delete(sessions.OrderedIndex, i, i+1)
-				}
-			}
-		}
 		fullOrderedIndex = append(fullOrderedIndex, sessions.OrderedIndex...)
 		for _, i := range sessions.OrderedIndex {
 			fullDirectory[i] = sessions.Directory[i]
@@ -64,6 +55,16 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 			}
 		}
 		fullOrderedIndex = fullOrderedIndex[:destIndex]
+	}
+
+	if opts.HideAttached {
+		attachedSession, _ := GetAttachedTmuxSession(l)
+		for i, index := range fullOrderedIndex {
+			if fullDirectory[index].Name == attachedSession.Name {
+				fullOrderedIndex = slices.Delete(fullOrderedIndex, i, i+1)
+				break
+			}
+		}
 	}
 
 	return model.SeshSessions{
