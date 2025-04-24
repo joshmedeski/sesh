@@ -2,6 +2,7 @@ package lister
 
 import (
 	"github.com/joshmedeski/sesh/v2/model"
+	"slices"
 )
 
 type (
@@ -41,8 +42,7 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 			sessionsCopy := sessions.OrderedIndex
 			for i, ses := range sessionsCopy {
 				if attachedSession.Name == sessions.Directory[ses].Name {
-					sessions.OrderedIndex = append(sessions.OrderedIndex[:i],
-						sessions.OrderedIndex[i+1:]...)
+					sessions.OrderedIndex = slices.Delete(sessions.OrderedIndex, i, i+1)
 				}
 			}
 		}
