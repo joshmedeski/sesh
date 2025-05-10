@@ -56,8 +56,11 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, *stri
 	d.DisallowUnknownFields()
 	err = d.Decode(&config)
 	var details *toml.StrictMissingError
-	string_details := details.String()
-	if !errors.As(err, &details) {
+	var string_details string
+	if errors.As(err, &details) {
+		string_details = details.String()
+	}
+	if err != nil {
 		return config, &string_details, fmt.Errorf("couldn't unmarshal config file: %q", err)
 	}
 
