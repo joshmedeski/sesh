@@ -22,6 +22,9 @@ type (
 		Attached              int     // Whether the session is currently attached
 		Windows               int     // The number of windows in the session
 		Score                 float64 // The score of the session (from Zoxide)
+		Marked                bool    // Whether the session has any marked windows
+		MarkedWindows         []string // List of marked window IDs for this session
+		MarkTimestamp         int64   // Timestamp of the most recent mark for this session
 	}
 
 	SeshSrcs struct {

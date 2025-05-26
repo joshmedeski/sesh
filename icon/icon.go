@@ -48,10 +48,19 @@ func (i *RealIcon) AddIcon(s model.SeshSession) string {
 		icon = configIcon
 		colorCode = 90 // gray
 	}
+	
+	var result string
 	if icon != "" {
-		return fmt.Sprintf("%s %s", ansiString(colorCode, icon), s.Name)
+		result = fmt.Sprintf("%s %s", ansiString(colorCode, icon), s.Name)
+	} else {
+		result = s.Name
 	}
-	return s.Name
+	
+	if s.Marked {
+		result = fmt.Sprintf("📌 %s", result)
+	}
+	
+	return result
 }
 
 func (i *RealIcon) RemoveIcon(name string) string {

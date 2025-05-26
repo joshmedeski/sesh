@@ -2,6 +2,7 @@ package lister
 
 import (
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/marker"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
@@ -9,7 +10,7 @@ import (
 )
 
 type Lister interface {
-	List(opts ListOptions) (model.SeshSessions, error)
+	List(opts ListOptions, marker marker.Marker) (model.SeshSessions, error)
 	FindTmuxSession(name string) (model.SeshSession, bool)
 	GetAttachedTmuxSession() (model.SeshSession, bool)
 	GetLastTmuxSession() (model.SeshSession, bool)

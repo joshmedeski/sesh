@@ -6,11 +6,12 @@ import (
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
 	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/marker"
 	"github.com/joshmedeski/sesh/v2/model"
 	cli "github.com/urfave/cli/v2"
 )
 
-func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
+func List(icon icon.Icon, json json.Json, list lister.Lister, marker marker.Marker) *cli.Command {
 	return &cli.Command{
 		Name:                   "list",
 		Aliases:                []string{"l"},
@@ -57,6 +58,11 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Aliases: []string{"d"},
 				Usage:   "hide duplicate entries",
 			},
+			&cli.BoolFlag{
+				Name:    "marked",
+				Aliases: []string{"m"},
+				Usage:   "show only marked sessions",
+			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			sessions, err := list.List(lister.ListOptions{
@@ -68,7 +74,8 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 				Zoxide:         cCtx.Bool("zoxide"),
 				Tmuxinator:     cCtx.Bool("tmuxinator"),
 				HideDuplicates: cCtx.Bool("hide-duplicates"),
-			})
+				Marked:         cCtx.Bool("marked"),
+			}, marker)
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)
 			}

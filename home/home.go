@@ -1,6 +1,7 @@
 package home
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -9,6 +10,7 @@ import (
 type Home interface {
 	ShortenHome(path string) (string, error)
 	ExpandHome(path string) (string, error)
+	SeshDir() string
 }
 
 type RealHome struct {
@@ -41,4 +43,12 @@ func (p *RealHome) ExpandHome(path string) (string, error) {
 		return strings.Replace(path, "~", home, 1), nil
 	}
 	return path, nil
+}
+
+func (p *RealHome) SeshDir() string {
+	home, err := p.os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".config", "sesh")
 }

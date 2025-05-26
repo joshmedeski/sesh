@@ -3,6 +3,7 @@
 package lister
 
 import (
+	marker "github.com/joshmedeski/sesh/v2/marker"
 	model "github.com/joshmedeski/sesh/v2/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -355,8 +356,8 @@ func (_c *MockLister_GetLastTmuxSession_Call) RunAndReturn(run func() (model.Ses
 }
 
 // List provides a mock function with given fields: opts
-func (_m *MockLister) List(opts ListOptions) (model.SeshSessions, error) {
-	ret := _m.Called(opts)
+func (_m *MockLister) List(opts ListOptions, m marker.Marker) (model.SeshSessions, error) {
+	ret := _m.Called(opts, m)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
@@ -364,17 +365,17 @@ func (_m *MockLister) List(opts ListOptions) (model.SeshSessions, error) {
 
 	var r0 model.SeshSessions
 	var r1 error
-	if rf, ok := ret.Get(0).(func(ListOptions) (model.SeshSessions, error)); ok {
-		return rf(opts)
+	if rf, ok := ret.Get(0).(func(ListOptions, marker.Marker) (model.SeshSessions, error)); ok {
+		return rf(opts, m)
 	}
-	if rf, ok := ret.Get(0).(func(ListOptions) model.SeshSessions); ok {
-		r0 = rf(opts)
+	if rf, ok := ret.Get(0).(func(ListOptions, marker.Marker) model.SeshSessions); ok {
+		r0 = rf(opts, m)
 	} else {
 		r0 = ret.Get(0).(model.SeshSessions)
 	}
 
-	if rf, ok := ret.Get(1).(func(ListOptions) error); ok {
-		r1 = rf(opts)
+	if rf, ok := ret.Get(1).(func(ListOptions, marker.Marker) error); ok {
+		r1 = rf(opts, m)
 	} else {
 		r1 = ret.Error(1)
 	}

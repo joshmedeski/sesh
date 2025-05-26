@@ -26,6 +26,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
+	"github.com/joshmedeski/sesh/v2/marker"
 )
 
 func App(version string) cli.App {
@@ -66,18 +67,21 @@ func App(version string) cli.App {
 	icon := icon.NewIcon(config)
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
+	marker := marker.NewMarker(home)
 
 	return cli.App{
 		Name:    "sesh",
 		Version: version,
 		Usage:   "Smart session manager for the terminal",
 		Commands: []*cli.Command{
-			List(icon, json, lister),
+			List(icon, json, lister, marker),
 			Last(lister, tmux),
 			Connect(connector, icon, dir),
 			Clone(cloner),
 			Root(lister, namer),
 			Preview(previewer),
+			Mark(marker),
+			Unmark(marker),
 		},
 	}
 }
