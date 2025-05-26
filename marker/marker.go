@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joshmedeski/sesh/v2/home"
@@ -19,6 +22,7 @@ type Marker interface {
 	GetMarkedSessionsForSession(session string) ([]MarkedSession, error)
 	UpdateActivity(session, window string) error
 	GetAlertLevel(session, window string) int
+	ResetAlertForWindow(session, window string) error
 }
 
 type RealMarker struct {
@@ -32,6 +36,7 @@ type MarkedSession struct {
 	Marked            bool   `json:"marked"`
 	LastActivity      int64  `json:"last_activity"`
 	AlertStartTime    int64  `json:"alert_start_time"`
+	LastNavigated     int64  `json:"last_navigated"`
 }
 
 type MarkedSessionMap map[string]MarkedSession
@@ -177,6 +182,46 @@ func (m *RealMarker) UpdateActivity(session, window string) error {
 	return nil
 }
 
+func (m *RealMarker) getTmuxWindowActivity(session, window string) (int64, error) {
+	cmd := exec.Command("tmux", "list-windows", "-t", session, "-F", "#{window_index}:#{window_activity}")
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get tmux window activity: %w", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	for _, line := range lines {
+		parts := strings.Split(line, ":")
+		if len(parts) == 2 && parts[0] == window {
+			activity, err := strconv.ParseInt(parts[1], 10, 64)
+			if err != nil {
+				return 0, fmt.Errorf("failed to parse activity timestamp: %w", err)
+			}
+			return activity, nil
+		}
+	}
+
+	return 0, fmt.Errorf("window %s not found in session %s", window, session)
+}
+
+func (m *RealMarker) ResetAlertForWindow(session, window string) error {
+	sessions, err := m.loadMarkedSessions()
+	if err != nil {
+		return err
+	}
+
+	key := fmt.Sprintf("%s:%s", session, window)
+	if marked, exists := sessions[key]; exists && marked.Marked {
+		now := time.Now().Unix()
+		marked.LastNavigated = now
+		marked.AlertStartTime = 0 // Reset alert timer
+		sessions[key] = marked
+		return m.saveMarkedSessions(sessions)
+	}
+
+	return nil
+}
+
 func (m *RealMarker) GetAlertLevel(session, window string) int {
 	sessions, err := m.loadMarkedSessions()
 	if err != nil {
@@ -189,11 +234,25 @@ func (m *RealMarker) GetAlertLevel(session, window string) int {
 		return 0
 	}
 
-	now := time.Now().Unix()
-	inactiveTime := now - marked.LastActivity
+	// Get actual tmux window activity
+	tmuxActivity, err := m.getTmuxWindowActivity(session, window)
+	if err != nil {
+		// Fallback to stored activity if tmux query fails
+		tmuxActivity = marked.LastActivity
+	}
 
+	now := time.Now().Unix()
 	const inactivityThreshold = 10
 
+	// Check if window has recent activity or user recently navigated to it
+	lastRelevantTime := tmuxActivity
+	if marked.LastNavigated > lastRelevantTime {
+		lastRelevantTime = marked.LastNavigated
+	}
+
+	inactiveTime := now - lastRelevantTime
+
+	// If recently active or recently navigated, reset alert
 	if inactiveTime <= inactivityThreshold {
 		if marked.AlertStartTime > 0 {
 			marked.AlertStartTime = 0
@@ -203,19 +262,25 @@ func (m *RealMarker) GetAlertLevel(session, window string) int {
 		return 0
 	}
 
+	// Start alert timer if not already started
 	if marked.AlertStartTime == 0 {
-		marked.AlertStartTime = now
+		// Alert will start counting from when inactivity period ends
+		marked.AlertStartTime = lastRelevantTime + inactivityThreshold
 		sessions[key] = marked
 		m.saveMarkedSessions(sessions)
 	}
 
+	// Calculate how long we've been in alert state (time since inactivity threshold was reached)
 	alertDuration := now - marked.AlertStartTime
 
-	if alertDuration <= 60 {
-		return 1
+	// Only show alert if we're past the alert start time
+	if alertDuration <= 0 {
+		return 0
+	} else if alertDuration <= 60 {
+		return 1 // 0-1 minute after becoming inactive
 	} else if alertDuration <= 300 {
-		return 2
+		return 2 // 1-5 minutes after becoming inactive  
 	} else {
-		return 3
+		return 3 // 5+ minutes after becoming inactive
 	}
 }

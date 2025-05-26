@@ -19,6 +19,9 @@ func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 			return model.Connection{Found: false}, nil
 		}
 		
+		// Reset alert timer for this marked window since user is navigating to it
+		c.marker.ResetAlertForWindow(sessionName, windowNumber)
+		
 		// Modify the session name to include the window number for connection
 		session.Name = sessionName + ":" + windowNumber
 		

@@ -63,11 +63,11 @@ func App(version string) cli.App {
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
 	startup := startup.NewStartup(config, lister, tmux)
 	namer := namer.NewNamer(path, git, home)
-	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
+	marker := marker.NewMarker(home)
+	connector := connector.NewConnector(config, dir, home, lister, marker, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
-	marker := marker.NewMarker(home)
 
 	return cli.App{
 		Name:    "sesh",

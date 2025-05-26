@@ -4,6 +4,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/marker"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
 	"github.com/joshmedeski/sesh/v2/startup"
@@ -21,6 +22,7 @@ type RealConnector struct {
 	dir        dir.Dir
 	home       home.Home
 	lister     lister.Lister
+	marker     marker.Marker
 	namer      namer.Namer
 	startup    startup.Startup
 	tmux       tmux.Tmux
@@ -33,6 +35,7 @@ func NewConnector(
 	dir dir.Dir,
 	home home.Home,
 	lister lister.Lister,
+	marker marker.Marker,
 	namer namer.Namer,
 	startup startup.Startup,
 	tmux tmux.Tmux,
@@ -44,6 +47,7 @@ func NewConnector(
 		dir,
 		home,
 		lister,
+		marker,
 		namer,
 		startup,
 		tmux,
