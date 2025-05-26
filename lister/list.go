@@ -1,6 +1,7 @@
 package lister
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/joshmedeski/sesh/v2/marker"
@@ -27,6 +28,14 @@ var srcStrategies = map[string]srcStrategy{
 	"config":     listConfig,
 	"tmuxinator": listTmuxinator,
 	"zoxide":     listZoxide,
+}
+
+func (l *RealLister) getWindowName(session, window string) string {
+	name, err := l.tmux.GetWindowName(session, window)
+	if err != nil {
+		return window
+	}
+	return name
 }
 
 func (l *RealLister) List(opts ListOptions, marker marker.Marker) (model.SeshSessions, error) {
@@ -75,21 +84,39 @@ func (l *RealLister) List(opts ListOptions, marker marker.Marker) (model.SeshSes
 		return model.SeshSessions{}, err
 	}
 
-	for _, index := range fullOrderedIndex {
-		session := fullDirectory[index]
-		for _, marked := range markedSessions {
-			if marked.Session == session.Name && session.Src == "tmux" {
-				session.Marked = true
-				if len(session.MarkedWindows) == 0 {
-					session.MarkedWindows = []string{}
-				}
-				session.MarkedWindows = append(session.MarkedWindows, marked.Window)
-				if session.MarkTimestamp == 0 || marked.Timestamp > session.MarkTimestamp {
-					session.MarkTimestamp = marked.Timestamp
-				}
-				fullDirectory[index] = session
+	// Add individual marked windows as separate entries
+	for _, marked := range markedSessions {
+		if !marked.Marked {
+			continue
+		}
+		
+		windowName := l.getWindowName(marked.Session, marked.Window)
+		markedKey := fmt.Sprintf("%s:%s(%s)", marked.Session, windowName, marked.Window)
+		
+		// Find the original session to get its path
+		originalSession, exists := fullDirectory[marked.Session]
+		if !exists {
+			// If original session not found, create a basic one
+			originalSession = model.SeshSession{
+				Src:  "tmux",
+				Name: marked.Session,
+				Path: "",
 			}
 		}
+		
+		// Create a new session entry for this marked window
+		markedSession := model.SeshSession{
+			Src:           "tmux",
+			Name:          markedKey,
+			Path:          originalSession.Path,
+			Marked:        true,
+			MarkedWindows: []string{marked.Window},
+			MarkTimestamp: marked.Timestamp,
+			AlertLevel:    marker.GetAlertLevel(marked.Session, marked.Window),
+		}
+		
+		fullDirectory[markedKey] = markedSession
+		fullOrderedIndex = append(fullOrderedIndex, markedKey)
 	}
 
 	if opts.Marked {
@@ -101,7 +128,13 @@ func (l *RealLister) List(opts ListOptions, marker marker.Marker) (model.SeshSes
 		}
 		
 		sort.Slice(markedIndices, func(i, j int) bool {
-			return fullDirectory[markedIndices[i]].MarkTimestamp > fullDirectory[markedIndices[j]].MarkTimestamp
+			sessionI := fullDirectory[markedIndices[i]]
+			sessionJ := fullDirectory[markedIndices[j]]
+			
+			if sessionI.AlertLevel != sessionJ.AlertLevel {
+				return sessionI.AlertLevel > sessionJ.AlertLevel
+			}
+			return sessionI.MarkTimestamp > sessionJ.MarkTimestamp
 		})
 		
 		fullOrderedIndex = markedIndices
@@ -118,7 +151,13 @@ func (l *RealLister) List(opts ListOptions, marker marker.Marker) (model.SeshSes
 		}
 		
 		sort.Slice(markedIndices, func(i, j int) bool {
-			return fullDirectory[markedIndices[i]].MarkTimestamp > fullDirectory[markedIndices[j]].MarkTimestamp
+			sessionI := fullDirectory[markedIndices[i]]
+			sessionJ := fullDirectory[markedIndices[j]]
+			
+			if sessionI.AlertLevel != sessionJ.AlertLevel {
+				return sessionI.AlertLevel > sessionJ.AlertLevel
+			}
+			return sessionI.MarkTimestamp > sessionJ.MarkTimestamp
 		})
 		
 		fullOrderedIndex = append(markedIndices, normalIndices...)

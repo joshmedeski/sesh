@@ -25,6 +25,7 @@ type (
 		Marked                bool    // Whether the session has any marked windows
 		MarkedWindows         []string // List of marked window IDs for this session
 		MarkTimestamp         int64   // Timestamp of the most recent mark for this session
+		AlertLevel            int     // Alert level (0=none, 1=recent, 2=warning, 3=urgent)
 	}
 
 	SeshSrcs struct {

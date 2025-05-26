@@ -17,6 +17,8 @@ type Marker interface {
 	IsMarked(session, window string) bool
 	GetMarkedSessions() ([]MarkedSession, error)
 	GetMarkedSessionsForSession(session string) ([]MarkedSession, error)
+	UpdateActivity(session, window string) error
+	GetAlertLevel(session, window string) int
 }
 
 type RealMarker struct {
@@ -24,10 +26,12 @@ type RealMarker struct {
 }
 
 type MarkedSession struct {
-	Session   string `json:"session"`
-	Window    string `json:"window"`
-	Timestamp int64  `json:"timestamp"`
-	Marked    bool   `json:"marked"`
+	Session           string `json:"session"`
+	Window            string `json:"window"`
+	Timestamp         int64  `json:"timestamp"`
+	Marked            bool   `json:"marked"`
+	LastActivity      int64  `json:"last_activity"`
+	AlertStartTime    int64  `json:"alert_start_time"`
 }
 
 type MarkedSessionMap map[string]MarkedSession
@@ -86,11 +90,13 @@ func (m *RealMarker) Mark(session, window string) error {
 	}
 
 	key := fmt.Sprintf("%s:%s", session, window)
+	now := time.Now().Unix()
 	sessions[key] = MarkedSession{
-		Session:   session,
-		Window:    window,
-		Timestamp: time.Now().Unix(),
-		Marked:    true,
+		Session:      session,
+		Window:       window,
+		Timestamp:    now,
+		Marked:       true,
+		LastActivity: now,
 	}
 
 	return m.saveMarkedSessions(sessions)
@@ -153,4 +159,63 @@ func (m *RealMarker) GetMarkedSessionsForSession(session string) ([]MarkedSessio
 	}
 
 	return result, nil
+}
+
+func (m *RealMarker) UpdateActivity(session, window string) error {
+	sessions, err := m.loadMarkedSessions()
+	if err != nil {
+		return err
+	}
+
+	key := fmt.Sprintf("%s:%s", session, window)
+	if marked, exists := sessions[key]; exists && marked.Marked {
+		marked.LastActivity = time.Now().Unix()
+		sessions[key] = marked
+		return m.saveMarkedSessions(sessions)
+	}
+
+	return nil
+}
+
+func (m *RealMarker) GetAlertLevel(session, window string) int {
+	sessions, err := m.loadMarkedSessions()
+	if err != nil {
+		return 0
+	}
+
+	key := fmt.Sprintf("%s:%s", session, window)
+	marked, exists := sessions[key]
+	if !exists || !marked.Marked {
+		return 0
+	}
+
+	now := time.Now().Unix()
+	inactiveTime := now - marked.LastActivity
+
+	const inactivityThreshold = 10
+
+	if inactiveTime <= inactivityThreshold {
+		if marked.AlertStartTime > 0 {
+			marked.AlertStartTime = 0
+			sessions[key] = marked
+			m.saveMarkedSessions(sessions)
+		}
+		return 0
+	}
+
+	if marked.AlertStartTime == 0 {
+		marked.AlertStartTime = now
+		sessions[key] = marked
+		m.saveMarkedSessions(sessions)
+	}
+
+	alertDuration := now - marked.AlertStartTime
+
+	if alertDuration <= 60 {
+		return 1
+	} else if alertDuration <= 300 {
+		return 2
+	} else {
+		return 3
+	}
 }

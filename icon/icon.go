@@ -31,6 +31,23 @@ func ansiString(code int, s string) string {
 	return fmt.Sprintf("\033[%dm%s\033[39m", code, s)
 }
 
+func ansiBackground(code int, s string) string {
+	return fmt.Sprintf("\033[%dm%s\033[49m", code, s)
+}
+
+func getAlertBackground(alertLevel int) int {
+	switch alertLevel {
+	case 1:
+		return 100 // Light gray background (rose-pine surface)
+	case 2:
+		return 101 // Light red background (rose-pine love)
+	case 3:
+		return 41  // Red background with emphasis
+	default:
+		return 0 // No background
+	}
+}
+
 func (i *RealIcon) AddIcon(s model.SeshSession) string {
 	var icon string
 	var colorCode int
@@ -58,6 +75,13 @@ func (i *RealIcon) AddIcon(s model.SeshSession) string {
 	
 	if s.Marked {
 		result = fmt.Sprintf("📌 %s", result)
+		
+		if s.AlertLevel > 0 {
+			bgCode := getAlertBackground(s.AlertLevel)
+			if bgCode > 0 {
+				result = ansiBackground(bgCode, result)
+			}
+		}
 	}
 	
 	return result
