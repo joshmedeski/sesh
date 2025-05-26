@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 type Marker interface {
@@ -26,7 +27,8 @@ type Marker interface {
 }
 
 type RealMarker struct {
-	home home.Home
+	home   home.Home
+	config model.Config
 }
 
 type MarkedSession struct {
@@ -41,8 +43,8 @@ type MarkedSession struct {
 
 type MarkedSessionMap map[string]MarkedSession
 
-func NewMarker(home home.Home) Marker {
-	return &RealMarker{home: home}
+func NewMarker(home home.Home, config model.Config) Marker {
+	return &RealMarker{home: home, config: config}
 }
 
 func (m *RealMarker) getMarkerFilePath() string {
@@ -222,6 +224,31 @@ func (m *RealMarker) ResetAlertForWindow(session, window string) error {
 	return nil
 }
 
+// getMarkerConfigWithDefaults returns marker config values with sensible defaults
+func (m *RealMarker) getMarkerConfigWithDefaults() (int, int, int, int) {
+	// Default values
+	inactivityThreshold := 10  // 10 seconds
+	alertLevel1Time := 60      // 1 minute
+	alertLevel2Time := 300     // 5 minutes
+	alertLevel3Time := 600     // 10 minutes (anything beyond level 2)
+
+	// Use config values if set
+	if m.config.MarkerConfig.InactivityThreshold > 0 {
+		inactivityThreshold = m.config.MarkerConfig.InactivityThreshold
+	}
+	if m.config.MarkerConfig.AlertLevel1Time > 0 {
+		alertLevel1Time = m.config.MarkerConfig.AlertLevel1Time
+	}
+	if m.config.MarkerConfig.AlertLevel2Time > 0 {
+		alertLevel2Time = m.config.MarkerConfig.AlertLevel2Time
+	}
+	if m.config.MarkerConfig.AlertLevel3Time > 0 {
+		alertLevel3Time = m.config.MarkerConfig.AlertLevel3Time
+	}
+
+	return inactivityThreshold, alertLevel1Time, alertLevel2Time, alertLevel3Time
+}
+
 func (m *RealMarker) GetAlertLevel(session, window string) int {
 	sessions, err := m.loadMarkedSessions()
 	if err != nil {
@@ -242,7 +269,7 @@ func (m *RealMarker) GetAlertLevel(session, window string) int {
 	}
 
 	now := time.Now().Unix()
-	const inactivityThreshold = 10
+	inactivityThreshold, alertLevel1Time, alertLevel2Time, _ := m.getMarkerConfigWithDefaults()
 
 	// Check if window has recent activity or user recently navigated to it
 	lastRelevantTime := tmuxActivity
@@ -253,7 +280,7 @@ func (m *RealMarker) GetAlertLevel(session, window string) int {
 	inactiveTime := now - lastRelevantTime
 
 	// If recently active or recently navigated, reset alert
-	if inactiveTime <= inactivityThreshold {
+	if inactiveTime <= int64(inactivityThreshold) {
 		if marked.AlertStartTime > 0 {
 			marked.AlertStartTime = 0
 			sessions[key] = marked
@@ -265,7 +292,7 @@ func (m *RealMarker) GetAlertLevel(session, window string) int {
 	// Start alert timer if not already started
 	if marked.AlertStartTime == 0 {
 		// Alert will start counting from when inactivity period ends
-		marked.AlertStartTime = lastRelevantTime + inactivityThreshold
+		marked.AlertStartTime = lastRelevantTime + int64(inactivityThreshold)
 		sessions[key] = marked
 		m.saveMarkedSessions(sessions)
 	}
@@ -276,11 +303,11 @@ func (m *RealMarker) GetAlertLevel(session, window string) int {
 	// Only show alert if we're past the alert start time
 	if alertDuration <= 0 {
 		return 0
-	} else if alertDuration <= 60 {
-		return 1 // 0-1 minute after becoming inactive
-	} else if alertDuration <= 300 {
-		return 2 // 1-5 minutes after becoming inactive  
+	} else if alertDuration <= int64(alertLevel1Time) {
+		return 1 // Level 1 alert (configurable)
+	} else if alertDuration <= int64(alertLevel2Time) {
+		return 2 // Level 2 alert (configurable)
 	} else {
-		return 3 // 5+ minutes after becoming inactive
+		return 3 // Level 3 alert (beyond level 2 time)
 	}
 }

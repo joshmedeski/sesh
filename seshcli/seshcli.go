@@ -63,7 +63,7 @@ func App(version string) cli.App {
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
 	startup := startup.NewStartup(config, lister, tmux)
 	namer := namer.NewNamer(path, git, home)
-	marker := marker.NewMarker(home)
+	marker := marker.NewMarker(home, config)
 	connector := connector.NewConnector(config, dir, home, lister, marker, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
