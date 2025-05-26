@@ -3,7 +3,7 @@
 # Toggle mark/unmark for current tmux session:window
 # Usage: Called from tmux binding to toggle marking state
 
-export PATH="/Users/rumen.d/.local/bin:$PATH"
+# Using system sesh via homebrew symlink
 
 # Get current session and window
 SESSION=$(tmux display-message -p '#S')
