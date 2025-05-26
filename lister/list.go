@@ -84,9 +84,24 @@ func (l *RealLister) List(opts ListOptions, marker marker.Marker) (model.SeshSes
 		return model.SeshSessions{}, err
 	}
 
-	// Add individual marked windows as separate entries
+	// Add individual marked windows as separate entries, but only if they match the source filter
+	requestedSrcs := srcs(opts)
 	for _, marked := range markedSessions {
 		if !marked.Marked {
+			continue
+		}
+		
+		// Check if the marked session's source should be included in this filter
+		includeMarked := false
+		for _, src := range requestedSrcs {
+			if src == "tmux" {
+				includeMarked = true
+				break
+			}
+		}
+		
+		// If this is a config-only filter, don't include tmux marked windows
+		if !includeMarked {
 			continue
 		}
 		
