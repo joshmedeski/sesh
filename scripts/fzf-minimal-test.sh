@@ -25,7 +25,21 @@ debug_log "Selected: $selected"
 if [ -n "$selected" ]; then
   cleaned=$(echo "$selected" | sed 's/\[[0-9;]*m//g' | sed 's/^[📌🟢⚙️📁⚡[:space:]]*//' | sed 's/^[[:space:]]*//')
   debug_log "Cleaned: $cleaned"
-  sesh connect "$cleaned" 2>&1 | tee -a /tmp/sesh-fzf-debug.log
+  
+  # Try original cleaned name first
+  if sesh connect "$cleaned" 2>/dev/null; then
+    debug_log "Connected successfully with: $cleaned"
+  else
+    # If connection fails and name contains underscores, try replacing with spaces
+    if [[ "$cleaned" == *"_"* ]] && [[ "$cleaned" != *"/"* ]] && [[ "$cleaned" != *"~"* ]]; then
+      spaced_name=$(echo "$cleaned" | tr '_' ' ')
+      debug_log "Trying with spaces: $spaced_name"
+      sesh connect "$spaced_name" 2>&1 | tee -a /tmp/sesh-fzf-debug.log
+    else
+      debug_log "Connection failed for: $cleaned"
+      exit 1
+    fi
+  fi
 else
   debug_log "Failed - no selection"
 fi

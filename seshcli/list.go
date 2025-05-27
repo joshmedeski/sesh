@@ -107,11 +107,44 @@ func List(icon icon.Icon, json json.Json, list lister.Lister, marker marker.Mark
 // cleanDisplayName cleans session names for display purposes only
 // This prevents visual confusion with spaces while preserving original names for connection
 func cleanDisplayName(name string) string {
-	// CONSERVATIVE: Only clean spaces in session names, and only if they look like tmux sessions
-	// Don't touch config/zoxide paths or anything with slashes
-	if strings.Contains(name, " ") && !strings.Contains(name, "/") && !strings.Contains(name, "~") {
-		// Only replace spaces with underscores, leave dots and colons alone
-		return strings.ReplaceAll(name, " ", "_")
+	// Don't touch config/zoxide paths or anything with slashes/tildes
+	if strings.Contains(name, "/") || strings.Contains(name, "~") {
+		return name
 	}
+	
+	// Handle marked sessions: 📌 [ANSI][ICON][RESET] [SESSION_NAME]
+	markerPrefix := ""
+	workingName := name
+	if strings.HasPrefix(name, "📌 ") {
+		markerPrefix = "📌 "
+		workingName = name[len(markerPrefix):]
+	}
+	
+	// Check if this has an ANSI color + icon prefix
+	// Format: \033[XXm[ICON]\033[39m [SESSION_NAME]
+	if strings.HasPrefix(workingName, "\033[") {
+		// Find the ANSI reset sequence followed by space: "\033[39m "
+		resetPattern := "\033[39m "
+		resetIndex := strings.Index(workingName, resetPattern)
+		if resetIndex > 0 {
+			// Split at the space after the reset sequence
+			iconPart := workingName[:resetIndex+len(resetPattern)] // Include reset + space
+			sessionName := workingName[resetIndex+len(resetPattern):] // After the space
+			
+			// Only clean spaces in the session name part
+			if strings.Contains(sessionName, " ") {
+				cleanedSession := strings.ReplaceAll(sessionName, " ", "_")
+				return markerPrefix + iconPart + cleanedSession
+			}
+			return name
+		}
+	}
+	
+	// No icon detected, clean all spaces in session names only
+	if strings.Contains(workingName, " ") {
+		cleanedSession := strings.ReplaceAll(workingName, " ", "_")
+		return markerPrefix + cleanedSession
+	}
+	
 	return name
 }
