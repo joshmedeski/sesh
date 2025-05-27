@@ -2,6 +2,7 @@ package seshcli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
@@ -94,10 +95,23 @@ func List(icon icon.Icon, json json.Json, list lister.Lister, marker marker.Mark
 				if cCtx.Bool("icons") {
 					name = icon.AddIcon(sessions.Directory[i])
 				}
-				fmt.Println(name)
+				// Clean display name for better readability (spaces -> underscores)
+				displayName := cleanDisplayName(name)
+				fmt.Println(displayName)
 			}
 
 			return nil
 		},
 	}
+}
+// cleanDisplayName cleans session names for display purposes only
+// This prevents visual confusion with spaces while preserving original names for connection
+func cleanDisplayName(name string) string {
+	// CONSERVATIVE: Only clean spaces in session names, and only if they look like tmux sessions
+	// Don't touch config/zoxide paths or anything with slashes
+	if strings.Contains(name, " ") && !strings.Contains(name, "/") && !strings.Contains(name, "~") {
+		// Only replace spaces with underscores, leave dots and colons alone
+		return strings.ReplaceAll(name, " ", "_")
+	}
+	return name
 }

@@ -50,6 +50,7 @@ func listsessionsformat() string {
 	return strings.Join(variables, separator)
 }
 
+
 func parseTmuxSessionsOutput(rawList []string) ([]*model.TmuxSession, error) {
 	sessions := make([]*model.TmuxSession, 0, len(rawList))
 	for _, line := range rawList {

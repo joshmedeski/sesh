@@ -104,3 +104,4 @@ func TestListSessions(t *testing.T) {
 		assert.Equal(t, expectedSortedSessions, actualSortedSessionsInOrder)
 	})
 }
+
