@@ -234,6 +234,28 @@ blacklist = ["scratch"]
 > [!NOTE] 
 > Works great with [tmux-floatx](https://github.com/omerxx/tmux-floax)
 
+### Sorting
+
+If you'd like to change the order of the sessions shown, you can configure `sort_order` in your `sesh.toml` file
+
+```toml
+sort_order = [
+    "tmuxinator", # show first
+    "config",
+    "tmux",
+    "zoxide", # show last
+]
+```
+
+The default order is `tmux`, `config`, `tmuxinator`, and then `zoxide`.
+
+You can omit session types if you only care about the order of specific ones.
+
+```toml
+sort_order = [
+  "config", # resulting order: config, tmux, tmuxinator, zoxide
+]
+```
 ### Default Session
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
@@ -325,10 +347,4 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## Star History
 
-<a href="https://star-history.com/#joshmedeski/sesh&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date" />
- </picture>
-</a>
+[![Star History Chart](https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date)](https://www.star-history.com/#joshmedeski/sesh&Date)
