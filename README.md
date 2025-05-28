@@ -295,6 +295,30 @@ startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
 
+### Multiple windows
+
+If you want your session to have multiple windows you can define windows in your configuration. You can then use these window layouts in your sessions. These windows can be reused as many times as you want and you can add as many windows to each session as you want.
+
+Note: If you do not specify a path in the window, it will use the session's path.
+
+```toml
+[[session]]
+name = "Downloads 📥"
+path = "~/Downloads"
+startup_command = "ls"
+
+[[session]]
+name = "tmux config"
+path = "~/c/dotfiles/.config/tmux"
+startup_command = "nvim tmux.conf"
+preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
+windows = [ "git" ]
+
+[[window]]
+name = "git"
+startup_script = "git pull"
+```
+
 ### Listing Configurations
 
 Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
