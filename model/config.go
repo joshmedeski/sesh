@@ -2,10 +2,11 @@ package model
 
 type (
 	Config struct {
-		ImportPaths          []string             `toml:"import"`
-		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
-		Blacklist            []string             `toml:"blacklist"`
-		SessionConfigs       []SessionConfig      `toml:"session"`
+		EvalSettings         EvaluationConfigSettings `toml:"evaluation"`
+		ImportPaths          []string                 `toml:"import"`
+		DefaultSessionConfig DefaultSessionConfig     `toml:"default_session"`
+		Blacklist            []string                 `toml:"blacklist"`
+		SessionConfigs       []SessionConfig          `toml:"session"`
 	}
 
 	DefaultSessionConfig struct {
@@ -22,5 +23,9 @@ type (
 		Path                string `toml:"path"`
 		DisableStartCommand bool   `toml:"disable_startup_command"`
 		DefaultSessionConfig
+	}
+
+	EvaluationConfigSettings struct {
+		Strict string `toml:"strict"`
 	}
 )

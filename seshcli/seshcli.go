@@ -51,7 +51,7 @@ func App(version string) cli.App {
 	// config
 	config, err, details := configurator.NewConfigurator(os, path, runtime).GetConfig()
 	// TODO: make sure to ignore the error if the config doesn't exist
-	if err != nil {
+	if err != "" {
 		if details != nil {
 			fmt.Println(details)
 			panic(details.Error())

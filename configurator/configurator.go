@@ -13,7 +13,7 @@ import (
 )
 
 type Configurator interface {
-	GetConfig() (model.Config, *string, error)
+	GetConfig() (model.Config, string, error)
 }
 
 type RealConfigurator struct {
@@ -38,11 +38,11 @@ func (c *RealConfigurator) fullImportPath(homeDir, importPath string) (string, e
 	return c.path.Join(homeDir, importPath[1:]), nil
 }
 
-func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, *string, error) {
+func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, string, error) {
 	config := model.Config{}
 	userHomeDir, err := c.os.UserHomeDir()
 	if err != nil {
-		return config, nil, fmt.Errorf("couldn't get user config dir: %q", err)
+		return config, "", fmt.Errorf("couldn't get user config dir: %q", err)
 	}
 	userConfigDir := c.path.Join(userHomeDir, ".config")
 	configFilePath := c.configFilePath(userConfigDir)
@@ -51,45 +51,59 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, *stri
 	// if err != nil {
 	// 	return config, fmt.Errorf("couldn't read config file: %q", err)
 	// }
-	reader := strings.NewReader(string(file))
-	d := toml.NewDecoder(reader)
-	d.DisallowUnknownFields()
-	err = d.Decode(&config)
-	var details *toml.StrictMissingError
-	var string_details string
-	if errors.As(err, &details) {
-		string_details = details.String()
+	if err := toml.Unmarshal(file, &config); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		var derr *toml.DecodeError
+		if errors.As(err, &derr) {
+			return config, derr.String(), err
+		}
 	}
+	if config.EvalSettings.Strict != "yes" {
+		reader := strings.NewReader(string(file))
+		d := toml.NewDecoder(reader)
+		d.DisallowUnknownFields()
+		err = d.Decode(&config)
+		if err != nil {
+			var derr *toml.DecodeError
+			if errors.As(err, &derr) {
+				return config, derr.String(), err
+			}
+		}
+	}
+	err = toml.Unmarshal(file, &config)
 	if err != nil {
-		return config, &string_details, fmt.Errorf("couldn't unmarshal config file: %q", err)
+		var derr *toml.DecodeError
+		if errors.As(err, &derr) {
+			return config, derr.String(), err
+		}
 	}
 
 	for _, importPath := range config.ImportPaths {
 		importFilePath, err := c.fullImportPath(userHomeDir, importPath)
 		if err != nil {
-			return config, nil, fmt.Errorf("couldn't get full import path: %q", err)
+			return config, "", fmt.Errorf("couldn't get full import path: %q", err)
 		}
 
 		importFile, err := c.os.ReadFile(importFilePath)
 		if err != nil {
-			return config, nil, fmt.Errorf("couldn't read import file %s: %q", importFilePath, err)
+			return config, "", fmt.Errorf("couldn't read import file %s: %q", importFilePath, err)
 		}
 
 		importConfig := model.Config{}
 		if err := toml.Unmarshal(importFile, &importConfig); err != nil {
-			return config, nil, fmt.Errorf("couldn't unmarshal import file %s: %q", importFilePath, err)
+			return config, "", fmt.Errorf("couldn't unmarshal import file %s: %q", importFilePath, err)
 		}
 
 		config.SessionConfigs = append(config.SessionConfigs, importConfig.SessionConfigs...)
 	}
 
-	return config, nil, nil
+	return config, "", nil
 }
 
-func (c *RealConfigurator) GetConfig() (model.Config, *string, error) {
+func (c *RealConfigurator) GetConfig() (model.Config, string, error) {
 	config, details, err := c.getConfigFileFromUserConfigDir()
 	if err != nil {
 		return model.Config{}, details, err
 	}
-	return config, nil, nil
+	return config, "", nil
 }
