@@ -7,15 +7,23 @@ type (
 		DefaultSessionConfig DefaultSessionConfig     `toml:"default_session"`
 		Blacklist            []string                 `toml:"blacklist"`
 		SessionConfigs       []SessionConfig          `toml:"session"`
+
+		ImportPaths          []string             `toml:"import"`
+		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
+		Blacklist            []string             `toml:"blacklist"`
+		SessionConfigs       []SessionConfig      `toml:"session"`
+		SortOrder            []string             `toml:"sort_order"`
+		WindowConfigs        []WindowConfig       `toml:"window"`
 	}
 
 	DefaultSessionConfig struct {
 		// TODO: mention breaking change in v2 release notes
 		// StartupScript  string `toml:"startup_script"`
-		StartupCommand string `toml:"startup_command"`
-		Tmuxp          string `toml:"tmuxp"`
-		Tmuxinator     string `toml:"tmuxinator"`
-		PreviewCommand string `toml:"preview_command"`
+		StartupCommand string   `toml:"startup_command"`
+		Tmuxp          string   `toml:"tmuxp"`
+		Tmuxinator     string   `toml:"tmuxinator"`
+		PreviewCommand string   `toml:"preview_command"`
+		Windows        []string `toml:"windows"`
 	}
 
 	SessionConfig struct {
@@ -27,5 +35,10 @@ type (
 
 	EvaluationConfigSettings struct {
 		Strict string `toml:"strict"`
+	}
+	WindowConfig struct {
+		Name          string `toml:"name"`
+		StartupScript string `toml:"startup_script"`
+		Path          string `toml:"path"`
 	}
 )

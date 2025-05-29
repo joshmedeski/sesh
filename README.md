@@ -234,6 +234,28 @@ blacklist = ["scratch"]
 > [!NOTE] 
 > Works great with [tmux-floatx](https://github.com/omerxx/tmux-floax)
 
+### Sorting
+
+If you'd like to change the order of the sessions shown, you can configure `sort_order` in your `sesh.toml` file
+
+```toml
+sort_order = [
+    "tmuxinator", # show first
+    "config",
+    "tmux",
+    "zoxide", # show last
+]
+```
+
+The default order is `tmux`, `config`, `tmuxinator`, and then `zoxide`.
+
+You can omit session types if you only care about the order of specific ones.
+
+```toml
+sort_order = [
+  "config", # resulting order: config, tmux, tmuxinator, zoxide
+]
+```
 ### Default Session
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
@@ -271,6 +293,30 @@ name = "tmux config"
 path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
+```
+
+### Multiple windows
+
+If you want your session to have multiple windows you can define windows in your configuration. You can then use these window layouts in your sessions. These windows can be reused as many times as you want and you can add as many windows to each session as you want.
+
+Note: If you do not specify a path in the window, it will use the session's path.
+
+```toml
+[[session]]
+name = "Downloads 📥"
+path = "~/Downloads"
+startup_command = "ls"
+
+[[session]]
+name = "tmux config"
+path = "~/c/dotfiles/.config/tmux"
+startup_command = "nvim tmux.conf"
+preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
+windows = [ "git" ]
+
+[[window]]
+name = "git"
+startup_script = "git pull"
 ```
 
 ### Listing Configurations
