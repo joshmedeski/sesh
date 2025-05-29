@@ -51,30 +51,29 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, strin
 	// if err != nil {
 	// 	return config, fmt.Errorf("couldn't read config file: %q", err)
 	// }
-	if err := toml.Unmarshal(file, &config); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		var derr *toml.DecodeError
-		if errors.As(err, &derr) {
-			return config, derr.String(), err
-		}
-	}
-	if config.EvalSettings.Strict != "yes" {
+	_ = toml.Unmarshal(file, &config)
+	if config.EvalSettings.Strict == "yes" {
 		reader := strings.NewReader(string(file))
 		d := toml.NewDecoder(reader)
 		d.DisallowUnknownFields()
 		err = d.Decode(&config)
+		var details *toml.StrictMissingError
+		if err != nil {
+			if !errors.As(err, &details) {
+				panic(fmt.Sprintf("err should have been a *toml.StrictMissingError, but got %s (%T)", err, err))
+			}
+			fmt.Println(details.String())
+		}
+		if details != nil {
+			return config, details.String(), err
+		}
+	} else {
+		err = toml.Unmarshal(file, &config)
 		if err != nil {
 			var derr *toml.DecodeError
 			if errors.As(err, &derr) {
 				return config, derr.String(), err
 			}
-		}
-	}
-	err = toml.Unmarshal(file, &config)
-	if err != nil {
-		var derr *toml.DecodeError
-		if errors.As(err, &derr) {
-			return config, derr.String(), err
 		}
 	}
 
