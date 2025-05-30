@@ -7,13 +7,8 @@ type (
 		DefaultSessionConfig DefaultSessionConfig     `toml:"default_session"`
 		Blacklist            []string                 `toml:"blacklist"`
 		SessionConfigs       []SessionConfig          `toml:"session"`
-
-		ImportPaths          []string             `toml:"import"`
-		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
-		Blacklist            []string             `toml:"blacklist"`
-		SessionConfigs       []SessionConfig      `toml:"session"`
-		SortOrder            []string             `toml:"sort_order"`
-		WindowConfigs        []WindowConfig       `toml:"window"`
+		SortOrder            []string                 `toml:"sort_order"`
+		WindowConfigs        []WindowConfig           `toml:"window"`
 	}
 
 	DefaultSessionConfig struct {
@@ -34,8 +29,9 @@ type (
 	}
 
 	EvaluationConfigSettings struct {
-		Strict string `toml:"strict"`
+		Strict bool `toml:"strict"`
 	}
+
 	WindowConfig struct {
 		Name          string `toml:"name"`
 		StartupScript string `toml:"startup_script"`

@@ -52,7 +52,7 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, strin
 	// 	return config, fmt.Errorf("couldn't read config file: %q", err)
 	// }
 	_ = toml.Unmarshal(file, &config)
-	if config.EvalSettings.Strict == "yes" {
+	if config.EvalSettings.Strict {
 		reader := strings.NewReader(string(file))
 		d := toml.NewDecoder(reader)
 		d.DisallowUnknownFields()
@@ -60,7 +60,7 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, strin
 		var details *toml.StrictMissingError
 		if err != nil {
 			if !errors.As(err, &details) {
-				panic(fmt.Sprintf("err should have been a *toml.StrictMissingError, but got %s (%T)", err, err))
+				fmt.Printf("err: %v\n", err)
 			}
 			fmt.Println(details.String())
 		}
