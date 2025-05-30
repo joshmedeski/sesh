@@ -40,6 +40,7 @@ func (c *RealConfigurator) fullImportPath(homeDir, importPath string) (string, e
 
 func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, string, error) {
 	config := model.Config{}
+	evaluation := model.EvalSettings{}
 	userHomeDir, err := c.os.UserHomeDir()
 	if err != nil {
 		return config, "", fmt.Errorf("couldn't get user config dir: %q", err)
@@ -51,8 +52,8 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, strin
 	// if err != nil {
 	// 	return config, fmt.Errorf("couldn't read config file: %q", err)
 	// }
-	_ = toml.Unmarshal(file, &config)
-	if config.EvalSettings.Strict {
+	_ = toml.Unmarshal(file, &evaluation)
+	if evaluation.EvalConfig.Strict {
 		reader := strings.NewReader(string(file))
 		d := toml.NewDecoder(reader)
 		d.DisallowUnknownFields()

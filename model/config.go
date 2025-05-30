@@ -2,13 +2,13 @@ package model
 
 type (
 	Config struct {
-		EvalSettings         EvaluationConfigSettings `toml:"evaluation"`
-		ImportPaths          []string                 `toml:"import"`
-		DefaultSessionConfig DefaultSessionConfig     `toml:"default_session"`
-		Blacklist            []string                 `toml:"blacklist"`
-		SessionConfigs       []SessionConfig          `toml:"session"`
-		SortOrder            []string                 `toml:"sort_order"`
-		WindowConfigs        []WindowConfig           `toml:"window"`
+		EvalSettings         evalConfig           `toml:"evaluation"`
+		ImportPaths          []string             `toml:"import"`
+		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
+		Blacklist            []string             `toml:"blacklist"`
+		SessionConfigs       []SessionConfig      `toml:"session"`
+		SortOrder            []string             `toml:"sort_order"`
+		WindowConfigs        []WindowConfig       `toml:"window"`
 	}
 
 	DefaultSessionConfig struct {
@@ -28,8 +28,13 @@ type (
 		DefaultSessionConfig
 	}
 
-	EvaluationConfigSettings struct {
+	// NOTE: Making all evaluation structs public is a BAD idea because it makes way too many structs
+	// for _just_ configuration public
+	evalConfig struct {
 		Strict bool `toml:"strict"`
+	}
+	EvalSettings struct {
+		EvalConfig evalConfig `toml:"evaluation"`
 	}
 
 	WindowConfig struct {
