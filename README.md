@@ -295,6 +295,17 @@ startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
 
+### Path substitution
+If you want to use the path of the selected session in your startup or preview command, you can use the `{}` placeholder.  
+This will be replaced with the session's path when the command is run.
+
+An example of this in use is the following, where the `tmuxinator` default_project uses the path as key/value pair using [ERB syntax](https://github.com/tmuxinator/tmuxinator?tab=readme-ov-file#erb):
+```toml
+[default_session]
+startup_command = "tmuxinator start default_project path={}"
+preview_command = "eza --all --git --icons --color=always {}"
+```
+
 ### Multiple windows
 
 If you want your session to have multiple windows you can define windows in your configuration. You can then use these window layouts in your sessions. These windows can be reused as many times as you want and you can add as many windows to each session as you want.

@@ -20,6 +20,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/joshmedeski/sesh/v2/previewer"
+	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/runtimewrap"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/startup"
@@ -39,6 +40,7 @@ func App(version string) cli.App {
 	home := home.NewHome(os)
 	shell := shell.NewShell(exec, home)
 	json := json.NewJson()
+	replacer := replacer.NewReplacer()
 
 	// resource dependencies
 	git := git.NewGit(shell)
@@ -60,7 +62,7 @@ func App(version string) cli.App {
 	// core dependencies
 	ls := ls.NewLs(config, shell)
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
-	startup := startup.NewStartup(config, lister, tmux, home)
+	startup := startup.NewStartup(config, lister, tmux, home, replacer)
 	namer := namer.NewNamer(path, git, home)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
