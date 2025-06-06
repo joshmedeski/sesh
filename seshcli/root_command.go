@@ -78,7 +78,7 @@ func NewRootCommand(version string) *cobra.Command {
 	cloner := cloner.NewCloner(connector, git)
 
 	// tui
-	tui := tui.NewTui()
+	tui := tui.NewTui(lister)
 
 	rootCmd := &cobra.Command{
 		Use:     "sesh",
