@@ -18,9 +18,9 @@ func Tui(t tui.Tui) *cli.Command {
 		Flags:                  []cli.Flag{},
 		Action: func(cCtx *cli.Context) error {
 			model := t.NewModel()
-			p := tea.NewProgram(model)
+			p := tea.NewProgram(model, tea.WithAltScreen())
 			if _, err := p.Run(); err != nil {
-				slog.Error("Whoops, something went wrong", err.Error())
+				slog.Error("Whoops, something went wrong", "err", err.Error())
 				os.Exit(1)
 			}
 			return nil
