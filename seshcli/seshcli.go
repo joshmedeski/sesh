@@ -25,6 +25,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/tui"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -67,6 +68,9 @@ func App(version string) cli.App {
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
 
+	// tui
+	tui := tui.NewTui()
+
 	return cli.App{
 		Name:    "sesh",
 		Version: version,
@@ -78,6 +82,7 @@ func App(version string) cli.App {
 			Clone(cloner),
 			Root(lister, namer),
 			Preview(previewer),
+			Tui(tui),
 		},
 	}
 }
