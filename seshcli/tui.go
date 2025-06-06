@@ -16,9 +16,9 @@ func NewTuiCommand(t tui.Tui) *cobra.Command {
 		Short:   "View the user interface",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			model := t.NewModel()
-			p := tea.NewProgram(model)
+			p := tea.NewProgram(model, tea.WithAltScreen())
 			if _, err := p.Run(); err != nil {
-				slog.Error("Whoops, something went wrong", err.Error())
+				slog.Error("Whoops, something went wrong", "err", err.Error())
 				os.Exit(1)
 			}
 			return nil
