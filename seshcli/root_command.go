@@ -28,6 +28,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/tui"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -76,6 +77,9 @@ func NewRootCommand(version string) *cobra.Command {
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
 
+	// tui
+	tui := tui.NewTui()
+
 	rootCmd := &cobra.Command{
 		Use:     "sesh",
 		Version: version,
@@ -91,8 +95,8 @@ func NewRootCommand(version string) *cobra.Command {
 		NewCloneCommand(cloner),
 		NewRootSessionCommand(lister, namer),
 		NewPreviewCommand(previewer),
+		NewTuiCommand(tui),
 	)
 
 	return rootCmd
 }
-
