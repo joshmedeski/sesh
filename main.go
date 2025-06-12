@@ -32,9 +32,31 @@ func init() {
 	var err error
 	fileOnly := false
 
-	if f, err = createLoggerFile(); err != nil {
-		slog.Error("Unable to create logger file", "error", err)
-		os.Exit(1)
+	// TempDir returns the default directory to use for temporary files.
+	//
+	// On Unix systems, it returns $TMPDIR if non-empty, else /tmp.
+	// On Windows, it uses GetTempPath, returning the first non-empty
+	// value from %TMP%, %TEMP%, %USERPROFILE%, or the Windows directory.
+	// On Plan 9, it returns /tmp.
+	// It does not guarantee the user can write to the directory;
+	userTempDir := os.TempDir()
+	if f, err = createLoggerFile(userTempDir); err != nil {
+		if !strings.Contains(err.Error(), "permission denied") {
+			slog.Error("Unable to create logger file", "error", err)
+			os.Exit(1)
+		}
+
+		// If we can't write to the temp dir, try the user home dir
+		userTempDir, err = os.UserHomeDir()
+		if err != nil {
+			slog.Error("Unable to get user home directory", "error", err)
+			os.Exit(1)
+		}
+
+		if f, err = createLoggerFile(userTempDir); err != nil {
+			slog.Error("Unable to create logger file in user home directory", "error", err)
+			os.Exit(1)
+		}
 	}
 
 	env := os.Getenv("ENV")
@@ -62,24 +84,15 @@ func init() {
 	slog.SetDefault(slog.New(loggerHandler))
 }
 
-func createLoggerFile() (*os.File, error) {
+func createLoggerFile(userTempDir string) (*os.File, error) {
 	now := time.Now()
 	date := fmt.Sprintf("%s.log", now.Format("2006-01-02"))
 
-	// TempDir returns the default directory to use for temporary files.
-	//
-	// On Unix systems, it returns $TMPDIR if non-empty, else /tmp.
-	// On Windows, it uses GetTempPath, returning the first non-empty
-	// value from %TMP%, %TEMP%, %USERPROFILE%, or the Windows directory.
-	// On Plan 9, it returns /tmp.
-	userTempDir := os.TempDir()
-	slog.Debug("createLoggerFile:", "userTempDir", userTempDir)
-
-	if err := os.MkdirAll(path.Join(userTempDir, "sesh"), 0755); err != nil {
+	if err := os.MkdirAll(path.Join(userTempDir, ".seshtmp"), 0755); err != nil {
 		return nil, err
 	}
 
-	fileFullPath := path.Join(userTempDir, "sesh", date)
+	fileFullPath := path.Join(userTempDir, ".seshtmp", date)
 	file, err := os.OpenFile(fileFullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, err
