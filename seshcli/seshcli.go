@@ -31,7 +31,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
-func App(version string) *cli.App {
+func App(version string) cli.App {
 	// wrapper dependencies
 	exec := execwrap.NewExec()
 	os := oswrap.NewOs()
@@ -76,7 +76,7 @@ func App(version string) *cli.App {
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
 
-	return &cli.App{
+	return cli.App{
 		Name:    "sesh",
 		Version: version,
 		Usage:   "Smart session manager for the terminal",
