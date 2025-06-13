@@ -1,6 +1,8 @@
 package seshcli
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/urfave/cli/v2"
@@ -29,7 +31,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
-func App(version string) cli.App {
+func App(version string) *cli.App {
 	// wrapper dependencies
 	exec := execwrap.NewExec()
 	os := oswrap.NewOs()
@@ -50,11 +52,13 @@ func App(version string) cli.App {
 	tmuxinator := tmuxinator.NewTmuxinator(shell)
 
 	// config
-	config, details, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
+	config, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
 	// TODO: make sure to ignore the error if the config doesn't exist
 	if err != nil {
-		if details != "" {
-			slog.Error("seshcli/seshcli.go: App", "version", version, "error", details)
+		var human *configurator.ConfigError
+		if errors.As(err, &human) {
+			// No panic here because it leads to panic in the end of the root branch anyway.
+			fmt.Printf("Couldn't parse config, err: %v\n details:\n %s\n", err.Error(), human.Human())
 		}
 		slog.Error("seshcli/seshcli.go: App", "error", err)
 		panic(err)
@@ -72,7 +76,7 @@ func App(version string) cli.App {
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
 
-	return cli.App{
+	return &cli.App{
 		Name:    "sesh",
 		Version: version,
 		Usage:   "Smart session manager for the terminal",
