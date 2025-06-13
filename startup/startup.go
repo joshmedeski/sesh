@@ -6,6 +6,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/tmux"
 )
 
@@ -14,14 +15,17 @@ type Startup interface {
 }
 
 type RealStartup struct {
-	lister lister.Lister
-	tmux   tmux.Tmux
-	config model.Config
-	home   home.Home
+	lister   lister.Lister
+	tmux     tmux.Tmux
+	config   model.Config
+	home     home.Home
+	replacer replacer.Replacer
 }
 
-func NewStartup(config model.Config, lister lister.Lister, tmux tmux.Tmux, home home.Home) Startup {
-	return &RealStartup{lister, tmux, config, home}
+func NewStartup(
+	config model.Config, lister lister.Lister, tmux tmux.Tmux, home home.Home, replacer replacer.Replacer,
+) Startup {
+	return &RealStartup{lister, tmux, config, home, replacer}
 }
 
 func (s *RealStartup) Exec(session model.SeshSession) (string, error) {

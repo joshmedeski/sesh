@@ -9,7 +9,11 @@ func defaultConfigStrategy(s *RealStartup, session model.SeshSession) (string, e
 
 	defaultConfig := s.config.DefaultSessionConfig
 	if defaultConfig.StartupCommand != "" {
-		return defaultConfig.StartupCommand, nil
+		replacements := map[string]string{
+			"{}": session.Path,
+		}
+
+		return s.replacer.Replace(defaultConfig.StartupCommand, replacements), nil
 	}
 
 	return "", nil

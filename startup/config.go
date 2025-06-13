@@ -10,7 +10,11 @@ func configStrategy(s *RealStartup, session model.SeshSession) (string, error) {
 	}
 
 	if exists && config.StartupCommand != "" {
-		return config.StartupCommand, nil
+		replacements := map[string]string{
+			"{}": session.Path,
+		}
+
+		return s.replacer.Replace(config.StartupCommand, replacements), nil
 	}
 	return "", nil
 }

@@ -55,4 +55,14 @@ func TestShellPrepareCmd(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"/home/test/.local/bin/rat", "hello"}, cmdParts)
 	})
+
+	// This test case asserts the existing behaviour when the desired replacement is not separated by spaces
+	t.Run("should not use a partial match", func(t *testing.T) {
+		mockHome := new(home.MockHome)
+		shell := &RealShell{home: mockHome}
+		mockHome.On("ExpandHome", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		cmdParts, err := shell.PrepareCmd("~/.local/bin/rat localVar={}", map[string]string{"{}": "hello"})
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"/home/test/.local/bin/rat", "localVar={}"}, cmdParts)
+	})
 }
