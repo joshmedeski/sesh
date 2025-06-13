@@ -1,6 +1,8 @@
 package seshcli
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/urfave/cli/v2"
@@ -53,6 +55,11 @@ func App(version string) cli.App {
 	config, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
 	// TODO: make sure to ignore the error if the config doesn't exist
 	if err != nil {
+		var human *configurator.ConfigError
+		if errors.As(err, &human) {
+			// No panic here because it leads to panic in the end of the root branch anyway.
+			fmt.Printf("Couldn't parse config, err: %v\n details:\n %s\n", err.Error(), human.Human())
+		}
 		slog.Error("seshcli/seshcli.go: App", "error", err)
 		panic(err)
 	}
