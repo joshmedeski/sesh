@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/pelletier/go-toml/v2 v2.2.1
+	github.com/petar-dambovaliev/aho-corasick v0.0.0-20250424160509-463d218d4745
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.1
 )
