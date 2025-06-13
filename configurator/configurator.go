@@ -58,15 +58,12 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, strin
 		d := toml.NewDecoder(reader)
 		d.DisallowUnknownFields()
 		err = d.Decode(&config)
-		var details *toml.StrictMissingError
 		if err != nil {
-			if !errors.As(err, &details) {
-				fmt.Printf("err: %v\n", err)
+			var details *toml.StrictMissingError
+			if errors.As(err, &details) {
+				return config, details.String(), err
 			}
-			fmt.Println(details.String())
-		}
-		if details != nil {
-			return config, details.String(), err
+			return config, "", err
 		}
 	} else {
 		err = toml.Unmarshal(file, &config)

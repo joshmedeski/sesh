@@ -1,7 +1,6 @@
 package seshcli
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/urfave/cli/v2"
@@ -49,12 +48,11 @@ func App(version string) cli.App {
 	tmuxinator := tmuxinator.NewTmuxinator(shell)
 
 	// config
-	config, err, details := configurator.NewConfigurator(os, path, runtime).GetConfig()
+	config, details, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
 	// TODO: make sure to ignore the error if the config doesn't exist
-	if err != "" {
-		if details != nil {
-			fmt.Println(details)
-			panic(details.Error())
+	if err != nil {
+		if details != "" {
+			slog.Error("seshcli/seshcli.go: App", "version", version, "error", details)
 		}
 		slog.Error("seshcli/seshcli.go: App", "error", err)
 		panic(err)
