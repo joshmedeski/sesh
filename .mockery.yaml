@@ -1,14 +1,12 @@
-with-expecter: True
-inpackage: True
-testonly: False
-issue-845-fix: True
-resolve-type-alias: False
-dir: "{{.InterfaceDir}}"
-mockname: "Mock{{.InterfaceName}}"
-outpkg: "{{.PackageName}}"
-filename: "mock_{{.InterfaceName}}.go"
-all: True
+all: true
+dir: '{{.InterfaceDir}}'
+structname: Mock{{.InterfaceName}}
+pkgname: '{{.SrcPackageName}}'
+filename: mock_{{.InterfaceName}}.go
+template: testify
+template-data:
+  unroll-variadic: true
 packages:
   github.com/joshmedeski/sesh:
     config:
-      recursive: True
+      recursive: true
