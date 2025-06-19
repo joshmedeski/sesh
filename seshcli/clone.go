@@ -3,37 +3,28 @@ package seshcli
 import (
 	"errors"
 
+	"github.com/spf13/cobra"
+
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/model"
-	cli "github.com/urfave/cli/v2"
 )
 
-func Clone(c cloner.Cloner) *cli.Command {
-	return &cli.Command{
-		Name:                   "clone",
-		Aliases:                []string{"cl"},
-		Usage:                  "Clone a git repo and connect to it as a session",
-		UseShortOptionHandling: true,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "cmdDir",
-				Aliases: []string{"c"},
-				Usage:   "The directory to run the git command in",
-			},
-			&cli.StringFlag{
-				Name:    "dir",
-				Aliases: []string{"d"},
-				Usage:   "The name of the directory that git is creating",
-			},
-		},
-		Action: func(cCtx *cli.Context) error {
-
-			if cCtx.NArg() != 1 {
+func NewCloneCommand(c cloner.Cloner) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "clone",
+		Aliases: []string{"cl"},
+		Short:   "Clone a git repo and connect to it as a session",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
 				return errors.New("please provide url to clone")
 			}
-			repo := cCtx.Args().First()
+			repo := args[0]
 
-			opts := model.GitCloneOptions{CmdDir: cCtx.String("cmdDir"), Repo: repo, Dir: cCtx.String("dir")}
+			cmdDir, _ := cmd.Flags().GetString("cmdDir")
+			dir, _ := cmd.Flags().GetString("dir")
+
+			opts := model.GitCloneOptions{CmdDir: cmdDir, Repo: repo, Dir: dir}
 			if _, err := c.Clone(opts); err != nil {
 				return err
 			} else {
@@ -41,4 +32,9 @@ func Clone(c cloner.Cloner) *cli.Command {
 			}
 		},
 	}
+
+	cmd.Flags().StringP("cmdDir", "c", "", "The directory to run the git command in")
+	cmd.Flags().StringP("dir", "d", "", "The name of the directory that git is creating")
+
+	return cmd
 }
