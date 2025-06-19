@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io" // This is used to enable the multiwritter and be able to write to the log file and the console at the same time
 	"log/slog"
@@ -9,6 +10,7 @@ import (
 	"strings" // This is required to conpare the evironment variables
 	"time"    // This is used to get the current date and create the log file
 
+	"github.com/charmbracelet/fang"
 	"github.com/joshmedeski/sesh/v2/seshcli"
 )
 
@@ -20,8 +22,8 @@ func main() {
 	slog.Warn("Warning")
 	slog.Error("Error")
 
-	app := seshcli.App(version)
-	if err := app.Run(os.Args); err != nil {
+	cmd := seshcli.NewRootCommand(version)
+	if err := fang.Execute(context.TODO(), cmd); err != nil {
 		slog.Error("main file: ", "error", err)
 		os.Exit(1)
 	}

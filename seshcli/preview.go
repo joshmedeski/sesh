@@ -4,26 +4,27 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/joshmedeski/sesh/v2/previewer"
-	cli "github.com/urfave/cli/v2"
 )
 
-func Preview(p previewer.Previewer) *cli.Command {
-	return &cli.Command{
-		Name:                   "preview",
-		Aliases:                []string{"p"},
-		Usage:                  "Preview a session or directory",
-		UseShortOptionHandling: true,
-		Action: func(cCtx *cli.Context) error {
-			if cCtx.NArg() != 1 {
+func NewPreviewCommand(p previewer.Previewer) *cobra.Command {
+	return &cobra.Command{
+		Use:     "preview",
+		Aliases: []string{"p"},
+		Short:   "Preview a session or directory",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
 				return errors.New("session name or directory is required")
 			}
 
-			name := cCtx.Args().First()
+			name := args[0]
 
 			output, err := p.Preview(name)
 			if err != nil {
-				return cli.Exit(err, 1)
+				return err
 			}
 
 			fmt.Print(output)

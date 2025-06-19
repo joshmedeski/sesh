@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/urfave/cli/v2"
+	"github.com/spf13/cobra"
 
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/configurator"
@@ -31,7 +31,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
-func App(version string) cli.App {
+func NewRootCommand(version string) *cobra.Command {
 	// wrapper dependencies
 	exec := execwrap.NewExec()
 	os := oswrap.NewOs()
@@ -60,11 +60,11 @@ func App(version string) cli.App {
 			// No panic here because it leads to panic in the end of the root branch anyway.
 			fmt.Printf("Couldn't parse config, err: %v\n details:\n %s\n", err.Error(), human.Human())
 		}
-		slog.Error("seshcli/seshcli.go: App", "error", err)
+		slog.Error("seshcli/root_command.go: NewRootCommand", "error", err)
 		panic(err)
 	}
 
-	slog.Debug("seshcli/seshcli.go: App", "version", version, "config", config)
+	slog.Debug("seshcli/root_command.go: NewRootCommand", "version", version, "config", config)
 
 	// core dependencies
 	ls := ls.NewLs(config, shell)
@@ -76,17 +76,23 @@ func App(version string) cli.App {
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
 	cloner := cloner.NewCloner(connector, git)
 
-	return cli.App{
-		Name:    "sesh",
+	rootCmd := &cobra.Command{
+		Use:     "sesh",
 		Version: version,
-		Usage:   "Smart session manager for the terminal",
-		Commands: []*cli.Command{
-			List(icon, json, lister),
-			Last(lister, tmux),
-			Connect(connector, icon, dir),
-			Clone(cloner),
-			Root(lister, namer),
-			Preview(previewer),
-		},
+		Short:   "Smart session manager for the terminal",
+		Long:    "Sesh is a smart terminal session manager that helps you create and manage tmux sessions quickly and easily using zoxide.",
 	}
+
+	// Add subcommands
+	rootCmd.AddCommand(
+		NewListCommand(icon, json, lister),
+		NewLastCommand(lister, tmux),
+		NewConnectCommand(connector, icon, dir),
+		NewCloneCommand(cloner),
+		NewRootSessionCommand(lister, namer),
+		NewPreviewCommand(previewer),
+	)
+
+	return rootCmd
 }
+
