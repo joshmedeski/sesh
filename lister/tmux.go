@@ -24,12 +24,19 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 		if _, blacklisted := blacklistSet[session.Name]; !blacklisted {
 			key := tmuxKey(session.Name)
 			orderedIndex = append(orderedIndex, key)
+
+			description, err := l.home.ShortenHome(session.Path)
+			if err != nil {
+				return model.SeshSessions{}, fmt.Errorf("couldn't shorten path: %q", err)
+			}
+
 			directory[key] = model.SeshSession{
-				Src:      "tmux",
-				Name:     session.Name,
-				Path:     session.Path,
-				Attached: session.Attached,
-				Windows:  session.Windows,
+				Src:         "tmux",
+				Name:        session.Name,
+				Description: description,
+				Path:        session.Path,
+				Attached:    session.Attached,
+				Windows:     session.Windows,
 			}
 		}
 	}
