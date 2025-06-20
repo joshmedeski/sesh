@@ -2,12 +2,16 @@ package model
 
 type (
 	Config struct {
+		StrictMode           bool                 `toml:"strict_mode"`
 		ImportPaths          []string             `toml:"import"`
 		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
 		Blacklist            []string             `toml:"blacklist"`
 		SessionConfigs       []SessionConfig      `toml:"session"`
-    SortOrder            []string             `toml:"sort_order"`
+		SortOrder            []string             `toml:"sort_order"`
 		WindowConfigs        []WindowConfig       `toml:"window"`
+	}
+	Evaluation struct {
+		StrictMode bool `toml:"strict_mode"`
 	}
 
 	DefaultSessionConfig struct {
@@ -28,8 +32,8 @@ type (
 	}
 
 	WindowConfig struct {
-		Name               string `toml:"name"`
-		StartupScript      string `toml:"startup_script"`
-		Path               string `toml:"path"`
+		Name          string `toml:"name"`
+		StartupScript string `toml:"startup_script"`
+		Path          string `toml:"path"`
 	}
 )
