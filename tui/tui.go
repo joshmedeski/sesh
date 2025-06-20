@@ -67,7 +67,7 @@ func (t *RealTui) NewModel() TuiModel {
 	for i, session := range sessions.OrderedIndex {
 		items[i] = item{
 			title: sessions.Directory[session].Name,
-			desc:  sessions.Directory[session].Path,
+			desc:  sessions.Directory[session].Description,
 		}
 	}
 

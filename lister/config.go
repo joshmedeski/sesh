@@ -17,9 +17,15 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 		if session.Name != "" {
 			key := ConfigKey(session.Name)
 			orderedIndex = append(orderedIndex, key)
+
 			path, err := l.home.ExpandHome(session.Path)
 			if err != nil {
 				return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
+			}
+
+			description, err := l.home.ShortenHome(session.Path)
+			if err != nil {
+				return model.SeshSessions{}, fmt.Errorf("couldn't shorten path: %q", err)
 			}
 
 			if session.StartupCommand != "" && session.DisableStartCommand {
@@ -30,6 +36,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				Src:                   "config",
 				Name:                  session.Name,
 				Path:                  path,
+				Description:           description,
 				StartupCommand:        session.StartupCommand,
 				PreviewCommand:        session.PreviewCommand,
 				DisableStartupCommand: session.DisableStartCommand,

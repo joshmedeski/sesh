@@ -22,10 +22,11 @@ func listZoxide(l *RealLister) (model.SeshSessions, error) {
 		key := fmt.Sprintf("zoxide:%s", name)
 		orderedIndex[i] = key
 		directory[key] = model.SeshSession{
-			Src:   "zoxide",
-			Name:  name,
-			Path:  r.Path,
-			Score: r.Score,
+			Src:         "zoxide",
+			Name:        name,
+			Description: fmt.Sprintf("%.2f %s", r.Score, r.Path),
+			Path:        r.Path,
+			Score:       r.Score,
 		}
 	}
 	return model.SeshSessions{
