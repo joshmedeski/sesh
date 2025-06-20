@@ -6,7 +6,9 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 var docStyle = lipgloss.NewStyle().Margin(1, 2)
@@ -22,7 +24,8 @@ func (i item) FilterValue() string { return i.title }
 // TODO: move to model package
 // TuiModel represents the state of the TUI application
 type TuiModel struct {
-	list list.Model
+	connector connector.Connector
+	list      list.Model
 }
 
 type Tui interface {
@@ -30,11 +33,12 @@ type Tui interface {
 }
 
 type RealTui struct {
-	lister lister.Lister
+	connector connector.Connector
+	lister    lister.Lister
 }
 
-func NewTui(lister lister.Lister) Tui {
-	return &RealTui{lister}
+func NewTui(connector connector.Connector, lister lister.Lister) Tui {
+	return &RealTui{connector, lister}
 }
 
 func (t *RealTui) NewModel() TuiModel {
@@ -55,7 +59,8 @@ func (t *RealTui) NewModel() TuiModel {
 	if len(sessions.Directory) == 0 {
 		slog.Info("seshcli/tui.go: NewModel", "message", "No sessions found")
 		return TuiModel{
-			list: list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
+			connector: t.connector,
+			list:      list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
 		}
 	}
 	items := make([]list.Item, len(sessions.Directory))
@@ -67,9 +72,11 @@ func (t *RealTui) NewModel() TuiModel {
 	}
 
 	m := TuiModel{
-		list: list.New(items, list.NewDefaultDelegate(), 0, 0),
+		connector: t.connector,
+		list:      list.New(items, list.NewDefaultDelegate(), 0, 0),
 	}
 	m.list.Title = "Sesh"
+
 	return m
 }
 
@@ -84,6 +91,17 @@ func (m TuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
+		if msg.String() == "enter" {
+			selectedItem := m.list.SelectedItem()
+			name := selectedItem.(item).title
+			if name == "" {
+				slog.Error("seshcli/tui.go: Update", "error", "No session selected")
+				return m, tea.Quit
+			}
+			m.connector.Connect(selectedItem.(item).title, model.ConnectOpts{})
+			return m, tea.Quit
+		}
+
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
