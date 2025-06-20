@@ -69,7 +69,7 @@ func App(version string) cli.App {
 	cloner := cloner.NewCloner(connector, git)
 
 	// tui
-	tui := tui.NewTui(lister)
+	tui := tui.NewTui(connector, lister)
 
 	return cli.App{
 		Name:    "sesh",
