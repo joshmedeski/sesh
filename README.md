@@ -74,7 +74,7 @@ See the [nix package directory](https://search.nixos.org/packages?channel=unstab
 
 ## Extensions
 
-### Raycast Extension
+## Raycast Extension
 
 The [sesh companion extension](https://www.raycast.com/joshmedeski/sesh) for [Raycast](https://www.raycast.com/) makes it easy to use sesh outside of the terminal.
 
@@ -85,7 +85,7 @@ Here are limitations to keep in mind:
 
 <a title="Install sesh Raycast Extension" href="https://www.raycast.com/joshmedeski/sesh"><img src="https://www.raycast.com/joshmedeski/sesh/install_button@2x.png?v=1.1" height="64" alt="" style="height: 64px;"></a>
 
-### Ulauncher Extension
+## Ulauncher Extension
 
 For Linux users using [Ulauncher](https://ulauncher.io/) there is an [extension](https://ext.ulauncher.io/-/github-jacostag-sesh-ulauncher) to use sesh outside the terminal.
 
@@ -95,7 +95,7 @@ Here are limitations to keep in mind:
 - tmux has to be running before you can use the extension
 
 
-### Walker launcher usage (Linux)
+## Walker launcher usage (Linux)
 
 Create an action directly on $XDG_CONFIG_HOME/config.toml
 
@@ -112,15 +112,15 @@ show_icon_when_single = true
 switcher_only = true
 ```
 
-#### For the dmenu mode you can use:
+### For the dmenu mode you can use:
 
-##### Fish shell:
+#### Fish shell:
 set ssession $(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
 
-##### Bash/Zsh:
+#### Bash/Zsh:
 ssession=$(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
 
-###### For dmenu launchers replace walker -dfk with dmenu or rofi)
+##### For dmenu launchers replace walker -dfk with dmenu or rofi)
 
 ### How to use
 
