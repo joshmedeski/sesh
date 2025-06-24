@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"image/color"
 	"io" // This is used to enable the multiwritter and be able to write to the log file and the console at the same time
 	"log/slog"
 	"os"
@@ -9,10 +11,58 @@ import (
 	"strings" // This is required to conpare the evironment variables
 	"time"    // This is used to get the current date and create the log file
 
+	"github.com/charmbracelet/fang"
+	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/joshmedeski/sesh/v2/seshcli"
 )
 
 var version = "dev"
+
+var (
+	Black         = lipgloss.Color("0")
+	Red           = lipgloss.Color("1")
+	Green         = lipgloss.Color("2")
+	Yellow        = lipgloss.Color("3")
+	Blue          = lipgloss.Color("4")
+	Magenta       = lipgloss.Color("5")
+	Cyan          = lipgloss.Color("6")
+	White         = lipgloss.Color("7")
+	BrightBlack   = lipgloss.Color("8")
+	BrightRed     = lipgloss.Color("9")
+	BrightGreen   = lipgloss.Color("10")
+	BrightYellow  = lipgloss.Color("11")
+	BrightBlue    = lipgloss.Color("12")
+	BrightMagenta = lipgloss.Color("13")
+	BrightCyan    = lipgloss.Color("14")
+	BrightWhite   = lipgloss.Color("15")
+)
+
+func AnsiTheme() fang.ColorScheme {
+	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stderr)
+	c := lipgloss.LightDark(isDark)
+	base := c(Black, White)
+	inverted := c(White, Black)
+	muted := c(BrightBlack, BrightWhite)
+
+	return fang.ColorScheme{
+		Base:           base,
+		Title:          Blue,
+		Description:    base,
+		Codeblock:      base,
+		Program:        inverted,
+		DimmedArgument: inverted,
+		Comment:        muted,
+		Flag:           Magenta,
+		FlagDefault:    BrightMagenta,
+		Command:        Cyan,
+		QuotedString:   Green,
+		Argument:       base,
+		Help:           base,
+		Dash:           base,
+		ErrorHeader:    [2]color.Color{Black, Red},
+		ErrorDetails:   Red,
+	}
+}
 
 func main() {
 	slog.Debug("Debug")
@@ -20,8 +70,8 @@ func main() {
 	slog.Warn("Warning")
 	slog.Error("Error")
 
-	app := seshcli.App(version)
-	if err := app.Run(os.Args); err != nil {
+	cmd := seshcli.NewRootCommand(version)
+	if err := fang.Execute(context.TODO(), cmd, fang.WithTheme(AnsiTheme())); err != nil {
 		slog.Error("main file: ", "error", err)
 		os.Exit(1)
 	}

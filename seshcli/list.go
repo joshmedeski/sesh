@@ -3,77 +3,44 @@ package seshcli
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
-	cli "github.com/urfave/cli/v2"
 )
 
-func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
-	return &cli.Command{
-		Name:                   "list",
-		Aliases:                []string{"l"},
-		Usage:                  "List sessions",
-		UseShortOptionHandling: true,
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:    "config",
-				Aliases: []string{"c"},
-				Usage:   "show configured sessions",
-			},
-			&cli.BoolFlag{
-				Name:    "json",
-				Aliases: []string{"j"},
-				Usage:   "output as json",
-			},
-			&cli.BoolFlag{
-				Name:    "tmux",
-				Aliases: []string{"t"},
-				Usage:   "show tmux sessions",
-			},
-			&cli.BoolFlag{
-				Name:    "zoxide",
-				Aliases: []string{"z"},
-				Usage:   "show zoxide results",
-			},
-			&cli.BoolFlag{
-				Name:    "hide-attached",
-				Aliases: []string{"H"},
-				Usage:   "don't show currently attached sessions",
-			},
-			&cli.BoolFlag{
-				Name:    "icons",
-				Aliases: []string{"i"},
-				Usage:   "show icons",
-			},
-			&cli.BoolFlag{
-				Name:    "tmuxinator",
-				Aliases: []string{"T"},
-				Usage:   "show tmuxinator configs",
-			},
-			&cli.BoolFlag{
-				Name:    "hide-duplicates",
-				Aliases: []string{"d"},
-				Usage:   "hide duplicate entries",
-			},
-		},
-		Action: func(cCtx *cli.Context) error {
+func NewListCommand(icon icon.Icon, json json.Json, list lister.Lister) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"l"},
+		Short:   "List sessions",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, _ := cmd.Flags().GetBool("config")
+			jsonOutput, _ := cmd.Flags().GetBool("json")
+			tmux, _ := cmd.Flags().GetBool("tmux")
+			zoxide, _ := cmd.Flags().GetBool("zoxide")
+			hideAttached, _ := cmd.Flags().GetBool("hide-attached")
+			icons, _ := cmd.Flags().GetBool("icons")
+			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
+			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
+
 			sessions, err := list.List(lister.ListOptions{
-				Config:         cCtx.Bool("config"),
-				HideAttached:   cCtx.Bool("hide-attached"),
-				Icons:          cCtx.Bool("icons"),
-				Json:           cCtx.Bool("json"),
-				Tmux:           cCtx.Bool("tmux"),
-				Zoxide:         cCtx.Bool("zoxide"),
-				Tmuxinator:     cCtx.Bool("tmuxinator"),
-				HideDuplicates: cCtx.Bool("hide-duplicates"),
+				Config:         config,
+				HideAttached:   hideAttached,
+				Icons:          icons,
+				Json:           jsonOutput,
+				Tmux:           tmux,
+				Zoxide:         zoxide,
+				Tmuxinator:     tmuxinator,
+				HideDuplicates: hideDuplicates,
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)
 			}
 
-			if cCtx.Bool("json") {
+			if jsonOutput {
 				var sessionsArray []model.SeshSession
 				for _, i := range sessions.OrderedIndex {
 					sessionsArray = append(sessionsArray, sessions.Directory[i])
@@ -84,7 +51,7 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 
 			for _, i := range sessions.OrderedIndex {
 				name := sessions.Directory[i].Name
-				if cCtx.Bool("icons") {
+				if icons {
 					name = icon.AddIcon(sessions.Directory[i])
 				}
 				fmt.Println(name)
@@ -93,4 +60,15 @@ func List(icon icon.Icon, json json.Json, list lister.Lister) *cli.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolP("config", "c", false, "show configured sessions")
+	cmd.Flags().BoolP("json", "j", false, "output as json")
+	cmd.Flags().BoolP("tmux", "t", false, "show tmux sessions")
+	cmd.Flags().BoolP("zoxide", "z", false, "show zoxide results")
+	cmd.Flags().BoolP("hide-attached", "H", false, "don't show currently attached sessions")
+	cmd.Flags().BoolP("icons", "i", false, "show icons")
+	cmd.Flags().BoolP("tmuxinator", "T", false, "show tmuxinator configs")
+	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
+
+	return cmd
 }
