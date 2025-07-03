@@ -13,54 +13,39 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/charmbracelet/x/term"
 	"github.com/joshmedeski/sesh/v2/seshcli"
 )
 
 var version = "dev"
 
-var (
-	Black         = lipgloss.Color("0")
-	Red           = lipgloss.Color("1")
-	Green         = lipgloss.Color("2")
-	Yellow        = lipgloss.Color("3")
-	Blue          = lipgloss.Color("4")
-	Magenta       = lipgloss.Color("5")
-	Cyan          = lipgloss.Color("6")
-	White         = lipgloss.Color("7")
-	BrightBlack   = lipgloss.Color("8")
-	BrightRed     = lipgloss.Color("9")
-	BrightGreen   = lipgloss.Color("10")
-	BrightYellow  = lipgloss.Color("11")
-	BrightBlue    = lipgloss.Color("12")
-	BrightMagenta = lipgloss.Color("13")
-	BrightCyan    = lipgloss.Color("14")
-	BrightWhite   = lipgloss.Color("15")
-)
-
 func AnsiTheme() fang.ColorScheme {
-	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stderr)
+	var isDark bool
+	if term.IsTerminal(os.Stdout.Fd()) {
+		isDark = lipgloss.HasDarkBackground(os.Stdin, os.Stderr)
+	}
 	c := lipgloss.LightDark(isDark)
-	base := c(Black, White)
-	inverted := c(White, Black)
-	muted := c(BrightBlack, BrightWhite)
+	base := c(lipgloss.Black, lipgloss.White)
+	inverted := c(lipgloss.White, lipgloss.Black)
+	muted := c(lipgloss.BrightBlack, lipgloss.BrightWhite)
 
 	return fang.ColorScheme{
 		Base:           base,
-		Title:          Blue,
+		Title:          lipgloss.Blue,
 		Description:    base,
 		Codeblock:      base,
 		Program:        inverted,
 		DimmedArgument: inverted,
 		Comment:        muted,
-		Flag:           Magenta,
-		FlagDefault:    BrightMagenta,
-		Command:        Cyan,
-		QuotedString:   Green,
+		Flag:           lipgloss.Magenta,
+		FlagDefault:    lipgloss.BrightMagenta,
+		Command:        lipgloss.Cyan,
+		QuotedString:   lipgloss.Green,
 		Argument:       base,
 		Help:           base,
 		Dash:           base,
-		ErrorHeader:    [2]color.Color{Black, Red},
-		ErrorDetails:   Red,
+		ErrorHeader:    [2]color.Color{lipgloss.Black, lipgloss.Red},
+		ErrorDetails:   lipgloss.Red,
 	}
 }
 
