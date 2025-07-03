@@ -1,11 +1,11 @@
 module github.com/joshmedeski/sesh/v2
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.4
 
 require (
-	github.com/charmbracelet/fang v0.2.0
+	github.com/charmbracelet/fang v0.3.0
 	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta1
 	github.com/pelletier/go-toml/v2 v2.2.1
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20250424160509-463d218d4745
