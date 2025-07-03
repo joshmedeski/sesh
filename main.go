@@ -56,7 +56,7 @@ func main() {
 	slog.Error("Error")
 
 	cmd := seshcli.NewRootCommand(version)
-	if err := fang.Execute(context.TODO(), cmd, fang.WithTheme(AnsiTheme())); err != nil {
+	if err := fang.Execute(context.TODO(), cmd, fang.WithColorSchemeFunc(fang.AnsiColorScheme), fang.WithoutVersion()); err != nil {
 		slog.Error("main file: ", "error", err)
 		os.Exit(1)
 	}
