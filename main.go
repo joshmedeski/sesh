@@ -25,9 +25,9 @@ func AnsiTheme() fang.ColorScheme {
 		isDark = lipgloss.HasDarkBackground(os.Stdin, os.Stderr)
 	}
 	c := lipgloss.LightDark(isDark)
-	base := c(lipgloss.Black, lipgloss.White)
-	inverted := c(lipgloss.White, lipgloss.Black)
-	muted := c(lipgloss.BrightBlack, lipgloss.BrightWhite)
+	base := c(lipgloss.White, lipgloss.Black)
+	inverted := c(lipgloss.Black, lipgloss.White)
+	muted := c(lipgloss.BrightWhite, lipgloss.BrightBlack)
 
 	return fang.ColorScheme{
 		Base:           base,
