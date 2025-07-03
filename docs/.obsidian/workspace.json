@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "5dd057f6a1dfc700",
+        "id": "4cb5758625bcd432",
         "type": "tabs",
         "children": [
           {
-            "id": "03d838a8d98d2680",
+            "id": "478e027daf89951d",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "specs/cobra-fang-migration.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "cobra-fang-migration"
+              "title": "New tab"
             }
           }
         ]
@@ -168,7 +164,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "03d838a8d98d2680",
+  "active": "478e027daf89951d",
   "lastOpenFiles": [
     "specs/cobra-fang-migration.md",
     "specs"
