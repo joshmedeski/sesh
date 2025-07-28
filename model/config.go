@@ -9,6 +9,7 @@ type (
 		SessionConfigs       []SessionConfig      `toml:"session"`
 		SortOrder            []string             `toml:"sort_order"`
 		WindowConfigs        []WindowConfig       `toml:"window"`
+		DirLength            int                  `toml:"dir_length"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`

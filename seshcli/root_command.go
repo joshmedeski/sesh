@@ -70,7 +70,7 @@ func NewRootCommand(version string) *cobra.Command {
 	ls := ls.NewLs(config, shell)
 	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
 	startup := startup.NewStartup(config, lister, tmux, home, replacer)
-	namer := namer.NewNamer(path, git, home)
+	namer := namer.NewNamer(path, git, home, config)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)
 	icon := icon.NewIcon(config)
 	previewer := previewer.NewPreviewer(lister, tmux, icon, dir, home, ls, config, shell)
@@ -95,4 +95,3 @@ func NewRootCommand(version string) *cobra.Command {
 
 	return rootCmd
 }
-
