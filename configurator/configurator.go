@@ -108,6 +108,10 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 		config.SessionConfigs = append(config.SessionConfigs, importConfig.SessionConfigs...)
 	}
 
+	if config.DirLength < 1 {
+		config.DirLength = 1
+	}
+
 	return config, nil
 }
 

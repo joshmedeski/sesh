@@ -289,6 +289,14 @@ You may want to blacklist certain tmux sessions from showing up in the results. 
 blacklist = ["scratch"]
 ```
 
+### Directory Length
+
+Control how many directory components are used for session names. Default is 1 (only the directory basename).
+
+```toml
+dir_length = 2  # Uses last 2 directories: "projects/sesh" instead of just "sesh"
+```
+
 > [!NOTE] 
 > Works great with [tmux-floatx](https://github.com/omerxx/tmux-floax)
 

@@ -6,7 +6,6 @@ toolchain go1.24.4
 
 require (
 	github.com/charmbracelet/fang v0.4.2
-	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta1
 	github.com/pelletier/go-toml/v2 v2.2.1
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20250424160509-463d218d4745
 	github.com/spf13/cobra v1.10.1
@@ -15,6 +14,7 @@ require (
 
 require (
 	github.com/charmbracelet/colorprofile v0.3.2 // indirect
+	github.com/charmbracelet/lipgloss/v2 v2.0.0-beta1 // indirect
 	github.com/charmbracelet/x/ansi v0.10.1 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/exp/charmtone v0.0.0-20250916153604-9a2e892ed98e // indirect

@@ -6,6 +6,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +16,8 @@ func TestFromPath(t *testing.T) {
 		mockPathwrap := new(pathwrap.MockPath)
 		mockGit := new(git.MockGit)
 		mockHome := new(home.MockHome)
-		n := NewNamer(mockPathwrap, mockGit, mockHome)
+		config := model.Config{DirLength: 1}
+		n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 
 		t.Run("name for git repo", func(t *testing.T) {
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/config/dotfiles/.config/neovim").Return("/Users/josh/config/dotfiles/.config/neovim", nil)
@@ -43,7 +45,8 @@ func TestFromPath(t *testing.T) {
 			mockPathwrap := new(pathwrap.MockPath)
 			mockGit := new(git.MockGit)
 			mockHome := new(home.MockHome)
-			n := NewNamer(mockPathwrap, mockGit, mockHome)
+			config := model.Config{DirLength: 1}
+			n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/d/.c/neovim").Return("/Users/josh/dotfiles/.config/neovim", nil)
 			mockGit.On("WorktreeList", "/Users/josh/dotfiles/.config/neovim").Return(false, "", nil)
 			mockGit.On("ShowTopLevel", "/Users/josh/dotfiles/.config/neovim").Return(true, "/Users/josh/dotfiles", nil)
@@ -57,7 +60,8 @@ func TestFromPath(t *testing.T) {
 			mockPathwrap := new(pathwrap.MockPath)
 			mockGit := new(git.MockGit)
 			mockHome := new(home.MockHome)
-			n := NewNamer(mockPathwrap, mockGit, mockHome)
+			config := model.Config{DirLength: 1}
+			n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/p/sesh/main").Return("/Users/josh/projects/sesh/main", nil)
 			mockGit.On("WorktreeList", "/Users/josh/projects/sesh/main").Return(true, `/Users/josh/projects/sesh/.bare             (bare)
 /Users/josh/projects/sesh/main        ba04ca494 [main]
@@ -71,7 +75,8 @@ func TestFromPath(t *testing.T) {
 			mockPathwrap := new(pathwrap.MockPath)
 			mockGit := new(git.MockGit)
 			mockHome := new(home.MockHome)
-			n := NewNamer(mockPathwrap, mockGit, mockHome)
+			config := model.Config{DirLength: 1}
+			n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/c/neovim").Return("/Users/josh/.config/neovim", nil)
 			mockGit.On("WorktreeList", "/Users/josh/.config/neovim").Return(true, `/Users/josh/.config/neovim     c1d2e3f45 [main]
 `, nil)

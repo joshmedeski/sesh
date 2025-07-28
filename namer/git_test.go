@@ -5,6 +5,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,8 @@ func TestGitNamer(t *testing.T) {
 		mockPathwrap := new(pathwrap.MockPath)
 		mockGit := new(git.MockGit)
 		mockHome := new(home.MockHome)
-		n := NewNamer(mockPathwrap, mockGit, mockHome)
+		config := model.Config{DirLength: 1}
+		n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 		mockGit.On("ShowTopLevel", "/Users/hansolo/code/project/sesh").Return(true, "/Users/hansolo/code/project/sesh", nil)
 		mockPathwrap.On("Base", "/Users/hansolo/code/project/sesh").Return("sesh")
 		name, err := gitName(n.(*RealNamer), "/Users/hansolo/code/project/sesh")
@@ -26,7 +28,8 @@ func TestGitNamer(t *testing.T) {
 		mockPathwrap := new(pathwrap.MockPath)
 		mockGit := new(git.MockGit)
 		mockHome := new(home.MockHome)
-		n := NewNamer(mockPathwrap, mockGit, mockHome)
+		config := model.Config{DirLength: 1}
+		n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 		mockGit.On("ShowTopLevel", "/Users/hansolo/code/project/sesh/namer").Return(true, "/Users/hansolo/code/project/sesh", nil)
 		mockPathwrap.On("Base", "/Users/hansolo/code/project/sesh").Return("sesh")
 		name, err := gitName(n.(*RealNamer), "/Users/hansolo/code/project/sesh/namer")
@@ -38,7 +41,8 @@ func TestGitNamer(t *testing.T) {
 		mockPathwrap := new(pathwrap.MockPath)
 		mockGit := new(git.MockGit)
 		mockHome := new(home.MockHome)
-		n := NewNamer(mockPathwrap, mockGit, mockHome)
+		config := model.Config{DirLength: 1}
+		n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 		mockGit.On("ShowTopLevel", "/Users/hansolo/code/project/sesh").Return(false, "", nil)
 		name, err := gitName(n.(*RealNamer), "/Users/hansolo/code/project/sesh")
 		assert.NoError(t, err)
