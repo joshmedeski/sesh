@@ -21,13 +21,18 @@ func gitBareRootName(n *RealNamer, path string) (string, error) {
 
 // Gets the name from a git bare repository
 func gitBareName(n *RealNamer, path string) (string, error) {
-	var name string
 	isGit, commonDir, _ := n.git.GitCommonDir(path)
 	if isGit && strings.HasSuffix(commonDir, "/.bare") {
 		topLevelDir := strings.TrimSuffix(commonDir, "/.bare")
+
+		// Use dirName logic to respect dir_length for git bare repos
+		repoName, err := dirName(n, topLevelDir, n.config.DirLength)
+		if err != nil {
+			return "", err
+		}
+
 		relativePath := strings.TrimPrefix(path, topLevelDir)
-		baseDir := n.pathwrap.Base(topLevelDir)
-		name = baseDir + relativePath
+		name := repoName + relativePath
 		return name, nil
 	} else {
 		return "", nil
@@ -37,11 +42,12 @@ func gitBareName(n *RealNamer, path string) (string, error) {
 func gitRootName(n *RealNamer, path string) (string, error) {
 	isGit, topLevelDir, _ := n.git.ShowTopLevel(path)
 	if isGit && topLevelDir != "" {
-		name, err := n.home.ShortenHome(topLevelDir)
+		// Use dirName logic to respect dir_length for git root names
+		repoName, err := dirName(n, topLevelDir, n.config.DirLength)
 		if err != nil {
-			return "", fmt.Errorf("couldn't shorten path: %q", err)
+			return "", err
 		}
-		return name, nil
+		return repoName, nil
 	} else {
 		return "", nil
 	}
@@ -51,9 +57,14 @@ func gitRootName(n *RealNamer, path string) (string, error) {
 func gitName(n *RealNamer, path string) (string, error) {
 	isGit, topLevelDir, _ := n.git.ShowTopLevel(path)
 	if isGit && topLevelDir != "" {
+		// Use dirName logic to respect dir_length for git repos
+		repoName, err := dirName(n, topLevelDir, n.config.DirLength)
+		if err != nil {
+			return "", err
+		}
+
 		relativePath := strings.TrimPrefix(path, topLevelDir)
-		baseDir := n.pathwrap.Base(topLevelDir)
-		name := baseDir + relativePath
+		name := repoName + relativePath
 		return name, nil
 	} else {
 		return "", nil

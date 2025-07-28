@@ -5,6 +5,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 )
 
@@ -18,13 +19,15 @@ type RealNamer struct {
 	pathwrap pathwrap.Path
 	git      git.Git
 	home     home.Home
+	config   model.Config
 }
 
-func NewNamer(pathwrap pathwrap.Path, git git.Git, home home.Home) Namer {
+func NewNamer(pathwrap pathwrap.Path, git git.Git, home home.Home, config model.Config) Namer {
 	return &RealNamer{
 		pathwrap: pathwrap,
 		git:      git,
 		home:     home,
+		config:   config,
 	}
 }
 
@@ -37,8 +40,11 @@ func (n *RealNamer) Name(path string) (string, error) {
 	strategies := []func(*RealNamer, string) (string, error){
 		gitBareName,
 		gitName,
-		dirName,
+		func(n *RealNamer, path string) (string, error) {
+			return dirName(n, path, n.config.DirLength)
+		},
 	}
+
 	for _, strategy := range strategies {
 		name, err := strategy(n, path)
 		if err != nil {
@@ -59,8 +65,11 @@ func (n *RealNamer) RootName(path string) (string, error) {
 
 	strategies := []func(*RealNamer, string) (string, error){
 		gitRootName,
-		dirName,
+		func(n *RealNamer, path string) (string, error) {
+			return dirName(n, path, n.config.DirLength)
+		},
 	}
+
 	for _, strategy := range strategies {
 		name, err := strategy(n, path)
 		if err != nil {
