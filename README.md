@@ -64,6 +64,24 @@ This will download and install the latest version of Sesh. Make sure that your G
 </details>
 
 <details>
+  <summary>Conda</summary>
+
+To install sesh, run **one** of the following commands, depending on your setup:
+
+* Conda/(micro)mamba users
+```sh
+# Replace with mamba/micromamba if required
+conda -c conda-forge install sesh
+```
+
+* Pixi users
+```sh
+pixi global install sesh
+```
+
+</details>
+
+<details>
   <summary>Nix</summary>
 
 See the [nix package directory](https://search.nixos.org/packages?channel=unstable&show=sesh&from=0&size=50&sort=relevance&type=packages&query=sesh) for instructions on how to install sesh through the nix platform.
