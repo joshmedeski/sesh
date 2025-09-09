@@ -64,6 +64,24 @@ This will download and install the latest version of Sesh. Make sure that your G
 </details>
 
 <details>
+  <summary>Conda</summary>
+
+To install sesh, run **one** of the following commands, depending on your setup:
+
+* Conda/(micro)mamba users
+```sh
+# Replace with mamba/micromamba if required
+conda -c conda-forge install sesh
+```
+
+* Pixi users
+```sh
+pixi global install sesh
+```
+
+</details>
+
+<details>
   <summary>Nix</summary>
 
 See the [nix package directory](https://search.nixos.org/packages?channel=unstable&show=sesh&from=0&size=50&sort=relevance&type=packages&query=sesh) for instructions on how to install sesh through the nix platform.
@@ -71,6 +89,8 @@ See the [nix package directory](https://search.nixos.org/packages?channel=unstab
 </details>
 
 **Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
+
+## Extensions
 
 ## Raycast Extension
 
@@ -83,7 +103,44 @@ Here are limitations to keep in mind:
 
 <a title="Install sesh Raycast Extension" href="https://www.raycast.com/joshmedeski/sesh"><img src="https://www.raycast.com/joshmedeski/sesh/install_button@2x.png?v=1.1" height="64" alt="" style="height: 64px;"></a>
 
-## How to use
+## Ulauncher Extension
+
+For Linux users using [Ulauncher](https://ulauncher.io/) there is an [extension](https://ext.ulauncher.io/-/github-jacostag-sesh-ulauncher) to use sesh outside the terminal.
+
+
+Here are limitations to keep in mind:
+
+- tmux has to be running before you can use the extension
+
+
+## Walker launcher usage (Linux)
+
+Create an action directly on $XDG_CONFIG_HOME/config.toml
+
+
+```
+[[plugins]]
+name = "sesh"
+prefix = ";s "
+src_once = "sesh list -d -c -t -T"
+cmd = "sesh connect --switch %RESULT%"
+keep_sort = false
+recalculate_score = true
+show_icon_when_single = true
+switcher_only = true
+```
+
+### For the dmenu mode you can use:
+
+#### Fish shell:
+set ssession $(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
+
+#### Bash/Zsh:
+ssession=$(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
+
+##### For dmenu launchers replace walker -dfk with dmenu or rofi)
+
+### How to use
 
 ### tmux for sessions
 
@@ -234,6 +291,28 @@ blacklist = ["scratch"]
 > [!NOTE] 
 > Works great with [tmux-floatx](https://github.com/omerxx/tmux-floax)
 
+### Sorting
+
+If you'd like to change the order of the sessions shown, you can configure `sort_order` in your `sesh.toml` file
+
+```toml
+sort_order = [
+    "tmuxinator", # show first
+    "config",
+    "tmux",
+    "zoxide", # show last
+]
+```
+
+The default order is `tmux`, `config`, `tmuxinator`, and then `zoxide`.
+
+You can omit session types if you only care about the order of specific ones.
+
+```toml
+sort_order = [
+  "config", # resulting order: config, tmux, tmuxinator, zoxide
+]
+```
 ### Default Session
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
@@ -273,6 +352,41 @@ startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
 
+### Path substitution
+If you want to use the path of the selected session in your startup or preview command, you can use the `{}` placeholder.  
+This will be replaced with the session's path when the command is run.
+
+An example of this in use is the following, where the `tmuxinator` default_project uses the path as key/value pair using [ERB syntax](https://github.com/tmuxinator/tmuxinator?tab=readme-ov-file#erb):
+```toml
+[default_session]
+startup_command = "tmuxinator start default_project path={}"
+preview_command = "eza --all --git --icons --color=always {}"
+```
+
+### Multiple windows
+
+If you want your session to have multiple windows you can define windows in your configuration. You can then use these window layouts in your sessions. These windows can be reused as many times as you want and you can add as many windows to each session as you want.
+
+Note: If you do not specify a path in the window, it will use the session's path.
+
+```toml
+[[session]]
+name = "Downloads 📥"
+path = "~/Downloads"
+startup_command = "ls"
+
+[[session]]
+name = "tmux config"
+path = "~/c/dotfiles/.config/tmux"
+startup_command = "nvim tmux.conf"
+preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
+windows = [ "git" ]
+
+[[window]]
+name = "git"
+startup_script = "git pull"
+```
+
 ### Listing Configurations
 
 Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
@@ -301,10 +415,4 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## Star History
 
-<a href="https://star-history.com/#joshmedeski/sesh&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date" />
- </picture>
-</a>
+[![Star History Chart](https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date)](https://www.star-history.com/#joshmedeski/sesh&Date)
