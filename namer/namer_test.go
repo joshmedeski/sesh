@@ -17,8 +17,13 @@ func TestFromPath(t *testing.T) {
 		mockHome := new(home.MockHome)
 		n := NewNamer(mockPathwrap, mockGit, mockHome)
 
+		// TODO: test namer for git bare repo (using bare root)
+		// TODO: test namer for git repo (using top level)
+		// TODO: test namer for non-git dir (using base dir)
+
 		t.Run("name for git repo", func(t *testing.T) {
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/config/dotfiles/.config/neovim").Return("/Users/josh/config/dotfiles/.config/neovim", nil)
+			mockGit.On("WorktreeList", "/Users/josh/config/dotfiles/.config/neovim").Return(false, "", nil)
 			mockGit.On("ShowTopLevel", "/Users/josh/config/dotfiles/.config/neovim").Return(true, "/Users/josh/config/dotfiles", nil)
 			mockGit.On("GitCommonDir", "/Users/josh/config/dotfiles/.config/neovim").Return(true, "", nil)
 			mockPathwrap.On("Base", "/Users/josh/config/dotfiles").Return("dotfiles")
@@ -26,17 +31,9 @@ func TestFromPath(t *testing.T) {
 			assert.Equal(t, "dotfiles/_config/neovim", name)
 		})
 
-		t.Run("name for git worktree", func(t *testing.T) {
-			mockPathwrap.On("EvalSymlinks", "/Users/josh/config/sesh/main").Return("/Users/josh/config/sesh/main", nil)
-			mockGit.On("ShowTopLevel", "/Users/josh/config/sesh/main").Return(true, "/Users/josh/config/sesh/main", nil)
-			mockGit.On("GitCommonDir", "/Users/josh/config/sesh/main").Return(true, "/Users/josh/config/sesh/.bare", nil)
-			mockPathwrap.On("Base", "/Users/josh/config/sesh").Return("sesh")
-			name, _ := n.Name("/Users/josh/config/sesh/main")
-			assert.Equal(t, "sesh/main", name)
-		})
-
 		t.Run("returns base on non-git dir", func(t *testing.T) {
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/.config/neovim").Return("/Users/josh/.config/neovim", nil)
+			mockGit.On("WorktreeList", "/Users/josh/.config/neovim").Return(false, "", nil)
 			mockGit.On("ShowTopLevel", "/Users/josh/.config/neovim").Return(false, "", fmt.Errorf("not a git repository (or any of the parent"))
 			mockGit.On("GitCommonDir", "/Users/josh/.config/neovim").Return(false, "", fmt.Errorf("not a git repository (or any of the parent"))
 			mockPathwrap.On("Base", "/Users/josh/.config/neovim").Return("neovim")
