@@ -43,13 +43,13 @@ func TestFromPath(t *testing.T) {
 	})
 
 	t.Run("when path contains a symlink", func(t *testing.T) {
-		mockPathwrap := new(pathwrap.MockPath)
-		mockGit := new(git.MockGit)
-		mockHome := new(home.MockHome)
-		n := NewNamer(mockPathwrap, mockGit, mockHome)
-
 		t.Run("name for symlinked file in symlinked git repo", func(t *testing.T) {
+			mockPathwrap := new(pathwrap.MockPath)
+			mockGit := new(git.MockGit)
+			mockHome := new(home.MockHome)
+			n := NewNamer(mockPathwrap, mockGit, mockHome)
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/d/.c/neovim").Return("/Users/josh/dotfiles/.config/neovim", nil)
+			mockGit.On("WorktreeList", "/Users/josh/dotfiles/.config/neovim").Return(false, "", nil)
 			mockGit.On("ShowTopLevel", "/Users/josh/dotfiles/.config/neovim").Return(true, "/Users/josh/dotfiles", nil)
 			mockGit.On("GitCommonDir", "/Users/josh/dotfiles/.config/neovim").Return(true, "", nil)
 			mockPathwrap.On("Base", "/Users/josh/dotfiles").Return("dotfiles")
@@ -57,17 +57,28 @@ func TestFromPath(t *testing.T) {
 			assert.Equal(t, "dotfiles/_config/neovim", name)
 		})
 
-		t.Run("name for git worktree", func(t *testing.T) {
+		t.Run("name for git bare repo", func(t *testing.T) {
+			mockPathwrap := new(pathwrap.MockPath)
+			mockGit := new(git.MockGit)
+			mockHome := new(home.MockHome)
+			n := NewNamer(mockPathwrap, mockGit, mockHome)
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/p/sesh/main").Return("/Users/josh/projects/sesh/main", nil)
-			mockGit.On("ShowTopLevel", "/Users/josh/projects/sesh/main").Return(true, "/Users/josh/projects/sesh/main", nil)
-			mockGit.On("GitCommonDir", "/Users/josh/projects/sesh/main").Return(true, "/Users/josh/projects/sesh/.bare", nil)
+			mockGit.On("WorktreeList", "/Users/josh/projects/sesh/main").Return(true, `/Users/josh/projects/sesh/.bare             (bare)
+/Users/josh/projects/sesh/main        ba04ca494 [main]
+`, nil)
 			mockPathwrap.On("Base", "/Users/josh/projects/sesh").Return("sesh")
 			name, _ := n.Name("/Users/josh/p/sesh/main")
 			assert.Equal(t, "sesh/main", name)
 		})
 
 		t.Run("returns base on non-git dir", func(t *testing.T) {
+			mockPathwrap := new(pathwrap.MockPath)
+			mockGit := new(git.MockGit)
+			mockHome := new(home.MockHome)
+			n := NewNamer(mockPathwrap, mockGit, mockHome)
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/c/neovim").Return("/Users/josh/.config/neovim", nil)
+			mockGit.On("WorktreeList", "/Users/josh/.config/neovim").Return(true, `/Users/josh/.config/neovim     c1d2e3f45 [main]
+`, nil)
 			mockGit.On("ShowTopLevel", "/Users/josh/.config/neovim").Return(false, "", fmt.Errorf("not a git repository (or any of the parent"))
 			mockGit.On("GitCommonDir", "/Users/josh/.config/neovim").Return(false, "", fmt.Errorf("not a git repository (or any of the parent"))
 			mockPathwrap.On("Base", "/Users/josh/.config/neovim").Return("neovim")
