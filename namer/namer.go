@@ -11,6 +11,7 @@ import (
 type Namer interface {
 	// Names a sesh session from a given path
 	Name(path string) (string, error)
+	// Names a sesh session from the root of a given path
 	RootName(path string) (string, error)
 }
 
