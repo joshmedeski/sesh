@@ -17,10 +17,6 @@ func TestFromPath(t *testing.T) {
 		mockHome := new(home.MockHome)
 		n := NewNamer(mockPathwrap, mockGit, mockHome)
 
-		// TODO: test namer for git bare repo (using bare root)
-		// TODO: test namer for git repo (using top level)
-		// TODO: test namer for non-git dir (using base dir)
-
 		t.Run("name for git repo", func(t *testing.T) {
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/config/dotfiles/.config/neovim").Return("/Users/josh/config/dotfiles/.config/neovim", nil)
 			mockGit.On("WorktreeList", "/Users/josh/config/dotfiles/.config/neovim").Return(false, "", nil)
