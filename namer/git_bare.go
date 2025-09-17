@@ -31,14 +31,14 @@ func determineBareWorktreePath(out string) string {
 func getBareWorktreePath(n *RealNamer, path string) (bool, string, error) {
 	isGit, list, err := n.git.WorktreeList(path)
 	if err != nil {
-		return false, "", err
+		return false, "", nil
 	}
 	if !isGit {
 		return false, "", nil
 	}
 	barePath := determineBareWorktreePath(list)
 	if barePath == "" {
-		return false, "", err
+		return false, "", nil
 	}
 	return true, barePath, nil
 }
