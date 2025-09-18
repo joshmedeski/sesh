@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"image/color"
 	"io" // This is used to enable the multiwritter and be able to write to the log file and the console at the same time
 	"log/slog"
 	"os"
@@ -12,42 +11,10 @@ import (
 	"time"    // This is used to get the current date and create the log file
 
 	"github.com/charmbracelet/fang"
-	"github.com/charmbracelet/lipgloss/v2"
-	"github.com/charmbracelet/x/term"
 	"github.com/joshmedeski/sesh/v2/seshcli"
 )
 
 var version = "dev"
-
-func AnsiTheme() fang.ColorScheme {
-	var isDark bool
-	if term.IsTerminal(os.Stdout.Fd()) {
-		isDark = lipgloss.HasDarkBackground(os.Stdin, os.Stderr)
-	}
-	c := lipgloss.LightDark(isDark)
-	base := c(lipgloss.White, lipgloss.Black)
-	inverted := c(lipgloss.Black, lipgloss.White)
-	muted := c(lipgloss.BrightWhite, lipgloss.BrightBlack)
-
-	return fang.ColorScheme{
-		Base:           base,
-		Title:          lipgloss.Blue,
-		Description:    base,
-		Codeblock:      base,
-		Program:        inverted,
-		DimmedArgument: inverted,
-		Comment:        muted,
-		Flag:           lipgloss.Magenta,
-		FlagDefault:    lipgloss.BrightMagenta,
-		Command:        lipgloss.Cyan,
-		QuotedString:   lipgloss.Green,
-		Argument:       base,
-		Help:           base,
-		Dash:           base,
-		ErrorHeader:    [2]color.Color{lipgloss.Black, lipgloss.Red},
-		ErrorDetails:   lipgloss.Red,
-	}
-}
 
 func main() {
 	slog.Debug("Debug")
