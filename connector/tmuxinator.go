@@ -19,5 +19,6 @@ func tmuxinatorStrategy(c *RealConnector, name string) (model.Connection, error)
 }
 
 func connectToTmuxinator(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
-	return c.tmuxinator.Start(connection.Session.Name)
+	c.tmuxinator.Start(connection.Session.Name)
+	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
 }
