@@ -105,10 +105,11 @@ Here are limitations to keep in mind:
 
 ## Ulauncher Extension
 
-For Linux users using [Ulauncher](https://ulauncher.io/) there is an [extension](https://ext.ulauncher.io/-/github-jacostag-sesh-ulauncher) to use sesh outside the terminal.
+For Linux users using [Ulauncher](https://ulauncher.io/) there are two extensions to use sesh outside the terminal:
+- [Sesh Session Manager](https://ext.ulauncher.io/-/github-jacostag-sesh-ulauncher)
+- [SESHion Manager](https://ext.ulauncher.io/-/github-mrinfinidy-seshion-manager)
 
-
-Here are limitations to keep in mind:
+Here are limitations to keep in mind for Sesh Session Manager:
 
 - tmux has to be running before you can use the extension
 
