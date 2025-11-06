@@ -31,6 +31,7 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	fullOrderedIndex := make([]string, 0)
 
 	srcsOrderedIndex := srcs(opts)
+	srcsOrderedIndex = sortSources(srcsOrderedIndex, l.config.SortOrder)
 
 	for _, src := range srcsOrderedIndex {
 		sessions, err := srcStrategies[src](l)
@@ -45,12 +46,16 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 
 	if opts.HideDuplicates {
 		directoryHash := make(map[string]int)
+		nameHash := make(map[string]int)
 		destIndex := 0
 		for _, index := range fullOrderedIndex {
-			directoryPath := fullDirectory[index].Path
-			if _, exists := directoryHash[directoryPath]; !exists {
+			session := fullDirectory[index]
+			nameIsDuplicate := nameHash[session.Name] != 0
+			pathIsDuplicate := session.Path != "" && directoryHash[session.Path] != 0
+			if !nameIsDuplicate && !pathIsDuplicate {
 				fullOrderedIndex[destIndex] = index
-				directoryHash[directoryPath] = 1
+				directoryHash[session.Path] = 1
+				nameHash[session.Name] = 1
 				destIndex = destIndex + 1
 			}
 		}

@@ -1,23 +1,24 @@
 package seshcli
 
 import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/tmux"
-	cli "github.com/urfave/cli/v2"
 )
 
-func Last(l lister.Lister, t tmux.Tmux) *cli.Command {
-	return &cli.Command{
-		Name:                   "last",
-		Aliases:                []string{"L"},
-		Usage:                  "Connect to the last tmux session",
-		UseShortOptionHandling: true,
-		Flags:                  []cli.Flag{},
-		Action: func(cCtx *cli.Context) error {
+func NewLastCommand(l lister.Lister, t tmux.Tmux) *cobra.Command {
+	return &cobra.Command{
+		Use:     "last",
+		Aliases: []string{"L"},
+		Short:   "Connect to the last tmux session",
+		RunE: func(cmd *cobra.Command, args []string) error {
 			lastSession, exists := l.GetLastTmuxSession()
 			if !exists {
 				// TODO: silently fail?
-				return cli.Exit("No last session found", 1)
+				return fmt.Errorf("No last session found")
 			}
 			t.SwitchClient(lastSession.Name)
 			return nil

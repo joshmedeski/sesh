@@ -22,9 +22,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
-      - name: Install deps
+          go-version: "1.24"
+      - name: Install junit report
         run: go install github.com/jstemmer/go-junit-report/v2@latest
+      - name: Install mockery
+        run: go install github.com/vektra/mockery/v3@v3.4.0
+      - name: Create mocks
+        run: mockery
       - name: Run tests
         run: go test -cover -bench=. -benchmem -race -v 2>&1 ./... | go-junit-report -set-exit-code > report.xml
       - name: Test Summary
@@ -47,7 +51,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.24"
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:

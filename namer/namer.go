@@ -5,12 +5,14 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 )
 
 type Namer interface {
 	// Names a sesh session from a given path
 	Name(path string) (string, error)
+	// Names a sesh session from the root of a given path
 	RootName(path string) (string, error)
 }
 
@@ -18,13 +20,15 @@ type RealNamer struct {
 	pathwrap pathwrap.Path
 	git      git.Git
 	home     home.Home
+	config   model.Config
 }
 
-func NewNamer(pathwrap pathwrap.Path, git git.Git, home home.Home) Namer {
+func NewNamer(pathwrap pathwrap.Path, git git.Git, home home.Home, config model.Config) Namer {
 	return &RealNamer{
 		pathwrap: pathwrap,
 		git:      git,
 		home:     home,
+		config:   config,
 	}
 }
 
@@ -39,6 +43,7 @@ func (n *RealNamer) Name(path string) (string, error) {
 		gitName,
 		dirName,
 	}
+
 	for _, strategy := range strategies {
 		name, err := strategy(n, path)
 		if err != nil {
@@ -61,6 +66,7 @@ func (n *RealNamer) RootName(path string) (string, error) {
 		gitRootName,
 		dirName,
 	}
+
 	for _, strategy := range strategies {
 		name, err := strategy(n, path)
 		if err != nil {
