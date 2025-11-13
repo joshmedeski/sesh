@@ -106,6 +106,7 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 		}
 
 		config.SessionConfigs = append(config.SessionConfigs, importConfig.SessionConfigs...)
+		config.WindowConfigs = append(config.WindowConfigs, importConfig.WindowConfigs...)
 	}
 
 	if config.DirLength < 1 {
