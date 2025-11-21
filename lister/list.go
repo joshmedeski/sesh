@@ -1,8 +1,10 @@
 package lister
 
 import (
-	"github.com/joshmedeski/sesh/v2/model"
 	"slices"
+	"sync"
+
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 type (
@@ -19,6 +21,12 @@ type (
 	srcStrategy func(*RealLister) (model.SeshSessions, error)
 )
 
+type strategyResult struct {
+	source   string
+	sessions model.SeshSessions
+	err      error
+}
+
 var srcStrategies = map[string]srcStrategy{
 	"tmux":       listTmux,
 	"config":     listConfig,
@@ -33,11 +41,32 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	srcsOrderedIndex := srcs(opts)
 	srcsOrderedIndex = sortSources(srcsOrderedIndex, l.config.SortOrder)
 
+	resultsChan := make(chan strategyResult, len(srcsOrderedIndex))
+	var wg sync.WaitGroup
+
 	for _, src := range srcsOrderedIndex {
-		sessions, err := srcStrategies[src](l)
-		if err != nil {
-			return model.SeshSessions{}, err
+		wg.Add(1)
+		go func(s string) {
+			defer wg.Done()
+			sessions, err := srcStrategies[s](l)
+			resultsChan <- strategyResult{source: s, sessions: sessions, err: err}
+		}(src)
+	}
+
+	wg.Wait()
+	close(resultsChan)
+
+	// Collect results into a map for easy lookup
+	resultsMap := make(map[string]model.SeshSessions)
+	for res := range resultsChan {
+		if res.err != nil {
+			return model.SeshSessions{}, res.err
 		}
+		resultsMap[res.source] = res.sessions
+	}
+
+	for _, src := range srcsOrderedIndex {
+		sessions := resultsMap[src]
 		fullOrderedIndex = append(fullOrderedIndex, sessions.OrderedIndex...)
 		for _, i := range sessions.OrderedIndex {
 			fullDirectory[i] = sessions.Directory[i]
