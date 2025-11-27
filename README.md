@@ -186,6 +186,16 @@ bind-key "T" run-shell "sesh connect \"$(
 
 You can customize this however you want, see `man fzf` for more info on the different options.
 
+#### tmux + [television](https://github.com/alexpasmantier/television)
+
+If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/docs/Users/community-channels-unix#sesh) in a tmux popup.
+
+```sh
+bind-key "T" display-popup -E -w 80% -h 70% -d '#{pane_current_path}' -T 'Sesh' tv sesh
+```
+
+Use `Ctrl-s` to cycle through the sources, and `Ctrl-d` to kill the highlighted session.
+
 ## gum + tmux
 
 If you prefer to use [charmblacelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
