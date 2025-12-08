@@ -90,6 +90,87 @@ See the [nix package directory](https://search.nixos.org/packages?channel=unstab
 
 **Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
 
+## Shell Completion
+
+Sesh supports shell completion (tab completion) for Bash, Zsh, Fish, and PowerShell. This helps you discover commands, flags, and arguments by pressing the Tab key.
+
+<details>
+  <summary>Bash</summary>
+
+```sh
+# Generate completion script
+sesh completion bash > sesh-completion.bash
+
+# Install system-wide (recommended)
+sudo cp sesh-completion.bash /etc/bash_completion.d/
+
+# Or install user-only
+mkdir -p ~/.local/share/bash-completion/completions
+cp sesh-completion.bash ~/.local/share/bash-completion/completions/sesh
+
+# Reload your shell
+source ~/.bashrc
+```
+
+</details>
+
+<details>
+  <summary>Zsh</summary>
+
+```sh
+# Generate completion script
+sesh completion zsh > _sesh
+
+# Install system-wide (recommended)
+sudo mkdir -p /usr/local/share/zsh/site-functions
+sudo cp _sesh /usr/local/share/zsh/site-functions/
+
+# Or install user-only
+mkdir -p ~/.zsh/completions
+cp _sesh ~/.zsh/completions/
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -U compinit && compinit' >> ~/.zshrc
+
+# Reload your shell
+source ~/.zshrc
+```
+
+</details>
+
+<details>
+  <summary>Fish</summary>
+
+```sh
+# Generate and install completion
+sesh completion fish > ~/.config/fish/completions/sesh.fish
+
+# Reload fish configuration
+source ~/.config/fish/config.fish
+```
+
+</details>
+
+<details>
+  <summary>PowerShell</summary>
+
+```powershell
+# Generate completion script
+sesh completion powershell > sesh.ps1
+
+# Create PowerShell profile directory if it doesn't exist
+mkdir -p (Split-Path $PROFILE)
+
+# Add to PowerShell profile
+Add-Content $PROFILE ". /path/to/sesh.ps1"
+
+# Reload PowerShell
+& $PROFILE
+```
+
+</details>
+
+After setting up completion, you can press Tab while typing `sesh` to see available commands, flags, and arguments.
+
 ## Extensions
 
 ## Raycast Extension
