@@ -1,9 +1,13 @@
 package seshcli
 
 import (
+	stdjson "encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -30,6 +34,38 @@ import (
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
+
+func getLatestVersion() (string, error) {
+	resp, err := http.Get("https://api.github.com/repos/joshmedeski/sesh/releases/latest")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	var release struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := stdjson.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", err
+	}
+	return release.TagName, nil
+}
+
+func isUpgradeAvailable(current, latest string) bool {
+	c := strings.TrimPrefix(current, "v")
+	l := strings.TrimPrefix(latest, "v")
+	cParts := strings.Split(c, ".")
+	lParts := strings.Split(l, ".")
+	for i := 0; i < len(cParts) && i < len(lParts); i++ {
+		cNum, _ := strconv.Atoi(cParts[i])
+		lNum, _ := strconv.Atoi(lParts[i])
+		if lNum > cNum {
+			return true
+		} else if lNum < cNum {
+			return false
+		}
+	}
+	return len(lParts) > len(cParts)
+}
 
 func NewRootCommand(version string) *cobra.Command {
 	// wrapper dependencies
@@ -65,6 +101,12 @@ func NewRootCommand(version string) *cobra.Command {
 	}
 
 	slog.Debug("seshcli/root_command.go: NewRootCommand", "version", version, "config", config)
+
+	latest, err := getLatestVersion()
+	fmt.Println(version, latest)
+	if err == nil && isUpgradeAvailable(version, latest) {
+		fmt.Printf("A new version of sesh is available: %s (current: %s)\n", latest, version)
+	}
 
 	// core dependencies
 	ls := ls.NewLs(config, shell)
