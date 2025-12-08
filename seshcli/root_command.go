@@ -58,7 +58,7 @@ func isUpgradeAvailable(current, latest string) bool {
 	for i := 0; i < len(cParts) && i < len(lParts); i++ {
 		cNum, _ := strconv.Atoi(cParts[i])
 		lNum, _ := strconv.Atoi(lParts[i])
-		if lNum > cNum {
+		return lNum > cNum
 			return true
 		} else if lNum < cNum {
 			return false
