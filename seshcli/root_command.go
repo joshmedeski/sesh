@@ -103,7 +103,6 @@ func NewRootCommand(version string) *cobra.Command {
 	slog.Debug("seshcli/root_command.go: NewRootCommand", "version", version, "config", config)
 
 	latest, err := getLatestVersion()
-	fmt.Println(version, latest)
 	if err == nil && isUpgradeAvailable(version, latest) {
 		fmt.Printf("A new version of sesh is available: %s (current: %s)\n", latest, version)
 	}
