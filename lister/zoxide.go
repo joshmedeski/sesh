@@ -14,25 +14,20 @@ func listZoxide(l *RealLister) (model.SeshSessions, error) {
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list zoxide sessions: %q", err)
 	}
-	validIndex := 0
-	for _, r := range zoxideResults {
+	for i, r := range zoxideResults {
 		name, err := l.home.ShortenHome(r.Path)
 		if err != nil {
 			return model.SeshSessions{}, fmt.Errorf("couldn't shorten path: %q", err)
 		}
-		if !isBlacklisted(l.config.Blacklist, name) {
-			key := fmt.Sprintf("zoxide:%s", name)
-			orderedIndex[validIndex] = key
-			directory[key] = model.SeshSession{
-				Src:   "zoxide",
-				Name:  name,
-				Path:  r.Path,
-				Score: r.Score,
-			}
-			validIndex++
+		key := fmt.Sprintf("zoxide:%s", name)
+		orderedIndex[i] = key
+		directory[key] = model.SeshSession{
+			Src:   "zoxide",
+			Name:  name,
+			Path:  r.Path,
+			Score: r.Score,
 		}
 	}
-	orderedIndex = orderedIndex[:validIndex]
 	return model.SeshSessions{
 		Directory:    directory,
 		OrderedIndex: orderedIndex,
