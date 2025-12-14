@@ -73,6 +73,20 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		}
 	}
 
+	if len(l.config.Blacklist) > 0 {
+		filteredIndex := make([]string, 0, len(fullOrderedIndex))
+		filteredDirectory := make(model.SeshSessionMap)
+		for _, index := range fullOrderedIndex {
+			session := fullDirectory[index]
+			if !isBlacklisted(l.config.Blacklist, session.Name) {
+				filteredIndex = append(filteredIndex, index)
+				filteredDirectory[index] = session
+			}
+		}
+		fullOrderedIndex = filteredIndex
+		fullDirectory = filteredDirectory
+	}
+
 	if opts.HideDuplicates {
 		directoryHash := make(map[string]int)
 		nameHash := make(map[string]int)

@@ -20,16 +20,14 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 	orderedIndex := []string{}
 
 	for _, session := range tmuxSessions {
-		if !isBlacklisted(l.config.Blacklist, session.Name) {
-			key := tmuxKey(session.Name)
-			orderedIndex = append(orderedIndex, key)
-			directory[key] = model.SeshSession{
-				Src:      "tmux",
-				Name:     session.Name,
-				Path:     session.Path,
-				Attached: session.Attached,
-				Windows:  session.Windows,
-			}
+		key := tmuxKey(session.Name)
+		orderedIndex = append(orderedIndex, key)
+		directory[key] = model.SeshSession{
+			Src:      "tmux",
+			Name:     session.Name,
+			Path:     session.Path,
+			Attached: session.Attached,
+			Windows:  session.Windows,
 		}
 	}
 
