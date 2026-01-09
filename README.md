@@ -347,7 +347,7 @@ While working in a nested session, you may way to connect to the root session of
 I recommend adding this to your `tmux.conf`:
 
 ```sh
-bind -N "switch to root session (via sesh) " 9 run-shell "sesh connect --root \'$(pwd)\'"
+bind -N "switch to root session (via sesh) " 9 run-shell "sesh connect --root $(pwd)"
 ```
 
 ### Filter by root
