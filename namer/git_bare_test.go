@@ -52,6 +52,15 @@ func TestDetermineBareWorktreePath(t *testing.T) {
 		assert.Equal(t, "/Users/hansolo/code/project/repo.git", barePath)
 	})
 
+	t.Run("should find the bare path for bare clone to .git folder and trim .git suffix", func(t *testing.T) {
+		out := `
+/Users/hansolo/code/project/sesh/.git             (bare)
+/Users/hansolo/code/project/sesh/main        ba04ca494 [5.x]
+`
+		barePath := determineBareWorktreePath(out)
+		assert.Equal(t, "/Users/hansolo/code/project/sesh", barePath)
+	})
+
 	t.Run("should handle multiple lines with bare on second line", func(t *testing.T) {
 		out := `
 /Users/hansolo/code/project/sesh/main        ba04ca494 [5.x]

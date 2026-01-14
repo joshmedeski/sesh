@@ -15,10 +15,11 @@ func determineBareWorktreePath(out string) string {
 			parts := strings.Fields(line)
 			if len(parts) >= 2 && parts[1] == "(bare)" {
 				path := parts[0]
-				// TODO: move `.bare` folder naming convention to configuration?
+				// Handle common bare clone folder naming conventions
 				if strings.HasSuffix(path, "/.bare") {
-					trimmedPath := strings.TrimSuffix(path, "/.bare")
-					return trimmedPath
+					return strings.TrimSuffix(path, "/.bare")
+				} else if strings.HasSuffix(path, "/.git") {
+					return strings.TrimSuffix(path, "/.git")
 				} else {
 					return parts[0]
 				}
