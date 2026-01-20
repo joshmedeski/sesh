@@ -9,6 +9,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
+	"github.com/joshmedeski/sesh/v2/projects"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +25,7 @@ func TestListTmuxinatorConfigs(t *testing.T) {
 			{Name: "dotfiles"},
 		}, nil)
 
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, new(projects.MockProjects))
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {

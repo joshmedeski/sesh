@@ -12,7 +12,7 @@ type (
 	SeshWindowMap  map[string]WindowConfig
 
 	SeshSession struct {
-		Src  string // The source of the session (config, tmux, zoxide, tmuxinator)
+		Src  string // The source of the session (config, tmux, zoxide, tmuxinator, projects)
 		Name string // The display name
 		Path string // The absolute directory path
 
@@ -25,6 +25,7 @@ type (
 		WindowConfigs         []WindowConfig // The windows used in session config
 		WindowNames           []string       // The names of the windows in session config
 		Score                 float64        // The score of the session (from Zoxide)
+		ProjectType           string         // The marker that identified this project (e.g., "go.mod", "package.json")
 	}
 
 	SeshSrcs struct {

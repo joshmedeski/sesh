@@ -22,6 +22,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/joshmedeski/sesh/v2/previewer"
+	"github.com/joshmedeski/sesh/v2/projects"
 	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/runtimewrap"
 	"github.com/joshmedeski/sesh/v2/shell"
@@ -68,7 +69,8 @@ func NewRootCommand(version string) *cobra.Command {
 
 	// core dependencies
 	ls := ls.NewLs(config, shell)
-	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator)
+	projects := projects.NewProjects(config, home)
+	lister := lister.NewLister(config, home, tmux, zoxide, tmuxinator, projects)
 	startup := startup.NewStartup(config, lister, tmux, home, replacer)
 	namer := namer.NewNamer(path, git, home, config)
 	connector := connector.NewConnector(config, dir, home, lister, namer, startup, tmux, zoxide, tmuxinator)

@@ -7,34 +7,34 @@ import (
 )
 
 func TestSortSources(t *testing.T) {
-	defaultSources := []string{"tmux", "config", "tmuxinator", "zoxide"}
+	defaultSources := []string{"tmux", "config", "tmuxinator", "zoxide", "projects"}
 	tests := map[string]struct {
 		sortOrder []string
 		expected  []string
 	}{
 		"a normal configuration": {
 			sortOrder: []string{"tmuxinator", "zoxide", "config", "tmux"},
-			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
+			expected:  []string{"tmuxinator", "zoxide", "config", "tmux", "projects"},
 		},
 		"empty configuration": {
 			sortOrder: []string{},
-			expected:  []string{"tmux", "config", "tmuxinator", "zoxide"},
+			expected:  []string{"tmux", "config", "tmuxinator", "zoxide", "projects"},
 		},
 		"partial configuration": {
 			sortOrder: []string{"tmuxinator"},
-			expected:  []string{"tmuxinator", "tmux", "config", "zoxide"},
+			expected:  []string{"tmuxinator", "tmux", "config", "zoxide", "projects"},
 		},
 		"superfluous elements": {
 			sortOrder: []string{"tmuxinator", "apple", "zoxide", "banana", "config", "chocolate", "tmux"},
-			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
+			expected:  []string{"tmuxinator", "zoxide", "config", "tmux", "projects"},
 		},
 		"configuration with capitalization": {
 			sortOrder: []string{"tMuxiNator", "Zoxide", "conFIg", "tmux"},
-			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
+			expected:  []string{"tmuxinator", "zoxide", "config", "tmux", "projects"},
 		},
 		"configuration with duplicate elements": {
 			sortOrder: []string{"tmuxinator", "zoxide", "tmuxinator", "config", "tmuxinator", "tmux", "tmuxinator", "tmuxinator"},
-			expected:  []string{"zoxide", "config", "tmux", "tmuxinator"},
+			expected:  []string{"zoxide", "config", "tmux", "tmuxinator", "projects"},
 		},
 	}
 	for name, tt := range tests {
@@ -54,7 +54,7 @@ func TestSrcs(t *testing.T) {
 		{
 			name:     "All options are false",
 			opts:     ListOptions{},
-			expected: []string{"tmux", "config", "tmuxinator", "zoxide"},
+			expected: []string{"tmux", "config", "tmuxinator", "zoxide", "projects"},
 		},
 		{
 			name:     "Only Tmux is true",

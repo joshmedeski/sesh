@@ -10,6 +10,10 @@ type (
 		SortOrder            []string             `toml:"sort_order"`
 		WindowConfigs        []WindowConfig       `toml:"window"`
 		DirLength            int                  `toml:"dir_length"`
+		ProjectRoots         []string             `toml:"project_roots"`
+		ProjectMarkers       []string             `toml:"project_markers"`
+		MaxDepth             int                  `toml:"max_depth"`
+		ProjectIcons         map[string]string    `toml:"project_icons"` // marker -> icon mapping
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`

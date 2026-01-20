@@ -24,6 +24,7 @@ func NewListCommand(icon icon.Icon, json json.Json, list lister.Lister) *cobra.C
 			hideAttached, _ := cmd.Flags().GetBool("hide-attached")
 			icons, _ := cmd.Flags().GetBool("icons")
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
+			projects, _ := cmd.Flags().GetBool("projects")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 
 			sessions, err := list.List(lister.ListOptions{
@@ -34,6 +35,7 @@ func NewListCommand(icon icon.Icon, json json.Json, list lister.Lister) *cobra.C
 				Tmux:           tmux,
 				Zoxide:         zoxide,
 				Tmuxinator:     tmuxinator,
+				Projects:       projects,
 				HideDuplicates: hideDuplicates,
 			})
 			if err != nil {
@@ -68,6 +70,7 @@ func NewListCommand(icon icon.Icon, json json.Json, list lister.Lister) *cobra.C
 	cmd.Flags().BoolP("hide-attached", "H", false, "don't show currently attached sessions")
 	cmd.Flags().BoolP("icons", "i", false, "show icons")
 	cmd.Flags().BoolP("tmuxinator", "T", false, "show tmuxinator configs")
+	cmd.Flags().BoolP("projects", "p", false, "show project directories")
 	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
 
 	return cmd

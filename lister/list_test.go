@@ -5,6 +5,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/projects"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -161,8 +162,9 @@ func TestHideDuplicates(t *testing.T) {
 			config := model.Config{
 				SessionConfigs: tt.configSessions,
 			}
+			mockProjects := new(projects.MockProjects)
 
-			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, mockProjects)
 
 			// Call the actual List function with HideDuplicates
 			result, err := lister.List(ListOptions{
