@@ -12,6 +12,7 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/joshmedeski/sesh/v2/seshcli"
+	"github.com/spf13/pflag"
 )
 
 var version = "dev"
@@ -22,11 +23,23 @@ func main() {
 	slog.Warn("Warning")
 	slog.Error("Error")
 
-	cmd := seshcli.NewRootCommand(version)
+	// Pre-parse --config/-C flag before cobra builds the command tree,
+	// since the DI graph is constructed eagerly in NewRootCommand.
+	configPath := preParseConfigFlag(os.Args[1:])
+
+	cmd := seshcli.NewRootCommand(version, configPath)
 	if err := fang.Execute(context.TODO(), cmd, fang.WithColorSchemeFunc(fang.AnsiColorScheme), fang.WithoutVersion()); err != nil {
 		slog.Error("main file: ", "error", err)
 		os.Exit(1)
 	}
+}
+
+func preParseConfigFlag(args []string) string {
+	fs := pflag.NewFlagSet("pre-parse", pflag.ContinueOnError)
+	fs.ParseErrorsWhitelist.UnknownFlags = true
+	configPath := fs.StringP("config", "C", "", "")
+	_ = fs.Parse(args)
+	return *configPath
 }
 
 func init() {

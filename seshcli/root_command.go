@@ -31,7 +31,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
-func NewRootCommand(version string) *cobra.Command {
+func NewRootCommand(version string, configPath string) *cobra.Command {
 	// wrapper dependencies
 	exec := execwrap.NewExec()
 	os := oswrap.NewOs()
@@ -52,7 +52,7 @@ func NewRootCommand(version string) *cobra.Command {
 	tmuxinator := tmuxinator.NewTmuxinator(shell)
 
 	// config
-	config, err := configurator.NewConfigurator(os, path, runtime).GetConfig()
+	config, err := configurator.NewConfiguratorWithPath(os, path, runtime, configPath).GetConfig()
 	// TODO: make sure to ignore the error if the config doesn't exist
 	if err != nil {
 		var human *configurator.ConfigError
@@ -82,6 +82,9 @@ func NewRootCommand(version string) *cobra.Command {
 		Short:   "Smart session manager for the terminal",
 		Long:    "Sesh is a smart terminal session manager that helps you create and manage tmux sessions quickly and easily using zoxide.",
 	}
+
+	// Register --config/-C flag for help text and shell completion (value is pre-parsed in main.go)
+	rootCmd.PersistentFlags().StringP("config", "C", "", "path to config file")
 
 	// Add subcommands
 	rootCmd.AddCommand(
