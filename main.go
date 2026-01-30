@@ -12,7 +12,6 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/joshmedeski/sesh/v2/seshcli"
-	"github.com/spf13/pflag"
 )
 
 var version = "dev"
@@ -23,9 +22,11 @@ func main() {
 	slog.Warn("Warning")
 	slog.Error("Error")
 
-	// Pre-parse --config/-C flag before cobra builds the command tree,
+	// Extract --config/-C flag from os.Args before cobra builds the command tree,
 	// since the DI graph is constructed eagerly in NewRootCommand.
-	configPath := preParseConfigFlag(os.Args[1:])
+	// The flag is stripped from os.Args so cobra/fang don't see it.
+	configPath, remaining := extractConfigFlag(os.Args[1:])
+	os.Args = append(os.Args[:1], remaining...)
 
 	cmd := seshcli.NewRootCommand(version, configPath)
 	if err := fang.Execute(context.TODO(), cmd, fang.WithColorSchemeFunc(fang.AnsiColorScheme), fang.WithoutVersion()); err != nil {
@@ -34,12 +35,21 @@ func main() {
 	}
 }
 
-func preParseConfigFlag(args []string) string {
-	fs := pflag.NewFlagSet("pre-parse", pflag.ContinueOnError)
-	fs.ParseErrorsWhitelist.UnknownFlags = true
-	configPath := fs.StringP("config", "C", "", "")
-	_ = fs.Parse(args)
-	return *configPath
+func extractConfigFlag(args []string) (configPath string, remaining []string) {
+	for i := 0; i < len(args); i++ {
+		switch {
+		case args[i] == "--config" || args[i] == "-C":
+			if i+1 < len(args) {
+				configPath = args[i+1]
+				i++ // skip value
+			}
+		case strings.HasPrefix(args[i], "--config="):
+			configPath = args[i][len("--config="):]
+		default:
+			remaining = append(remaining, args[i])
+		}
+	}
+	return
 }
 
 func init() {
