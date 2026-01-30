@@ -22,34 +22,11 @@ func main() {
 	slog.Warn("Warning")
 	slog.Error("Error")
 
-	// Extract --config/-C flag from os.Args before cobra builds the command tree,
-	// since the DI graph is constructed eagerly in NewRootCommand.
-	// The flag is stripped from os.Args so cobra/fang don't see it.
-	configPath, remaining := extractConfigFlag(os.Args[1:])
-	os.Args = append(os.Args[:1], remaining...)
-
-	cmd := seshcli.NewRootCommand(version, configPath)
+	cmd := seshcli.NewRootCommand(version)
 	if err := fang.Execute(context.TODO(), cmd, fang.WithColorSchemeFunc(fang.AnsiColorScheme), fang.WithoutVersion()); err != nil {
 		slog.Error("main file: ", "error", err)
 		os.Exit(1)
 	}
-}
-
-func extractConfigFlag(args []string) (configPath string, remaining []string) {
-	for i := 0; i < len(args); i++ {
-		switch {
-		case args[i] == "--config" || args[i] == "-C":
-			if i+1 < len(args) {
-				configPath = args[i+1]
-				i++ // skip value
-			}
-		case strings.HasPrefix(args[i], "--config="):
-			configPath = args[i][len("--config="):]
-		default:
-			remaining = append(remaining, args[i])
-		}
-	}
-	return
 }
 
 func init() {

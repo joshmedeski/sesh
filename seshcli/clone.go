@@ -5,11 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
-func NewCloneCommand(c cloner.Cloner) *cobra.Command {
+func NewCloneCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "clone",
 		Aliases: []string{"cl"},
@@ -21,11 +20,16 @@ func NewCloneCommand(c cloner.Cloner) *cobra.Command {
 			}
 			repo := args[0]
 
+			deps, err := buildDeps(cmd, base)
+			if err != nil {
+				return err
+			}
+
 			cmdDir, _ := cmd.Flags().GetString("cmdDir")
 			dir, _ := cmd.Flags().GetString("dir")
 
 			opts := model.GitCloneOptions{CmdDir: cmdDir, Repo: repo, Dir: dir}
-			if _, err := c.Clone(opts); err != nil {
+			if _, err := deps.Cloner.Clone(opts); err != nil {
 				return err
 			} else {
 				return nil
