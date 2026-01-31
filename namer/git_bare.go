@@ -51,10 +51,7 @@ func gitBareName(n *RealNamer, path string) (string, error) {
 		return "", err
 	}
 	if isGit && barePath != "" {
-		repoName, err := dirName(n, barePath)
-		if err != nil {
-			return "", err
-		}
+		repoName := n.pathwrap.Base(barePath)
 
 		relativePath := strings.TrimPrefix(path, barePath)
 		name := repoName + relativePath

@@ -10,10 +10,7 @@ func gitBareRootName(n *RealNamer, path string) (string, error) {
 		return "", err
 	}
 	if isGit && barePath != "" {
-		repoName, err := dirName(n, barePath)
-		if err != nil {
-			return "", err
-		}
+		repoName := n.pathwrap.Base(barePath)
 
 		// Get the worktree's top-level directory
 		_, topLevelDir, _ := n.git.ShowTopLevel(path)
