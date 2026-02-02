@@ -508,6 +508,10 @@ sesh list -c
 
 Set the file as an executable and it will be run when you connect to the specified session.
 
+## Contributing
+
+Want to contribute? Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
+
 ## Background (the "t" script)
 
 Sesh is the successor to my popular [t-smart-tmux-session-manager](https://github.com/joshmedeski/t-smart-tmux-session-manager) tmux plugin. After a year of development and over 250 stars, it's clear that people enjoy the idea of a smart session manager. However, I've always felt that the tmux plugin was a bit of a hack. It's a bash script that runs in the background and parses the output of tmux commands. It works, but it's not ideal and isn't flexible enough to support other terminal multiplexers.
