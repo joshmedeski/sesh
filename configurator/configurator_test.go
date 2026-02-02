@@ -20,6 +20,7 @@ type testOs struct {
 	configErr   error
 	files       map[string][]byte
 	readFileErr map[string]error
+	envVars     map[string]string
 }
 
 func (o *testOs) UserHomeDir() (string, error) {
@@ -45,6 +46,9 @@ func (o *testOs) ReadFile(name string) ([]byte, error) {
 }
 
 func (o *testOs) Getenv(key string) string {
+	if o.envVars != nil {
+		return o.envVars[key]
+	}
 	return ""
 }
 
@@ -148,4 +152,55 @@ func TestGetConfig_EmptyConfigPath(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, config.DirLength)
+}
+
+func TestGetConfig_XDGConfigHome(t *testing.T) {
+	configFile := testdataPath("sesh.toml")
+	data, err := os.ReadFile(configFile)
+	require.NoError(t, err)
+
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		envVars: map[string]string{
+			"XDG_CONFIG_HOME": "/custom/config",
+		},
+		files: map[string][]byte{
+			"/custom/config/sesh/sesh.toml": data,
+		},
+	}
+	mockPath := pathwrap.NewPath()
+	mockRuntime := &runtimewrap.MockRunTime{}
+
+	c := NewConfigurator(mockOs, mockPath, mockRuntime)
+	config, err := c.GetConfig()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "echo test", config.DefaultSessionConfig.StartupCommand)
+	assert.Len(t, config.SessionConfigs, 1)
+	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
+}
+
+func TestGetConfig_XDGConfigHomeNotSet(t *testing.T) {
+	// When XDG_CONFIG_HOME is not set, should fall back to $HOME/.config
+	configFile := testdataPath("sesh.toml")
+	data, err := os.ReadFile(configFile)
+	require.NoError(t, err)
+
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		// envVars not set, so XDG_CONFIG_HOME will return ""
+		files: map[string][]byte{
+			"/home/testuser/.config/sesh/sesh.toml": data,
+		},
+	}
+	mockPath := pathwrap.NewPath()
+	mockRuntime := &runtimewrap.MockRunTime{}
+
+	c := NewConfigurator(mockOs, mockPath, mockRuntime)
+	config, err := c.GetConfig()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "echo test", config.DefaultSessionConfig.StartupCommand)
+	assert.Len(t, config.SessionConfigs, 1)
+	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
 }

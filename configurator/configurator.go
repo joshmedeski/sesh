@@ -145,7 +145,13 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 	if err != nil {
 		return model.Config{}, fmt.Errorf("couldn't get user config dir: %q", err)
 	}
-	userConfigDir := c.path.Join(userHomeDir, ".config")
+
+	// Check XDG_CONFIG_HOME first, fall back to $HOME/.config
+	userConfigDir := c.os.Getenv("XDG_CONFIG_HOME")
+	if userConfigDir == "" {
+		userConfigDir = c.path.Join(userHomeDir, ".config")
+	}
+
 	configFilePath := c.configFilePath(userConfigDir)
 	file, _ := c.os.ReadFile(configFilePath)
 	// TODO: add to debugging logs (Update, added details string)
