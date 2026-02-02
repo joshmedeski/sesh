@@ -5,18 +5,21 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/joshmedeski/sesh/v2/icon"
-	"github.com/joshmedeski/sesh/v2/json"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
-func NewListCommand(icon icon.Icon, json json.Json, list lister.Lister) *cobra.Command {
+func NewListCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"l"},
 		Short:   "List sessions",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			deps, err := buildDeps(cmd, base)
+			if err != nil {
+				return err
+			}
+
 			config, _ := cmd.Flags().GetBool("config")
 			jsonOutput, _ := cmd.Flags().GetBool("json")
 			tmux, _ := cmd.Flags().GetBool("tmux")
@@ -26,7 +29,7 @@ func NewListCommand(icon icon.Icon, json json.Json, list lister.Lister) *cobra.C
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 
-			sessions, err := list.List(lister.ListOptions{
+			sessions, err := deps.Lister.List(lister.ListOptions{
 				Config:         config,
 				HideAttached:   hideAttached,
 				Icons:          icons,
@@ -45,14 +48,14 @@ func NewListCommand(icon icon.Icon, json json.Json, list lister.Lister) *cobra.C
 				for _, i := range sessions.OrderedIndex {
 					sessionsArray = append(sessionsArray, sessions.Directory[i])
 				}
-				fmt.Println(json.EncodeSessions(sessionsArray))
+				fmt.Println(base.Json.EncodeSessions(sessionsArray))
 				return nil
 			}
 
 			for _, i := range sessions.OrderedIndex {
 				name := sessions.Directory[i].Name
 				if icons {
-					name = icon.AddIcon(sessions.Directory[i])
+					name = deps.Icon.AddIcon(sessions.Directory[i])
 				}
 				fmt.Println(name)
 			}

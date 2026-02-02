@@ -372,6 +372,17 @@ You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/
 mkdir -p ~/.config/sesh && touch ~/.config/sesh/sesh.toml
 ```
 
+### Custom Config Path
+
+You can specify a custom config file path using the `--config` (or `-C`) flag. This is useful for NixOS wrappers, maintaining separate work/private configurations, or testing.
+
+```sh
+sesh -C /path/to/custom/sesh.toml list
+sesh --config /path/to/custom/sesh.toml connect my-session
+```
+
+The flag works with any subcommand. When specified, the file must exist or sesh will return an error. Without the flag, sesh uses the default config path.
+
 ### Blacklist
 
 You may want to blacklist certain tmux sessions from showing up in the results. For example, you may want to exclude your `scratch` directory from the results.

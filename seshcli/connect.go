@@ -6,13 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/joshmedeski/sesh/v2/connector"
-	"github.com/joshmedeski/sesh/v2/dir"
-	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
-func NewConnectCommand(c connector.Connector, i icon.Icon, d dir.Dir) *cobra.Command {
+func NewConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "connect",
 		Aliases: []string{"cn"},
@@ -27,21 +24,26 @@ func NewConnectCommand(c connector.Connector, i icon.Icon, d dir.Dir) *cobra.Com
 				return nil
 			}
 
+			deps, err := buildDeps(cmd, base)
+			if err != nil {
+				return err
+			}
+
 			switchFlag, _ := cmd.Flags().GetBool("switch")
 			command, _ := cmd.Flags().GetString("command")
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			root, _ := cmd.Flags().GetBool("root")
 
 			if root {
-				hasRootDir, rootDir := d.RootDir(name)
+				hasRootDir, rootDir := base.Dir.RootDir(name)
 				if hasRootDir {
 					name = rootDir
 				}
 			}
 
 			opts := model.ConnectOpts{Switch: switchFlag, Command: command, Tmuxinator: tmuxinator}
-			trimmedName := i.RemoveIcon(name)
-			if _, err := c.Connect(trimmedName, opts); err != nil {
+			trimmedName := deps.Icon.RemoveIcon(name)
+			if _, err := deps.Connector.Connect(trimmedName, opts); err != nil {
 				// TODO: add to logging
 				return err
 			} else {

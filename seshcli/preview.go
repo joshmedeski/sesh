@@ -5,11 +5,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-
-	"github.com/joshmedeski/sesh/v2/previewer"
 )
 
-func NewPreviewCommand(p previewer.Previewer) *cobra.Command {
+func NewPreviewCommand(base *BaseDeps) *cobra.Command {
 	return &cobra.Command{
 		Use:     "preview",
 		Aliases: []string{"p"},
@@ -20,9 +18,14 @@ func NewPreviewCommand(p previewer.Previewer) *cobra.Command {
 				return errors.New("session name or directory is required")
 			}
 
+			deps, err := buildDeps(cmd, base)
+			if err != nil {
+				return err
+			}
+
 			name := args[0]
 
-			output, err := p.Preview(name)
+			output, err := deps.Previewer.Preview(name)
 			if err != nil {
 				return err
 			}

@@ -1,0 +1,6 @@
+[default_session]
+startup_command = "echo test"
+
+[[session]]
+name = "test-session"
+path = "/tmp/test"
