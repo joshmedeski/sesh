@@ -16,16 +16,18 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		tmuxStrategy,
 		tmuxinatorStrategy,
 		configStrategy,
+		configWildcardStrategy,
 		dirStrategy,
 		zoxideStrategy,
 	}
 
 	connectStrategy := map[string]func(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error){
-		"tmux":       connectToTmux,
-		"tmuxinator": connectToTmuxinator,
-		"config":     connectToTmux,
-		"dir":        connectToTmux,
-		"zoxide":     connectToTmux,
+		"tmux":            connectToTmux,
+		"tmuxinator":      connectToTmuxinator,
+		"config":          connectToTmux,
+		"config_wildcard": connectToTmux,
+		"dir":             connectToTmux,
+		"zoxide":          connectToTmux,
 	}
 
 	for _, strategy := range strategies {
