@@ -9,6 +9,7 @@ type (
 		SessionConfigs       []SessionConfig      `toml:"session"`
 		SortOrder            []string             `toml:"sort_order"`
 		WindowConfigs        []WindowConfig       `toml:"window"`
+		WildcardConfigs      []WildcardConfig     `toml:"wildcard"`
 		DirLength            int                  `toml:"dir_length"`
 	}
 	Evaluation struct {
@@ -36,5 +37,12 @@ type (
 		Name          string `toml:"name"`
 		StartupScript string `toml:"startup_script"`
 		Path          string `toml:"path"`
+	}
+
+	WildcardConfig struct {
+		Pattern             string `toml:"pattern"`
+		StartupCommand      string `toml:"startup_command"`
+		DisableStartCommand bool   `toml:"disable_startup_command"`
+		PreviewCommand      string `toml:"preview_command"`
 	}
 )
