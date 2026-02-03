@@ -498,6 +498,34 @@ name = "git"
 startup_script = "git pull"
 ```
 
+### Wildcard Configuration
+
+Wildcard configs let you define session settings that apply to any directory matching a glob pattern, instead of creating a `[[session]]` entry for each project. This is useful when you have a directory full of projects that should all use the same startup command.
+
+```toml
+[[wildcard]]
+pattern = "~/projects/*"
+startup_command = "nvim"
+
+[[wildcard]]
+pattern = "~/work/*"
+startup_command = "make dev"
+preview_command = "ls -la"
+```
+
+When you run `sesh connect ~/projects/myapp`, sesh matches the path against your wildcard patterns and automatically creates a session named from the directory (using git remote or folder name), runs the configured startup command, and adds the path to zoxide.
+
+Available fields:
+
+| Field | Description |
+|-------|-------------|
+| `pattern` | Glob pattern to match directories (e.g. `~/projects/*`) |
+| `startup_command` | Command to run on session creation (supports `{}` for path) |
+| `preview_command` | Command to run when previewing the session |
+| `disable_startup_command` | Set to `true` to suppress the startup command |
+
+**Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). Recursive matching with `**` is not supported -- `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
+
 ### Listing Configurations
 
 Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
