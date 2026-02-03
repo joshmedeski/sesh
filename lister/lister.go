@@ -14,6 +14,7 @@ type Lister interface {
 	GetAttachedTmuxSession() (model.SeshSession, bool)
 	GetLastTmuxSession() (model.SeshSession, bool)
 	FindConfigSession(name string) (model.SeshSession, bool)
+	FindConfigWildcard(path string) (model.WildcardConfig, bool)
 	FindZoxideSession(name string) (model.SeshSession, bool)
 	FindTmuxinatorConfig(name string) (model.SeshSession, bool)
 }
