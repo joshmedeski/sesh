@@ -92,6 +92,93 @@ func TestListTmuxSessions(t *testing.T) {
 	})
 }
 
+func makeTmuxSession(name, path string) *model.TmuxSession {
+	return &model.TmuxSession{
+		Name:    name,
+		Path:    path,
+		ID:      "$1",
+		Windows: 1,
+	}
+}
+
+func TestGetLastTmuxSession(t *testing.T) {
+	tests := []struct {
+		name      string
+		sessions  []*model.TmuxSession
+		blacklist []string
+		wantName  string
+		wantOk    bool
+	}{
+		{
+			name: "no blacklist returns second session",
+			sessions: []*model.TmuxSession{
+				makeTmuxSession("current", "/tmp/current"),
+				makeTmuxSession("previous", "/tmp/previous"),
+				makeTmuxSession("oldest", "/tmp/oldest"),
+			},
+			blacklist: nil,
+			wantName:  "previous",
+			wantOk:    true,
+		},
+		{
+			name: "second session blacklisted skips to next",
+			sessions: []*model.TmuxSession{
+				makeTmuxSession("current", "/tmp/current"),
+				makeTmuxSession("blocked", "/tmp/blocked"),
+				makeTmuxSession("fallback", "/tmp/fallback"),
+			},
+			blacklist: []string{"blocked"},
+			wantName:  "fallback",
+			wantOk:    true,
+		},
+		{
+			name: "all sessions blacklisted returns false",
+			sessions: []*model.TmuxSession{
+				makeTmuxSession("a", "/tmp/a"),
+				makeTmuxSession("b", "/tmp/b"),
+			},
+			blacklist: []string{"a", "b"},
+			wantOk:    false,
+		},
+		{
+			name: "only one non-blacklisted session returns false",
+			sessions: []*model.TmuxSession{
+				makeTmuxSession("keep", "/tmp/keep"),
+				makeTmuxSession("blocked", "/tmp/blocked"),
+			},
+			blacklist: []string{"blocked"},
+			wantOk:    false,
+		},
+		{
+			name: "regex blacklist pattern matches",
+			sessions: []*model.TmuxSession{
+				makeTmuxSession("current", "/tmp/current"),
+				makeTmuxSession("scratch-123", "/tmp/scratch-123"),
+				makeTmuxSession("work", "/tmp/work"),
+			},
+			blacklist: []string{"^scratch-.*"},
+			wantName:  "work",
+			wantOk:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockTmux := new(tmux.MockTmux)
+			mockTmux.On("ListSessions").Return(tt.sessions, nil)
+
+			config := model.Config{Blacklist: tt.blacklist}
+			lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+
+			session, ok := lister.GetLastTmuxSession()
+			assert.Equal(t, tt.wantOk, ok)
+			if tt.wantOk {
+				assert.Equal(t, tt.wantName, session.Name)
+			}
+		})
+	}
+}
+
 func TestListTmuxSessionsError(t *testing.T) {
 	mockTmux := new(tmux.MockTmux)
 	t.Run("should return error when unable to list tmux sessions", func(t *testing.T) {
