@@ -63,7 +63,8 @@ func TestIsBlacklisted(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isBlacklisted(tt.blacklist, tt.input)
+			compiled := compileBlacklist(tt.blacklist)
+			result := isBlacklisted(compiled, tt.input)
 			if result != tt.expected {
 				t.Errorf("isBlacklisted(%v, %q) = %v, want %v", tt.blacklist, tt.input, result, tt.expected)
 			}
