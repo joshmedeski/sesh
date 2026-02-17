@@ -55,10 +55,23 @@ func (l *RealLister) GetLastTmuxSession() (model.SeshSession, bool) {
 	if err != nil {
 		return model.SeshSession{}, false
 	}
-	if len(sessions.OrderedIndex) < 2 {
+
+	filtered := sessions.OrderedIndex
+	if len(l.config.Blacklist) > 0 {
+		compiled := compileBlacklist(l.config.Blacklist)
+		filtered = make([]string, 0, len(sessions.OrderedIndex))
+		for _, index := range sessions.OrderedIndex {
+			session := sessions.Directory[index]
+			if !isBlacklisted(compiled, session.Name) {
+				filtered = append(filtered, index)
+			}
+		}
+	}
+
+	if len(filtered) < 2 {
 		return model.SeshSession{}, false
 	}
-	secondSessionIndex := sessions.OrderedIndex[1]
+	secondSessionIndex := filtered[1]
 	return sessions.Directory[secondSessionIndex], true
 }
 
