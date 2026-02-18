@@ -16,6 +16,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
+	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/ls"
 	"github.com/joshmedeski/sesh/v2/namer"
@@ -51,13 +52,14 @@ type BaseDeps struct {
 // Deps holds all dependencies including config-dependent ones.
 type Deps struct {
 	BaseDeps
-	Lister    lister.Lister
-	Startup   startup.Startup
-	Namer     namer.Namer
-	Connector connector.Connector
-	Icon      icon.Icon
-	Previewer previewer.Previewer
-	Cloner    cloner.Cloner
+	Lister        lister.Lister
+	CachingLister *lister.CachingLister
+	Startup       startup.Startup
+	Namer         namer.Namer
+	Connector     connector.Connector
+	Icon          icon.Icon
+	Previewer     previewer.Previewer
+	Cloner        cloner.Cloner
 }
 
 // NewBaseDeps constructs all config-free dependencies.
@@ -106,22 +108,32 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	l := ls.NewLs(config, b.Shell)
 	li := lister.NewLister(config, b.Home, b.Tmux, b.Zoxide, b.Tmuxinator)
-	s := startup.NewStartup(config, li, b.Tmux, b.Home, b.Replacer)
+
+	var usedLister lister.Lister = li
+	var cachedLi *lister.CachingLister
+	if config.Cache {
+		fc := cache.NewFileCache()
+		cachedLi = lister.NewCachingLister(li, fc)
+		usedLister = cachedLi
+	}
+
+	s := startup.NewStartup(config, usedLister, b.Tmux, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
-	c := connector.NewConnector(config, b.Dir, b.Home, li, n, s, b.Tmux, b.Zoxide, b.Tmuxinator)
+	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, b.Tmux, b.Zoxide, b.Tmuxinator)
 	ic := icon.NewIcon(config)
-	p := previewer.NewPreviewer(li, b.Tmux, ic, b.Dir, b.Home, l, config, b.Shell)
+	p := previewer.NewPreviewer(usedLister, b.Tmux, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
 
 	return &Deps{
-		BaseDeps:  *b,
-		Lister:    li,
-		Startup:   s,
-		Namer:     n,
-		Connector: c,
-		Icon:      ic,
-		Previewer: p,
-		Cloner:    cl,
+		BaseDeps:      *b,
+		Lister:        usedLister,
+		CachingLister: cachedLi,
+		Startup:       s,
+		Namer:         n,
+		Connector:     c,
+		Icon:          ic,
+		Previewer:     p,
+		Cloner:        cl,
 	}, nil
 }
 

@@ -21,6 +21,9 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if deps.CachingLister != nil {
+				defer deps.CachingLister.Wait()
+			}
 
 			config, _ := cmd.Flags().GetBool("config")
 			tmux, _ := cmd.Flags().GetBool("tmux")

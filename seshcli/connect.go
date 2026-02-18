@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -46,10 +47,13 @@ func NewConnectCommand(base *BaseDeps) *cobra.Command {
 			if _, err := deps.Connector.Connect(trimmedName, opts); err != nil {
 				// TODO: add to logging
 				return err
-			} else {
-				// TODO: add to logging
-				return nil
 			}
+			// Refresh cache in background so next sesh list has fresh data
+			if deps.CachingLister != nil {
+				deps.CachingLister.RefreshCache(lister.ListOptions{})
+				deps.CachingLister.Wait()
+			}
+			return nil
 		},
 	}
 

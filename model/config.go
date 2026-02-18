@@ -2,6 +2,7 @@ package model
 
 type (
 	Config struct {
+		Cache                bool                 `toml:"cache"`
 		StrictMode           bool                 `toml:"strict_mode"`
 		ImportPaths          []string             `toml:"import"`
 		DefaultSessionConfig DefaultSessionConfig `toml:"default_session"`
