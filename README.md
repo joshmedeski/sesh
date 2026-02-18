@@ -432,6 +432,20 @@ sort_order = [
   "config", # resulting order: config, tmux, tmuxinator, zoxide
 ]
 ```
+### Cache
+
+Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores results at `$XDG_CACHE_HOME/sesh/sessions.gob` (default `~/.cache/sesh/sessions.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
+
+- **Cold start**: no cache exists, fetches live data and writes the cache
+- **Fresh hit** (within 5s): returns cached data instantly
+- **Stale hit** (after 5s): returns cached data instantly and refreshes the cache in the background
+
+The cache is also refreshed automatically after `sesh connect`.
+
+```toml
+cache = true
+```
+
 ### Default Session
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.

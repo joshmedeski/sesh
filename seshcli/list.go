@@ -19,6 +19,9 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if deps.CachingLister != nil {
+				defer deps.CachingLister.Wait()
+			}
 
 			config, _ := cmd.Flags().GetBool("config")
 			jsonOutput, _ := cmd.Flags().GetBool("json")
