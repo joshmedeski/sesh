@@ -16,6 +16,12 @@
   </a>
 </p>
 
+<div align="center">
+
+[English](README.md) | [简体中文](README.zh-cn.md)
+
+</div>
+
 Sesh is a CLI that helps you create and manage tmux sessions quickly and easily using zoxide.
 
 <div style="width:50%">
