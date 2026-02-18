@@ -294,6 +294,14 @@ bind-key "K" display-popup -E -w 40% "sesh connect \"$(
 
 See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
 
+#### sesh picker
+
+Sesh has a built-in picker that can be used as a tmux popup:
+
+```sh
+bind-key "K" display-popup -h 90% -w 50% -E "sesh picker -i"
+```
+
 ## zsh keybind
 
 If you use zsh, you can add the following keybind to your `.zshrc` to connect to a session:
