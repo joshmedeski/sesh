@@ -27,29 +27,28 @@ var (
 	tmuxinatorIcon string = ""
 )
 
+// Glyph holds the icon character and ANSI color code for a session source.
+type Glyph struct {
+	Icon      string
+	ColorCode int
+}
+
+// Glyphs maps session source names to their icon and color.
+var Glyphs = map[string]Glyph{
+	"tmux":       {Icon: tmuxIcon, ColorCode: 34},
+	"config":     {Icon: configIcon, ColorCode: 90},
+	"zoxide":     {Icon: zoxideIcon, ColorCode: 36},
+	"tmuxinator": {Icon: tmuxinatorIcon, ColorCode: 33},
+}
+
+
 func ansiString(code int, s string) string {
 	return fmt.Sprintf("\033[%dm%s\033[39m", code, s)
 }
 
 func (i *RealIcon) AddIcon(s model.SeshSession) string {
-	var icon string
-	var colorCode int
-	switch s.Src {
-	case "tmux":
-		icon = tmuxIcon
-		colorCode = 34 // blue
-	case "tmuxinator":
-		icon = tmuxinatorIcon
-		colorCode = 33 // yellow
-	case "zoxide":
-		icon = zoxideIcon
-		colorCode = 36 // cyan
-	case "config":
-		icon = configIcon
-		colorCode = 90 // gray
-	}
-	if icon != "" {
-		return fmt.Sprintf("%s %s", ansiString(colorCode, icon), s.Name)
+	if g, ok := Glyphs[s.Src]; ok {
+		return fmt.Sprintf("%s %s", ansiString(g.ColorCode, g.Icon), s.Name)
 	}
 	return s.Name
 }
