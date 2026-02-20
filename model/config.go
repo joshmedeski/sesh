@@ -12,6 +12,7 @@ type (
 		WindowConfigs        []WindowConfig       `toml:"window"`
 		WildcardConfigs      []WildcardConfig     `toml:"wildcard"`
 		DirLength            int                  `toml:"dir_length"`
+		SeparatorAware       bool                 `toml:"separator_aware"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`

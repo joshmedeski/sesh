@@ -15,15 +15,16 @@ import (
 )
 
 type sessionItem struct {
-	session model.SeshSession
-	name    string // raw session name (no icons/ANSI)
-	src     string // source type (tmux, config, zoxide, tmuxinator)
+	session    model.SeshSession
+	name       string // raw session name (no icons/ANSI)
+	searchName string // normalized name used for fuzzy matching
+	src        string // source type (tmux, config, zoxide, tmuxinator)
 }
 
 // sessionItems implements fuzzy.Source for fuzzy matching.
 type sessionItems []sessionItem
 
-func (s sessionItems) String(i int) string { return s[i].name }
+func (s sessionItems) String(i int) string { return s[i].searchName }
 func (s sessionItems) Len() int            { return len(s) }
 
 type filteredItem struct {
@@ -41,20 +42,21 @@ type sessionsLoadedMsg struct {
 }
 
 type Model struct {
-	allItems    sessionItems
-	filtered    []filteredItem
-	filterInput textinput.Model
-	cursor      int
-	offset      int
-	width       int
-	height      int
-	chosen      string
-	quit        bool
-	showIcons   bool
-	focusCmd    tea.Cmd
-	loading     bool
-	fetchFunc   FetchFunc
-	loadErr     error
+	allItems       sessionItems
+	filtered       []filteredItem
+	filterInput    textinput.Model
+	cursor         int
+	offset         int
+	width          int
+	height         int
+	chosen         string
+	quit           bool
+	showIcons      bool
+	separatorAware bool
+	focusCmd       tea.Cmd
+	loading        bool
+	fetchFunc      FetchFunc
+	loadErr        error
 }
 
 // srcIcon returns the nerd font icon and color for a session source.
@@ -74,29 +76,41 @@ func srcIcon(src string) (string, color.Color) {
 	return "? ", lipgloss.ANSIColor(8)
 }
 
-func buildItems(sessions model.SeshSessions) sessionItems {
+var separatorReplacer = strings.NewReplacer("-", " ", "_", " ", "/", " ", "\\", " ")
+
+func normalizeSeparators(s string) string {
+	return separatorReplacer.Replace(s)
+}
+
+func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
 	items := make(sessionItems, 0, len(sessions.OrderedIndex))
 	for _, key := range sessions.OrderedIndex {
 		s := sessions.Directory[key]
+		searchName := s.Name
+		if separatorAware {
+			searchName = normalizeSeparators(s.Name)
+		}
 		items = append(items, sessionItem{
-			session: s,
-			name:    s.Name,
-			src:     s.Src,
+			session:    s,
+			name:       s.Name,
+			searchName: searchName,
+			src:        s.Src,
 		})
 	}
 	return items
 }
 
-func New(fetchFunc FetchFunc, showIcons bool) Model {
+func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool) Model {
 	ti := textinput.New()
 	ti.Placeholder = "Filter sessions..."
 	ti.Prompt = "> "
 
 	m := Model{
-		filterInput: ti,
-		showIcons:   showIcons,
-		loading:     true,
-		fetchFunc:   fetchFunc,
+		filterInput:    ti,
+		showIcons:      showIcons,
+		separatorAware: separatorAware,
+		loading:        true,
+		fetchFunc:      fetchFunc,
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -121,7 +135,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		m.loading = false
-		m.allItems = buildItems(msg.sessions)
+		m.allItems = buildItems(msg.sessions, m.separatorAware)
 		m.applyFilter()
 		return m, nil
 
@@ -189,6 +203,10 @@ func (m *Model) applyFilter() {
 			m.filtered[i] = filteredItem{item: item}
 		}
 		return
+	}
+
+	if m.separatorAware {
+		pattern = normalizeSeparators(pattern)
 	}
 
 	matches := fuzzy.FindFrom(pattern, m.allItems)
