@@ -9,3 +9,8 @@ test: mock
 # Build sesh binary to GOPATH/bin
 build version="dev":
     go build -buildvcs=false -ldflags "-X 'main.version={{version}}'" -o `go env GOPATH`/bin/sesh
+
+# Generate man page
+man: build
+    mkdir -p man
+    sesh man > man/sesh.1

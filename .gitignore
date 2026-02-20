@@ -27,4 +27,5 @@ go.work
 sesh
 
 dist/
+man/
 .DS_Store
