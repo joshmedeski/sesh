@@ -1,0 +1,182 @@
+.TH SESH 1 "2026-02-20" "sesh" "Smart session manager for the terminal"
+.SH NAME
+sesh - Smart session manager for the terminal
+.SH SYNOPSIS
+\fBsesh\fP [\fIoptions\&.\&.\&.\fP] [\fIargument\&.\&.\&.\fP]
+.SH DESCRIPTION
+Sesh is a smart terminal session manager that helps you create and manage tmux sessions quickly and easily using zoxide\&.
+.SH OPTIONS
+.TP
+\fB-C, --config\fP
+path to config file
+.SH COMMANDS
+.TP
+\fBclone\fP
+.RS 4
+Clone a git repo and connect to it as a session
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB-c, --cmdDir\fP
+The directory to run the git command in
+.TP
+\fB-d, --dir\fP
+The name of the directory that git is creating
+.RE
+.TP
+\fBcompletion\fP
+.RS 4
+Generate the autocompletion script for the specified shell
+.RE
+.TP
+\fBCOMMANDS\fP
+.RS 4
+\fBbash\fP
+.RS 4
+Generate the autocompletion script for bash
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB--no-descriptions\fP
+disable completion descriptions
+.RE
+.TP
+\fBfish\fP
+.RS 4
+Generate the autocompletion script for fish
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB--no-descriptions\fP
+disable completion descriptions
+.RE
+.TP
+\fBpowershell\fP
+.RS 4
+Generate the autocompletion script for powershell
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB--no-descriptions\fP
+disable completion descriptions
+.RE
+.TP
+\fBzsh\fP
+.RS 4
+Generate the autocompletion script for zsh
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB--no-descriptions\fP
+disable completion descriptions
+.RE
+.RE
+.TP
+\fBconnect\fP
+.RS 4
+Connect to the given session
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB-c, --command\fP
+Execute a command when connecting to a new session\&. Will be ignored if the session exists\&.
+.TP
+\fB-r, --root\fP
+Switches to the root of the current session
+.TP
+\fB-s, --switch\fP
+Switch the session (rather than attach)\&. This is useful for actions triggered outside the terminal\&.
+.TP
+\fB-T, --tmuxinator\fP
+Use tmuxinator to start session if it doesnt exist
+.RE
+.TP
+\fBhelp\fP [command]
+.RS 4
+Help about any command
+.RE
+.TP
+\fBlast\fP
+.RS 4
+Connect to the last tmux session
+.RE
+.TP
+\fBlist\fP
+.RS 4
+List sessions
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB-c, --config\fP
+show configured sessions
+.TP
+\fB-H, --hide-attached\fP
+don't show currently attached sessions
+.TP
+\fB-d, --hide-duplicates\fP
+hide duplicate entries
+.TP
+\fB-i, --icons\fP
+show icons
+.TP
+\fB-j, --json\fP
+output as json
+.TP
+\fB-t, --tmux\fP
+show tmux sessions
+.TP
+\fB-T, --tmuxinator\fP
+show tmuxinator configs
+.TP
+\fB-z, --zoxide\fP
+show zoxide results
+.RE
+.TP
+\fBpicker\fP
+.RS 4
+Interactive session picker
+.RE
+.TP
+\fBOPTIONS\fP
+.RS 4
+\fB-c, --config\fP
+show configured sessions
+.TP
+\fB-H, --hide-attached\fP
+don't show currently attached sessions
+.TP
+\fB-d, --hide-duplicates\fP
+hide duplicate entries
+.TP
+\fB-i, --icons\fP
+show icons
+.TP
+\fB-s, --separator-aware\fP
+match spaces to separators (-_/\e)
+.TP
+\fB-t, --tmux\fP
+show tmux sessions
+.TP
+\fB-T, --tmuxinator\fP
+show tmuxinator configs
+.TP
+\fB-z, --zoxide\fP
+show zoxide results
+.RE
+.TP
+\fBpreview\fP
+.RS 4
+Preview a session or directory
+.RE
+.TP
+\fBroot\fP
+.RS 4
+Show the root from the active session
+.RE

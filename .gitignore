@@ -27,5 +27,5 @@ go.work
 sesh
 
 dist/
-man/
+share/
 .DS_Store

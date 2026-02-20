@@ -12,5 +12,5 @@ build version="dev":
 
 # Generate man page
 man: build
-    mkdir -p man
-    sesh man > man/sesh.1
+    mkdir -p share/man/man1
+    sesh man > share/man/man1/sesh.1

@@ -14,8 +14,8 @@ before:
     - go mod tidy
     # you may remove this if you don't need go generate
     - go generate ./...
-    - mkdir -p man
-    - sh -c "go run . man > man/sesh.1"
+    - mkdir -p share/man/man1
+    - sh -c "go run . man > share/man/man1/sesh.1"
 
 builds:
   - env:
@@ -42,8 +42,7 @@ archives:
       - goos: windows
         format: zip
     files:
-      - src: man/sesh.1
-        dst: share/man/man1/
+      - share/man/man1/sesh.1
 
 changelog:
   sort: asc
