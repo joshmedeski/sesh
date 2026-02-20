@@ -36,7 +36,7 @@ func testFetchFunc(sessions model.SeshSessions) FetchFunc {
 // newTestModel creates a model and simulates the async load completing.
 func newTestModel() Model {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model)
 }
@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 
 func TestNew_StartsInLoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 	assert.True(t, m.loading)
 	assert.Len(t, m.allItems, 0)
 	assert.Len(t, m.filtered, 0)
@@ -202,7 +202,7 @@ func TestUpdate_Enter_EmptyList(t *testing.T) {
 
 func TestUpdate_Enter_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 	assert.True(t, m.loading)
 
 	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -215,7 +215,7 @@ func TestUpdate_Enter_WhileLoading(t *testing.T) {
 
 func TestUpdate_Escape_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 
 	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
 	resultModel := result.(Model)
@@ -225,7 +225,7 @@ func TestUpdate_Escape_WhileLoading(t *testing.T) {
 
 func TestUpdate_SessionsLoaded(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 	assert.True(t, m.loading)
 
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
@@ -239,7 +239,7 @@ func TestUpdate_SessionsLoaded(t *testing.T) {
 
 func TestUpdate_SessionsLoaded_WithPreTypedFilter(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 
 	// Simulate typing "dot" before sessions arrive
 	m.filterInput.SetValue("dot")
@@ -257,7 +257,7 @@ func TestUpdate_SessionsLoadError(t *testing.T) {
 	fetchErr := errors.New("zoxide not found")
 	m := New(func() (model.SeshSessions, error) {
 		return model.SeshSessions{}, fetchErr
-	}, false)
+	}, false, false)
 
 	result, _ := m.Update(sessionsLoadedMsg{err: fetchErr})
 	resultModel := result.(Model)
@@ -307,7 +307,7 @@ func TestView_ReturnsNonEmpty(t *testing.T) {
 
 func TestView_LoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 	m.width = 60
 	m.height = 24
 
@@ -352,7 +352,7 @@ func TestHalfPageMovement(t *testing.T) {
 		index[i] = key
 	}
 	sessions := model.SeshSessions{OrderedIndex: index, Directory: dir}
-	m := New(testFetchFunc(sessions), false)
+	m := New(testFetchFunc(sessions), false, false)
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	m = result.(Model)
 	m.height = 20
@@ -361,4 +361,88 @@ func TestHalfPageMovement(t *testing.T) {
 	result, _ = m.Update(tea.KeyPressMsg{Code: 'd', Mod: tea.ModCtrl})
 	resultModel := result.(Model)
 	assert.Equal(t, half, resultModel.cursor)
+}
+
+// newTestModelSeparatorAware creates a model with separator-aware matching enabled.
+func newTestModelSeparatorAware() Model {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), false, true)
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	return result.(Model)
+}
+
+func TestNormalizeSeparators(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"my-project", "my project"},
+		{"my_project", "my project"},
+		{"~/code/app", "~ code app"},
+		{"path\\to\\dir", "path to dir"},
+		{"a-b_c/d\\e", "a b c d e"},
+		{"no separators", "no separators"},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, normalizeSeparators(tt.input))
+		})
+	}
+}
+
+func TestApplyFilter_SeparatorAware_SpaceMatchesDash(t *testing.T) {
+	m := newTestModelSeparatorAware()
+	m.filterInput.SetValue("my project")
+	m.applyFilter()
+
+	found := false
+	for _, f := range m.filtered {
+		if f.item.name == "my-project" {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "space in pattern should match dash in session name")
+}
+
+func TestApplyFilter_SeparatorAware_SpaceMatchesSlash(t *testing.T) {
+	m := newTestModelSeparatorAware()
+	m.filterInput.SetValue("code app")
+	m.applyFilter()
+
+	found := false
+	for _, f := range m.filtered {
+		if f.item.name == "~/code/app" {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "space in pattern should match slash in session name")
+}
+
+func TestApplyFilter_SeparatorAware_PatternNormalization(t *testing.T) {
+	m := newTestModelSeparatorAware()
+	m.filterInput.SetValue("my-project")
+	m.applyFilter()
+
+	found := false
+	for _, f := range m.filtered {
+		if f.item.name == "my-project" {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "dash in pattern should still match dash in session name")
+}
+
+func TestApplyFilter_SeparatorAware_Disabled(t *testing.T) {
+	m := newTestModel()
+	m.filterInput.SetValue("my project")
+	m.applyFilter()
+
+	for _, f := range m.filtered {
+		assert.NotEqual(t, "my-project", f.item.name,
+			"space should NOT match dash when separator-aware is disabled")
+	}
 }

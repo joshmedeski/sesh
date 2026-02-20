@@ -10,6 +10,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/configurator"
 	"github.com/joshmedeski/sesh/v2/connector"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/git"
@@ -52,6 +53,7 @@ type BaseDeps struct {
 // Deps holds all dependencies including config-dependent ones.
 type Deps struct {
 	BaseDeps
+	Config        model.Config
 	Lister        lister.Lister
 	CachingLister *lister.CachingLister
 	Startup       startup.Startup
@@ -126,6 +128,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	return &Deps{
 		BaseDeps:      *b,
+		Config:        config,
 		Lister:        usedLister,
 		CachingLister: cachedLi,
 		Startup:       s,

@@ -33,6 +33,11 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 
+			separatorAware := deps.Config.SeparatorAware
+			if cmd.Flags().Changed("separator-aware") {
+				separatorAware, _ = cmd.Flags().GetBool("separator-aware")
+			}
+
 			opts := lister.ListOptions{
 				Config:         config,
 				HideAttached:   hideAttached,
@@ -46,7 +51,7 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 				return deps.Lister.List(opts)
 			}
 
-			m := picker.New(fetchFunc, icons)
+			m := picker.New(fetchFunc, icons, separatorAware)
 			p := tea.NewProgram(m)
 			result, err := p.Run()
 			if err != nil {
@@ -81,6 +86,7 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("icons", "i", false, "show icons")
 	cmd.Flags().BoolP("tmuxinator", "T", false, "show tmuxinator configs")
 	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
+	cmd.Flags().BoolP("separator-aware", "s", false, "match spaces to separators (-_/\\)")
 
 	return cmd
 }
