@@ -14,6 +14,8 @@ before:
     - go mod tidy
     # you may remove this if you don't need go generate
     - go generate ./...
+    - mkdir -p man
+    - sh -c "go run . man > man/sesh.1"
 
 builds:
   - env:
@@ -39,6 +41,9 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    files:
+      - src: man/sesh.1
+        dst: share/man/man1/
 
 changelog:
   sort: asc
@@ -61,6 +66,9 @@ brews:
     commit_author:
       name: goreleaser-bot
       email: bot@goreleaser.com
+    install: |
+      bin.install "sesh"
+      man1.install "share/man/man1/sesh.1"
     dependencies:
       - tmux
       - zoxide
@@ -76,8 +84,6 @@ aurs:
       - zoxide
         tmux
     package: |-
-      # bin
       install -Dm755 $_pkgname "$pkgdir/usr/bin/$_pkgname"
-
-      # license
+      install -Dm644 share/man/man1/sesh.1 "$pkgdir/usr/share/man/man1/sesh.1"
       install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
