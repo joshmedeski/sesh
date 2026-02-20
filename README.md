@@ -391,6 +391,44 @@ sesh --config /path/to/custom/sesh.toml connect my-session
 
 The flag works with any subcommand. When specified, the file must exist or sesh will return an error. Without the flag, sesh uses the default config path.
 
+### Schema (Editor Autocomplete)
+
+Sesh provides a [JSON Schema](https://json-schema.org/) for `sesh.toml` that enables autocomplete, validation, and documentation in your editor. This works with any editor that supports the [taplo](https://taplo.tamasfe.dev/) TOML language server.
+
+#### Quick Setup
+
+Add this line to the top of your `sesh.toml`:
+
+```toml
+#:schema https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json
+```
+
+That's it! Taplo will read the directive and apply the schema automatically.
+
+#### Neovim
+
+Make sure you have taplo installed:
+
+```sh
+brew install taplo
+```
+
+If you're using [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig), taplo should work out of the box with the `#:schema` directive above. Alternatively, you can configure the schema association directly:
+
+```lua
+require("lspconfig").taplo.setup({
+  settings = {
+    taplo = {
+      schema = {
+        associations = {
+          [".*sesh\\.toml$"] = "https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json",
+        },
+      },
+    },
+  },
+})
+```
+
 ### Blacklist
 
 You may want to blacklist certain tmux sessions from showing up in the results. For example, you may want to exclude your `scratch` directory from the results.

@@ -1,0 +1,177 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json",
+  "title": "sesh configuration",
+  "description": "Configuration for sesh, a smart terminal session manager",
+  "type": "object",
+  "properties": {
+    "cache": {
+      "type": "boolean",
+      "description": "Enable caching for improved performance",
+      "default": false
+    },
+    "strict_mode": {
+      "type": "boolean",
+      "description": "Disallow unknown fields in the configuration file",
+      "default": false
+    },
+    "import": {
+      "type": "array",
+      "description": "Paths to additional config files to import (supports ~ for home directory)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blacklist": {
+      "type": "array",
+      "description": "List of session names to exclude",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sort_order": {
+      "type": "array",
+      "description": "Order in which session sources appear in the list",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dir_length": {
+      "type": "integer",
+      "description": "Number of directory components to use when naming sessions (minimum 1)",
+      "minimum": 1,
+      "default": 1
+    },
+    "separator_aware": {
+      "type": "boolean",
+      "description": "Enable separator-aware configuration for the picker",
+      "default": false
+    },
+    "default_session": {
+      "type": "object",
+      "description": "Default settings applied to all sessions",
+      "properties": {
+        "startup_command": {
+          "type": "string",
+          "description": "Shell command to run when a new session is created"
+        },
+        "tmuxp": {
+          "type": "string",
+          "description": "tmuxp session file to use"
+        },
+        "tmuxinator": {
+          "type": "string",
+          "description": "tmuxinator project to use"
+        },
+        "preview_command": {
+          "type": "string",
+          "description": "Command used to generate the preview for the session"
+        },
+        "windows": {
+          "type": "array",
+          "description": "List of window names to create in the session",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "session": {
+      "type": "array",
+      "description": "Named session configurations",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Display name for the session"
+          },
+          "path": {
+            "type": "string",
+            "description": "Absolute path to the session's working directory"
+          },
+          "disable_startup_command": {
+            "type": "boolean",
+            "description": "Disable the default startup command for this session",
+            "default": false
+          },
+          "startup_command": {
+            "type": "string",
+            "description": "Shell command to run when this session is created (overrides default)"
+          },
+          "tmuxp": {
+            "type": "string",
+            "description": "tmuxp session file to use for this session"
+          },
+          "tmuxinator": {
+            "type": "string",
+            "description": "tmuxinator project to use for this session"
+          },
+          "preview_command": {
+            "type": "string",
+            "description": "Command used to generate the preview for this session"
+          },
+          "windows": {
+            "type": "array",
+            "description": "List of window names to create in this session",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "window": {
+      "type": "array",
+      "description": "Window configurations",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the window"
+          },
+          "startup_script": {
+            "type": "string",
+            "description": "Script to run when the window is created"
+          },
+          "path": {
+            "type": "string",
+            "description": "Working directory for the window"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "wildcard": {
+      "type": "array",
+      "description": "Wildcard configurations that match session paths by pattern",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Glob pattern to match against session paths"
+          },
+          "startup_command": {
+            "type": "string",
+            "description": "Shell command to run when a matching session is created"
+          },
+          "disable_startup_command": {
+            "type": "boolean",
+            "description": "Disable the default startup command for matching sessions",
+            "default": false
+          },
+          "preview_command": {
+            "type": "string",
+            "description": "Command used to generate the preview for matching sessions"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
