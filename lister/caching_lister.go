@@ -27,12 +27,12 @@ func NewCachingLister(inner Lister, c cache.Cache) *CachingLister {
 
 // List implements Lister. It returns cached data when available, triggering a
 // background refresh when the cache is older than the soft TTL.
-// The cache always stores the full unfiltered list; view-level filters like
-// HideAttached are applied after reading from cache.
+// The cache always stores the full unfiltered list; source filters,
+// HideDuplicates, and HideAttached are applied after reading from cache.
 func (cl *CachingLister) List(opts ListOptions) (model.SeshSessions, error) {
-	// Always fetch/store the full list; we apply filters ourselves.
-	innerOpts := opts
-	innerOpts.HideAttached = false
+	// Always fetch/store the full list (all sources, no dedup, no hide);
+	// we apply all view-level filters ourselves after cache read.
+	innerOpts := ListOptions{}
 
 	cached, err := cl.cache.Read()
 	if err == nil {
@@ -63,26 +63,83 @@ func (cl *CachingLister) List(opts ListOptions) (model.SeshSessions, error) {
 	return cl.applyFilters(sessions, opts), nil
 }
 
-// applyFilters applies view-level filters (like HideAttached) that should not
-// affect what gets stored in the cache.
+// applyFilters applies view-level filters that should not affect what gets
+// stored in the cache: source filtering, HideDuplicates, and HideAttached.
 func (cl *CachingLister) applyFilters(sessions model.SeshSessions, opts ListOptions) model.SeshSessions {
-	if !opts.HideAttached {
-		return sessions
+	filtered := sessions.OrderedIndex
+
+	// 1. Source filtering: if any source flag is set, keep only matching sessions.
+	if allowed := sourceSet(opts); allowed != nil {
+		result := make([]string, 0, len(filtered))
+		for _, index := range filtered {
+			if allowed[sessions.Directory[index].Src] {
+				result = append(result, index)
+			}
+		}
+		filtered = result
 	}
-	attached, ok := cl.inner.GetAttachedTmuxSession()
-	if !ok {
-		return sessions
+
+	// 2. HideDuplicates: deduplicate by name, then by path.
+	if opts.HideDuplicates {
+		nameHash := make(map[string]bool)
+		pathHash := make(map[string]bool)
+		destIndex := 0
+		for _, index := range filtered {
+			session := sessions.Directory[index]
+			nameIsDuplicate := nameHash[session.Name]
+			pathIsDuplicate := session.Path != "" && pathHash[session.Path]
+			if !nameIsDuplicate && !pathIsDuplicate {
+				filtered[destIndex] = index
+				nameHash[session.Name] = true
+				pathHash[session.Path] = true
+				destIndex++
+			}
+		}
+		filtered = filtered[:destIndex]
 	}
-	for i, index := range sessions.OrderedIndex {
-		if sessions.Directory[index].Name == attached.Name {
-			filtered := slices.Delete(slices.Clone(sessions.OrderedIndex), i, i+1)
-			return model.SeshSessions{
-				OrderedIndex: filtered,
-				Directory:    sessions.Directory,
+
+	// 3. HideAttached: remove the currently attached tmux session.
+	if opts.HideAttached {
+		attached, ok := cl.inner.GetAttachedTmuxSession()
+		if ok {
+			for i, index := range filtered {
+				if sessions.Directory[index].Name == attached.Name {
+					filtered = slices.Delete(slices.Clone(filtered), i, i+1)
+					break
+				}
 			}
 		}
 	}
-	return sessions
+
+	if len(filtered) == len(sessions.OrderedIndex) {
+		return sessions
+	}
+	return model.SeshSessions{
+		OrderedIndex: filtered,
+		Directory:    sessions.Directory,
+	}
+}
+
+// sourceSet returns a set of allowed source names based on opts, or nil if
+// no source flags are set (meaning all sources are allowed).
+func sourceSet(opts ListOptions) map[string]bool {
+	if !opts.Tmux && !opts.Config && !opts.Zoxide && !opts.Tmuxinator {
+		return nil
+	}
+	m := make(map[string]bool)
+	if opts.Tmux {
+		m["tmux"] = true
+	}
+	if opts.Config {
+		m["config"] = true
+	}
+	if opts.Zoxide {
+		m["zoxide"] = true
+	}
+	if opts.Tmuxinator {
+		m["tmuxinator"] = true
+	}
+	return m
 }
 
 func (cl *CachingLister) revalidate(opts ListOptions) {
