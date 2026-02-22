@@ -285,7 +285,7 @@ Use `Ctrl-s` to cycle through the sources, and `Ctrl-d` to kill the highlighted 
 
 ## gum + tmux
 
-If you prefer to use [charmblacelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
+If you prefer to use [charmbracelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
 
 ```sh
 bind-key "K" display-popup -E -w 40% "sesh connect \"$(
@@ -406,7 +406,7 @@ dir_length = 2  # Uses last 2 directories: "projects/sesh" instead of just "sesh
 ```
 
 > [!NOTE] 
-> Works great with [tmux-floatx](https://github.com/omerxx/tmux-floax)
+> Works great with [tmux-floax](https://github.com/omerxx/tmux-floax)
 
 ### Sorting
 

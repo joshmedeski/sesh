@@ -285,7 +285,7 @@ bind-key "T" display-popup -E -w 80% -h 70% -d '#{pane_current_path}' -T 'Sesh' 
 
 ## gum + tmux
 
-如果您更喜欢使用 [charmblacelet's gum](https://github.com/charmbracelet/gum)，那么您可以使用以下命令连接到会话：
+如果您更喜欢使用 [charmbracelet's gum](https://github.com/charmbracelet/gum)，那么您可以使用以下命令连接到会话：
 
 ```sh
 bind-key "K" display-popup -E -w 40% "sesh connect "$(
@@ -295,7 +295,7 @@ bind-key "K" display-popup -E -w 40% "sesh connect "$(
 
 **注意：** 与 fzf 相比，gum 提供的功能较少，但我发现它的匹配算法更快，并且感觉更现代。
 
-> [!警告]
+> [!WARNING]
 > 从 [gum v0.15.0](https://github.com/charmbracelet/gum/releases/tag/v0.15.0) 开始，您必须添加 `--no-strip-ansi` 才能正确显示图标。
 
 请参阅我的视频 [排名前 4 的模糊 CLI](https://www.youtube.com/watch?v=T0O2qrOhauY)，以获取更多可与 sesh 集成的工具灵感。
@@ -405,8 +405,8 @@ blacklist = ["scratch"]
 dir_length = 2  # 使用最后两个目录："projects/sesh" 而不是 "sesh"
 ```
 
-> [!注意] 
-> 与 [tmux-floatx](https://github.com/omerxx/tmux-floax) 配合使用效果很好
+> [!NOTE] 
+> 与 [tmux-floax](https://github.com/omerxx/tmux-floax) 配合使用效果很好
 
 ### 排序
 
