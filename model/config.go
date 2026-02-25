@@ -41,6 +41,12 @@ type (
 		Path          string `toml:"path"`
 	}
 
+	TUIConfig struct {
+		// TODO: keybindings and more
+		ShowIcons bool   `toml:"show_icons"`
+		Prompt    string `toml:"prompt"`
+	}
+
 	WildcardConfig struct {
 		Pattern             string `toml:"pattern"`
 		StartupCommand      string `toml:"startup_command"`

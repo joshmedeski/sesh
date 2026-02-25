@@ -51,6 +51,7 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 				return deps.Lister.List(opts)
 			}
 
+			// TODO: DO HERE.
 			m := picker.New(fetchFunc, icons, separatorAware)
 			p := tea.NewProgram(m)
 			result, err := p.Run()
