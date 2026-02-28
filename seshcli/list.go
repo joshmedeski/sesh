@@ -29,6 +29,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			zoxide, _ := cmd.Flags().GetBool("zoxide")
 			hideAttached, _ := cmd.Flags().GetBool("hide-attached")
 			icons, _ := cmd.Flags().GetBool("icons")
+			noColor, _ := cmd.Flags().GetBool("no-color")
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 
@@ -36,6 +37,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 				Config:         config,
 				HideAttached:   hideAttached,
 				Icons:          icons,
+				NoColor:        noColor,
 				Json:           jsonOutput,
 				Tmux:           tmux,
 				Zoxide:         zoxide,
@@ -58,7 +60,11 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			for _, i := range sessions.OrderedIndex {
 				name := sessions.Directory[i].Name
 				if icons {
-					name = deps.Icon.AddIcon(sessions.Directory[i])
+					if noColor {
+						name = deps.Icon.AddIconNoColor(sessions.Directory[i])
+					} else {
+						name = deps.Icon.AddIcon(sessions.Directory[i])
+					}
 				}
 				fmt.Println(name)
 			}
@@ -73,6 +79,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("zoxide", "z", false, "show zoxide results")
 	cmd.Flags().BoolP("hide-attached", "H", false, "don't show currently attached sessions")
 	cmd.Flags().BoolP("icons", "i", false, "show icons")
+	cmd.Flags().BoolP("no-color", "n", false, "show icons without color (requires --icons)")
 	cmd.Flags().BoolP("tmuxinator", "T", false, "show tmuxinator configs")
 	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
 

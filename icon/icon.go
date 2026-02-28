@@ -9,6 +9,7 @@ import (
 
 type Icon interface {
 	AddIcon(session model.SeshSession) string
+	AddIconNoColor(session model.SeshSession) string
 	RemoveIcon(name string) string
 }
 
@@ -49,6 +50,13 @@ func ansiString(code int, s string) string {
 func (i *RealIcon) AddIcon(s model.SeshSession) string {
 	if g, ok := Glyphs[s.Src]; ok {
 		return fmt.Sprintf("%s %s", ansiString(g.ColorCode, g.Icon), s.Name)
+	}
+	return s.Name
+}
+
+func (i *RealIcon) AddIconNoColor(s model.SeshSession) string {
+	if g, ok := Glyphs[s.Src]; ok {
+		return fmt.Sprintf("%s %s", g.Icon, s.Name)
 	}
 	return s.Name
 }
