@@ -12,6 +12,7 @@ type (
 		Config         bool
 		HideAttached   bool
 		Icons          bool
+		NoColor        bool
 		Json           bool
 		Tmux           bool
 		Zoxide         bool
