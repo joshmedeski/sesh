@@ -8,6 +8,7 @@ import (
 
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
+	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
 	NewSession(sessionName string, startDir string) (string, error)
 	NewWindow(startDir string, name string) (string, error)
 	IsAttached() bool
@@ -16,6 +17,7 @@ type Tmux interface {
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
 	NextWindow() (string, error)
+	SelectWindow(name string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 }
 
