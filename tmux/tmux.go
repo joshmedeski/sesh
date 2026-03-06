@@ -17,6 +17,7 @@ type Tmux interface {
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
 	NextWindow() (string, error)
+	SelectWindow(name string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 }
 
