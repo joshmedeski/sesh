@@ -25,6 +25,7 @@ func NewRootCommand(version string) *cobra.Command {
 		NewRootSessionCommand(base),
 		NewPreviewCommand(base),
 		NewPickerCommand(base),
+		NewWindowCommand(base),
 	)
 
 	return rootCmd
