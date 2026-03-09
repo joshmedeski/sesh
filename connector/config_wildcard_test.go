@@ -41,6 +41,7 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		mockLister.On("FindConfigWildcard", "~/projects/myapp").Return(model.WildcardConfig{
 			Pattern:        "~/projects/*",
 			StartupCommand: "nvim",
+			Windows:        []string{"code", "server"},
 		}, true)
 		mockHome.On("ExpandHome", "~/projects/myapp").Return("/Users/test/projects/myapp", nil)
 		mockDir.On("Dir", "/Users/test/projects/myapp").Return(true, "/Users/test/projects/myapp")
@@ -54,6 +55,7 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		assert.Equal(t, "myapp", connection.Session.Name)
 		assert.Equal(t, "/Users/test/projects/myapp", connection.Session.Path)
 		assert.Equal(t, "config_wildcard", connection.Session.Src)
+		assert.Equal(t, []string{"code", "server"}, connection.Session.WindowNames)
 	})
 
 	t.Run("should return not found when no wildcard matches", func(t *testing.T) {

@@ -42,9 +42,10 @@ type (
 	}
 
 	WildcardConfig struct {
-		Pattern             string `toml:"pattern"`
-		StartupCommand      string `toml:"startup_command"`
-		DisableStartCommand bool   `toml:"disable_startup_command"`
-		PreviewCommand      string `toml:"preview_command"`
+		Pattern             string   `toml:"pattern"`
+		StartupCommand      string   `toml:"startup_command"`
+		DisableStartCommand bool     `toml:"disable_startup_command"`
+		PreviewCommand      string   `toml:"preview_command"`
+		Windows             []string `toml:"windows"`
 	}
 )
