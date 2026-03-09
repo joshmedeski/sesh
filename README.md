@@ -589,6 +589,7 @@ Available fields:
 | `startup_command` | Command to run on session creation (supports `{}` for path) |
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
+| `windows` | Window layout to use (array of window names from `[[window]]` configs) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). Recursive matching with `**` is not supported -- `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 

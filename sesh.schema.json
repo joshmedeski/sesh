@@ -167,6 +167,13 @@
           "preview_command": {
             "type": "string",
             "description": "Command used to generate the preview for matching sessions"
+          },
+          "windows": {
+            "type": "array",
+            "description": "Window layout to use for matching sessions",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "additionalProperties": false
