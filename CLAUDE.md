@@ -9,7 +9,7 @@ Sesh is a smart terminal session manager written in Go that helps users create a
 ## Core Architecture
 
 - **Module**: `github.com/joshmedeski/sesh/v2`
-- **Go Version**: 1.24.2 (toolchain 1.24.4)
+- **Go Version**: 1.25.0
 - **Main Entry Point**: `main.go` → `seshcli.App()`
 
 ### Key Packages
