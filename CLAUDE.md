@@ -67,6 +67,7 @@ just mock
 
 ## Development Notes
 
+- Always prefer `just` commands over raw `go` commands when a justfile recipe exists
 - All external dependencies use interfaces for testability (see wrapper packages: `execwrap`, `oswrap`, `pathwrap`)
 - Mock files follow pattern `mock_*.go` in the same package as the interface
 - Follow existing patterns for error handling and `slog` logging
