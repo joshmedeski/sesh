@@ -17,6 +17,9 @@ type Tmux interface {
 	CapturePane(targetSession string) (string, error)
 	NextWindow() (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
+	ListTmuxPanes() ([]*model.TmuxPane, error)
+	SelectPane(windowIndex int, paneIndex int) (string, error)
+	GetCurrentSession() (string, error)
 }
 
 type RealTmux struct {
