@@ -13,6 +13,7 @@ type (
 		WildcardConfigs      []WildcardConfig     `toml:"wildcard"`
 		DirLength            int                  `toml:"dir_length"`
 		SeparatorAware       bool                 `toml:"separator_aware"`
+		TUI                  TUIConfig            `toml:"tui"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
@@ -43,8 +44,9 @@ type (
 
 	TUIConfig struct {
 		// TODO: keybindings and more
-		ShowIcons bool   `toml:"show_icons"`
-		Prompt    string `toml:"prompt"`
+		ShowIcons   bool   `toml:"show_icons"`
+		Prompt      string `toml:"prompt"`
+		Placeholder string `toml:"placeholder"`
 	}
 
 	WildcardConfig struct {

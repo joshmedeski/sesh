@@ -1,6 +1,16 @@
 package picker
 
 import (
+	"fmt"
+	"image/color"
+	"strings"
+
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/sahilm/fuzzy"
+
+	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -31,6 +41,12 @@ type sessionsLoadedMsg struct {
 	err      error
 }
 
+/*
+Move to configuration:
+  - showIcons
+  - prompt (New option)
+  - placeholder
+*/
 type Model struct {
 	allItems       sessionItems
 	filtered       []filteredItem
@@ -42,6 +58,8 @@ type Model struct {
 	chosen         string
 	quit           bool
 	showIcons      bool
+	prompt         string
+	placeholder    string
 	separatorAware bool
 	focusCmd       tea.Cmd
 	loading        bool
@@ -90,15 +108,17 @@ func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
 	return items
 }
 
-func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool) Model {
+func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool, prompt string, placeholder string) Model {
 	ti := textinput.New()
-	ti.Placeholder = "Filter sessions..."
-	ti.Prompt = "> "
+	ti.Placeholder = placeholder
+	ti.Prompt = prompt
 
 	m := Model{
 		filterInput:    ti,
 		showIcons:      showIcons,
 		separatorAware: separatorAware,
+		prompt:         prompt,
+		placeholder:    placeholder,
 		loading:        true,
 		fetchFunc:      fetchFunc,
 	}
