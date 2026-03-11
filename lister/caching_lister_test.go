@@ -139,6 +139,7 @@ func TestCachingLister_DelegatesMethods(t *testing.T) {
 	inner.On("FindConfigWildcard", "/path").Return(model.WildcardConfig{}, false)
 	inner.On("FindZoxideSession", "test").Return(session, true)
 	inner.On("FindTmuxinatorConfig", "test").Return(session, true)
+	inner.On("ListTmuxPanes").Return(model.SeshSessions{}, nil)
 
 	cl := lister.NewCachingLister(inner, fc)
 
@@ -163,6 +164,10 @@ func TestCachingLister_DelegatesMethods(t *testing.T) {
 
 	s, ok = cl.FindTmuxinatorConfig("test")
 	assert.True(t, ok)
+
+	panes, pErr := cl.ListTmuxPanes()
+	assert.NoError(t, pErr)
+	assert.Empty(t, panes.OrderedIndex)
 }
 
 func sessionsWithAttached() model.SeshSessions {
