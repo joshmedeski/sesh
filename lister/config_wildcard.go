@@ -2,6 +2,7 @@ package lister
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -17,13 +18,18 @@ func (l *RealLister) FindConfigWildcard(path string) (model.WildcardConfig, bool
 		if err != nil {
 			continue
 		}
-		matched, err := filepath.Match(expandedPattern, expandedPath)
-		if err != nil {
-			continue
-		}
-		if matched {
+		if matchWildcard(expandedPattern, expandedPath) {
 			return wc, true
 		}
 	}
 	return model.WildcardConfig{}, false
+}
+
+func matchWildcard(pattern, path string) bool {
+	if strings.HasSuffix(pattern, "/**") {
+		prefix := strings.TrimSuffix(pattern, "/**")
+		return strings.HasPrefix(path, prefix+"/")
+	}
+	matched, err := filepath.Match(pattern, path)
+	return err == nil && matched
 }
