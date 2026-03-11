@@ -12,7 +12,7 @@ func isTmuxPaneFormat(name string) bool {
 }
 
 func tmuxPaneStrategy(c *RealConnector, name string) (model.Connection, error) {
-	if !isTmuxPaneFormat(name) {
+	if !c.tmux.IsAttached() || !isTmuxPaneFormat(name) {
 		return model.Connection{Found: false}, nil
 	}
 
@@ -36,7 +36,7 @@ func tmuxPaneStrategy(c *RealConnector, name string) (model.Connection, error) {
 	return model.Connection{Found: false}, nil
 }
 
-func connectToTmuxPane(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
+func connectToTmuxPane(c *RealConnector, connection model.Connection, _ model.ConnectOpts) (string, error) {
 	panes, err := c.tmux.ListTmuxPanes()
 	if err != nil {
 		return "", err

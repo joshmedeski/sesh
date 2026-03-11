@@ -50,11 +50,17 @@ func parseTmuxPanesOutput(rawList []string) ([]*model.TmuxPane, error) {
 }
 
 func (t *RealTmux) SelectPane(windowIndex int, paneIndex int) (string, error) {
-	if _, err := t.shell.Cmd("tmux", "select-window", "-t", fmt.Sprintf(":%d", windowIndex)); err != nil {
+	sessionName, err := t.GetCurrentSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current session: %w", err)
+	}
+
+	target := fmt.Sprintf("%s:%d.%d", sessionName, windowIndex, paneIndex)
+	if _, err := t.shell.Cmd("tmux", "select-window", "-t", fmt.Sprintf("%s:%d", sessionName, windowIndex)); err != nil {
 		return "", fmt.Errorf("failed to select window %d: %w", windowIndex, err)
 	}
-	if _, err := t.shell.Cmd("tmux", "select-pane", "-t", fmt.Sprintf(".%d", paneIndex)); err != nil {
-		return "", fmt.Errorf("failed to select pane %d: %w", paneIndex, err)
+	if _, err := t.shell.Cmd("tmux", "select-pane", "-t", target); err != nil {
+		return "", fmt.Errorf("failed to select pane %d in window %d: %w", paneIndex, windowIndex, err)
 	}
 	return fmt.Sprintf("selected pane %d in window %d", paneIndex, windowIndex), nil
 }

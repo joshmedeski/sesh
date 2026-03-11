@@ -48,7 +48,7 @@ func srcs(opts ListOptions) []string {
 		count++
 	}
 	if count == 0 {
-		return []string{"tmux", "config", "tmuxinator", "zoxide", "tmux-pane"}
+		return []string{"tmux", "config", "tmuxinator", "zoxide"}
 	}
 	srcs := make([]string, 0, count)
 	if opts.Tmux {
