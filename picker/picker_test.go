@@ -36,7 +36,7 @@ func testFetchFunc(sessions model.SeshSessions) FetchFunc {
 // newTestModel creates a model and simulates the async load completing.
 func newTestModel() Model {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model)
 }
@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 
 func TestNew_StartsInLoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 	assert.True(t, m.loading)
 	assert.Len(t, m.allItems, 0)
 	assert.Len(t, m.filtered, 0)
@@ -202,7 +202,7 @@ func TestUpdate_Enter_EmptyList(t *testing.T) {
 
 func TestUpdate_Enter_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 	assert.True(t, m.loading)
 
 	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -215,7 +215,7 @@ func TestUpdate_Enter_WhileLoading(t *testing.T) {
 
 func TestUpdate_Escape_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 
 	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
 	resultModel := result.(Model)
@@ -225,7 +225,7 @@ func TestUpdate_Escape_WhileLoading(t *testing.T) {
 
 func TestUpdate_SessionsLoaded(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 	assert.True(t, m.loading)
 
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
@@ -239,7 +239,7 @@ func TestUpdate_SessionsLoaded(t *testing.T) {
 
 func TestUpdate_SessionsLoaded_WithPreTypedFilter(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 
 	// Simulate typing "dot" before sessions arrive
 	m.filterInput.SetValue("dot")
@@ -257,7 +257,7 @@ func TestUpdate_SessionsLoadError(t *testing.T) {
 	fetchErr := errors.New("zoxide not found")
 	m := New(func() (model.SeshSessions, error) {
 		return model.SeshSessions{}, fetchErr
-	}, false, false)
+	}, false, false, "> ", "Filter sessions...")
 
 	result, _ := m.Update(sessionsLoadedMsg{err: fetchErr})
 	resultModel := result.(Model)
@@ -307,7 +307,7 @@ func TestView_ReturnsNonEmpty(t *testing.T) {
 
 func TestView_LoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 	m.width = 60
 	m.height = 24
 
@@ -352,7 +352,7 @@ func TestHalfPageMovement(t *testing.T) {
 		index[i] = key
 	}
 	sessions := model.SeshSessions{OrderedIndex: index, Directory: dir}
-	m := New(testFetchFunc(sessions), false, false)
+	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	m = result.(Model)
 	m.height = 20
@@ -366,7 +366,7 @@ func TestHalfPageMovement(t *testing.T) {
 // newTestModelSeparatorAware creates a model with separator-aware matching enabled.
 func newTestModelSeparatorAware() Model {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, true)
+	m := New(testFetchFunc(sessions), false, true, "> ", "Filter sessions...")
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model)
 }
