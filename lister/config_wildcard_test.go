@@ -93,4 +93,10 @@ func TestFindConfigWildcard(t *testing.T) {
 		_, found := realLister.FindConfigWildcard("/Users/test/deep")
 		assert.False(t, found)
 	})
+
+	t.Run("should not match the prefix directory with trailing slash and **", func(t *testing.T) {
+		mockHome.On("ExpandHome", "/Users/test/deep/").Return("/Users/test/deep/", nil)
+		_, found := realLister.FindConfigWildcard("/Users/test/deep/")
+		assert.False(t, found)
+	})
 }

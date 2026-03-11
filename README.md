@@ -577,6 +577,10 @@ startup_command = "nvim"
 pattern = "~/work/*"
 startup_command = "make dev"
 preview_command = "ls -la"
+
+[[wildcard]]
+pattern = "~/repos/**"
+startup_command = "git status"
 ```
 
 When you run `sesh connect ~/projects/myapp`, sesh matches the path against your wildcard patterns and automatically creates a session named from the directory (using git remote or folder name), runs the configured startup command, and adds the path to zoxide.
@@ -590,7 +594,7 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 
-**Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). Recursive matching with `**` is not supported -- `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
+**Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 
 ### Listing Configurations
 

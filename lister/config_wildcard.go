@@ -26,10 +26,16 @@ func (l *RealLister) FindConfigWildcard(path string) (model.WildcardConfig, bool
 }
 
 func matchWildcard(pattern, path string) bool {
+	cleanPath := filepath.Clean(path)
+
 	if strings.HasSuffix(pattern, "/**") {
 		prefix := strings.TrimSuffix(pattern, "/**")
-		return strings.HasPrefix(path, prefix+"/")
+		if !strings.HasPrefix(cleanPath, prefix+"/") {
+			return false
+		}
+		return len(cleanPath) > len(prefix)+1
 	}
-	matched, err := filepath.Match(pattern, path)
+
+	matched, err := filepath.Match(pattern, cleanPath)
 	return err == nil && matched
 }
