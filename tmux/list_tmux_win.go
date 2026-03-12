@@ -27,7 +27,7 @@ func (t *RealTmux) ListWindows(targetSession string) ([]*model.TmuxWindow, error
 
 	output, err := t.shell.ListCmd("tmux", args...)
 	if err != nil {
-		return []*model.TmuxWindow{}, nil
+		return nil, err
 	}
 	return parseTmuxWindowsOutput(output)
 }

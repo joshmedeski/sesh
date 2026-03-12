@@ -1,6 +1,7 @@
 package seshcli
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,6 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			targetSession, _ := cmd.Flags().GetString("session")
 			jsonOutput, _ := cmd.Flags().GetBool("json")
-			_ = jsonOutput
 
 			if targetSession == "" {
 				if !base.Tmux.IsAttached() {
@@ -43,6 +43,14 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 				windows, err := base.Tmux.ListWindows(targetSession)
 				if err != nil {
 					return err
+				}
+				if jsonOutput {
+					out, err := json.Marshal(windows)
+					if err != nil {
+						return err
+					}
+					fmt.Println(string(out))
+					return nil
 				}
 				for _, w := range windows {
 					fmt.Println(w.Name)
@@ -79,11 +87,7 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			windowName := filepath.Base(absPath)
-			newWindowArgs := []string{"new-window", "-n", windowName, "-c", absPath}
-			if targetSession != "" {
-				newWindowArgs = append(newWindowArgs, "-t", targetSession)
-			}
-			if _, err := base.Shell.Cmd("tmux", newWindowArgs...); err != nil {
+			if _, err := base.Tmux.NewWindowInSession(windowName, absPath, targetSession); err != nil {
 				return fmt.Errorf("failed to create window: %w", err)
 			}
 			return nil

@@ -11,13 +11,14 @@ type Tmux interface {
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
 	NewSession(sessionName string, startDir string) (string, error)
 	NewWindow(startDir string, name string) (string, error)
+	NewWindowInSession(name string, startDir string, targetSession string) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
 	NextWindow() (string, error)
-	SelectWindow(name string) (string, error)
+	SelectWindow(targetWindow string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 }
 
