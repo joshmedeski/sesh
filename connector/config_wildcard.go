@@ -30,10 +30,11 @@ func configWildcardStrategy(c *RealConnector, name string) (model.Connection, er
 		New:         true,
 		AddToZoxide: true,
 		Session: model.SeshSession{
-			Src:         "config_wildcard",
-			Name:        nameFromPath,
-			Path:        absPath,
-			WindowNames: wc.Windows,
+			Src:                   "config_wildcard",
+			Name:                  nameFromPath,
+			Path:                  absPath,
+			WindowNames:           wc.Windows,
+			DisableStartupCommand: wc.DisableStartCommand,
 		},
 	}, nil
 }

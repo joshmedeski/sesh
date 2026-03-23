@@ -58,6 +58,21 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		assert.Equal(t, []string{"code", "server"}, connection.Session.WindowNames)
 	})
 
+	t.Run("should propagate DisableStartupCommand from wildcard config", func(t *testing.T) {
+		mockLister.On("FindConfigWildcard", "~/projects/quiet").Return(model.WildcardConfig{
+			Pattern:             "~/projects/*",
+			DisableStartCommand: true,
+		}, true)
+		mockHome.On("ExpandHome", "~/projects/quiet").Return("/Users/test/projects/quiet", nil)
+		mockDir.On("Dir", "/Users/test/projects/quiet").Return(true, "/Users/test/projects/quiet")
+		mockNamer.On("Name", "/Users/test/projects/quiet").Return("quiet", nil)
+
+		connection, err := configWildcardStrategy(c, "~/projects/quiet")
+		assert.Nil(t, err)
+		assert.True(t, connection.Found)
+		assert.True(t, connection.Session.DisableStartupCommand)
+	})
+
 	t.Run("should return not found when no wildcard matches", func(t *testing.T) {
 		mockLister.On("FindConfigWildcard", "/other/path").Return(model.WildcardConfig{}, false)
 
