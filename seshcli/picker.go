@@ -29,30 +29,9 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 
-			showIcons := deps.Config.TUI.ShowIcons
-			if cmd.Flags().Changed("icons") {
-				showIcons, _ = cmd.Flags().GetBool("icons")
-			}
-
-			separatorAware := deps.Config.SeparatorAware
-			if cmd.Flags().Changed("separator-aware") {
-				separatorAware, _ = cmd.Flags().GetBool("separator-aware")
-			}
-
-			prompt := deps.Config.TUI.Prompt
-			if prompt == "" {
-				prompt = "> "
-			}
-
-			placeholder := deps.Config.TUI.Placeholder
-			if placeholder == "" {
-				placeholder = "Filter sessions..."
-			}
-
 			listerOpts := lister.ListOptions{
 				Config:         config,
 				HideAttached:   hideAttached,
-				Icons:          showIcons,
 				Tmux:           tmux,
 				Zoxide:         zoxide,
 				Tmuxinator:     tmuxinator,
@@ -62,11 +41,14 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 				return deps.Lister.List(listerOpts)
 			}
 
-			pickerOpts := picker.PickerOptions{
-				ShowIcons:      showIcons,
-				SeparatorAware: separatorAware,
-				Prompt:         prompt,
-				Placeholder:    placeholder,
+			var pickerOpts picker.PickerOptions
+			if cmd.Flags().Changed("icons") {
+				showIcons := true
+				pickerOpts.ShowIcons = &showIcons
+			}
+			if cmd.Flags().Changed("separator-aware") {
+				separatorAware := true
+				pickerOpts.SeparatorAware = &separatorAware
 			}
 
 			chosen, err := deps.Picker.Pick(fetchFunc, pickerOpts)

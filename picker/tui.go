@@ -52,8 +52,6 @@ type Model struct {
 	chosen         string
 	quit           bool
 	showIcons      bool
-	prompt         string
-	placeholder    string
 	separatorAware bool
 	focusCmd       tea.Cmd
 	loading        bool
@@ -111,8 +109,6 @@ func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool, prompt string
 		filterInput:    ti,
 		showIcons:      showIcons,
 		separatorAware: separatorAware,
-		prompt:         prompt,
-		placeholder:    placeholder,
 		loading:        true,
 		fetchFunc:      fetchFunc,
 	}

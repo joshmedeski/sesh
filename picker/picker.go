@@ -9,11 +9,16 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
+const (
+	defaultPrompt      = "> "
+	defaultPlaceholder = "Filter sessions..."
+)
+
 type PickerOptions struct {
-	ShowIcons      bool
-	SeparatorAware bool
-	Prompt         string
-	Placeholder    string
+	ShowIcons      *bool
+	SeparatorAware *bool
+	Prompt         *string
+	Placeholder    *string
 }
 
 type Picker interface {
@@ -29,7 +34,7 @@ func NewPicker(config model.Config) Picker {
 }
 
 func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, error) {
-	m := New(fetchFunc, opts.ShowIcons, opts.SeparatorAware, opts.Prompt, opts.Placeholder)
+	m := New(fetchFunc, *opts.ShowIcons, *opts.SeparatorAware, *opts.Prompt, *opts.Placeholder)
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()
 	if err != nil {
