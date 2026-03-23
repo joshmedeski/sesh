@@ -26,6 +26,7 @@ var (
 	tmuxIcon       string = ""
 	configIcon     string = ""
 	tmuxinatorIcon string = ""
+	tmuxPaneIcon       string = ""
 )
 
 // Glyph holds the icon character and ANSI color code for a session source.
@@ -40,8 +41,8 @@ var Glyphs = map[string]Glyph{
 	"config":     {Icon: configIcon, ColorCode: 90},
 	"zoxide":     {Icon: zoxideIcon, ColorCode: 36},
 	"tmuxinator": {Icon: tmuxinatorIcon, ColorCode: 33},
+	"tmux-pane":  {Icon: tmuxPaneIcon, ColorCode: 32},
 }
-
 
 func ansiString(code int, s string) string {
 	return fmt.Sprintf("\033[%dm%s\033[39m", code, s)
@@ -62,7 +63,7 @@ func (i *RealIcon) AddIconNoColor(s model.SeshSession) string {
 }
 
 func (i *RealIcon) RemoveIcon(name string) string {
-	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) || strings.HasPrefix(name, tmuxinatorIcon) {
+	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) || strings.HasPrefix(name, tmuxinatorIcon) || strings.HasPrefix(name, tmuxPaneIcon) {
 		return name[4:]
 	}
 	return name

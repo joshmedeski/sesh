@@ -123,7 +123,7 @@ func (cl *CachingLister) applyFilters(sessions model.SeshSessions, opts ListOpti
 // sourceSet returns a set of allowed source names based on opts, or nil if
 // no source flags are set (meaning all sources are allowed).
 func sourceSet(opts ListOptions) map[string]bool {
-	if !opts.Tmux && !opts.Config && !opts.Zoxide && !opts.Tmuxinator {
+	if !opts.Tmux && !opts.Config && !opts.Zoxide && !opts.Tmuxinator && !opts.Panes {
 		return nil
 	}
 	m := make(map[string]bool)
@@ -138,6 +138,9 @@ func sourceSet(opts ListOptions) map[string]bool {
 	}
 	if opts.Tmuxinator {
 		m["tmuxinator"] = true
+	}
+	if opts.Panes {
+		m["tmux-pane"] = true
 	}
 	return m
 }
@@ -170,6 +173,10 @@ func (cl *CachingLister) Wait() {
 }
 
 // --- Delegate all other Lister methods to inner ---
+
+func (cl *CachingLister) ListTmuxPanes() (model.SeshSessions, error) {
+	return cl.inner.ListTmuxPanes()
+}
 
 func (cl *CachingLister) FindTmuxSession(name string) (model.SeshSession, bool) {
 	return cl.inner.FindTmuxSession(name)
