@@ -41,12 +41,6 @@ type sessionsLoadedMsg struct {
 	err      error
 }
 
-/*
-Move to configuration:
-  - showIcons
-  - prompt (New option)
-  - placeholder
-*/
 type Model struct {
 	allItems       sessionItems
 	filtered       []filteredItem
