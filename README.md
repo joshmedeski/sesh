@@ -24,6 +24,17 @@
 
 Sesh is a CLI that helps you create and manage tmux sessions quickly and easily using zoxide.
 
+- **Smart session creation** - automatically names sessions based on git repo, git remote, or directory
+- **Zoxide integration** - jump to your most-used projects instantly
+- **Session configuration** - define startup commands, windows, and preview commands per project in `sesh.toml`
+- **Wildcard configs** - apply settings to all projects matching a glob pattern
+- **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
+- **Clone and connect** - clone a git repo and start a session in one step
+- **Last session switching** - seamlessly bounce between your two most recent sessions
+- **Root session navigation** - jump to the root of a git worktree or repository
+- **Nerd Font icons** - display session type icons in your picker
+- **Shell completions** - tab completion for Bash, Zsh, Fish, and PowerShell
+
 ## Videos
 
 <table>
