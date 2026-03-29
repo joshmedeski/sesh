@@ -478,6 +478,9 @@ sort_order = [
 ```
 ### Cache
 
+> [!WARNING]
+> This feature is experimental and may not work as expected.
+
 Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores results at `$XDG_CACHE_HOME/sesh/sessions.gob` (default `~/.cache/sesh/sessions.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
 
 - **Cold start**: no cache exists, fetches live data and writes the cache
