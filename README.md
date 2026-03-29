@@ -41,6 +41,33 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 > [!TIP]
 > Want to see more features and help sesh mature? Consider [sponsoring the project](https://github.com/sponsors/joshmedeski) to support ongoing development.
 
+## Table of Contents
+
+<table>
+  <tr>
+    <td>
+
+- [Videos](#videos)
+- [How to install](#how-to-install)
+- [Shell Completion](#shell-completion)
+- [Extensions](#extensions)
+- [How to use](#how-to-use)
+- [Recommended tmux Settings](#recommended-tmux-settings)
+
+</td>
+    <td>
+
+- [Bonus](#bonus)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [Background (the "t" script)](#background-the-t-script)
+- [Contributors](#contributors)
+- [Star History](#star-history)
+
+</td>
+  </tr>
+</table>
+
 ## Videos
 
 <table>
