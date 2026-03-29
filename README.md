@@ -35,6 +35,12 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - **Nerd Font icons** - display session type icons in your picker
 - **Shell completions** - tab completion for Bash, Zsh, Fish, and PowerShell
 
+> [!NOTE]
+> ⭐ If you find sesh useful, please star the repo — it helps the project grow and reach more developers!
+
+> [!TIP]
+> Want to see more features and help sesh mature? Consider [sponsoring the project](https://github.com/sponsors/joshmedeski) to support ongoing development.
+
 ## Videos
 
 <table>
