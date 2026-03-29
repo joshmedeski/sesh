@@ -24,13 +24,24 @@
 
 Sesh is a CLI that helps you create and manage tmux sessions quickly and easily using zoxide.
 
-<div style="width:50%">
-  <a href="https://youtu.be/-yX3GjZfb5Y?si=iFG8qNro1hmZjJFY" target="_blank">
-    <img src="./smart-tmux-sessions-with-sesh.jpeg" alt="Smart tmux sessions with sesh">
-  </a>
-</div>
+## Videos
 
-Watch the video to learn more about how to use sesh to manage your tmux sessions.
+<table>
+  <tr>
+    <td width="50%">
+      <a href="https://youtu.be/-yX3GjZfb5Y?si=iFG8qNro1hmZjJFY" target="_blank">
+        <img src="./smart-tmux-sessions-with-sesh.jpeg" alt="Smart tmux sessions with sesh">
+      <p><strong>Intro from Josh Medeski (sesh's creator)</strong></p>
+      </a>
+    </td>
+    <td width="50%">
+      <a href="https://www.youtube.com/watch?v=ejdzk_L6nIk" target="_blank">
+        <img src="./devops-toolbox-video-thumb.jpeg" alt="DevOps Toolbox - sesh">
+      <p><strong>Review from DevOps Toolbox</strong></p>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ## How to install
 
