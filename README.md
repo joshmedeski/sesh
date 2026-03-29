@@ -275,7 +275,7 @@ You can customize this however you want, see `man fzf` for more info on the diff
 
 #### tmux + [television](https://github.com/alexpasmantier/television)
 
-If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/docs/Users/community-channels-unix#sesh) in a tmux popup.
+If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/community/channels-unix/#sesh) in a tmux popup.
 
 ```sh
 bind-key "T" display-popup -E -w 80% -h 70% -d '#{pane_current_path}' -T 'Sesh' tv sesh
