@@ -35,7 +35,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 			panes, _ := cmd.Flags().GetBool("panes")
 
-			if panes && !base.Tmux.IsAttached() {
+			if panes && !deps.Tmux.IsAttached() {
 				return errors.New("--panes requires being inside a tmux session")
 			}
 

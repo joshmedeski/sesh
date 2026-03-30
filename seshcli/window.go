@@ -15,15 +15,20 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 		Aliases: []string{"w"},
 		Short:   "List or switch/create windows in a tmux session",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			deps, err := buildDeps(cmd, base)
+			if err != nil {
+				return err
+			}
+
 			targetSession, _ := cmd.Flags().GetString("session")
 			jsonOutput, _ := cmd.Flags().GetBool("json")
 
 			if targetSession == "" {
-				if !base.Tmux.IsAttached() {
+				if !deps.Tmux.IsAttached() {
 					return fmt.Errorf("not inside a tmux session, use --session to specify one")
 				}
 			} else {
-				sessions, err := base.Tmux.ListSessions()
+				sessions, err := deps.Tmux.ListSessions()
 				if err != nil {
 					return err
 				}
@@ -40,7 +45,7 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				windows, err := base.Tmux.ListWindows(targetSession)
+				windows, err := deps.Tmux.ListWindows(targetSession)
 				if err != nil {
 					return err
 				}
@@ -60,7 +65,7 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 
 			name := strings.Join(args, " ")
 
-			windows, err := base.Tmux.ListWindows(targetSession)
+			windows, err := deps.Tmux.ListWindows(targetSession)
 			if err != nil {
 				return err
 			}
@@ -70,7 +75,7 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 					if targetSession != "" {
 						target = fmt.Sprintf("%s:%s", targetSession, name)
 					}
-					if _, err := base.Tmux.SelectWindow(target); err != nil {
+					if _, err := deps.Tmux.SelectWindow(target); err != nil {
 						return fmt.Errorf("failed to select window '%s': %w", name, err)
 					}
 					return nil
@@ -87,7 +92,7 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			windowName := filepath.Base(absPath)
-			if _, err := base.Tmux.NewWindowInSession(windowName, absPath, targetSession); err != nil {
+			if _, err := deps.Tmux.NewWindowInSession(windowName, absPath, targetSession); err != nil {
 				return fmt.Errorf("failed to create window: %w", err)
 			}
 			return nil
