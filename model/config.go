@@ -13,6 +13,7 @@ type (
 		WildcardConfigs      []WildcardConfig     `toml:"wildcard"`
 		DirLength            int                  `toml:"dir_length"`
 		SeparatorAware       bool                 `toml:"separator_aware"`
+		TmuxCommand          string               `toml:"tmux_command"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
