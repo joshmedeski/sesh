@@ -31,7 +31,6 @@ func sortSources(sources, sortOrder []string) []string {
 }
 
 func srcs(opts ListOptions) []string {
-	var srcs []string
 	count := 0
 	if opts.Tmux {
 		count++
@@ -45,26 +44,27 @@ func srcs(opts ListOptions) []string {
 	if opts.Zoxide {
 		count++
 	}
+	if opts.Panes {
+		count++
+	}
 	if count == 0 {
 		return []string{"tmux", "config", "tmuxinator", "zoxide"}
 	}
-	srcs = make([]string, count)
-	i := 0
+	srcs := make([]string, 0, count)
 	if opts.Tmux {
-		srcs[i] = "tmux"
-		i++
+		srcs = append(srcs, "tmux")
 	}
 	if opts.Config {
-		srcs[i] = "config"
-		i++
+		srcs = append(srcs, "config")
 	}
 	if opts.Tmuxinator {
-		srcs[i] = "tmuxinator"
-		i++
+		srcs = append(srcs, "tmuxinator")
 	}
 	if opts.Zoxide {
-		srcs[i] = "zoxide"
-		i++
+		srcs = append(srcs, "zoxide")
+	}
+	if opts.Panes {
+		srcs = append(srcs, "tmux-pane")
 	}
 	return srcs
 }
