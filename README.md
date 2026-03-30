@@ -452,6 +452,16 @@ sesh --config /path/to/custom/sesh.toml connect my-session
 
 The flag works with any subcommand. When specified, the file must exist or sesh will return an error. Without the flag, sesh uses the default config path.
 
+### Custom Multiplexer (psmux)
+
+Sesh uses `tmux` as the default terminal multiplexer, but you can configure it to use any tmux-compatible multiplexer like [psmux](https://github.com/psmux/psmux) by setting `tmux_command` in your `sesh.toml`:
+
+```toml
+tmux_command = "psmux"
+```
+
+This replaces the `tmux` binary in all commands sesh runs (session creation, switching, attaching, etc.). The configured multiplexer must support tmux's CLI interface.
+
 ### Schema (Editor Autocomplete)
 
 Sesh provides a [JSON Schema](https://json-schema.org/) for `sesh.toml` that enables autocomplete, validation, and documentation in your editor. This works with any editor that supports the [taplo](https://taplo.tamasfe.dev/) TOML language server.

@@ -13,7 +13,7 @@ import (
 func TestListSessions(t *testing.T) {
 	t.Run("List tmux session", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
-		tmux := &RealTmux{shell: mockShell}
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
 		mockShell.EXPECT().ListCmd("tmux", "list-sessions", "-F", mock.Anything).Return([]string{"1714092246::::0::::1714089765::1::::::::::::::0::$1::1714092246::0::0::sesh/main::/Users/joshmedeski/c/sesh/main::2,1::2"},
 			nil,
 		)
