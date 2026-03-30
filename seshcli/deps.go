@@ -7,22 +7,23 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/configurator"
 	"github.com/joshmedeski/sesh/v2/connector"
-	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
-	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
+	"github.com/joshmedeski/sesh/v2/picker"
 	"github.com/joshmedeski/sesh/v2/previewer"
 	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/runtimewrap"
@@ -55,6 +56,7 @@ type Deps struct {
 	BaseDeps
 	Config        model.Config
 	Lister        lister.Lister
+	Picker        picker.Picker
 	CachingLister *lister.CachingLister
 	Startup       startup.Startup
 	Namer         namer.Namer
@@ -125,11 +127,13 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, b.Tmux, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
+	pk := picker.NewPicker(config)
 
 	return &Deps{
 		BaseDeps:      *b,
 		Config:        config,
 		Lister:        usedLister,
+		Picker:        pk,
 		CachingLister: cachedLi,
 		Startup:       s,
 		Namer:         n,

@@ -1,9 +1,6 @@
 package seshcli
 
 import (
-	"fmt"
-
-	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/joshmedeski/sesh/v2/lister"
@@ -29,49 +26,41 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			tmux, _ := cmd.Flags().GetBool("tmux")
 			zoxide, _ := cmd.Flags().GetBool("zoxide")
 			hideAttached, _ := cmd.Flags().GetBool("hide-attached")
-			icons, _ := cmd.Flags().GetBool("icons")
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 
-			separatorAware := deps.Config.SeparatorAware
-			if cmd.Flags().Changed("separator-aware") {
-				separatorAware, _ = cmd.Flags().GetBool("separator-aware")
-			}
-
-			opts := lister.ListOptions{
+			listerOpts := lister.ListOptions{
 				Config:         config,
 				HideAttached:   hideAttached,
-				Icons:          icons,
 				Tmux:           tmux,
 				Zoxide:         zoxide,
 				Tmuxinator:     tmuxinator,
 				HideDuplicates: hideDuplicates,
 			}
 			fetchFunc := func() (model.SeshSessions, error) {
-				return deps.Lister.List(opts)
+				return deps.Lister.List(listerOpts)
 			}
 
-			m := picker.New(fetchFunc, icons, separatorAware)
-			p := tea.NewProgram(m)
-			result, err := p.Run()
+			var pickerOpts picker.PickerOptions
+			if cmd.Flags().Changed("icons") {
+				showIcons := true
+				pickerOpts.ShowIcons = &showIcons
+			}
+			if cmd.Flags().Changed("separator-aware") {
+				separatorAware := true
+				pickerOpts.SeparatorAware = &separatorAware
+			}
+
+			chosen, err := deps.Picker.Pick(fetchFunc, pickerOpts)
 			if err != nil {
-				return fmt.Errorf("picker error: %w", err)
+				return err
 			}
 
-			pickerModel, ok := result.(picker.Model)
-			if !ok {
-				return fmt.Errorf("unexpected model type")
-			}
-
-			if pickerModel.LoadErr() != nil {
-				return fmt.Errorf("couldn't list sessions: %w", pickerModel.LoadErr())
-			}
-
-			if pickerModel.Quit() || pickerModel.Chosen() == "" {
+			if chosen == "" {
 				return nil
 			}
 
-			if _, err := deps.Connector.Connect(pickerModel.Chosen(), model.ConnectOpts{}); err != nil {
+			if _, err := deps.Connector.Connect(chosen, model.ConnectOpts{}); err != nil {
 				return err
 			}
 
