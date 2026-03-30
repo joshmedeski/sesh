@@ -24,6 +24,9 @@ builds:
       - linux
       - windows
       - darwin
+    goarch:
+      - amd64
+      - arm64
     ldflags:
       - -X main.version={{.Version}}
 
@@ -75,13 +78,15 @@ brews:
 aurs:
   - name: sesh-bin
     description: "Smart session manager for the terminal"
+    homepage: "https://github.com/joshmedeski/sesh"
     maintainers:
       - "Josh Medeski <josh.medeski@gmail.com>"
     license: "MIT"
-    git_url: "https://github.com/joshmedeski/sesh"
+    git_url: "ssh://aur@aur.archlinux.org/sesh-bin.git"
+    private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
     depends:
       - zoxide
-        tmux
+      - tmux
     package: |-
       install -Dm755 $_pkgname "$pkgdir/usr/bin/$_pkgname"
       install -Dm644 share/man/man1/sesh.1 "$pkgdir/usr/share/man/man1/sesh.1"
