@@ -29,6 +29,10 @@ func TestFindConfigWildcard(t *testing.T) {
 				StartupCommand: "make dev",
 				PreviewCommand: "ls -la",
 			},
+			{
+				Pattern:        "~/deep/**",
+				StartupCommand: "deep-cmd",
+			},
 		},
 	}
 	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
@@ -40,6 +44,7 @@ func TestFindConfigWildcard(t *testing.T) {
 	// Register pattern expansions used across multiple test cases
 	mockHome.On("ExpandHome", "~/projects/*").Return("/Users/test/projects/*", nil)
 	mockHome.On("ExpandHome", "~/work/*").Return("/Users/test/work/*", nil)
+	mockHome.On("ExpandHome", "~/deep/**").Return("/Users/test/deep/**", nil)
 
 	t.Run("should match path against wildcard pattern", func(t *testing.T) {
 		mockHome.On("ExpandHome", "/Users/test/projects/myapp").Return("/Users/test/projects/myapp", nil)
@@ -67,6 +72,31 @@ func TestFindConfigWildcard(t *testing.T) {
 	t.Run("should not match nested paths (single-level glob)", func(t *testing.T) {
 		mockHome.On("ExpandHome", "/Users/test/projects/foo/bar").Return("/Users/test/projects/foo/bar", nil)
 		_, found := realLister.FindConfigWildcard("/Users/test/projects/foo/bar")
+		assert.False(t, found)
+	})
+
+	t.Run("should match nested paths with ** pattern", func(t *testing.T) {
+		mockHome.On("ExpandHome", "/Users/test/deep/foo/bar/baz").Return("/Users/test/deep/foo/bar/baz", nil)
+		wc, found := realLister.FindConfigWildcard("/Users/test/deep/foo/bar/baz")
+		assert.True(t, found)
+		assert.Equal(t, "deep-cmd", wc.StartupCommand)
+	})
+
+	t.Run("should not match unrelated paths with ** pattern", func(t *testing.T) {
+		mockHome.On("ExpandHome", "/Users/test/other/foo").Return("/Users/test/other/foo", nil)
+		_, found := realLister.FindConfigWildcard("/Users/test/other/foo")
+		assert.False(t, found)
+	})
+
+	t.Run("should not match the prefix directory itself with **", func(t *testing.T) {
+		mockHome.On("ExpandHome", "/Users/test/deep").Return("/Users/test/deep", nil)
+		_, found := realLister.FindConfigWildcard("/Users/test/deep")
+		assert.False(t, found)
+	})
+
+	t.Run("should not match the prefix directory with trailing slash and **", func(t *testing.T) {
+		mockHome.On("ExpandHome", "/Users/test/deep/").Return("/Users/test/deep/", nil)
+		_, found := realLister.FindConfigWildcard("/Users/test/deep/")
 		assert.False(t, found)
 	})
 }

@@ -2,7 +2,7 @@
   <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
 </p>
 
-<h1 align="center">Sesh, the smart terminal session manager</h1>
+<h1 align="center">Sesh, the smart tmux session manager</h1>
 
 <p align="center">
   <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml">
@@ -24,13 +24,68 @@
 
 Sesh is a CLI that helps you create and manage tmux sessions quickly and easily using zoxide.
 
-<div style="width:50%">
-  <a href="https://youtu.be/-yX3GjZfb5Y?si=iFG8qNro1hmZjJFY" target="_blank">
-    <img src="./smart-tmux-sessions-with-sesh.jpeg" alt="Smart tmux sessions with sesh">
-  </a>
-</div>
+- **Smart session creation** - automatically names sessions based on git repo, git remote, or directory
+- **Zoxide integration** - jump to your most-used projects instantly
+- **Session configuration** - define startup commands, windows, and preview commands per project in `sesh.toml`
+- **Wildcard configs** - apply settings to all projects matching a glob pattern
+- **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
+- **Clone and connect** - clone a git repo and start a session in one step
+- **Last session switching** - seamlessly bounce between your two most recent sessions
+- **Root session navigation** - jump to the root of a git worktree or repository
+- **Nerd Font icons** - display session type icons in your picker
+- **Shell completions** - tab completion for Bash, Zsh, Fish, and PowerShell
 
-Watch the video to learn more about how to use sesh to manage your tmux sessions.
+> [!NOTE]
+> ⭐ If you find sesh useful, please star the repo — it helps the project grow and reach more developers!
+
+> [!TIP]
+> Want to see more features and help sesh mature? Consider [sponsoring the project](https://github.com/sponsors/joshmedeski) to support ongoing development.
+
+## Table of Contents
+
+<table>
+  <tr>
+    <td>
+
+- [Videos](#videos)
+- [How to install](#how-to-install)
+- [Shell Completion](#shell-completion)
+- [Extensions](#extensions)
+- [How to use](#how-to-use)
+- [Recommended tmux Settings](#recommended-tmux-settings)
+
+</td>
+    <td>
+
+- [Bonus](#bonus)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [Background (the "t" script)](#background-the-t-script)
+- [Contributors](#contributors)
+- [Star History](#star-history)
+
+</td>
+  </tr>
+</table>
+
+## Videos
+
+<table>
+  <tr>
+    <td width="50%">
+      <a href="https://youtu.be/-yX3GjZfb5Y?si=iFG8qNro1hmZjJFY" target="_blank">
+        <img src="./smart-tmux-sessions-with-sesh.jpeg" alt="Smart tmux sessions with sesh">
+      <p><strong>Intro from Josh Medeski (sesh's creator)</strong></p>
+      </a>
+    </td>
+    <td width="50%">
+      <a href="https://www.youtube.com/watch?v=ejdzk_L6nIk" target="_blank">
+        <img src="./devops-toolbox-video-thumb.jpeg" alt="DevOps Toolbox - sesh">
+      <p><strong>Review from DevOps Toolbox</strong></p>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ## How to install
 
@@ -74,13 +129,15 @@ This will download and install the latest version of Sesh. Make sure that your G
 
 To install sesh, run **one** of the following commands, depending on your setup:
 
-* Conda/(micro)mamba users
+- Conda/(micro)mamba users
+
 ```sh
 # Replace with mamba/micromamba if required
 conda -c conda-forge install sesh
 ```
 
-* Pixi users
+- Pixi users
+
 ```sh
 pixi global install sesh
 ```
@@ -193,6 +250,7 @@ Here are limitations to keep in mind:
 ## Ulauncher Extension
 
 For Linux users using [Ulauncher](https://ulauncher.io/) there are two extensions to use sesh outside the terminal:
+
 - [Sesh Session Manager](https://ext.ulauncher.io/-/github-jacostag-sesh-ulauncher)
 - [SESHion Manager](https://ext.ulauncher.io/-/github-mrinfinidy-seshion-manager)
 
@@ -200,11 +258,9 @@ Here are limitations to keep in mind for Sesh Session Manager:
 
 - tmux has to be running before you can use the extension
 
-
 ## Walker launcher usage (Linux)
 
 Create an action directly on $XDG_CONFIG_HOME/config.toml
-
 
 ```
 [[plugins]]
@@ -221,9 +277,11 @@ switcher_only = true
 ### For the dmenu mode you can use:
 
 #### Fish shell:
+
 set ssession $(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
 
 #### Bash/Zsh:
+
 ssession=$(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
 
 ##### For dmenu launchers replace walker -dfk with dmenu or rofi)
@@ -275,13 +333,62 @@ You can customize this however you want, see `man fzf` for more info on the diff
 
 #### tmux + [television](https://github.com/alexpasmantier/television)
 
-If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/docs/Users/community-channels-unix#sesh) in a tmux popup.
+If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/community/channels-unix/#sesh) in a tmux popup.
 
 ```sh
 bind-key "T" display-popup -E -w 80% -h 70% -d '#{pane_current_path}' -T 'Sesh' tv sesh
 ```
 
 Use `Ctrl-s` to cycle through the sources, and `Ctrl-d` to kill the highlighted session.
+
+### Window management
+
+`sesh window` (alias `w`) lets you list, switch to, and create tmux windows within a session — similar to how `sesh list` and `sesh connect` work for sessions.
+
+#### List windows in the current session
+
+```sh
+sesh window
+```
+
+#### Switch to an existing window by name
+
+```sh
+sesh window editor
+```
+
+If a window named `editor` exists in the current session, sesh will switch to it.
+
+#### Create a new window at a directory
+
+```sh
+sesh window ~/projects/my-app
+```
+
+If no window with that name exists, sesh will create a new window named after the directory (`my-app`) with its working directory set to the given path.
+
+#### Target a specific session
+
+Use `--session` / `-s` to manage windows in a session other than the one you're currently attached to:
+
+```sh
+sesh window --session work
+sesh window ~/projects/my-app --session work
+```
+
+#### fzf integration
+
+You can combine `sesh window` with fzf to interactively switch windows:
+
+```sh
+sesh window $(sesh window | fzf)
+```
+
+Or as a tmux keybind:
+
+```sh
+bind-key "W" run-shell "sesh window \"$(sesh window | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
+```
 
 ## gum + tmux
 
@@ -451,7 +558,7 @@ Control how many directory components are used for session names. Default is 1 (
 dir_length = 2  # Uses last 2 directories: "projects/sesh" instead of just "sesh"
 ```
 
-> [!NOTE] 
+> [!NOTE]
 > Works great with [tmux-floax](https://github.com/omerxx/tmux-floax)
 
 ### Sorting
@@ -476,7 +583,11 @@ sort_order = [
   "config", # resulting order: config, tmux, tmuxinator, zoxide
 ]
 ```
+
 ### Cache
+
+> [!WARNING]
+> This feature is experimental and may not work as expected.
 
 Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores results at `$XDG_CACHE_HOME/sesh/sessions.gob` (default `~/.cache/sesh/sessions.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
 
@@ -530,10 +641,12 @@ preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
 
 ### Path substitution
+
 If you want to use the path of the selected session in your startup or preview command, you can use the `{}` placeholder.  
 This will be replaced with the session's path when the command is run.
 
 An example of this in use is the following, where the `tmuxinator` default_project uses the path as key/value pair using [ERB syntax](https://github.com/tmuxinator/tmuxinator?tab=readme-ov-file#erb):
+
 ```toml
 [default_session]
 startup_command = "tmuxinator start default_project path={}"
@@ -577,6 +690,10 @@ startup_command = "nvim"
 pattern = "~/work/*"
 startup_command = "make dev"
 preview_command = "ls -la"
+
+[[wildcard]]
+pattern = "~/repos/**"
+startup_command = "git status"
 ```
 
 When you run `sesh connect ~/projects/myapp`, sesh matches the path against your wildcard patterns and automatically creates a session named from the directory (using git remote or folder name), runs the configured startup command, and adds the path to zoxide.
@@ -591,7 +708,7 @@ Available fields:
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
 
-**Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). Recursive matching with `**` is not supported -- `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
+**Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 
 ### Listing Configurations
 

@@ -18,6 +18,7 @@ type (
 		Zoxide         bool
 		Tmuxinator     bool
 		HideDuplicates bool
+		Panes          bool
 	}
 	srcStrategy func(*RealLister) (model.SeshSessions, error)
 )
@@ -33,6 +34,7 @@ var srcStrategies = map[string]srcStrategy{
 	"config":     listConfig,
 	"tmuxinator": listTmuxinator,
 	"zoxide":     listZoxide,
+	"tmux-pane":  listTmuxPanes,
 }
 
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {

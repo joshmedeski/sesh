@@ -13,6 +13,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 	// TODO: make it configurable to disable certain strategies (including flags for optimized fzf commands)
 	// sesh connect --config (sesh list --config | fzf)
 	strategies := []func(*RealConnector, string) (model.Connection, error){
+		tmuxPaneStrategy,
 		tmuxStrategy,
 		tmuxinatorStrategy,
 		configStrategy,
@@ -22,6 +23,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 	}
 
 	connectStrategy := map[string]func(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error){
+		"tmux-pane":       connectToTmuxPane,
 		"tmux":            connectToTmux,
 		"tmuxinator":      connectToTmuxinator,
 		"config":          connectToTmux,
