@@ -700,12 +700,13 @@ When you run `sesh connect ~/projects/myapp`, sesh matches the path against your
 
 Available fields:
 
-| Field                     | Description                                                 |
-| ------------------------- | ----------------------------------------------------------- |
-| `pattern`                 | Glob pattern to match directories (e.g. `~/projects/*`)     |
-| `startup_command`         | Command to run on session creation (supports `{}` for path) |
-| `preview_command`         | Command to run when previewing the session                  |
-| `disable_startup_command` | Set to `true` to suppress the startup command               |
+| Field | Description |
+|-------|-------------|
+| `pattern` | Glob pattern to match directories (e.g. `~/projects/*`) |
+| `startup_command` | Command to run on session creation (supports `{}` for path) |
+| `preview_command` | Command to run when previewing the session |
+| `disable_startup_command` | Set to `true` to suppress the startup command |
+| `windows` | Window layout to use (array of window names from `[[window]]` configs) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 
