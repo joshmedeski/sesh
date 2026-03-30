@@ -9,7 +9,7 @@ Sesh is a smart terminal session manager written in Go that helps users create a
 ## Core Architecture
 
 - **Module**: `github.com/joshmedeski/sesh/v2`
-- **Go Version**: 1.24.2 (toolchain 1.24.4)
+- **Go Version**: 1.25.0
 - **Main Entry Point**: `main.go` → `seshcli.App()`
 
 ### Key Packages
@@ -67,6 +67,7 @@ just mock
 
 ## Development Notes
 
+- Always prefer `just` commands over raw `go` commands when a justfile recipe exists
 - All external dependencies use interfaces for testability (see wrapper packages: `execwrap`, `oswrap`, `pathwrap`)
 - Mock files follow pattern `mock_*.go` in the same package as the interface
 - Follow existing patterns for error handling and `slog` logging

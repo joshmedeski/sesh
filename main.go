@@ -10,7 +10,7 @@ import (
 	"strings" // This is required to conpare the evironment variables
 	"time"    // This is used to get the current date and create the log file
 
-	"github.com/charmbracelet/fang"
+	"charm.land/fang/v2"
 	"github.com/joshmedeski/sesh/v2/seshcli"
 )
 
