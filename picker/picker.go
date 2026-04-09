@@ -34,7 +34,28 @@ func NewPicker(config model.Config) Picker {
 }
 
 func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, error) {
-	m := New(fetchFunc, *opts.ShowIcons, *opts.SeparatorAware, *opts.Prompt, *opts.Placeholder)
+	showIcons := false
+	if opts.ShowIcons != nil {
+		showIcons = *opts.ShowIcons
+	} else {
+		showIcons = p.config.TUI.ShowIcons
+	}
+
+	prompt := defaultPrompt
+	if opts.Prompt != nil {
+		prompt = *opts.Prompt
+	} else if p.config.TUI.Prompt != "" {
+		prompt = p.config.TUI.Prompt
+	}
+
+	placeholder := defaultPlaceholder
+	if opts.Placeholder != nil {
+		placeholder = *opts.Placeholder
+	} else if p.config.TUI.Placeholder != "" {
+		placeholder = p.config.TUI.Placeholder
+	}
+
+	m := New(fetchFunc, showIcons, p.config.SeparatorAware, prompt, placeholder)
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()
 	if err != nil {

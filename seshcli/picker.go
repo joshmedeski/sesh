@@ -45,10 +45,25 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			if cmd.Flags().Changed("icons") {
 				showIcons := true
 				pickerOpts.ShowIcons = &showIcons
+			} else {
+				showIcons := deps.Config.TUI.ShowIcons
+				pickerOpts.ShowIcons = &showIcons
 			}
 			if cmd.Flags().Changed("separator-aware") {
 				separatorAware := true
 				pickerOpts.SeparatorAware = &separatorAware
+			}
+			if cmd.Flags().Changed("prompt") {
+				prompt, _ := cmd.Flags().GetString("prompt")
+				pickerOpts.Prompt = &prompt
+			} else if deps.Config.TUI.Prompt != "" {
+				pickerOpts.Prompt = &deps.Config.TUI.Prompt
+			}
+			if cmd.Flags().Changed("placeholder") {
+				placeholder, _ := cmd.Flags().GetString("placeholder")
+				pickerOpts.Placeholder = &placeholder
+			} else if deps.Config.TUI.Placeholder != "" {
+				pickerOpts.Placeholder = &deps.Config.TUI.Placeholder
 			}
 
 			chosen, err := deps.Picker.Pick(fetchFunc, pickerOpts)
@@ -76,6 +91,8 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("tmuxinator", "T", false, "show tmuxinator configs")
 	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
 	cmd.Flags().BoolP("separator-aware", "s", false, "match spaces to separators (-_/\\)")
+	cmd.Flags().StringP("prompt", "p", "", "prompt shown in the picker TUI")
+	cmd.Flags().String("placeholder", "", "placeholder text in the picker TUI")
 
 	return cmd
 }

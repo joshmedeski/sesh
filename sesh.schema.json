@@ -52,7 +52,7 @@
       "description": "Settings for the Sesh Picker TUI",
       "properties": {
         "show_icons": {
-          "type": "string",
+          "type": "boolean",
           "description": "Show icons in the picker TUI"
         },
         "prompt": {
