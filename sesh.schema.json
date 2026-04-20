@@ -47,6 +47,11 @@
       "description": "Enable separator-aware configuration for the picker",
       "default": false
     },
+    "tmux_command": {
+      "type": "string",
+      "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",
+      "default": "tmux"
+    },
     "default_session": {
       "type": "object",
       "description": "Default settings applied to all sessions",
