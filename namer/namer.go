@@ -50,7 +50,7 @@ func (n *RealNamer) Name(path string) (string, error) {
 			return "", err
 		}
 		if name != "" {
-			return convertToValidName(name), nil
+			return convertToValidName(name, n.config.Backend), nil
 		}
 	}
 	return "", fmt.Errorf("could not determine name from path: %s", path)
@@ -74,7 +74,7 @@ func (n *RealNamer) RootName(path string) (string, error) {
 			return "", err
 		}
 		if name != "" {
-			return convertToValidName(name), nil
+			return convertToValidName(name, n.config.Backend), nil
 		}
 	}
 	return "", fmt.Errorf("could not determine root name from path: %s", path)

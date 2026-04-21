@@ -11,6 +11,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/wezterm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,6 +26,7 @@ type PreviewerTestSuite struct {
 	suite.Suite
 	mockLister  *lister.MockLister
 	mockTmux    *tmux.MockTmux
+	mockWezterm *wezterm.MockWezterm
 	mockIcon    *icon.MockIcon
 	mockDir     *dir.MockDir
 	mockHome    *home.MockHome
@@ -52,6 +54,7 @@ func (suite *PreviewerTestSuite) TearDownTest() {
 func (suite *PreviewerTestSuite) initializeMocks() {
 	suite.mockLister = new(lister.MockLister)
 	suite.mockTmux = new(tmux.MockTmux)
+	suite.mockWezterm = new(wezterm.MockWezterm)
 	suite.mockIcon = new(icon.MockIcon)
 	suite.mockDir = new(dir.MockDir)
 	suite.mockHome = new(home.MockHome)
@@ -63,6 +66,7 @@ func (suite *PreviewerTestSuite) initializePreviewer() {
 	suite.previewer = NewPreviewer(
 		suite.mockLister,
 		suite.mockTmux,
+		suite.mockWezterm,
 		suite.mockIcon,
 		suite.mockDir,
 		suite.mockHome,
@@ -198,6 +202,7 @@ func (suite *PreviewerTestSuite) setupTmuxMocks(inputName, trimmedName, expected
 func (suite *PreviewerTestSuite) setupDefaultConfigMocks(inputName, trimmedName, expectedPath, expectedOutput string) {
 	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
 	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
+	suite.mockLister.On("FindWeztermWorkspace", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{
 		Name: trimmedName,
 		Path: expectedPath,
@@ -208,6 +213,7 @@ func (suite *PreviewerTestSuite) setupDefaultConfigMocks(inputName, trimmedName,
 func (suite *PreviewerTestSuite) setupConfigMocks(inputName string, trimmedName string, previewCommand string, previewCommandParts []string, expectedPath string, expectedOutput string) {
 	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
 	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
+	suite.mockLister.On("FindWeztermWorkspace", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{
 		Name:           trimmedName,
 		Path:           expectedPath,
@@ -220,6 +226,7 @@ func (suite *PreviewerTestSuite) setupConfigMocks(inputName string, trimmedName 
 func (suite *PreviewerTestSuite) setupDirectoryMocks(inputName, trimmedName, expectedPath, expectedOutput string) {
 	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
 	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
+	suite.mockLister.On("FindWeztermWorkspace", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockHome.On("ExpandHome", trimmedName).Return(expectedPath, nil)
 	suite.mockDir.On("Dir", expectedPath).Return(true, expectedPath)
@@ -229,6 +236,7 @@ func (suite *PreviewerTestSuite) setupDirectoryMocks(inputName, trimmedName, exp
 func (suite *PreviewerTestSuite) setupNoMatchMocks(inputName, trimmedName string) {
 	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
 	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
+	suite.mockLister.On("FindWeztermWorkspace", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockHome.On("ExpandHome", trimmedName).Return("", nil)
 	suite.mockDir.On("Dir", "").Return(false, "")

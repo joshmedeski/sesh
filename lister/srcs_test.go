@@ -95,7 +95,7 @@ func TestSrcs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := srcs(tt.opts)
+			result := srcs(tt.opts, "")
 			assert.Equal(t, tt.expected, result)
 		})
 	}

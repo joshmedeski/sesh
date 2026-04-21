@@ -11,6 +11,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/wezterm"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 	"github.com/stretchr/testify/assert"
 	mock "github.com/stretchr/testify/mock"
@@ -23,6 +24,7 @@ func TestConfigStrategy(t *testing.T) {
 	mockNamer := new(namer.MockNamer)
 	mockStartup := new(startup.MockStartup)
 	mockTmux := new(tmux.MockTmux)
+	mockWezterm := new(wezterm.MockWezterm)
 	mockZoxide := new(zoxide.MockZoxide)
 	mockTmuxinator := new(tmuxinator.MockTmuxinator)
 
@@ -34,6 +36,7 @@ func TestConfigStrategy(t *testing.T) {
 		mockNamer,
 		mockStartup,
 		mockTmux,
+		mockWezterm,
 		mockZoxide,
 		mockTmuxinator,
 	}

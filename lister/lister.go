@@ -5,6 +5,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/wezterm"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -17,16 +18,19 @@ type Lister interface {
 	FindConfigWildcard(path string) (model.WildcardConfig, bool)
 	FindZoxideSession(name string) (model.SeshSession, bool)
 	FindTmuxinatorConfig(name string) (model.SeshSession, bool)
+	FindWeztermWorkspace(name string) (model.SeshSession, bool)
+	GetActiveWeztermWorkspace() (model.SeshSession, bool)
 }
 
 type RealLister struct {
 	config     model.Config
 	home       home.Home
 	tmux       tmux.Tmux
+	wezterm    wezterm.Wezterm
 	zoxide     zoxide.Zoxide
 	tmuxinator tmuxinator.Tmuxinator
 }
 
-func NewLister(config model.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide, tmuxinator tmuxinator.Tmuxinator) Lister {
-	return &RealLister{config, home, tmux, zoxide, tmuxinator}
+func NewLister(config model.Config, home home.Home, tmux tmux.Tmux, wezterm wezterm.Wezterm, zoxide zoxide.Zoxide, tmuxinator tmuxinator.Tmuxinator) Lister {
+	return &RealLister{config, home, tmux, wezterm, zoxide, tmuxinator}
 }

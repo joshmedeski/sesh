@@ -25,6 +25,8 @@ var (
 	tmuxIcon       string = ""
 	configIcon     string = ""
 	tmuxinatorIcon string = ""
+
+	weztermIcon    string = "\xee\xae\x99"
 )
 
 func ansiString(code int, s string) string {
@@ -44,6 +46,9 @@ func (i *RealIcon) AddIcon(s model.SeshSession) string {
 	case "zoxide":
 		icon = zoxideIcon
 		colorCode = 36 // cyan
+	case "wezterm":
+		icon = weztermIcon
+		colorCode = 35 // magenta
 	case "config":
 		icon = configIcon
 		colorCode = 90 // gray
@@ -55,7 +60,7 @@ func (i *RealIcon) AddIcon(s model.SeshSession) string {
 }
 
 func (i *RealIcon) RemoveIcon(name string) string {
-	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) || strings.HasPrefix(name, tmuxinatorIcon) {
+	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) || strings.HasPrefix(name, tmuxinatorIcon) || strings.HasPrefix(name, weztermIcon) {
 		return name[4:]
 	}
 	return name

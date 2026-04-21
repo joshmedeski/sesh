@@ -16,7 +16,6 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		tmuxStrategy,
 		tmuxinatorStrategy,
 		configStrategy,
-		configWildcardStrategy,
 		dirStrategy,
 		zoxideStrategy,
 	}
@@ -34,8 +33,6 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 		if connection, err := strategy(c, name); err != nil {
 			return "", fmt.Errorf("failed to establish connection: %w", err)
 		} else if connection.Found {
-			// TODO: allow CLI flag to disable zoxide and overwrite all settings?
-			// sesh connect --ignore-zoxide "dotfiles"
 			if connection.AddToZoxide {
 				c.zoxide.Add(connection.Session.Path)
 			}

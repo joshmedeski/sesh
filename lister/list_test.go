@@ -7,6 +7,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/wezterm"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 	"github.com/stretchr/testify/assert"
 )
@@ -162,7 +163,8 @@ func TestHideDuplicates(t *testing.T) {
 				SessionConfigs: tt.configSessions,
 			}
 
-			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+			mockWezterm := new(wezterm.MockWezterm)
+			lister := NewLister(config, mockHome, mockTmux, mockWezterm, mockZoxide, mockTmuxinator)
 
 			// Call the actual List function with HideDuplicates
 			result, err := lister.List(ListOptions{

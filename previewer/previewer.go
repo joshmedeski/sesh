@@ -9,6 +9,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/wezterm"
 )
 
 type Previewer interface {
@@ -24,6 +25,7 @@ type RealPreviewer struct {
 func NewPreviewer(
 	lister lister.Lister,
 	tmux tmux.Tmux,
+	wezterm wezterm.Wezterm,
 	icon icon.Icon,
 	dir dir.Dir,
 	home home.Home,
@@ -33,6 +35,7 @@ func NewPreviewer(
 ) Previewer {
 	strategies := []PreviewStrategy{
 		NewTmuxStrategy(lister, tmux),
+		NewWeztermStrategy(lister, wezterm),
 		NewConfigStrategy(lister, shell),
 		NewDefaultConfigStrategy(lister, config, ls),
 		NewDirectoryStrategy(home, dir, ls),

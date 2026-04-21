@@ -17,9 +17,12 @@ func NewLastCommand(base *BaseDeps) *cobra.Command {
 				return err
 			}
 
+			if deps.Config.Backend == "wezterm" {
+				return fmt.Errorf("'sesh last' is not supported for WezTerm (workspace history is not available via CLI)")
+			}
+
 			lastSession, exists := deps.Lister.GetLastTmuxSession()
 			if !exists {
-				// TODO: silently fail?
 				return fmt.Errorf("No last session found")
 			}
 			base.Tmux.SwitchClient(lastSession.Name)

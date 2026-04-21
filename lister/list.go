@@ -14,6 +14,7 @@ type (
 		Icons          bool
 		Json           bool
 		Tmux           bool
+		Wezterm        bool
 		Zoxide         bool
 		Tmuxinator     bool
 		HideDuplicates bool
@@ -29,6 +30,7 @@ type strategyResult struct {
 
 var srcStrategies = map[string]srcStrategy{
 	"tmux":       listTmux,
+	"wezterm":    listWezterm,
 	"config":     listConfig,
 	"tmuxinator": listTmuxinator,
 	"zoxide":     listZoxide,
@@ -38,7 +40,7 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	fullDirectory := make(model.SeshSessionMap)
 	fullOrderedIndex := make([]string, 0)
 
-	srcsOrderedIndex := srcs(opts)
+	srcsOrderedIndex := srcs(opts, l.config.Backend)
 	srcsOrderedIndex = sortSources(srcsOrderedIndex, l.config.SortOrder)
 
 	resultsChan := make(chan strategyResult, len(srcsOrderedIndex))
@@ -107,7 +109,12 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	}
 
 	if opts.HideAttached {
-		attachedSession, _ := GetAttachedTmuxSession(l)
+		var attachedSession model.SeshSession
+		if l.config.Backend == "wezterm" {
+			attachedSession, _ = l.GetActiveWeztermWorkspace()
+		} else {
+			attachedSession, _ = GetAttachedTmuxSession(l)
+		}
 		for i, index := range fullOrderedIndex {
 			if fullDirectory[index].Name == attachedSession.Name {
 				fullOrderedIndex = slices.Delete(fullOrderedIndex, i, i+1)

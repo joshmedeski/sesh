@@ -8,6 +8,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/wezterm"
 )
 
 type Startup interface {
@@ -17,15 +18,23 @@ type Startup interface {
 type RealStartup struct {
 	lister   lister.Lister
 	tmux     tmux.Tmux
+	wezterm  wezterm.Wezterm
 	config   model.Config
 	home     home.Home
 	replacer replacer.Replacer
 }
 
 func NewStartup(
-	config model.Config, lister lister.Lister, tmux tmux.Tmux, home home.Home, replacer replacer.Replacer,
+	config model.Config, lister lister.Lister, tmux tmux.Tmux, wezterm wezterm.Wezterm, home home.Home, replacer replacer.Replacer,
 ) Startup {
-	return &RealStartup{lister, tmux, config, home, replacer}
+	return &RealStartup{lister, tmux, wezterm, config, home, replacer}
+}
+
+func (s *RealStartup) terminal(sessionName string) Terminal {
+	if s.config.Backend == "wezterm" {
+		return NewWeztermTerminal(s.wezterm, sessionName)
+	}
+	return NewTmuxTerminal(s.tmux)
 }
 
 func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
@@ -34,6 +43,8 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		configWildcardStartupStrategy,
 		defaultConfigStrategy,
 	}
+
+	term := s.terminal(session.Name)
 
 	windows := make(model.SeshWindowMap)
 	for _, window := range s.config.WindowConfigs {
@@ -68,20 +79,20 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		}
 
 		// create the new window
-		if ret, err := s.tmux.NewWindow(windowConfig.Path, windowConfig.Name); err != nil {
+		if ret, err := term.CreateWindow(windowConfig.Path, windowConfig.Name); err != nil {
 			return ret, err
 		}
-		if ret, err := s.tmux.SendKeys(session.Name, windowConfig.StartupScript); err != nil {
+		if ret, err := term.SendCommand(session.Name, windowConfig.StartupScript); err != nil {
 			return ret, err
 		}
 	}
-	s.tmux.NextWindow()
+	term.FocusFirstWindow()
 
 	for _, strategy := range strategies {
 		if command, err := strategy(s, session); err != nil {
 			return "", fmt.Errorf("failed to determine startup command: %w", err)
 		} else if command != "" {
-			s.tmux.SendKeys(session.Name, command)
+			term.SendCommand(session.Name, command)
 			return fmt.Sprintf("executing startup command: %s", command), nil
 		}
 	}

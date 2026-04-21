@@ -17,11 +17,23 @@ func NewRootSessionCommand(base *BaseDeps) *cobra.Command {
 				return err
 			}
 
-			session, exists := deps.Lister.GetAttachedTmuxSession()
+			var sessionPath string
+			var exists bool
+
+			if deps.Config.Backend == "wezterm" {
+				session, ok := deps.Lister.GetActiveWeztermWorkspace()
+				exists = ok
+				sessionPath = session.Path
+			} else {
+				session, ok := deps.Lister.GetAttachedTmuxSession()
+				exists = ok
+				sessionPath = session.Path
+			}
+
 			if !exists {
 				return fmt.Errorf("No root found for session")
 			}
-			root, err := deps.Namer.RootName(session.Path)
+			root, err := deps.Namer.RootName(sessionPath)
 			if err != nil {
 				return err
 			}
