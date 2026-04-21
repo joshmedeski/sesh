@@ -3,6 +3,7 @@ package configurator
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
@@ -50,6 +51,7 @@ func (c *RealConfigurator) configFilePath(rootDir string) string {
 }
 
 func (c *RealConfigurator) fullImportPath(homeDir, importPath string) (string, error) {
+	importPath = os.ExpandEnv(importPath)
 	if !strings.HasPrefix(importPath, "~") {
 		return c.path.Abs(importPath)
 	}

@@ -77,6 +77,7 @@ func (c *RealShell) PrepareCmd(cmd string, replacements map[string]string) ([]st
 	result := make([]string, len(cmdParts))
 
 	for i, arg := range cmdParts {
+		arg = os.ExpandEnv(arg)
 		if strings.HasPrefix(arg, "~") {
 			expanded, err := c.home.ExpandHome(arg)
 			if err != nil {
