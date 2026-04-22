@@ -560,6 +560,8 @@ You may want to blacklist certain tmux sessions from showing up in the results. 
 blacklist = ["scratch"]
 ```
 
+To surface blacklisted sessions for management, pass `-b` (or `--blacklisted`) to `sesh list`. It composes with source flags, so `sesh list -b -t` lists blacklisted tmux sessions only.
+
 ### Directory Length
 
 Control how many directory components are used for session names. Default is 1 (only the directory basename).

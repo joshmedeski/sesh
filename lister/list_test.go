@@ -190,3 +190,84 @@ func TestHideDuplicates(t *testing.T) {
 		})
 	}
 }
+
+func TestBlacklistedFlag(t *testing.T) {
+	tests := []struct {
+		name          string
+		blacklist     []string
+		tmuxSessions  []*model.TmuxSession
+		blacklisted   bool
+		expectedNames []string
+	}{
+		{
+			name:      "flag on, some sessions match patterns",
+			blacklist: []string{"^scratch$", "^temp"},
+			tmuxSessions: []*model.TmuxSession{
+				{Name: "scratch", Path: "/path/to/scratch"},
+				{Name: "work", Path: "/path/to/work"},
+				{Name: "temporary", Path: "/path/to/temporary"},
+			},
+			blacklisted:   true,
+			expectedNames: []string{"scratch", "temporary"},
+		},
+		{
+			name:      "flag on, no sessions match patterns",
+			blacklist: []string{"^nomatch$"},
+			tmuxSessions: []*model.TmuxSession{
+				{Name: "alpha", Path: "/path/to/alpha"},
+				{Name: "beta", Path: "/path/to/beta"},
+			},
+			blacklisted:   true,
+			expectedNames: []string{},
+		},
+		{
+			name:      "flag on, empty blacklist in config",
+			blacklist: []string{},
+			tmuxSessions: []*model.TmuxSession{
+				{Name: "alpha", Path: "/path/to/alpha"},
+			},
+			blacklisted:   true,
+			expectedNames: []string{},
+		},
+		{
+			name:      "flag off preserves existing hide-blacklisted behavior",
+			blacklist: []string{"^scratch$"},
+			tmuxSessions: []*model.TmuxSession{
+				{Name: "scratch", Path: "/path/to/scratch"},
+				{Name: "work", Path: "/path/to/work"},
+			},
+			blacklisted:   false,
+			expectedNames: []string{"work"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockTmux := new(tmux.MockTmux)
+			mockZoxide := new(zoxide.MockZoxide)
+			mockHome := new(home.MockHome)
+			mockTmuxinator := new(tmuxinator.MockTmuxinator)
+
+			mockTmux.On("ListSessions").Return(tt.tmuxSessions, nil)
+
+			config := model.Config{Blacklist: tt.blacklist}
+			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+
+			result, err := lister.List(ListOptions{
+				Tmux:        true,
+				Blacklisted: tt.blacklisted,
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, len(tt.expectedNames), len(result.OrderedIndex))
+			for i, expectedName := range tt.expectedNames {
+				if i < len(result.OrderedIndex) {
+					session := result.Directory[result.OrderedIndex[i]]
+					assert.Equal(t, expectedName, session.Name)
+				}
+			}
+
+			mockTmux.AssertExpectations(t)
+		})
+	}
+}
