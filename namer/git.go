@@ -4,29 +4,33 @@ import (
 	"strings"
 )
 
-// determineGitRootPath parses the first non-empty line of `git worktree list`
-// output and returns the main working tree path. For bare repos (first line
-// contains "(bare)"), it trims a trailing "/.bare" or "/.git" suffix so the name
-// reflects the parent directory rather than the bare-storage folder.
+// determineGitRootPath parses `git worktree list --porcelain` output and returns
+// the main working tree path. The first entry (block of lines up to a blank line)
+// describes the main working tree: `worktree <path>` followed by attributes like
+// `HEAD <sha>`, `branch <ref>`, or `bare`. Porcelain preserves paths containing
+// spaces and gives a dedicated `bare` token instead of a `(bare)` substring.
 func determineGitRootPath(out string) string {
-	out = strings.TrimSpace(out)
-	if out == "" {
+	var path string
+	var isBare bool
+	for _, line := range strings.Split(out, "\n") {
+		if line == "" {
+			if path != "" {
+				break
+			}
+			continue
+		}
+		if p, ok := strings.CutPrefix(line, "worktree "); ok {
+			path = p
+			continue
+		}
+		if line == "bare" {
+			isBare = true
+		}
+	}
+	if path == "" {
 		return ""
 	}
-	firstLine := out
-	if idx := strings.Index(out, "\n"); idx >= 0 {
-		firstLine = out[:idx]
-	}
-	firstLine = strings.TrimSpace(firstLine)
-	if firstLine == "" {
-		return ""
-	}
-	parts := strings.Fields(firstLine)
-	if len(parts) == 0 {
-		return ""
-	}
-	path := parts[0]
-	if strings.Contains(firstLine, "(bare)") {
+	if isBare {
 		if strings.HasSuffix(path, "/.bare") {
 			return strings.TrimSuffix(path, "/.bare")
 		}

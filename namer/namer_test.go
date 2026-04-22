@@ -21,7 +21,10 @@ func TestFromPath(t *testing.T) {
 
 		t.Run("name for git repo", func(t *testing.T) {
 			path := "/Users/josh/config/dotfiles/.config/neovim"
-			list := "/Users/josh/config/dotfiles       abc123 [main]\n"
+			list := `worktree /Users/josh/config/dotfiles
+HEAD abc123
+branch refs/heads/main
+`
 			mockPathwrap.On("EvalSymlinks", path).Return(path, nil)
 			mockGit.On("WorktreeList", path).Return(true, list, nil)
 			mockPathwrap.On("Base", "/Users/josh/config/dotfiles").Return("dotfiles")
@@ -47,7 +50,10 @@ func TestFromPath(t *testing.T) {
 			config := model.Config{DirLength: 1}
 			n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 			resolved := "/Users/josh/dotfiles/.config/neovim"
-			list := "/Users/josh/dotfiles       abc123 [main]\n"
+			list := `worktree /Users/josh/dotfiles
+HEAD abc123
+branch refs/heads/main
+`
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/d/.c/neovim").Return(resolved, nil)
 			mockGit.On("WorktreeList", resolved).Return(true, list, nil)
 			mockPathwrap.On("Base", "/Users/josh/dotfiles").Return("dotfiles")
@@ -62,8 +68,12 @@ func TestFromPath(t *testing.T) {
 			config := model.Config{DirLength: 1}
 			n := NewNamer(mockPathwrap, mockGit, mockHome, config)
 			resolved := "/Users/josh/projects/sesh/main"
-			list := `/Users/josh/projects/sesh/.bare             (bare)
-/Users/josh/projects/sesh/main        ba04ca494 [main]
+			list := `worktree /Users/josh/projects/sesh/.bare
+bare
+
+worktree /Users/josh/projects/sesh/main
+HEAD ba04ca494
+branch refs/heads/main
 `
 			mockPathwrap.On("EvalSymlinks", "/Users/josh/p/sesh/main").Return(resolved, nil)
 			mockGit.On("WorktreeList", resolved).Return(true, list, nil)
