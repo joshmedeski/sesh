@@ -17,7 +17,7 @@ func NewDirectoryStrategy(home home.Home, dir dir.Dir, ls ls.Ls) *DirectoryPrevi
 }
 
 func (s *DirectoryPreviewStrategy) Execute(name string) (string, error) {
-	path, _ := s.home.ExpandHome(name)
+	path, _ := s.home.ExpandPath(name)
 	isDir, absPath := s.dir.Dir(path)
 
 	if isDir {

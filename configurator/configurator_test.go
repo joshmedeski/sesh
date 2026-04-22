@@ -52,6 +52,15 @@ func (o *testOs) Getenv(key string) string {
 	return ""
 }
 
+func (o *testOs) ExpandEnv(s string) string {
+	return os.Expand(s, func(key string) string {
+		if o.envVars != nil {
+			return o.envVars[key]
+		}
+		return ""
+	})
+}
+
 func (o *testOs) Stat(name string) (os.FileInfo, error) {
 	return nil, nil
 }
@@ -176,6 +185,63 @@ func TestGetConfig_XDGConfigHome(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "echo test", config.DefaultSessionConfig.StartupCommand)
+	assert.Len(t, config.SessionConfigs, 1)
+	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
+}
+
+func TestGetConfig_ImportPathWithEnvVar(t *testing.T) {
+	// Import path uses $VAR syntax — should be env-expanded via oswrap
+	importFile := testdataPath("sesh.toml")
+	importData, err := os.ReadFile(importFile)
+	require.NoError(t, err)
+
+	mainTOML := []byte(`import = ["$CONFIGS/imported.toml"]` + "\n")
+
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		envVars: map[string]string{
+			"CONFIGS": "/custom/dir",
+		},
+		files: map[string][]byte{
+			"/main/sesh.toml":            mainTOML,
+			"/custom/dir/imported.toml": importData,
+		},
+	}
+	mockPath := pathwrap.NewPath()
+	mockRuntime := &runtimewrap.MockRunTime{}
+
+	c := NewConfiguratorWithPath(mockOs, mockPath, mockRuntime, "/main/sesh.toml")
+	config, err := c.GetConfig()
+
+	assert.NoError(t, err)
+	// The imported config contributes "test-session"; its presence proves the env var
+	// expanded to resolve /custom/dir/imported.toml
+	assert.Len(t, config.SessionConfigs, 1)
+	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
+}
+
+func TestGetConfig_ImportPathWithTilde(t *testing.T) {
+	// Import path uses ~ syntax — resolved against UserHomeDir via c.path.Join
+	importFile := testdataPath("sesh.toml")
+	importData, err := os.ReadFile(importFile)
+	require.NoError(t, err)
+
+	mainTOML := []byte(`import = ["~/imports/imported.toml"]` + "\n")
+
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		files: map[string][]byte{
+			"/main/sesh.toml":                             mainTOML,
+			"/home/testuser/imports/imported.toml": importData,
+		},
+	}
+	mockPath := pathwrap.NewPath()
+	mockRuntime := &runtimewrap.MockRunTime{}
+
+	c := NewConfiguratorWithPath(mockOs, mockPath, mockRuntime, "/main/sesh.toml")
+	config, err := c.GetConfig()
+
+	assert.NoError(t, err)
 	assert.Len(t, config.SessionConfigs, 1)
 	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
 }

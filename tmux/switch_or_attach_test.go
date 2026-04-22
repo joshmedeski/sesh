@@ -14,7 +14,7 @@ import (
 func TestSwitchOrAttach(t *testing.T) {
 	mockOs := new(oswrap.MockOs)
 	mockShell := new(shell.MockShell)
-	tmux := NewTmux(mockOs, mockShell)
+	tmux := NewTmux(mockOs, mockShell, "")
 
 	t.Run("switches because of option", func(t *testing.T) {
 		mockOs.ExpectedCalls = nil
@@ -53,5 +53,38 @@ func TestSwitchOrAttach(t *testing.T) {
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
 		assert.Equal(t, "attaching to tmux session: dotfiles", response)
 		assert.Equal(t, nil, error)
+	})
+}
+
+func TestCustomBin(t *testing.T) {
+	mockOs := new(oswrap.MockOs)
+	mockShell := new(shell.MockShell)
+	psmux := NewTmux(mockOs, mockShell, "psmux")
+
+	t.Run("uses psmux binary for new session", func(t *testing.T) {
+		mockShell.On("Cmd", "psmux", "new-session", "-d", "-s", "dotfiles", "-c", "/home/user/dotfiles").Return("", nil)
+		_, err := psmux.NewSession("dotfiles", "/home/user/dotfiles")
+		assert.Nil(t, err)
+		mockShell.AssertCalled(t, "Cmd", "psmux", "new-session", "-d", "-s", "dotfiles", "-c", "/home/user/dotfiles")
+	})
+
+	t.Run("uses psmux binary for switch client", func(t *testing.T) {
+		mockOs.On("Getenv", "TMUX").Return("/private/tmp/tmux-501/default,72439,4")
+		mockShell.On("Cmd", "psmux", "switch-client", "-t", "dotfiles").Return("", nil)
+		response, err := psmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: true})
+		assert.Nil(t, err)
+		assert.Equal(t, "switching to tmux session: dotfiles", response)
+		mockShell.AssertCalled(t, "Cmd", "psmux", "switch-client", "-t", "dotfiles")
+	})
+
+	t.Run("uses psmux binary for attach session", func(t *testing.T) {
+		mockOs.ExpectedCalls = nil
+		mockShell.ExpectedCalls = nil
+		mockOs.On("Getenv", "TMUX").Return("")
+		mockShell.On("Cmd", "psmux", "attach-session", "-t", "dotfiles").Return("", nil)
+		response, err := psmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
+		assert.Nil(t, err)
+		assert.Equal(t, "attaching to tmux session: dotfiles", response)
+		mockShell.AssertCalled(t, "Cmd", "psmux", "attach-session", "-t", "dotfiles")
 	})
 }

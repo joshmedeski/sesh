@@ -47,6 +47,11 @@
       "description": "Enable separator-aware configuration for the picker",
       "default": false
     },
+    "tmux_command": {
+      "type": "string",
+      "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",
+      "default": "tmux"
+    },
     "tui": {
       "type": "object",
       "description": "Settings for the Sesh Picker TUI",
@@ -186,6 +191,13 @@
           "preview_command": {
             "type": "string",
             "description": "Command used to generate the preview for matching sessions"
+          },
+          "windows": {
+            "type": "array",
+            "description": "Window layout to use for matching sessions",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "additionalProperties": false

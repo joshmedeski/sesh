@@ -9,7 +9,7 @@ import (
 )
 
 func (t *RealTmux) ListSessions() ([]*model.TmuxSession, error) {
-	output, err := t.shell.ListCmd("tmux", "list-sessions", "-F", listsessionsformat())
+	output, err := t.shell.ListCmd(t.bin, "list-sessions", "-F", listsessionsformat())
 	if err != nil {
 		return []*model.TmuxSession{}, nil
 	}

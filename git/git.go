@@ -36,9 +36,6 @@ func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
 }
 
 func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
-	var out string
-	var err error
-
 	args := []string{"clone", url}
 	if cmdDir != "" {
 		args = append([]string{"-C", cmdDir}, args...)
@@ -47,11 +44,11 @@ func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
 		args = append(args, dir)
 	}
 
-	out, err = g.shell.Cmd("git", args...)
+	_, err := g.shell.CmdWithOutput("git", args...)
 	if err != nil {
 		return "", err
 	}
-	return out, nil
+	return "", nil
 }
 
 func (g *RealGit) WorktreeList(path string) (bool, string, error) {

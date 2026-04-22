@@ -13,6 +13,7 @@ type (
 		WildcardConfigs      []WildcardConfig     `toml:"wildcard"`
 		DirLength            int                  `toml:"dir_length"`
 		SeparatorAware       bool                 `toml:"separator_aware"`
+		TmuxCommand          string               `toml:"tmux_command"`
 		TUI                  TUIConfig            `toml:"tui"`
 	}
 	Evaluation struct {
@@ -50,9 +51,10 @@ type (
 	}
 
 	WildcardConfig struct {
-		Pattern             string `toml:"pattern"`
-		StartupCommand      string `toml:"startup_command"`
-		DisableStartCommand bool   `toml:"disable_startup_command"`
-		PreviewCommand      string `toml:"preview_command"`
+		Pattern             string   `toml:"pattern"`
+		StartupCommand      string   `toml:"startup_command"`
+		DisableStartCommand bool     `toml:"disable_startup_command"`
+		PreviewCommand      string   `toml:"preview_command"`
+		Windows             []string `toml:"windows"`
 	}
 )

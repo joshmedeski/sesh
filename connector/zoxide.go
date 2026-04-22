@@ -3,7 +3,7 @@ package connector
 import "github.com/joshmedeski/sesh/v2/model"
 
 func zoxideToTmuxName(c *RealConnector, path string) (string, error) {
-	fullPath, err := c.home.ExpandHome(path)
+	fullPath, err := c.home.ExpandPath(path)
 	if err != nil {
 		return "", err
 	}

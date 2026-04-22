@@ -12,6 +12,7 @@ import (
 
 type Shell interface {
 	Cmd(cmd string, arg ...string) (string, error)
+	CmdWithOutput(cmd string, arg ...string) (string, error)
 	ListCmd(cmd string, arg ...string) ([]string, error)
 	PrepareCmd(cmd string, replacements map[string]string) ([]string, error)
 }
@@ -50,6 +51,21 @@ func (c *RealShell) Cmd(cmd string, args ...string) (string, error) {
 	return trimmedOutput, nil
 }
 
+func (c *RealShell) CmdWithOutput(cmd string, args ...string) (string, error) {
+	foundCmd, err := c.exec.LookPath(cmd)
+	if err != nil {
+		return "", err
+	}
+	command := exec.Command(foundCmd, args...)
+	command.Stdin = os.Stdin
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+	if err := command.Run(); err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
 func (c *RealShell) ListCmd(cmd string, arg ...string) ([]string, error) {
 	command := c.exec.Command(cmd, arg...)
 	output, err := command.Output()
@@ -61,19 +77,14 @@ func (c *RealShell) PrepareCmd(cmd string, replacements map[string]string) ([]st
 	result := make([]string, len(cmdParts))
 
 	for i, arg := range cmdParts {
-		if strings.HasPrefix(arg, "~") {
-			expanded, err := c.home.ExpandHome(arg)
-			if err != nil {
-				return nil, err
-			}
-			result[i] = expanded
-			continue
+		expanded, err := c.home.ExpandPath(arg)
+		if err != nil {
+			return nil, err
 		}
-
-		if replacement, ok := replacements[arg]; ok {
+		if replacement, ok := replacements[expanded]; ok {
 			result[i] = replacement
 		} else {
-			result[i] = arg
+			result[i] = expanded
 		}
 	}
 

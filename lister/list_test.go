@@ -151,7 +151,7 @@ func TestHideDuplicates(t *testing.T) {
 			}
 			if tt.configSessions != nil {
 				for _, session := range tt.configSessions {
-					mockHome.On("ExpandHome", session.Path).Return(session.Path, nil)
+					mockHome.On("ExpandPath", session.Path).Return(session.Path, nil)
 				}
 			}
 			if tt.tmuxinatorConfigs != nil {

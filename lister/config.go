@@ -17,7 +17,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 		if session.Name != "" {
 			key := ConfigKey(session.Name)
 			orderedIndex = append(orderedIndex, key)
-			path, err := l.home.ExpandHome(session.Path)
+			path, err := l.home.ExpandPath(session.Path)
 			if err != nil {
 				return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
 			}

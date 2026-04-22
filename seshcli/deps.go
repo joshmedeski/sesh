@@ -46,7 +46,6 @@ type BaseDeps struct {
 	Replacer   replacer.Replacer
 	Git        git.Git
 	Dir        dir.Dir
-	Tmux       tmux.Tmux
 	Zoxide     zoxide.Zoxide
 	Tmuxinator tmuxinator.Tmuxinator
 }
@@ -55,6 +54,7 @@ type BaseDeps struct {
 type Deps struct {
 	BaseDeps
 	Config        model.Config
+	Tmux          tmux.Tmux
 	Lister        lister.Lister
 	Picker        picker.Picker
 	CachingLister *lister.CachingLister
@@ -80,7 +80,6 @@ func NewBaseDeps() *BaseDeps {
 
 	g := git.NewGit(sh)
 	d := dir.NewDir(os, g, path)
-	t := tmux.NewTmux(os, sh)
 	z := zoxide.NewZoxide(sh)
 	ti := tmuxinator.NewTmuxinator(sh)
 
@@ -95,7 +94,6 @@ func NewBaseDeps() *BaseDeps {
 		Replacer:   r,
 		Git:        g,
 		Dir:        d,
-		Tmux:       t,
 		Zoxide:     z,
 		Tmuxinator: ti,
 	}
@@ -110,8 +108,10 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	slog.Debug("deps: BuildAll", "config", config)
 
+	t := tmux.NewTmux(b.Os, b.Shell, config.TmuxCommand)
+
 	l := ls.NewLs(config, b.Shell)
-	li := lister.NewLister(config, b.Home, b.Tmux, b.Zoxide, b.Tmuxinator)
+	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator)
 
 	var usedLister lister.Lister = li
 	var cachedLi *lister.CachingLister
@@ -121,17 +121,18 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		usedLister = cachedLi
 	}
 
-	s := startup.NewStartup(config, usedLister, b.Tmux, b.Home, b.Replacer)
+	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
-	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, b.Tmux, b.Zoxide, b.Tmuxinator)
+	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator)
 	ic := icon.NewIcon(config)
-	p := previewer.NewPreviewer(usedLister, b.Tmux, ic, b.Dir, b.Home, l, config, b.Shell)
+	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
 	pk := picker.NewPicker(config)
 
 	return &Deps{
 		BaseDeps:      *b,
 		Config:        config,
+		Tmux:          t,
 		Lister:        usedLister,
 		Picker:        pk,
 		CachingLister: cachedLi,

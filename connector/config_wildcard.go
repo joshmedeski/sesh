@@ -5,12 +5,12 @@ import (
 )
 
 func configWildcardStrategy(c *RealConnector, name string) (model.Connection, error) {
-	_, found := c.lister.FindConfigWildcard(name)
+	wc, found := c.lister.FindConfigWildcard(name)
 	if !found {
 		return model.Connection{Found: false}, nil
 	}
 
-	path, err := c.home.ExpandHome(name)
+	path, err := c.home.ExpandPath(name)
 	if err != nil {
 		return model.Connection{}, err
 	}
@@ -30,9 +30,11 @@ func configWildcardStrategy(c *RealConnector, name string) (model.Connection, er
 		New:         true,
 		AddToZoxide: true,
 		Session: model.SeshSession{
-			Src:  "config_wildcard",
-			Name: nameFromPath,
-			Path: absPath,
+			Src:                   "config_wildcard",
+			Name:                  nameFromPath,
+			Path:                  absPath,
+			WindowNames:           wc.Windows,
+			DisableStartupCommand: wc.DisableStartCommand,
 		},
 	}, nil
 }

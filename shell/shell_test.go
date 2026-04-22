@@ -50,7 +50,8 @@ func TestShellPrepareCmd(t *testing.T) {
 	t.Run("should succeed with correct replacements and expansions", func(t *testing.T) {
 		mockHome := new(home.MockHome)
 		shell := &RealShell{home: mockHome}
-		mockHome.On("ExpandHome", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		mockHome.On("ExpandPath", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		mockHome.On("ExpandPath", "{}").Return("{}", nil)
 		cmdParts, err := shell.PrepareCmd("~/.local/bin/rat {}", map[string]string{"{}": "hello"})
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"/home/test/.local/bin/rat", "hello"}, cmdParts)
@@ -60,9 +61,20 @@ func TestShellPrepareCmd(t *testing.T) {
 	t.Run("should not use a partial match", func(t *testing.T) {
 		mockHome := new(home.MockHome)
 		shell := &RealShell{home: mockHome}
-		mockHome.On("ExpandHome", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		mockHome.On("ExpandPath", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		mockHome.On("ExpandPath", "localVar={}").Return("localVar={}", nil)
 		cmdParts, err := shell.PrepareCmd("~/.local/bin/rat localVar={}", map[string]string{"{}": "hello"})
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"/home/test/.local/bin/rat", "localVar={}"}, cmdParts)
+	})
+
+	t.Run("should expand environment variables", func(t *testing.T) {
+		mockHome := new(home.MockHome)
+		shell := &RealShell{home: mockHome}
+		mockHome.On("ExpandPath", "$TOOL").Return("/opt/tool", nil)
+		mockHome.On("ExpandPath", "--flag").Return("--flag", nil)
+		cmdParts, err := shell.PrepareCmd("$TOOL --flag", map[string]string{})
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"/opt/tool", "--flag"}, cmdParts)
 	})
 }

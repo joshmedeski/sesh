@@ -1,6 +1,7 @@
 package seshcli
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -32,6 +33,11 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			noColor, _ := cmd.Flags().GetBool("no-color")
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
+			panes, _ := cmd.Flags().GetBool("panes")
+
+			if panes && !deps.Tmux.IsAttached() {
+				return errors.New("--panes requires being inside a tmux session")
+			}
 
 			sessions, err := deps.Lister.List(lister.ListOptions{
 				Config:         config,
@@ -43,6 +49,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 				Zoxide:         zoxide,
 				Tmuxinator:     tmuxinator,
 				HideDuplicates: hideDuplicates,
+				Panes:          panes,
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)
@@ -82,6 +89,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("no-color", "n", false, "show icons without color (requires --icons)")
 	cmd.Flags().BoolP("tmuxinator", "T", false, "show tmuxinator configs")
 	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
+	cmd.Flags().BoolP("panes", "p", false, "show panes in current session")
 
 	return cmd
 }

@@ -41,7 +41,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		var path string = ""
 		var err error = nil
 		if window.Path != "" {
-			path, err = s.home.ExpandHome(window.Path)
+			path, err = s.home.ExpandPath(window.Path)
 			if err != nil {
 				return "", fmt.Errorf("couldn't expand home: %q", err)
 			}
@@ -60,7 +60,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 			return "", fmt.Errorf("window %s is not defined in config", window)
 		}
 		if windowConfig.Path == "" {
-			path, err := s.home.ExpandHome(session.Path)
+			path, err := s.home.ExpandPath(session.Path)
 			if err != nil {
 				return "", fmt.Errorf("couldn't expand home: %q", err)
 			}

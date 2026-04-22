@@ -41,8 +41,9 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		mockLister.On("FindConfigWildcard", "~/projects/myapp").Return(model.WildcardConfig{
 			Pattern:        "~/projects/*",
 			StartupCommand: "nvim",
+			Windows:        []string{"code", "server"},
 		}, true)
-		mockHome.On("ExpandHome", "~/projects/myapp").Return("/Users/test/projects/myapp", nil)
+		mockHome.On("ExpandPath", "~/projects/myapp").Return("/Users/test/projects/myapp", nil)
 		mockDir.On("Dir", "/Users/test/projects/myapp").Return(true, "/Users/test/projects/myapp")
 		mockNamer.On("Name", "/Users/test/projects/myapp").Return("myapp", nil)
 
@@ -54,6 +55,22 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		assert.Equal(t, "myapp", connection.Session.Name)
 		assert.Equal(t, "/Users/test/projects/myapp", connection.Session.Path)
 		assert.Equal(t, "config_wildcard", connection.Session.Src)
+		assert.Equal(t, []string{"code", "server"}, connection.Session.WindowNames)
+	})
+
+	t.Run("should propagate DisableStartupCommand from wildcard config", func(t *testing.T) {
+		mockLister.On("FindConfigWildcard", "~/projects/quiet").Return(model.WildcardConfig{
+			Pattern:             "~/projects/*",
+			DisableStartCommand: true,
+		}, true)
+		mockHome.On("ExpandPath", "~/projects/quiet").Return("/Users/test/projects/quiet", nil)
+		mockDir.On("Dir", "/Users/test/projects/quiet").Return(true, "/Users/test/projects/quiet")
+		mockNamer.On("Name", "/Users/test/projects/quiet").Return("quiet", nil)
+
+		connection, err := configWildcardStrategy(c, "~/projects/quiet")
+		assert.Nil(t, err)
+		assert.True(t, connection.Found)
+		assert.True(t, connection.Session.DisableStartupCommand)
 	})
 
 	t.Run("should return not found when no wildcard matches", func(t *testing.T) {
@@ -68,7 +85,7 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		mockLister.On("FindConfigWildcard", "~/projects/notadir").Return(model.WildcardConfig{
 			Pattern: "~/projects/*",
 		}, true)
-		mockHome.On("ExpandHome", "~/projects/notadir").Return("/Users/test/projects/notadir", nil)
+		mockHome.On("ExpandPath", "~/projects/notadir").Return("/Users/test/projects/notadir", nil)
 		mockDir.On("Dir", "/Users/test/projects/notadir").Return(false, "")
 
 		connection, err := configWildcardStrategy(c, "~/projects/notadir")
