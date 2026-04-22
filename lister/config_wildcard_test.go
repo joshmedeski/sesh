@@ -6,6 +6,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -13,6 +14,7 @@ import (
 )
 
 func TestFindConfigWildcard(t *testing.T) {
+	mockOs := new(oswrap.MockOs)
 	mockHome := new(home.MockHome)
 	mockZoxide := new(zoxide.MockZoxide)
 	mockTmux := new(tmux.MockTmux)
@@ -35,7 +37,7 @@ func TestFindConfigWildcard(t *testing.T) {
 			},
 		},
 	}
-	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+	lister := NewLister(mockOs, config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 	realLister, ok := lister.(*RealLister)
 	if !ok {
 		log.Fatal("Cannot convert lister to *RealLister")

@@ -8,6 +8,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -74,10 +75,11 @@ func TestListTmuxSessions(t *testing.T) {
 		mockTmux.On("ListSessions").Return([]*model.TmuxSession{&firstAttached, &lastAttached}, nil)
 
 		mockConfig := model.Config{}
+		mockOs := new(oswrap.MockOs)
 		mockHome := new(home.MockHome)
 		mockZoxide := new(zoxide.MockZoxide)
 		mockTmuxinator := new(tmuxinator.MockTmuxinator)
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+		lister := NewLister(mockOs, mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {
@@ -168,7 +170,7 @@ func TestGetLastTmuxSession(t *testing.T) {
 			mockTmux.On("ListSessions").Return(tt.sessions, nil)
 
 			config := model.Config{Blacklist: tt.blacklist}
-			lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+			lister := NewLister(new(oswrap.MockOs), config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
 
 			session, ok := lister.GetLastTmuxSession()
 			assert.Equal(t, tt.wantOk, ok)
@@ -185,10 +187,11 @@ func TestListTmuxSessionsError(t *testing.T) {
 		mockTmux.On("ListSessions").Return(nil, fmt.Errorf("some error"))
 
 		mockConfig := model.Config{}
+		mockOs := new(oswrap.MockOs)
 		mockHome := new(home.MockHome)
 		mockZoxide := new(zoxide.MockZoxide)
 		mockTmuxinator := new(tmuxinator.MockTmuxinator)
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+		lister := NewLister(mockOs, mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {

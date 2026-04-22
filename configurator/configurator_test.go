@@ -52,6 +52,15 @@ func (o *testOs) Getenv(key string) string {
 	return ""
 }
 
+func (o *testOs) ExpandEnv(s string) string {
+	return os.Expand(s, func(key string) string {
+		if o.envVars != nil {
+			return o.envVars[key]
+		}
+		return ""
+	})
+}
+
 func (o *testOs) Stat(name string) (os.FileInfo, error) {
 	return nil, nil
 }

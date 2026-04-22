@@ -2,7 +2,6 @@ package lister
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -18,7 +17,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 		if session.Name != "" {
 			key := ConfigKey(session.Name)
 			orderedIndex = append(orderedIndex, key)
-			path, err := l.home.ExpandHome(os.ExpandEnv(session.Path))
+			path, err := l.home.ExpandHome(l.os.ExpandEnv(session.Path))
 			if err != nil {
 				return model.SeshSessions{}, fmt.Errorf("couldn't expand home: %q", err)
 			}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/oswrap"
 )
 
 type Shell interface {
@@ -18,12 +19,13 @@ type Shell interface {
 }
 
 type RealShell struct {
+	os   oswrap.Os
 	exec execwrap.Exec
 	home home.Home
 }
 
-func NewShell(exec execwrap.Exec, home home.Home) Shell {
-	return &RealShell{exec, home}
+func NewShell(os oswrap.Os, exec execwrap.Exec, home home.Home) Shell {
+	return &RealShell{os, exec, home}
 }
 
 func (c *RealShell) Cmd(cmd string, args ...string) (string, error) {
@@ -77,7 +79,7 @@ func (c *RealShell) PrepareCmd(cmd string, replacements map[string]string) ([]st
 	result := make([]string, len(cmdParts))
 
 	for i, arg := range cmdParts {
-		arg = os.ExpandEnv(arg)
+		arg = c.os.ExpandEnv(arg)
 		if strings.HasPrefix(arg, "~") {
 			expanded, err := c.home.ExpandHome(arg)
 			if err != nil {

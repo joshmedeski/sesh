@@ -6,6 +6,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -13,6 +14,8 @@ import (
 )
 
 func TestListConfigSessions(t *testing.T) {
+	mockOs := new(oswrap.MockOs)
+	mockOs.On("ExpandEnv", "/Users/joshmedeski/.config/sesh").Return("/Users/joshmedeski/.config/sesh")
 	mockHome := new(home.MockHome)
 	mockHome.On("ExpandHome", "/Users/joshmedeski/.config/sesh").Return("/Users/joshmedeski/.config/sesh", nil)
 	mockZoxide := new(zoxide.MockZoxide)
@@ -26,7 +29,7 @@ func TestListConfigSessions(t *testing.T) {
 			},
 		},
 	}
-	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+	lister := NewLister(mockOs, config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 	realLister, ok := lister.(*RealLister)
 	if !ok {
