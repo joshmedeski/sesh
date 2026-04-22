@@ -10,7 +10,7 @@ func configWildcardStrategy(c *RealConnector, name string) (model.Connection, er
 		return model.Connection{Found: false}, nil
 	}
 
-	path, err := c.home.ExpandHome(name)
+	path, err := c.home.ExpandPath(name)
 	if err != nil {
 		return model.Connection{}, err
 	}

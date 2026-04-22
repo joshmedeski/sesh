@@ -50,6 +50,7 @@ func (c *RealConfigurator) configFilePath(rootDir string) string {
 }
 
 func (c *RealConfigurator) fullImportPath(homeDir, importPath string) (string, error) {
+	importPath = c.os.ExpandEnv(importPath)
 	if !strings.HasPrefix(importPath, "~") {
 		return c.path.Abs(importPath)
 	}

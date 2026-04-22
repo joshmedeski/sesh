@@ -77,19 +77,14 @@ func (c *RealShell) PrepareCmd(cmd string, replacements map[string]string) ([]st
 	result := make([]string, len(cmdParts))
 
 	for i, arg := range cmdParts {
-		if strings.HasPrefix(arg, "~") {
-			expanded, err := c.home.ExpandHome(arg)
-			if err != nil {
-				return nil, err
-			}
-			result[i] = expanded
-			continue
+		expanded, err := c.home.ExpandPath(arg)
+		if err != nil {
+			return nil, err
 		}
-
-		if replacement, ok := replacements[arg]; ok {
+		if replacement, ok := replacements[expanded]; ok {
 			result[i] = replacement
 		} else {
-			result[i] = arg
+			result[i] = expanded
 		}
 	}
 

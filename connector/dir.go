@@ -5,7 +5,7 @@ import (
 )
 
 func dirStrategy(c *RealConnector, name string) (model.Connection, error) {
-	path, err := c.home.ExpandHome(name)
+	path, err := c.home.ExpandPath(name)
 	if err != nil {
 		return model.Connection{}, err
 	}

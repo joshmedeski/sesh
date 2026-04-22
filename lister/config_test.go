@@ -14,7 +14,7 @@ import (
 
 func TestListConfigSessions(t *testing.T) {
 	mockHome := new(home.MockHome)
-	mockHome.On("ExpandHome", "/Users/joshmedeski/.config/sesh").Return("/Users/joshmedeski/.config/sesh", nil)
+	mockHome.On("ExpandPath", "/Users/joshmedeski/.config/sesh").Return("/Users/joshmedeski/.config/sesh", nil)
 	mockZoxide := new(zoxide.MockZoxide)
 	mockTmux := new(tmux.MockTmux)
 	mockTmuxinator := new(tmuxinator.MockTmuxinator)
