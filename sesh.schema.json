@@ -52,6 +52,25 @@
       "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",
       "default": "tmux"
     },
+    "tui": {
+      "type": "object",
+      "description": "Settings for the Sesh Picker TUI",
+      "properties": {
+        "show_icons": {
+          "type": "boolean",
+          "description": "Show icons in the picker TUI"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The prompt shown in the picker TUI"
+        },
+        "placeholder": {
+          "type": "string",
+          "description": "The placeholder text in the picker TUI"
+        }
+      },
+      "additionalProperties": false
+    },
     "default_session": {
       "type": "object",
       "description": "Default settings applied to all sessions",

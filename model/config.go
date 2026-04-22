@@ -14,6 +14,7 @@ type (
 		DirLength            int                  `toml:"dir_length"`
 		SeparatorAware       bool                 `toml:"separator_aware"`
 		TmuxCommand          string               `toml:"tmux_command"`
+		TUI                  TUIConfig            `toml:"tui"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
@@ -40,6 +41,13 @@ type (
 		Name          string `toml:"name"`
 		StartupScript string `toml:"startup_script"`
 		Path          string `toml:"path"`
+	}
+
+	TUIConfig struct {
+		// TODO: keybindings and more
+		ShowIcons   bool   `toml:"show_icons"`
+		Prompt      string `toml:"prompt"`
+		Placeholder string `toml:"placeholder"`
 	}
 
 	WildcardConfig struct {

@@ -611,6 +611,17 @@ The cache is also refreshed automatically after `sesh connect`.
 cache = true
 ```
 
+### Picker TUI
+
+The Picker TUI can be configured with some options that help you customize it's behaviour, this picker is a useful replacement to external fuzzy pickers.
+
+```toml
+[tui]
+prompt = "> "
+placeholder = "Filter sessions... "
+show_icons = false
+```
+
 ### Default Session
 
 The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.

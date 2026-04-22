@@ -116,6 +116,12 @@ func (c *RealConfigurator) applyDefaults(config *model.Config) {
 	if config.DirLength < 1 {
 		config.DirLength = 1
 	}
+	if config.TUI.Prompt == "" {
+		config.TUI.Prompt = "> "
+	}
+	if config.TUI.Placeholder == "" {
+		config.TUI.Placeholder = "Filter Sessions..."
+	}
 }
 
 func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Config, error) {
