@@ -52,7 +52,7 @@ func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
 }
 
 func (g *RealGit) WorktreeList(path string) (bool, string, error) {
-	out, err := g.shell.Cmd("git", "-C", path, "worktree", "list")
+	out, err := g.shell.Cmd("git", "-C", path, "worktree", "list", "--porcelain")
 	if err != nil {
 		return false, "", err
 	}
