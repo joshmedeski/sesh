@@ -19,5 +19,5 @@ func NewTmuxinator(shell shell.Shell) Tmuxinator {
 }
 
 func (t *RealTmuxinator) Start(targetSession string) (string, error) {
-	return t.shell.Cmd("tmuxinator", "start", targetSession)
+	return t.shell.Cmd("tmuxinator", "start", "--no-attach", "--name", targetSession, targetSession)
 }
