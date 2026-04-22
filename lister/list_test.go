@@ -5,7 +5,6 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -135,7 +134,6 @@ func TestHideDuplicates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mocks
-			mockOs := new(oswrap.MockOs)
 			mockTmux := new(tmux.MockTmux)
 			mockZoxide := new(zoxide.MockZoxide)
 			mockHome := new(home.MockHome)
@@ -153,8 +151,7 @@ func TestHideDuplicates(t *testing.T) {
 			}
 			if tt.configSessions != nil {
 				for _, session := range tt.configSessions {
-					mockOs.On("ExpandEnv", session.Path).Return(session.Path)
-					mockHome.On("ExpandHome", session.Path).Return(session.Path, nil)
+					mockHome.On("ExpandPath", session.Path).Return(session.Path, nil)
 				}
 			}
 			if tt.tmuxinatorConfigs != nil {
@@ -165,7 +162,7 @@ func TestHideDuplicates(t *testing.T) {
 				SessionConfigs: tt.configSessions,
 			}
 
-			lister := NewLister(mockOs, config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 			// Call the actual List function with HideDuplicates
 			result, err := lister.List(ListOptions{

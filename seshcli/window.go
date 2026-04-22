@@ -82,7 +82,7 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 				}
 			}
 
-			expanded, err := base.Home.ExpandHome(name)
+			expanded, err := base.Home.ExpandPath(name)
 			if err != nil {
 				return err
 			}

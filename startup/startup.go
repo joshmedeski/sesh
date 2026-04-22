@@ -6,7 +6,6 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/tmux"
 )
@@ -16,7 +15,6 @@ type Startup interface {
 }
 
 type RealStartup struct {
-	os       oswrap.Os
 	lister   lister.Lister
 	tmux     tmux.Tmux
 	config   model.Config
@@ -25,9 +23,9 @@ type RealStartup struct {
 }
 
 func NewStartup(
-	os oswrap.Os, config model.Config, lister lister.Lister, tmux tmux.Tmux, home home.Home, replacer replacer.Replacer,
+	config model.Config, lister lister.Lister, tmux tmux.Tmux, home home.Home, replacer replacer.Replacer,
 ) Startup {
-	return &RealStartup{os, lister, tmux, config, home, replacer}
+	return &RealStartup{lister, tmux, config, home, replacer}
 }
 
 func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
@@ -43,7 +41,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		var path string = ""
 		var err error = nil
 		if window.Path != "" {
-			path, err = s.home.ExpandHome(s.os.ExpandEnv(window.Path))
+			path, err = s.home.ExpandPath(window.Path)
 			if err != nil {
 				return "", fmt.Errorf("couldn't expand home: %q", err)
 			}
@@ -62,7 +60,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 			return "", fmt.Errorf("window %s is not defined in config", window)
 		}
 		if windowConfig.Path == "" {
-			path, err := s.home.ExpandHome(s.os.ExpandEnv(session.Path))
+			path, err := s.home.ExpandPath(session.Path)
 			if err != nil {
 				return "", fmt.Errorf("couldn't expand home: %q", err)
 			}

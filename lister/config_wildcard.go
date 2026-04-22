@@ -8,13 +8,13 @@ import (
 )
 
 func (l *RealLister) FindConfigWildcard(path string) (model.WildcardConfig, bool) {
-	expandedPath, err := l.home.ExpandHome(path)
+	expandedPath, err := l.home.ExpandPath(path)
 	if err != nil {
 		return model.WildcardConfig{}, false
 	}
 
 	for _, wc := range l.config.WildcardConfigs {
-		expandedPattern, err := l.home.ExpandHome(wc.Pattern)
+		expandedPattern, err := l.home.ExpandPath(wc.Pattern)
 		if err != nil {
 			continue
 		}

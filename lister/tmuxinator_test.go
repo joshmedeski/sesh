@@ -6,7 +6,6 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -16,7 +15,6 @@ import (
 func TestListTmuxinatorConfigs(t *testing.T) {
 	t.Run("should list tmuxinator configs", func(t *testing.T) {
 		mockConfig := model.Config{}
-		mockOs := new(oswrap.MockOs)
 		mockHome := new(home.MockHome)
 		mockZoxide := new(zoxide.MockZoxide)
 		mockTmux := new(tmux.MockTmux)
@@ -26,7 +24,7 @@ func TestListTmuxinatorConfigs(t *testing.T) {
 			{Name: "dotfiles"},
 		}, nil)
 
-		lister := NewLister(mockOs, mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {

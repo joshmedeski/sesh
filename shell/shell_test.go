@@ -5,7 +5,6 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/home"
-	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -49,11 +48,10 @@ drwxr-xr-x   8 joshmedeski  staff      256 Apr 11 19:05 ../
 
 func TestShellPrepareCmd(t *testing.T) {
 	t.Run("should succeed with correct replacements and expansions", func(t *testing.T) {
-		mockOs := new(oswrap.MockOs)
-		mockOs.On("ExpandEnv", mock.Anything).Return(func(s string) string { return s })
 		mockHome := new(home.MockHome)
-		shell := &RealShell{os: mockOs, home: mockHome}
-		mockHome.On("ExpandHome", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		shell := &RealShell{home: mockHome}
+		mockHome.On("ExpandPath", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		mockHome.On("ExpandPath", "{}").Return("{}", nil)
 		cmdParts, err := shell.PrepareCmd("~/.local/bin/rat {}", map[string]string{"{}": "hello"})
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"/home/test/.local/bin/rat", "hello"}, cmdParts)
@@ -61,22 +59,20 @@ func TestShellPrepareCmd(t *testing.T) {
 
 	// This test case asserts the existing behaviour when the desired replacement is not separated by spaces
 	t.Run("should not use a partial match", func(t *testing.T) {
-		mockOs := new(oswrap.MockOs)
-		mockOs.On("ExpandEnv", mock.Anything).Return(func(s string) string { return s })
 		mockHome := new(home.MockHome)
-		shell := &RealShell{os: mockOs, home: mockHome}
-		mockHome.On("ExpandHome", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		shell := &RealShell{home: mockHome}
+		mockHome.On("ExpandPath", "~/.local/bin/rat").Return("/home/test/.local/bin/rat", nil)
+		mockHome.On("ExpandPath", "localVar={}").Return("localVar={}", nil)
 		cmdParts, err := shell.PrepareCmd("~/.local/bin/rat localVar={}", map[string]string{"{}": "hello"})
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"/home/test/.local/bin/rat", "localVar={}"}, cmdParts)
 	})
 
 	t.Run("should expand environment variables", func(t *testing.T) {
-		mockOs := new(oswrap.MockOs)
-		mockOs.On("ExpandEnv", "$TOOL").Return("/opt/tool")
-		mockOs.On("ExpandEnv", "--flag").Return("--flag")
 		mockHome := new(home.MockHome)
-		shell := &RealShell{os: mockOs, home: mockHome}
+		shell := &RealShell{home: mockHome}
+		mockHome.On("ExpandPath", "$TOOL").Return("/opt/tool", nil)
+		mockHome.On("ExpandPath", "--flag").Return("--flag", nil)
 		cmdParts, err := shell.PrepareCmd("$TOOL --flag", map[string]string{})
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"/opt/tool", "--flag"}, cmdParts)

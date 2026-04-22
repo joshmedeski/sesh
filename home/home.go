@@ -8,7 +8,7 @@ import (
 
 type Home interface {
 	ShortenHome(path string) (string, error)
-	ExpandHome(path string) (string, error)
+	ExpandPath(path string) (string, error)
 }
 
 type RealHome struct {
@@ -32,13 +32,14 @@ func (p *RealHome) ShortenHome(path string) (string, error) {
 	return path, nil
 }
 
-func (p *RealHome) ExpandHome(path string) (string, error) {
+func (p *RealHome) ExpandPath(path string) (string, error) {
+	expanded := p.os.ExpandEnv(path)
 	home, err := p.os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	if strings.HasPrefix(path, "~") {
-		return strings.Replace(path, "~", home, 1), nil
+	if strings.HasPrefix(expanded, "~") {
+		return strings.Replace(expanded, "~", home, 1), nil
 	}
-	return path, nil
+	return expanded, nil
 }

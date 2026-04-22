@@ -221,7 +221,7 @@ func (suite *PreviewerTestSuite) setupDirectoryMocks(inputName, trimmedName, exp
 	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
 	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{}, false)
-	suite.mockHome.On("ExpandHome", trimmedName).Return(expectedPath, nil)
+	suite.mockHome.On("ExpandPath", trimmedName).Return(expectedPath, nil)
 	suite.mockDir.On("Dir", expectedPath).Return(true, expectedPath)
 	suite.mockLs.On("ListDirectory", expectedPath).Return(expectedOutput, nil)
 }
@@ -230,6 +230,6 @@ func (suite *PreviewerTestSuite) setupNoMatchMocks(inputName, trimmedName string
 	suite.mockIcon.On("RemoveIcon", inputName).Return(trimmedName)
 	suite.mockLister.On("FindTmuxSession", trimmedName).Return(model.SeshSession{}, false)
 	suite.mockLister.On("FindConfigSession", trimmedName).Return(model.SeshSession{}, false)
-	suite.mockHome.On("ExpandHome", trimmedName).Return("", nil)
+	suite.mockHome.On("ExpandPath", trimmedName).Return("", nil)
 	suite.mockDir.On("Dir", "").Return(false, "")
 }

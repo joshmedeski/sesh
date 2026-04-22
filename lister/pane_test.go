@@ -8,7 +8,6 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -38,7 +37,7 @@ func TestListTmuxPanes(t *testing.T) {
 			makeTmuxPane(1, "tests", 0, hostname, "go", "/home/user/project", "%2"),
 		}, nil)
 
-		lister := NewLister(new(oswrap.MockOs), model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+		lister := NewLister(model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
 		realLister, ok := lister.(*RealLister)
 		if !ok {
 			log.Fatal("Cannot convert lister to *RealLister")
@@ -63,7 +62,7 @@ func TestListTmuxPanes(t *testing.T) {
 			makeTmuxPane(0, "editor", 1, hostname, "zsh", "/home/user/project", "%1"),
 		}, nil)
 
-		lister := NewLister(new(oswrap.MockOs), model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+		lister := NewLister(model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
 		realLister, ok := lister.(*RealLister)
 		if !ok {
 			log.Fatal("Cannot convert lister to *RealLister")
@@ -83,7 +82,7 @@ func TestListTmuxPanes(t *testing.T) {
 			makeTmuxPane(1, "tests", 0, hostname, "zsh", "/tmp", "%2"),
 		}, nil)
 
-		lister := NewLister(new(oswrap.MockOs), model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+		lister := NewLister(model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
 		realLister, ok := lister.(*RealLister)
 		if !ok {
 			log.Fatal("Cannot convert lister to *RealLister")
@@ -100,7 +99,7 @@ func TestListTmuxPanes(t *testing.T) {
 		mockTmux := new(tmux.MockTmux)
 		mockTmux.On("ListTmuxPanes").Return(nil, fmt.Errorf("some error"))
 
-		lister := NewLister(new(oswrap.MockOs), model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+		lister := NewLister(model.Config{}, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
 		realLister, ok := lister.(*RealLister)
 		if !ok {
 			log.Fatal("Cannot convert lister to *RealLister")
