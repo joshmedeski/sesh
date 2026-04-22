@@ -34,6 +34,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 			panes, _ := cmd.Flags().GetBool("panes")
+			blacklisted, _ := cmd.Flags().GetBool("blacklisted")
 
 			if panes && !deps.Tmux.IsAttached() {
 				return errors.New("--panes requires being inside a tmux session")
@@ -50,6 +51,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 				Tmuxinator:     tmuxinator,
 				HideDuplicates: hideDuplicates,
 				Panes:          panes,
+				Blacklisted:    blacklisted,
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)
@@ -90,6 +92,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("tmuxinator", "T", false, "show tmuxinator configs")
 	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
 	cmd.Flags().BoolP("panes", "p", false, "show panes in current session")
+	cmd.Flags().BoolP("blacklisted", "b", false, "show blacklisted sessions")
 
 	return cmd
 }
