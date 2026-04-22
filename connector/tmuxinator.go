@@ -1,6 +1,8 @@
 package connector
 
 import (
+	"fmt"
+
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -19,6 +21,8 @@ func tmuxinatorStrategy(c *RealConnector, name string) (model.Connection, error)
 }
 
 func connectToTmuxinator(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
-	c.tmuxinator.Start(connection.Session.Name)
+	if _, err := c.tmuxinator.Start(connection.Session.Name); err != nil {
+		return "", fmt.Errorf("failed to start tmuxinator session: %w", err)
+	}
 	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
 }
