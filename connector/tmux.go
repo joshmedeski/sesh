@@ -35,7 +35,9 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 			return "", err
 		}
 		if opts.Command == "" {
-			c.startup.Exec(connection.Session)
+			if _, err := c.startup.Exec(connection.Session); err != nil {
+				return "", err
+			}
 		}
 	}
 	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
