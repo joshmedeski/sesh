@@ -8,5 +8,5 @@ func (t *RealTmux) NewWindowInSession(name string, startDir string, targetSessio
 	if shellCommand != "" {
 		args = append(args, shellCommand)
 	}
-	return t.shell.Cmd("tmux", args...)
+	return t.shell.Cmd(t.bin, args...)
 }

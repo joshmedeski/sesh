@@ -21,7 +21,7 @@ func TestWrapForShell(t *testing.T) {
 		s := &RealStartup{os: mockOs}
 
 		got := s.WrapForShell("nvim")
-		want := `'/bin/zsh' -i -c 'nvim; exec '\''/bin/zsh'\'' -i'`
+		want := `'/bin/zsh' -i -c 'nvim'`
 		assert.Equal(t, want, got)
 	})
 
@@ -31,7 +31,7 @@ func TestWrapForShell(t *testing.T) {
 		s := &RealStartup{os: mockOs}
 
 		got := s.WrapForShell("ls")
-		want := `'/bin/sh' -i -c 'ls; exec '\''/bin/sh'\'' -i'`
+		want := `'/bin/sh' -i -c 'ls'`
 		assert.Equal(t, want, got)
 	})
 
@@ -41,9 +41,7 @@ func TestWrapForShell(t *testing.T) {
 		s := &RealStartup{os: mockOs}
 
 		got := s.WrapForShell("echo 'hi'")
-		// Inner is: "echo 'hi'; exec '/bin/zsh' -i"
-		// After single-quoting the inner, every ' becomes '\''.
-		want := `'/bin/zsh' -i -c 'echo '\''hi'\''; exec '\''/bin/zsh'\'' -i'`
+		want := `'/bin/zsh' -i -c 'echo '\''hi'\'''`
 		assert.Equal(t, want, got)
 	})
 }

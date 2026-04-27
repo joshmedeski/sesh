@@ -55,8 +55,9 @@ func (s *RealStartup) ResolveCommand(session model.SeshSession) (string, error) 
 
 // WrapForShell returns a shell-command string suitable for passing as the
 // trailing positional argument to `tmux new-session` / `tmux new-window`.
-// The resulting pane runs $SHELL interactively, executes command, then execs
-// a fresh interactive $SHELL so the pane stays open after command exits.
+// The resulting pane runs $SHELL interactively and executes command as part
+// of pane creation, avoiding send-keys races without re-running shell init a
+// second time after the command exits.
 // Returns "" for empty input so callers can detect "no command".
 func (s *RealStartup) WrapForShell(command string) string {
 	if command == "" {
@@ -66,8 +67,7 @@ func (s *RealStartup) WrapForShell(command string) string {
 	if shellPath == "" {
 		shellPath = "/bin/sh"
 	}
-	inner := command + "; exec " + posixSingleQuote(shellPath) + " -i"
-	return posixSingleQuote(shellPath) + " -i -c " + posixSingleQuote(inner)
+	return posixSingleQuote(shellPath) + " -i -c " + posixSingleQuote(command)
 }
 
 func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
@@ -106,11 +106,15 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		// Inject the window's startup_script as its initial shell-command so
 		// it runs reliably regardless of shell-init speed (issue #188).
 		wrapped := s.WrapForShell(windowConfig.StartupScript)
-		if ret, err := s.tmux.NewWindow(windowConfig.Path, windowConfig.Name, wrapped); err != nil {
+		if ret, err := s.tmux.NewWindowInSession(windowConfig.Name, windowConfig.Path, session.Name, wrapped); err != nil {
 			return ret, err
 		}
 	}
-	s.tmux.NextWindow()
+	if len(session.WindowNames) > 0 {
+		if _, err := s.tmux.SelectWindow(session.Name + ":^"); err != nil {
+			return "", err
+		}
+	}
 
 	// The main startup_command is injected into `tmux new-session` by the
 	// connector (before Exec runs). Here we only resolve it for logging.
