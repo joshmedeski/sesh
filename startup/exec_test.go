@@ -31,7 +31,7 @@ func TestExecCreatesWindowsInTargetSession(t *testing.T) {
 
 	mockHome.On("ExpandPath", "/tmp").Return("/tmp", nil)
 	mockOs.On("Getenv", "SHELL").Return("/bin/zsh")
-	mockTmux.On("NewWindowInSession", "editor", "/tmp", "demo", `'/bin/zsh' -i -c 'echo hi'`).Return("", nil)
+	mockTmux.On("NewWindowInSession", "editor", "/tmp", "demo", `'/bin/zsh' -i -c 'echo hi; exec /bin/zsh -i -f'`).Return("", nil)
 	mockTmux.On("SelectWindow", "demo:^").Return("", nil)
 	mockLister.On("FindConfigSession", "demo").Return(model.SeshSession{}, false)
 	mockLister.On("FindConfigWildcard", "/tmp").Return(model.WildcardConfig{}, false)
@@ -39,5 +39,5 @@ func TestExecCreatesWindowsInTargetSession(t *testing.T) {
 	msg, err := s.Exec(session)
 	assert.Nil(t, err)
 	assert.Equal(t, "", msg)
-	mockTmux.AssertNotCalled(t, "NewWindow", "/tmp", "editor", `'/bin/zsh' -i -c 'echo hi'`)
+	mockTmux.AssertNotCalled(t, "NewWindow", "/tmp", "editor", `'/bin/zsh' -i -c 'echo hi; exec /bin/zsh -i -f'`)
 }
