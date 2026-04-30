@@ -2,6 +2,7 @@ package startup
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
@@ -55,9 +56,10 @@ func (s *RealStartup) ResolveCommand(session model.SeshSession) (string, error) 
 
 // WrapForShell returns a shell-command string suitable for passing as the
 // trailing positional argument to `tmux new-session` / `tmux new-window`.
-// The resulting pane runs $SHELL interactively and executes command as part
-// of pane creation, avoiding send-keys races without re-running shell init a
-// second time after the command exits.
+// The resulting pane runs the startup command inside $SHELL, then exec's into
+// a fresh interactive shell to keep the pane alive. The exec'd shell uses
+// flags to skip init files (-f for zsh, --norc --noprofile for bash) to avoid
+// double-init (e.g. p10k/gitstatus reloading).
 // Returns "" for empty input so callers can detect "no command".
 func (s *RealStartup) WrapForShell(command string) string {
 	if command == "" {
@@ -67,7 +69,14 @@ func (s *RealStartup) WrapForShell(command string) string {
 	if shellPath == "" {
 		shellPath = "/bin/sh"
 	}
-	return posixSingleQuote(shellPath) + " -i -c " + posixSingleQuote(command)
+	initSkipFlags := ""
+	if strings.Contains(shellPath, "zsh") {
+		initSkipFlags = " -f"
+	} else if strings.Contains(shellPath, "bash") {
+		initSkipFlags = " --norc --noprofile"
+	}
+	innerCmd := command + "; exec " + shellPath + " -i" + initSkipFlags
+	return posixSingleQuote(shellPath) + " -i -c " + posixSingleQuote(innerCmd)
 }
 
 func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
