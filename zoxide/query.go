@@ -1,6 +1,6 @@
 package zoxide
 
-import "github.com/joshmedeski/sesh/v2/model"
+import "github.com/Wingsdh/cc-sesh/v2/model"
 
 func (z *RealZoxide) Query(query string) (*model.ZoxideResult, error) {
 	result, err := z.shell.Cmd("zoxide", "query", query)

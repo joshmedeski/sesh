@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/joshmedeski/sesh/v2/pathwrap"
-	"github.com/joshmedeski/sesh/v2/runtimewrap"
+	"github.com/Wingsdh/cc-sesh/v2/pathwrap"
+	"github.com/Wingsdh/cc-sesh/v2/runtimewrap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -174,7 +174,7 @@ func TestGetConfig_XDGConfigHome(t *testing.T) {
 			"XDG_CONFIG_HOME": "/custom/config",
 		},
 		files: map[string][]byte{
-			"/custom/config/sesh/sesh.toml": data,
+			"/custom/config/cc-sesh/cc-sesh.toml": data,
 		},
 	}
 	mockPath := pathwrap.NewPath()
@@ -256,7 +256,7 @@ func TestGetConfig_XDGConfigHomeNotSet(t *testing.T) {
 		homeDir: "/home/testuser",
 		// envVars not set, so XDG_CONFIG_HOME will return ""
 		files: map[string][]byte{
-			"/home/testuser/.config/sesh/sesh.toml": data,
+			"/home/testuser/.config/cc-sesh/cc-sesh.toml": data,
 		},
 	}
 	mockPath := pathwrap.NewPath()

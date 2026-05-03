@@ -1,9 +1,9 @@
 package previewer
 
 import (
-	"github.com/joshmedeski/sesh/v2/dir"
-	"github.com/joshmedeski/sesh/v2/home"
-	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/Wingsdh/cc-sesh/v2/dir"
+	"github.com/Wingsdh/cc-sesh/v2/home"
+	"github.com/Wingsdh/cc-sesh/v2/ls"
 )
 
 type DirectoryPreviewStrategy struct {

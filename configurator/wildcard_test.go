@@ -3,7 +3,7 @@ package configurator
 import (
 	"testing"
 
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 	"github.com/pelletier/go-toml/v2"
 	"github.com/stretchr/testify/assert"
 )

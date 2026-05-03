@@ -3,9 +3,9 @@ package seshcli
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/joshmedeski/sesh/v2/lister"
-	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/picker"
+	"github.com/Wingsdh/cc-sesh/v2/lister"
+	"github.com/Wingsdh/cc-sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/picker"
 )
 
 func NewPickerCommand(base *BaseDeps) *cobra.Command {

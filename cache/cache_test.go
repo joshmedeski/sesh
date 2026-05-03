@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 )
 
 func testSessions() model.SeshSessions {

@@ -10,7 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 )
 
 func testSessions() model.SeshSessions {

@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/joshmedeski/sesh/v2/connector"
-	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/connector"
+	"github.com/Wingsdh/cc-sesh/v2/git"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 )
 
 type Cloner interface {

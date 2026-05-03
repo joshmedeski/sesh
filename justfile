@@ -6,11 +6,11 @@ mock:
 test: mock
     go test -cover -bench=. -benchmem -race ./... -coverprofile=coverage.out
 
-# Build sesh binary to GOPATH/bin
+# Build cc-sesh binary to GOPATH/bin
 build version="dev":
-    go build -buildvcs=false -ldflags "-X 'main.version={{version}}'" -o `go env GOPATH`/bin/sesh
+    go build -buildvcs=false -ldflags "-X 'main.version={{version}}'" -o `go env GOPATH`/bin/cc-sesh
 
 # Generate man page
 man: build
     mkdir -p share/man/man1
-    sesh man > share/man/man1/sesh.1
+    cc-sesh man > share/man/man1/cc-sesh.1

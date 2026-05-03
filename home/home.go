@@ -3,7 +3,7 @@ package home
 import (
 	"strings"
 
-	"github.com/joshmedeski/sesh/v2/oswrap"
+	"github.com/Wingsdh/cc-sesh/v2/oswrap"
 )
 
 type Home interface {

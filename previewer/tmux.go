@@ -1,8 +1,8 @@
 package previewer
 
 import (
-	"github.com/joshmedeski/sesh/v2/lister"
-	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/Wingsdh/cc-sesh/v2/lister"
+	"github.com/Wingsdh/cc-sesh/v2/tmux"
 )
 
 type TmuxPreviewStrategy struct {

@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/joshmedeski/sesh/v2/cache"
-	"github.com/joshmedeski/sesh/v2/lister"
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/cache"
+	"github.com/Wingsdh/cc-sesh/v2/lister"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 )
 
 func fakeSessions() model.SeshSessions {

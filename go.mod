@@ -1,4 +1,4 @@
-module github.com/joshmedeski/sesh/v2
+module github.com/Wingsdh/cc-sesh/v2
 
 go 1.25.0
 

@@ -1,8 +1,8 @@
 package tmuxinator
 
 import (
-	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/shell"
+	"github.com/Wingsdh/cc-sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/shell"
 )
 
 type Tmuxinator interface {

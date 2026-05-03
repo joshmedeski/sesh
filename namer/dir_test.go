@@ -3,10 +3,10 @@ package namer
 import (
 	"testing"
 
-	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/home"
-	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/pathwrap"
+	"github.com/Wingsdh/cc-sesh/v2/git"
+	"github.com/Wingsdh/cc-sesh/v2/home"
+	"github.com/Wingsdh/cc-sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/pathwrap"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,11 +1,11 @@
 package lister
 
 import (
-	"github.com/joshmedeski/sesh/v2/home"
-	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/tmux"
-	"github.com/joshmedeski/sesh/v2/tmuxinator"
-	"github.com/joshmedeski/sesh/v2/zoxide"
+	"github.com/Wingsdh/cc-sesh/v2/home"
+	"github.com/Wingsdh/cc-sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/tmux"
+	"github.com/Wingsdh/cc-sesh/v2/tmuxinator"
+	"github.com/Wingsdh/cc-sesh/v2/zoxide"
 )
 
 type Lister interface {

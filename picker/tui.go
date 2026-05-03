@@ -10,8 +10,8 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/sahilm/fuzzy"
 
-	"github.com/joshmedeski/sesh/v2/icon"
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/icon"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 )
 
 type sessionItem struct {

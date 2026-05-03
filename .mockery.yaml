@@ -7,6 +7,6 @@ template: testify
 template-data:
   unroll-variadic: true
 packages:
-  github.com/joshmedeski/sesh:
+  github.com/Wingsdh/cc-sesh:
     config:
       recursive: true

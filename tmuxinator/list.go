@@ -3,7 +3,7 @@ package tmuxinator
 import (
 	"slices"
 
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 )
 
 func (t *RealTmuxinator) List() ([]*model.TmuxinatorConfig, error) {

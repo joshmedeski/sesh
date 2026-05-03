@@ -3,12 +3,12 @@ package startup
 import (
 	"testing"
 
-	"github.com/joshmedeski/sesh/v2/home"
-	"github.com/joshmedeski/sesh/v2/lister"
-	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/oswrap"
-	"github.com/joshmedeski/sesh/v2/replacer"
-	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/Wingsdh/cc-sesh/v2/home"
+	"github.com/Wingsdh/cc-sesh/v2/lister"
+	"github.com/Wingsdh/cc-sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/oswrap"
+	"github.com/Wingsdh/cc-sesh/v2/replacer"
+	"github.com/Wingsdh/cc-sesh/v2/tmux"
 	"github.com/stretchr/testify/assert"
 )
 

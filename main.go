@@ -11,7 +11,7 @@ import (
 	"time"    // This is used to get the current date and create the log file
 
 	"charm.land/fang/v2"
-	"github.com/joshmedeski/sesh/v2/seshcli"
+	"github.com/Wingsdh/cc-sesh/v2/seshcli"
 )
 
 var version = "dev"
@@ -90,11 +90,11 @@ func createLoggerFile(userTempDir string) (*os.File, error) {
 	now := time.Now()
 	date := fmt.Sprintf("%s.log", now.Format("2006-01-02"))
 
-	if err := os.MkdirAll(path.Join(userTempDir, ".seshtmp"), 0o755); err != nil {
+	if err := os.MkdirAll(path.Join(userTempDir, ".cc-seshtmp"), 0o755); err != nil {
 		return nil, err
 	}
 
-	fileFullPath := path.Join(userTempDir, ".seshtmp", date)
+	fileFullPath := path.Join(userTempDir, ".cc-seshtmp", date)
 	file, err := os.OpenFile(fileFullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
 	if err != nil {
 		return nil, err

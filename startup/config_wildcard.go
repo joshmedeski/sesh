@@ -1,6 +1,6 @@
 package startup
 
-import "github.com/joshmedeski/sesh/v2/model"
+import "github.com/Wingsdh/cc-sesh/v2/model"
 
 func configWildcardStartupStrategy(s *RealStartup, session model.SeshSession) (string, error) {
 	wc, found := s.lister.FindConfigWildcard(session.Path)

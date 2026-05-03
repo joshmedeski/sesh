@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/shell"
+	"github.com/Wingsdh/cc-sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

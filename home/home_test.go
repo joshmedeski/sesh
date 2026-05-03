@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/joshmedeski/sesh/v2/oswrap"
+	"github.com/Wingsdh/cc-sesh/v2/oswrap"
 	"github.com/stretchr/testify/assert"
 )
 

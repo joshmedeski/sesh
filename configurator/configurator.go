@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/oswrap"
-	"github.com/joshmedeski/sesh/v2/pathwrap"
-	"github.com/joshmedeski/sesh/v2/runtimewrap"
+	"github.com/Wingsdh/cc-sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/oswrap"
+	"github.com/Wingsdh/cc-sesh/v2/pathwrap"
+	"github.com/Wingsdh/cc-sesh/v2/runtimewrap"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -46,7 +46,7 @@ func NewConfiguratorWithPath(os oswrap.Os, path pathwrap.Path, runtime runtimewr
 }
 
 func (c *RealConfigurator) configFilePath(rootDir string) string {
-	return c.path.Join(rootDir, "sesh", "sesh.toml")
+	return c.path.Join(rootDir, "cc-sesh", "cc-sesh.toml")
 }
 
 func (c *RealConfigurator) fullImportPath(homeDir, importPath string) (string, error) {

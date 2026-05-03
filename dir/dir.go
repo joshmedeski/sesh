@@ -3,9 +3,9 @@ package dir
 import (
 	"strings"
 
-	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/oswrap"
-	"github.com/joshmedeski/sesh/v2/pathwrap"
+	"github.com/Wingsdh/cc-sesh/v2/git"
+	"github.com/Wingsdh/cc-sesh/v2/oswrap"
+	"github.com/Wingsdh/cc-sesh/v2/pathwrap"
 )
 
 type Dir interface {

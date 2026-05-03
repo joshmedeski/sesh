@@ -8,10 +8,10 @@ func NewRootCommand(version string) *cobra.Command {
 	base := NewBaseDeps()
 
 	rootCmd := &cobra.Command{
-		Use:              "sesh",
+		Use:              "cc-sesh",
 		Version:          version,
-		Short:            "Smart session manager for the terminal",
-		Long:             "Sesh is a smart terminal session manager that helps you create and manage tmux sessions quickly and easily using zoxide.",
+		Short:            "Smart session manager for the terminal, with Claude Code awareness",
+		Long:             "cc-sesh is a fork of sesh that adds Claude Code state badges (busy / idle / needs-input / sub-agent) to the session picker, on top of all original sesh functionality.",
 		TraverseChildren: true,
 	}
 

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/joshmedeski/sesh/v2/cache"
-	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/Wingsdh/cc-sesh/v2/cache"
+	"github.com/Wingsdh/cc-sesh/v2/model"
 )
 
 const softTTL = 5 * time.Second

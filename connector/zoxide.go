@@ -1,6 +1,6 @@
 package connector
 
-import "github.com/joshmedeski/sesh/v2/model"
+import "github.com/Wingsdh/cc-sesh/v2/model"
 
 func zoxideToTmuxName(c *RealConnector, path string) (string, error) {
 	fullPath, err := c.home.ExpandPath(path)
