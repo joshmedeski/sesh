@@ -35,8 +35,18 @@ type filteredItem struct {
 	matchedIndexes []int
 }
 
-// FetchFunc 在 Init 时被异步调用。返回 sessions 与 decorator —— 后者承载 live/attention 信息。
-type FetchFunc func() (model.SeshSessions, Decorator, error)
+// FetchFunc 在 Init 与 mode 切换时被调用。mode 由 picker 内部按 ctrl+a/t/g/x/f 切换；
+// 调用方根据 mode 决定数据源（all/tmux/config/zoxide/find）。
+type FetchFunc func(mode string) (model.SeshSessions, Decorator, error)
+
+// 五种 fetch mode 常量。
+const (
+	ModeAll     = "all"
+	ModeTmux    = "tmux"
+	ModeConfig  = "config"
+	ModeZoxide  = "zoxide"
+	ModeFind    = "find"
+)
 
 type sessionsLoadedMsg struct {
 	sessions  model.SeshSessions
@@ -64,6 +74,7 @@ type Model struct {
 	dismisser      Dismisser
 	killer         Killer
 	now            func() time.Time
+	mode           string // 当前 fetch mode：all/tmux/config/zoxide/find
 }
 
 // srcIcon 返回 sesh 原本的来源 icon + ANSI 颜色。
@@ -130,6 +141,7 @@ func New(fetchFunc FetchFunc, dec Decorator, dis Dismisser, kil Killer, showIcon
 		dismisser:      dis,
 		killer:         kil,
 		now:            time.Now,
+		mode:           ModeAll,
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -140,10 +152,24 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) fetchSessions() tea.Cmd {
+	mode := m.mode
 	return func() tea.Msg {
-		sessions, dec, err := m.fetchFunc()
+		sessions, dec, err := m.fetchFunc(mode)
 		return sessionsLoadedMsg{sessions: sessions, decorator: dec, err: err}
 	}
+}
+
+// switchMode 切换数据源并触发异步 fetch。
+func (m *Model) switchMode(mode string) tea.Cmd {
+	if m.mode == mode {
+		return nil
+	}
+	m.mode = mode
+	m.loading = true
+	m.cursor = 0
+	m.offset = 0
+	m.filterInput.SetValue("")
+	return m.fetchSessions()
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -183,11 +209,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quit = true
 			return m, tea.Quit
 
-		case "up", "ctrl+k":
+		case "up", "ctrl+k", "shift+tab":
 			m.cursorUp(1)
 			return m, nil
 
-		case "down", "ctrl+j":
+		case "down", "ctrl+j", "tab":
 			m.cursorDown(1)
 			return m, nil
 
@@ -202,6 +228,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "pgup":
 			m.cursorUp(m.visibleCount() / 2)
 			return m, nil
+
+		case "ctrl+a":
+			return m, m.switchMode(ModeAll)
+
+		case "ctrl+t":
+			return m, m.switchMode(ModeTmux)
+
+		case "ctrl+g":
+			return m, m.switchMode(ModeConfig)
+
+		case "ctrl+x":
+			return m, m.switchMode(ModeZoxide)
+
+		case "ctrl+f":
+			return m, m.switchMode(ModeFind)
 
 		case "ctrl+d":
 			// kill 当前 cursor 所指 tmux session（与 fzf-tmux 习惯一致）。
@@ -350,7 +391,8 @@ func (m *Model) cursorDown(n int) {
 }
 
 func (m Model) visibleCount() int {
-	chrome := 9
+	// chrome: filter(1) + header(1) + 2 blank + section overhead(~5)
+	chrome := 10
 	available := m.height - chrome
 	if available < 1 {
 		available = 5
@@ -390,7 +432,9 @@ func (m Model) View() tea.View {
 	var b strings.Builder
 
 	b.WriteString("  " + m.filterInput.View())
-	b.WriteString("\n\n")
+	b.WriteString("\n")
+	b.WriteString(renderHotkeyHeader(m.mode))
+	b.WriteString("\n")
 
 	visible := m.visibleCount()
 
@@ -452,6 +496,27 @@ func (m Model) View() tea.View {
 
 func renderHeader(label string) string {
 	return lipgloss.NewStyle().Foreground(colorHeader).Faint(true).Render("  ─── " + label + " ──")
+}
+
+// renderHotkeyHeader 在搜索框下方显示模式切换的 hotkey 提示，当前 mode 高亮。
+func renderHotkeyHeader(mode string) string {
+	dim := lipgloss.NewStyle().Foreground(colorHeader).Faint(true)
+	hi := lipgloss.NewStyle().Foreground(colorCursor).Bold(true)
+	pick := func(name, label string) string {
+		if mode == name {
+			return hi.Render(label)
+		}
+		return dim.Render(label)
+	}
+	parts := []string{
+		pick(ModeAll, "^a all"),
+		pick(ModeTmux, "^t tmux"),
+		pick(ModeConfig, "^g configs"),
+		pick(ModeZoxide, "^x zoxide"),
+		pick(ModeFind, "^f find"),
+		dim.Render("^d kill"),
+	}
+	return "  " + strings.Join(parts, dim.Render("  "))
 }
 
 func renderDivider() string {
