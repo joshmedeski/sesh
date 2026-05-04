@@ -141,20 +141,23 @@ func reconcileAttention(
 	if store == nil {
 		return nil
 	}
-	signals := map[string]attention.Signal{}
+	busyByName := map[string]bool{}
 	activeNames := make([]string, 0, len(sessions.Directory))
 	for _, key := range sessions.OrderedIndex {
 		s := sessions.Directory[key]
-		// 只对真实 tmux session 触发 attention：其他 src 还没起 session 无法 attach 清除
+		// 只对真实 tmux session 跟踪 attention：其他 src 还没起 session 无法 attach 清除
 		if s.Src != "tmux" {
 			continue
 		}
 		activeNames = append(activeNames, s.Name)
-		if st, ok := liveByName[s.Name]; ok && st.Needing > 0 {
-			signals[s.Name] = attention.Signal{Reason: "needs-input"}
+		// busy/subagent 算「在跑活」；needs-input 不算（用户拒绝/忽略不该算"完成"）
+		if st, ok := liveByName[s.Name]; ok {
+			busyByName[s.Name] = st.Busy+st.Subagent > 0
+		} else {
+			busyByName[s.Name] = false
 		}
 	}
-	if err := store.Reconcile(signals, activeNames); err != nil {
+	if err := store.Reconcile(busyByName, activeNames); err != nil {
 		slog.Warn("claude: attention reconcile failed", "error", err)
 	}
 	return store.Load()
@@ -188,7 +191,6 @@ func (d *claudeDecorator) Decorate(s model.SeshSession) picker.Decoration {
 		dec.Attention = picker.AttentionBadge{
 			Triggered: true,
 			FirstAt:   f.FirstAt,
-			Reason:    f.Reason,
 		}
 	}
 	return dec

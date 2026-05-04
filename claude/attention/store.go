@@ -1,12 +1,12 @@
-// Package attention 维护一个粘性的「这个 session 出现过需介入的事，用户还没看过」标记。
+// Package attention 维护一个粘性的「session 跑完一轮活了，用户还没看」标记。
 //
-// 核心语义：
-//   - 触发：Reconcile 时发现 session 有 needs-input 信号 → 写入 flag
-//   - 粘性：信号消失后 flag **不自动清除**
-//   - 清除：用户 attach 该 session 时调 Ack(name)
+// 核心语义（v2，跟 Claude 实时状态完全解耦）：
+//   - 触发：Reconcile 观察到 session 发生 active(busy/subagent) → idle 的转换 → 写入 flag
+//   - 粘性：flag 写入后**不自动清除**
+//   - 清除：用户 attach 该 session（Ack）/ session 消失（GC）/ 手动 Clear
 //
-// 与 claude/live 完全解耦：live 算实时状态、不写盘；attention 写盘、跨进程累积。
-// 两者都从 ~/.claude/ 读数据，但归类逻辑、产出、生命周期独立。
+// 跟 needs-input（OAuth、permission prompt）无关 —— 那个走 live 包的实时统计，
+// 不再走粘性提醒。本包只回答："有几个 session 跑完一轮活，等着你 review？"
 package attention
 
 import (
@@ -19,20 +19,11 @@ import (
 	"time"
 )
 
-const fileVersion = 1
+const fileVersion = 2
 
-// Flag 是单个 session 的粘性标记。Reason / FirstAt 用于 picker 显示「等了多久 / 因何而起」。
+// Flag 是单个 session 的粘性 attention 标记。
 type Flag struct {
-	FirstAt    time.Time `json:"first_at"`
-	Reason     string    `json:"reason"`
-	TriggerPID int       `json:"trigger_pid,omitempty"`
-}
-
-// Signal 是 Reconcile 的单条输入：表示「现在 session X 有 needs-input 类信号」。
-// 由调用方（通常是 picker 主流程）从 live.Status / mcp-cache 等数据源派生。
-type Signal struct {
-	Reason     string
-	TriggerPID int
+	FirstAt time.Time `json:"first_at"`
 }
 
 // Clock 抽象时间源，便于单测。
@@ -42,15 +33,16 @@ type realClock struct{}
 
 func (realClock) Now() time.Time { return time.Now() }
 
-// Store 持久化 flag 到 attention.json。所有方法都做了惰性懒加载 + 原子写。
+// Store 持久化 flag + 上次观察到的 busy 状态（用于检测 active→idle 转换）。
 // 并发安全：一个进程内单实例使用，sync.Mutex 兜底。
 type Store struct {
 	path  string
 	clock Clock
 
-	mu     sync.Mutex
-	loaded bool
-	flags  map[string]Flag // session-name -> flag
+	mu       sync.Mutex
+	loaded   bool
+	flags    map[string]Flag // session-name -> 已触发的 attention flag
+	tracking map[string]bool // session-name -> 上次 Reconcile 观察到 busy/subagent
 }
 
 // New 用给定路径创建 Store。路径通常通过 DefaultPath() 得到。
@@ -80,7 +72,7 @@ func DefaultPath() (string, error) {
 	return filepath.Join(home, ".local", "state", "cc-sesh", "attention.json"), nil
 }
 
-// Load 返回当前所有 triggered 的 flag。读盘失败一律当空 map，不阻塞 picker。
+// Load 返回当前所有触发中的 attention flag。读盘失败一律当空 map。
 func (s *Store) Load() map[string]Flag {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -92,16 +84,19 @@ func (s *Store) Load() map[string]Flag {
 	return out
 }
 
-// Reconcile 接收当前 needs-input 信号集，写入新触发的 flag。
+// Reconcile 输入当前活实例的 busy 状态，按转换语义更新 flag。
 //
-// 语义（强粘性）：
-//   - 对 signals 里出现且 store 里**没有**的 session：新建 flag，FirstAt=now
-//   - 对 signals 里出现且 store 里**已有**的 session：保留原 FirstAt，仅可能更新 Reason/TriggerPID
-//   - 对 signals 里**未出现**的 session：保留（不清除！）
+// busyByName 的语义：
+//   - busyByName[name] = true：该 session 当前有 Claude 在 busy/subagent（在跑活）
+//   - busyByName[name] = false 或 missing：该 session 当前没在跑活（idle / 仅 needs-input / 无实例）
 //
-// activeSessionNames 用于回收幽灵 flag —— 不在该列表中的 flag 会被删除（tmux session 已消失）。
-// 传 nil 表示不做回收。
-func (s *Store) Reconcile(signals map[string]Signal, activeSessionNames []string) error {
+// 触发规则：
+//   - tracking 里记录 true 且本轮 busyByName[name] = false → 触发 flag
+//   - 已存在 flag 时不更新 FirstAt（保留首次时刻）
+//
+// activeSessionNames 用于回收幽灵数据 —— 不在该列表中的 flag/tracking 都被删除。
+// 传 nil 表示不做 GC。
+func (s *Store) Reconcile(busyByName map[string]bool, activeSessionNames []string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.ensureLoaded()
@@ -109,24 +104,24 @@ func (s *Store) Reconcile(signals map[string]Signal, activeSessionNames []string
 	now := s.clock.Now()
 	changed := false
 
-	// 1. 触发新 flag / 更新 reason
-	for name, sig := range signals {
-		existing, ok := s.flags[name]
-		if !ok {
-			s.flags[name] = Flag{FirstAt: now, Reason: sig.Reason, TriggerPID: sig.TriggerPID}
+	// 1. 按本轮 busy 状态更新 tracking + 触发 flag
+	for name, isBusy := range busyByName {
+		wasBusy := s.tracking[name]
+		switch {
+		case isBusy && !wasBusy:
+			s.tracking[name] = true
 			changed = true
-			continue
-		}
-		// 已存在：保留 FirstAt，但允许 reason 升级（auth_url 比之前的更紧迫等场景）
-		if existing.Reason != sig.Reason || existing.TriggerPID != sig.TriggerPID {
-			existing.Reason = sig.Reason
-			existing.TriggerPID = sig.TriggerPID
-			s.flags[name] = existing
+		case !isBusy && wasBusy:
+			// active → idle 转换：触发 flag（如还没有）
+			if _, has := s.flags[name]; !has {
+				s.flags[name] = Flag{FirstAt: now}
+			}
+			delete(s.tracking, name)
 			changed = true
 		}
 	}
 
-	// 2. 回收幽灵 flag（session 已不存在）
+	// 2. 回收 dead session 的 flag 和 tracking
 	if activeSessionNames != nil {
 		active := make(map[string]struct{}, len(activeSessionNames))
 		for _, n := range activeSessionNames {
@@ -138,6 +133,12 @@ func (s *Store) Reconcile(signals map[string]Signal, activeSessionNames []string
 				changed = true
 			}
 		}
+		for name := range s.tracking {
+			if _, ok := active[name]; !ok {
+				delete(s.tracking, name)
+				changed = true
+			}
+		}
 	}
 
 	if !changed {
@@ -146,24 +147,28 @@ func (s *Store) Reconcile(signals map[string]Signal, activeSessionNames []string
 	return s.saveLocked()
 }
 
-// Ack 清除指定 session 的 flag。无 flag 时是 no-op。
+// Ack 清除指定 session 的 flag 和 tracking。无 flag 时也会清 tracking，避免下次旧状态又触发。
 func (s *Store) Ack(name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.ensureLoaded()
 
-	if _, ok := s.flags[name]; !ok {
+	_, hadFlag := s.flags[name]
+	_, hadTracking := s.tracking[name]
+	if !hadFlag && !hadTracking {
 		return nil
 	}
 	delete(s.flags, name)
+	delete(s.tracking, name)
 	return s.saveLocked()
 }
 
-// Clear 清空所有 flag。给 `cc-sesh attention clear` 子命令用。
+// Clear 清空所有 flag 和 tracking。给 `cc-sesh attention clear` 子命令用。
 func (s *Store) Clear() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.flags = map[string]Flag{}
+	s.tracking = map[string]bool{}
 	s.loaded = true
 	return s.saveLocked()
 }
@@ -175,18 +180,22 @@ func (s *Store) ensureLoaded() {
 	}
 	s.loaded = true
 	s.flags = map[string]Flag{}
+	s.tracking = map[string]bool{}
 
 	data, err := os.ReadFile(s.path)
 	if err != nil {
-		return // 不存在/读不了：当空 map
+		return
 	}
 
 	var f fileShape
 	if err := json.Unmarshal(data, &f); err != nil {
-		return // 损坏：当空 map，下次写入会覆盖
+		return
 	}
 	if f.Sessions != nil {
 		s.flags = f.Sessions
+	}
+	if f.Tracking != nil {
+		s.tracking = f.Tracking
 	}
 }
 
@@ -196,18 +205,32 @@ func (s *Store) saveLocked() error {
 		return fmt.Errorf("mkdir state dir: %w", err)
 	}
 
-	// 排序输出以让 attention.json 变更对人友好
-	keys := make([]string, 0, len(s.flags))
+	// 排序输出以让文件 diff 友好
+	flagKeys := make([]string, 0, len(s.flags))
 	for k := range s.flags {
-		keys = append(keys, k)
+		flagKeys = append(flagKeys, k)
 	}
-	sort.Strings(keys)
-	ordered := make(map[string]Flag, len(keys))
-	for _, k := range keys {
-		ordered[k] = s.flags[k]
+	sort.Strings(flagKeys)
+	orderedFlags := make(map[string]Flag, len(flagKeys))
+	for _, k := range flagKeys {
+		orderedFlags[k] = s.flags[k]
 	}
 
-	data, err := json.MarshalIndent(fileShape{Version: fileVersion, Sessions: ordered}, "", "  ")
+	trackKeys := make([]string, 0, len(s.tracking))
+	for k := range s.tracking {
+		trackKeys = append(trackKeys, k)
+	}
+	sort.Strings(trackKeys)
+	orderedTracking := make(map[string]bool, len(trackKeys))
+	for _, k := range trackKeys {
+		orderedTracking[k] = s.tracking[k]
+	}
+
+	data, err := json.MarshalIndent(fileShape{
+		Version:  fileVersion,
+		Sessions: orderedFlags,
+		Tracking: orderedTracking,
+	}, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal attention: %w", err)
 	}
@@ -225,4 +248,5 @@ func (s *Store) saveLocked() error {
 type fileShape struct {
 	Version  int             `json:"version"`
 	Sessions map[string]Flag `json:"sessions"`
+	Tracking map[string]bool `json:"tracking,omitempty"`
 }

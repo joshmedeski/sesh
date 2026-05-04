@@ -32,34 +32,11 @@ func (l LiveBadge) Idle() int {
 	return idle
 }
 
-// Severity 决定主徽章字符的归类。
-type Severity int
-
-const (
-	SevIdle Severity = iota
-	SevSubagent
-	SevBusy
-	SevNeeding
-)
-
-func (l LiveBadge) Severity() Severity {
-	switch {
-	case l.Needing > 0:
-		return SevNeeding
-	case l.Busy > 0:
-		return SevBusy
-	case l.Subagent > 0:
-		return SevSubagent
-	default:
-		return SevIdle
-	}
-}
-
-// AttentionBadge 是粘性的「需介入」标记。Triggered=false 表示无标记。
+// AttentionBadge 是粘性的「该 session 跑完一轮活了，等用户去看」标记。
+// Triggered=false 表示无标记。FirstAt 为该 flag 首次触发时刻。
 type AttentionBadge struct {
 	Triggered bool
 	FirstAt   time.Time
-	Reason    string
 }
 
 // Decorator 把 SeshSession 映射为 Decoration。picker 渲染时按需调用。
