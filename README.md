@@ -1,770 +1,179 @@
+<h1 align="center">cc-sesh</h1>
+
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <em>给 Claude Code 用户的 sesh fork —— 在 picker 里看见每个 tmux session 内的 Claude 实时状态。</em>
 </p>
 
-<h1 align="center">Sesh, the smart tmux session manager</h1>
-
 <p align="center">
-  <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml">
-    <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml/badge.svg" />
-  </a>
-  <a href="https://goreportcard.com/report/github.com/joshmedeski/sesh">
-    <img alt="goreport" src="https://goreportcard.com/badge/github.com/joshmedeski/sesh" />
-  </a>
   <a href="https://opensource.org/licenses/MIT">
-    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License" />
+  </a>
+  <a href="https://github.com/joshmedeski/sesh">
+    <img src="https://img.shields.io/badge/forked%20from-joshmedeski%2Fsesh-blue.svg" alt="forked from joshmedeski/sesh" />
   </a>
 </p>
 
-<div align="center">
+---
 
-[English](README.md) | [简体中文](README.zh-cn.md)
+## 致敬原作者
 
-</div>
+cc-sesh 是 [**joshmedeski/sesh**](https://github.com/joshmedeski/sesh) 的下游 fork。
 
-Sesh is a CLI that helps you create and manage tmux sessions quickly and easily using zoxide.
+底层的 session 管理、tmux/zoxide/tmuxinator 集成、配置系统、命名策略、picker 的全部基础能力都来自 Josh Medeski 与 sesh 上游贡献者们多年的设计与打磨。**没有 sesh，就没有 cc-sesh。**
 
-- **Smart session creation** - automatically names sessions based on git repo, git remote, or directory
-- **Zoxide integration** - jump to your most-used projects instantly
-- **Session configuration** - define startup commands, windows, and preview commands per project in `sesh.toml`
-- **Wildcard configs** - apply settings to all projects matching a glob pattern
-- **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
-- **Clone and connect** - clone a git repo and start a session in one step
-- **Last session switching** - seamlessly bounce between your two most recent sessions
-- **Root session navigation** - jump to the root of a git worktree or repository
-- **Nerd Font icons** - display session type icons in your picker
-- **Shell completions** - tab completion for Bash, Zsh, Fish, and PowerShell
+- 上游仓库：<https://github.com/joshmedeski/sesh>
+- 上游作者：[Josh Medeski](https://github.com/joshmedeski)（[赞助 sesh 项目](https://github.com/sponsors/joshmedeski)）
+- 完整功能列表与配置文档请以 [上游 README](https://github.com/joshmedeski/sesh#readme) 为准
 
-> [!NOTE]
-> ⭐ If you find sesh useful, please star the repo — it helps the project grow and reach more developers!
+LICENSE 沿用 MIT，版权署名 © 2023 Josh Medeski（参见 [LICENSE](LICENSE) 文件）。本 fork 的修改部分同样以 MIT 发布。
 
-> [!TIP]
-> Want to see more features and help sesh mature? Consider [sponsoring the project](https://github.com/sponsors/joshmedeski) to support ongoing development.
+如果你不需要下文描述的 Claude Code 集成，**请优先使用上游 sesh** —— 它的功能更稳定、社区更活跃、生态扩展（Raycast / Ulauncher / Walker 等）也更全。
 
-## Table of Contents
+---
 
-<table>
-  <tr>
-    <td>
+## 这个 fork 在做什么
 
-- [Videos](#videos)
-- [How to install](#how-to-install)
-- [Shell Completion](#shell-completion)
-- [Extensions](#extensions)
-- [How to use](#how-to-use)
-- [Recommended tmux Settings](#recommended-tmux-settings)
+cc-sesh 只在上游 sesh 之上做了**一件事**：让 picker 里能直接看到每个 tmux session 内 [Claude Code](https://docs.claude.com/en/docs/claude-code) 进程的实时状态，并且在「跑完一轮活」时打个粘性提醒，方便我在多个并行 session 之间分配注意力。
 
-</td>
-    <td>
+具体差异如下。
 
-- [Bonus](#bonus)
-- [Configuration](#configuration)
-- [Contributing](#contributing)
-- [Background (the "t" script)](#background-the-t-script)
-- [Contributors](#contributors)
-- [Star History](#star-history)
+### 1. picker 内置 Claude 状态表格
 
-</td>
-  </tr>
-</table>
+原 sesh picker 的每行只有 src icon + session 名。cc-sesh 在中间加了一张 4 列的状态表：
 
-## Videos
+```
+  ^a all  ^t tmux  ^g configs  ^x zoxide  ^f find  ^d kill
+  ──────────────────────────────────────────────────────────
+       ATTN IDLE RUN  WAIT
+  >   tm    1                 my-feature-branch
+      tm                      bay-translate-extension
+      tm    ●    1            ai-dev-kit          done 15m ago
+      tm              2       long-running-task
+      tm                  1   oauth-flow
+      tm    1    1   1        mixed
+      ze                      ~/Code/backend/athena
+      ze                      ~/AI-Workspace/bay-translate
+```
 
-<table>
-  <tr>
-    <td width="50%">
-      <a href="https://youtu.be/-yX3GjZfb5Y?si=iFG8qNro1hmZjJFY" target="_blank">
-        <img src="./smart-tmux-sessions-with-sesh.jpeg" alt="Smart tmux sessions with sesh">
-      <p><strong>Intro from Josh Medeski (sesh's creator)</strong></p>
-      </a>
-    </td>
-    <td width="50%">
-      <a href="https://www.youtube.com/watch?v=ejdzk_L6nIk" target="_blank">
-        <img src="./devops-toolbox-video-thumb.jpeg" alt="DevOps Toolbox - sesh">
-      <p><strong>Review from DevOps Toolbox</strong></p>
-      </a>
-    </td>
-  </tr>
-</table>
+- **ATTN**（橙色 ●）：粘性提醒。**和 Claude 当前状态无关** —— 一旦检测到某个 session 完成了一轮 busy/subagent → idle 转换就亮起，直到我 attach 进去（或手动 dismiss / kill）才消失。用来回答「我刚才让它跑的活到底跑完没？」
+- **IDLE**：当前空闲的 Claude 进程数
+- **RUN**：busy + subagent 之和（实际在干活）
+- **WAIT**：等用户授权（OAuth、permission prompt 等）的进程数
 
-## How to install
+这些数据通过扫描 `~/.claude/sessions/*.json` 拿到，按 cwd 关联到 tmux pane，再聚合到 session。**不依赖任何 Claude Code 内部接口、不修改 Claude Code 任何配置**，纯只读。
 
-<details>
-  <summary>Homebrew</summary>
+### 2. picker 补齐的 hotkey
 
-To install sesh, run the following [homebrew](https://brew.sh/) command:
+为了不再依赖 `fzf-tmux` 包一层，把上游 fzf 路径里那套 hotkey 直接补进了 picker：
+
+| Hotkey | 行为 |
+|---|---|
+| `Ctrl-A` | all（默认 list） |
+| `Ctrl-T` | 仅 tmux session |
+| `Ctrl-G` | 仅 sesh.toml 配置 |
+| `Ctrl-X` | 仅 zoxide 历史 |
+| `Ctrl-F` | 在 `$HOME` 下深度 ≤ 2 列目录（替代 `fd`） |
+| `Ctrl-D` | kill 当前光标所指的 tmux session |
+| `Alt-D` | dismiss 当前行的 ATTN 标记（不 kill session） |
+
+### 3. 重命名
+
+为了不和已经装了上游 sesh 的环境冲突：
+
+| 项目 | 上游 sesh | cc-sesh |
+|---|---|---|
+| 二进制 | `sesh` | `cc-sesh` |
+| Go module | `github.com/joshmedeski/sesh/v2` | `github.com/Wingsdh/cc-sesh/v2` |
+| 配置目录 | `$XDG_CONFIG_HOME/sesh/` | `$XDG_CONFIG_HOME/cc-sesh/` |
+| 配置文件名 | `sesh.toml` | `sesh.toml`（沿用文件名） |
+| 状态目录 | — | `$XDG_STATE_HOME/cc-sesh/`（仅本 fork 新增的 attention 状态） |
+
+> 也就是说，你可以在同一台机器上同时装 `sesh` 和 `cc-sesh`，两套配置互不干扰。
+
+---
+
+## 安装
 
 ```sh
-brew install sesh
+go install github.com/Wingsdh/cc-sesh/v2@latest
 ```
 
-</details>
+需要 Go 1.25+。装完后二进制叫 `cc-sesh`，所有子命令名与上游 sesh 一致（`list / connect / picker / window / ...`）。
 
-<details>
-  <summary>Arch Linux AUR</summary>
+> 暂未提供 Homebrew / AUR / Conda / Nix 等打包，未来也大概率不会 —— 这是一个为了我自己用而 fork 的项目。
 
-To install sesh, run the following [yay](https://aur.archlinux.org/packages/yay) command:
+---
+
+## 用法
+
+### 基本命令
+
+完全同上游 sesh，把所有 `sesh` 替换成 `cc-sesh` 即可：
 
 ```sh
-yay -S sesh-bin
+cc-sesh list           # 列出所有 session 来源（tmux + config + zoxide + tmuxinator）
+cc-sesh connect <name> # connect 到 session（不存在则创建）
+cc-sesh picker         # 打开内置 picker（推荐）
 ```
 
-</details>
+`list / connect / window / pane / clone / root / last` 等子命令的语义与 flag 与上游一致，**详见 [上游 README](https://github.com/joshmedeski/sesh#readme)**。
 
-<details>
-  <summary>Go</summary>
+### 推荐绑定（tmux）
 
-Alternatively, you can install Sesh using Go's go install command:
+cc-sesh 的卖点是 picker，所以最佳用法是把它绑成 tmux popup：
 
-```sh
-go install github.com/joshmedeski/sesh/v2@latest
+```tmux
+bind-key "K" display-popup -h 90% -w 60% -E "cc-sesh picker -i"
 ```
 
-This will download and install the latest version of Sesh. Make sure that your Go environment is properly set up.
+`-i` 显示 src icon（需要 Nerd Font）。
 
-</details>
+### Claude Code 集成的工作方式
 
-<details>
-  <summary>Conda</summary>
+picker 在 fetch 阶段会做这几件事：
 
-To install sesh, run **one** of the following commands, depending on your setup:
+1. 调上游 lister 拿 session 列表（tmux / zoxide / config / tmuxinator）
+2. 扫 `~/.claude/sessions/*.json`，过滤出活进程
+3. 用 `tmux list-panes` 拿每个 pane 的 cwd，把 Claude 进程的 cwd 匹配到 tmux session
+4. 跟上一轮的 busy 状态对比，识别 busy/subagent → idle 转换并落入 `~/.local/state/cc-sesh/attention.json`
+5. 把每个 session 的 LiveBadge + Attention 一起贴到行上渲染
 
-- Conda/(micro)mamba users
+整个链路对没有 Claude 的环境完全透明 —— 任何一步失败（`~/.claude/sessions/` 不存在、tmux 不在跑、JSON 解析失败……）都会降级回上游 sesh 行为，picker 该列就是空白。
 
-```sh
-# Replace with mamba/micromamba if required
-conda -c conda-forge install sesh
-```
+### 配置
 
-- Pixi users
+配置文件路径变成 `~/.config/cc-sesh/sesh.toml`，**配置 schema 与上游 sesh 完全一致**（`[default_session]` / `[[session]]` / `[[wildcard]]` / `[tui]` / `blacklist` / `dir_length` / `sort_order` / `cache` 等都原样可用）。
 
-```sh
-pixi global install sesh
-```
+配置写法请直接看 [上游 README 的 Configuration 一节](https://github.com/joshmedeski/sesh#configuration)。
 
-</details>
+cc-sesh 本身没有新增任何配置项 —— Claude 集成是开箱即用、**不需要也不接受任何配置**。
 
-<details>
-  <summary>Nix</summary>
+### Attention 状态文件
 
-See the [nix package directory](https://search.nixos.org/packages?channel=unstable&show=sesh&from=0&size=50&sort=relevance&type=packages&query=sesh) for instructions on how to install sesh through the nix platform.
-
-</details>
-
-**Note:** Do you want this on another package manager? [Create an issue](https://github.com/joshmedeski/sesh/issues/new) and let me know!
-
-## Shell Completion
-
-Sesh supports shell completion (tab completion) for Bash, Zsh, Fish, and PowerShell. This helps you discover commands, flags, and arguments by pressing the Tab key.
-
-<details>
-  <summary>Bash</summary>
-
-```sh
-# Generate completion script
-sesh completion bash > sesh-completion.bash
-
-# Install system-wide (recommended)
-sudo cp sesh-completion.bash /etc/bash_completion.d/
-
-# Or install user-only
-mkdir -p ~/.local/share/bash-completion/completions
-cp sesh-completion.bash ~/.local/share/bash-completion/completions/sesh
-
-# Reload your shell
-source ~/.bashrc
-```
-
-</details>
-
-<details>
-  <summary>Zsh</summary>
-
-```sh
-# Generate completion script
-sesh completion zsh > _sesh
-
-# Install system-wide (recommended)
-sudo mkdir -p /usr/local/share/zsh/site-functions
-sudo cp _sesh /usr/local/share/zsh/site-functions/
-
-# Or install user-only
-mkdir -p ~/.zsh/completions
-cp _sesh ~/.zsh/completions/
-echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
-echo 'autoload -U compinit && compinit' >> ~/.zshrc
-
-# Reload your shell
-source ~/.zshrc
-```
-
-</details>
-
-<details>
-  <summary>Fish</summary>
-
-```sh
-# Generate and install completion
-sesh completion fish > ~/.config/fish/completions/sesh.fish
-
-# Reload fish configuration
-source ~/.config/fish/config.fish
-```
-
-</details>
-
-<details>
-  <summary>PowerShell</summary>
-
-```powershell
-# Generate completion script
-sesh completion powershell > sesh.ps1
-
-# Create PowerShell profile directory if it doesn't exist
-mkdir -p (Split-Path $PROFILE)
-
-# Add to PowerShell profile
-Add-Content $PROFILE ". /path/to/sesh.ps1"
-
-# Reload PowerShell
-& $PROFILE
-```
-
-</details>
-
-After setting up completion, you can press Tab while typing `sesh` to see available commands, flags, and arguments.
-
-## Extensions
-
-## Raycast Extension
-
-The [sesh companion extension](https://www.raycast.com/joshmedeski/sesh) for [Raycast](https://www.raycast.com/) makes it easy to use sesh outside of the terminal.
-
-Here are limitations to keep in mind:
-
-- tmux has to be running before you can use the extension
-- The extension caches results for a few seconds, so it may not always be up to date
-
-<a title="Install sesh Raycast Extension" href="https://www.raycast.com/joshmedeski/sesh"><img src="https://www.raycast.com/joshmedeski/sesh/install_button@2x.png?v=1.1" height="64" alt="" style="height: 64px;"></a>
-
-## Ulauncher Extension
-
-For Linux users using [Ulauncher](https://ulauncher.io/) there are two extensions to use sesh outside the terminal:
-
-- [Sesh Session Manager](https://ext.ulauncher.io/-/github-jacostag-sesh-ulauncher)
-- [SESHion Manager](https://ext.ulauncher.io/-/github-mrinfinidy-seshion-manager)
-
-Here are limitations to keep in mind for Sesh Session Manager:
-
-- tmux has to be running before you can use the extension
-
-## Walker launcher usage (Linux)
-
-Create an action directly on $XDG_CONFIG_HOME/config.toml
+为了让粘性提醒跨进程生效，cc-sesh 把 attention 状态持久化到：
 
 ```
-[[plugins]]
-name = "sesh"
-prefix = ";s "
-src_once = "sesh list -d -c -t -T"
-cmd = "sesh connect --switch %RESULT%"
-keep_sort = false
-recalculate_score = true
-show_icon_when_single = true
-switcher_only = true
+$XDG_STATE_HOME/cc-sesh/attention.json
+# 默认：~/.local/state/cc-sesh/attention.json
 ```
 
-### For the dmenu mode you can use:
+文件可以随时手动删，删完 attention 全清，下次 picker 打开会重新积累。
 
-#### Fish shell:
+---
 
-set ssession $(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
+## 与上游的同步策略
 
-#### Bash/Zsh:
+- 仓库的 `main` 分支会不定期 rebase / merge 上游的 release tag
+- 我自己的修改集中在：
+  - `claude/` 包（live + attention）—— 全新增
+  - `picker/` 包 —— UI 与 hotkey 改造
+  - `seshcli/claude_wire.go` —— 把 lister + claude/live + claude/attention 串起来注入 picker
+  - module path、二进制名、配置路径的全局重命名
 
-ssession=$(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
+如果你想把 Claude 集成提交回上游，请直接去和 [Josh Medeski](https://github.com/joshmedeski) 讨论 —— 我没有这个计划，因为这个改动对绝大多数 sesh 用户都是不必要的复杂度。
 
-##### For dmenu launchers replace walker -dfk with dmenu or rofi)
+---
 
-### How to use
+## License
 
-### tmux for sessions
-
-[tmux](https://github.com/tmux/tmux) is a powerful terminal multiplexer that allows you to create and manage multiple terminal sessions. Sesh is designed to make managing tmux sessions easier.
-
-### zoxide for directories
-
-[zoxide](https://github.com/ajeetdsouza/zoxide) is a blazing fast alternative to `cd` that tracks your most used directories. Sesh uses zoxide to manage your projects. You'll have to set up zoxide first, but once you do, you can use it to quickly jump to your most used directories.
-
-### Basic usage
-
-Once tmux and zoxide are setup, `sesh list` will list all your tmux sessions and zoxide results, and `sesh connect {session}` will connect to a session (automatically creating it if it doesn't exist yet). It is best used by integrating it into your shell and tmux.
-
-#### fzf
-
-The easiest way to integrate sesh into your workflow is to use [fzf](https://github.com/junegunn/fzf). You can use it to select a session to connect to:
-
-```sh
-sesh connect $(sesh list | fzf)
-```
-
-#### tmux + fzf
-
-In order to integrate with tmux, you can add a binding to your tmux config (`tmux.conf`). For example, the following will bind `ctrl-a T` to open a fzf prompt as a tmux popup (using `fzf-tmux`) and using different commands to list active sessions (`sesh list -t`), configured sessions (`sesh list -c`), zoxide directories (`sesh list -z`), and find directories (`fd...`).
-
-```sh
-bind-key "T" run-shell "sesh connect \"$(
-  sesh list --icons | fzf-tmux -p 80%,70% \
-    --no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
-    --header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
-    --bind 'tab:down,btab:up' \
-    --bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list --icons)' \
-    --bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t --icons)' \
-    --bind 'ctrl-g:change-prompt(⚙️  )+reload(sesh list -c --icons)' \
-    --bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z --icons)' \
-    --bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
-    --bind 'ctrl-d:execute(tmux kill-session -t {2..})+change-prompt(⚡  )+reload(sesh list --icons)' \
-    --preview-window 'right:55%' \
-    --preview 'sesh preview {}'
-)\""
-```
-
-You can customize this however you want, see `man fzf` for more info on the different options.
-
-#### tmux + [television](https://github.com/alexpasmantier/television)
-
-If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/community/channels-unix/#sesh) in a tmux popup.
-
-```sh
-bind-key "T" display-popup -E -w 80% -h 70% -d '#{pane_current_path}' -T 'Sesh' tv sesh
-```
-
-Use `Ctrl-s` to cycle through the sources, and `Ctrl-d` to kill the highlighted session.
-
-### Window management
-
-`sesh window` (alias `w`) lets you list, switch to, and create tmux windows within a session — similar to how `sesh list` and `sesh connect` work for sessions.
-
-#### List windows in the current session
-
-```sh
-sesh window
-```
-
-#### Switch to an existing window by name
-
-```sh
-sesh window editor
-```
-
-If a window named `editor` exists in the current session, sesh will switch to it.
-
-#### Create a new window at a directory
-
-```sh
-sesh window ~/projects/my-app
-```
-
-If no window with that name exists, sesh will create a new window named after the directory (`my-app`) with its working directory set to the given path.
-
-#### Target a specific session
-
-Use `--session` / `-s` to manage windows in a session other than the one you're currently attached to:
-
-```sh
-sesh window --session work
-sesh window ~/projects/my-app --session work
-```
-
-#### fzf integration
-
-You can combine `sesh window` with fzf to interactively switch windows:
-
-```sh
-sesh window $(sesh window | fzf)
-```
-
-Or as a tmux keybind:
-
-```sh
-bind-key "W" run-shell "sesh window \"$(sesh window | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
-```
-
-## gum + tmux
-
-If you prefer to use [charmbracelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
-
-```sh
-bind-key "K" display-popup -E -w 40% "sesh connect \"$(
- sesh list -i | gum filter --limit 1 --no-sort --fuzzy --placeholder 'Pick a sesh' --height 50 --prompt='⚡'
-)\""
-```
-
-**Note:** There are less features available with gum compared to fzf, but I found its matching algorithm is faster and it has a more modern feel.
-
-> [!WARNING]
-> As of [gum v0.15.0](https://github.com/charmbracelet/gum/releases/tag/v0.15.0) you have to add the `--no-strip-ansi` in order to display the icons correctly.
-
-See my video, [Top 4 Fuzzy CLIs](https://www.youtube.com/watch?v=T0O2qrOhauY) for more inspiration for tooling that can be integrated with sesh.
-
-#### sesh picker
-
-Sesh has a built-in picker that can be used as a tmux popup:
-
-```sh
-bind-key "K" display-popup -h 90% -w 50% -E "sesh picker -i"
-```
-
-## zsh keybind
-
-If you use zsh, you can add the following keybind to your `.zshrc` to connect to a session:
-
-```sh
-function sesh-sessions() {
-  {
-    exec </dev/tty
-    exec <&1
-    local session
-    session=$(sesh list -t -c | fzf --height 40% --reverse --border-label ' sesh ' --border --prompt '⚡  ')
-    zle reset-prompt > /dev/null 2>&1 || true
-    [[ -z "$session" ]] && return
-    sesh connect $session
-  }
-}
-
-zle     -N             sesh-sessions
-bindkey -M emacs '\es' sesh-sessions
-bindkey -M vicmd '\es' sesh-sessions
-bindkey -M viins '\es' sesh-sessions
-```
-
-After adding this to your `.zshrc`, you can press `Alt-s` to open a fzf prompt to connect to a session.
-
-## Recommended tmux Settings
-
-I recommend you add these settings to your `tmux.conf` to have a better experience with this plugin.
-
-```sh
-bind-key x kill-pane # skip "kill-pane 1? (y/n)" prompt
-set -g detach-on-destroy off  # don't exit from tmux when closing a session
-```
-
-## Bonus
-
-### Last
-
-The default `<prefix>+L` command will "Switch the attached client back to the last session." However, if you close a session while `detach-on-destroy off` is set, the last session will not be found. To fix this, I have a `sesh last` command that will always switch the client to the second to last session that has been attached.
-
-Add the following to your `tmux.conf` to overwrite the default `last-session` command:
-
-```sh
-bind -N "last-session (via sesh) " L run-shell "sesh last"
-```
-
-### Connect to root
-
-While working in a nested session, you may way to connect to the root session of a git worktree or git repository. To do this, you can use the `--root` flag with the `sesh connect` command.
-
-I recommend adding this to your `tmux.conf`:
-
-```sh
-bind -N "switch to root session (via sesh) " 9 run-shell "sesh connect --root $(pwd)"
-```
-
-### Filter by root
-
-If you want to filter your search by the root of the active project, you can modify your piker by using the `sesh root` command:
-
-```sh
-bind-key "R" display-popup -E -w 40% "sesh connect \"$(
-  sesh list -i -H | gum filter --value \"$(sesh root)\" --limit 1 --fuzzy --no-sort --placeholder 'Pick a sesh' --prompt='⚡'readme
-)\""
-```
-
-I have this bound to `<prefix>+R` so I can use an alternative binding.
-
-**Note:** This will only work if you are in a git worktree or git repository. For now, git worktrees expect a `.bare` folder.
-
-## Configuration
-
-You can configure sesh by creating a `sesh.toml` file in your `$XDG_CONFIG_HOME/sesh` or `$HOME/.config/sesh` directory.
-
-```sh
-mkdir -p ~/.config/sesh && touch ~/.config/sesh/sesh.toml
-```
-
-### Custom Config Path
-
-You can specify a custom config file path using the `--config` (or `-C`) flag. This is useful for NixOS wrappers, maintaining separate work/private configurations, or testing.
-
-```sh
-sesh -C /path/to/custom/sesh.toml list
-sesh --config /path/to/custom/sesh.toml connect my-session
-```
-
-The flag works with any subcommand. When specified, the file must exist or sesh will return an error. Without the flag, sesh uses the default config path.
-
-### Custom Multiplexer (psmux)
-
-Sesh uses `tmux` as the default terminal multiplexer, but you can configure it to use any tmux-compatible multiplexer like [psmux](https://github.com/psmux/psmux) by setting `tmux_command` in your `sesh.toml`:
-
-```toml
-tmux_command = "psmux"
-```
-
-This replaces the `tmux` binary in all commands sesh runs (session creation, switching, attaching, etc.). The configured multiplexer must support tmux's CLI interface.
-
-### Schema (Editor Autocomplete)
-
-Sesh provides a [JSON Schema](https://json-schema.org/) for `sesh.toml` that enables autocomplete, validation, and documentation in your editor. This works with any editor that supports the [taplo](https://taplo.tamasfe.dev/) TOML language server.
-
-#### Quick Setup
-
-Add this line to the top of your `sesh.toml`:
-
-```toml
-#:schema https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json
-```
-
-That's it! Taplo will read the directive and apply the schema automatically.
-
-#### Neovim
-
-Make sure you have taplo installed:
-
-```sh
-brew install taplo
-```
-
-If you're using [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig), taplo should work out of the box with the `#:schema` directive above. Alternatively, you can configure the schema association directly:
-
-```lua
-require("lspconfig").taplo.setup({
-  settings = {
-    taplo = {
-      schema = {
-        associations = {
-          [".*sesh\\.toml$"] = "https://github.com/joshmedeski/sesh/raw/main/sesh.schema.json",
-        },
-      },
-    },
-  },
-})
-```
-
-### Blacklist
-
-You may want to blacklist certain tmux sessions from showing up in the results. For example, you may want to exclude your `scratch` directory from the results.
-
-```sh
-blacklist = ["scratch"]
-```
-
-To surface blacklisted sessions for management, pass `-b` (or `--blacklisted`) to `sesh list`. It composes with source flags, so `sesh list -b -t` lists blacklisted tmux sessions only.
-
-### Directory Length
-
-Control how many directory components are used for session names. Default is 1 (only the directory basename).
-
-```toml
-dir_length = 2  # Uses last 2 directories: "projects/sesh" instead of just "sesh"
-```
-
-> [!NOTE]
-> Works great with [tmux-floax](https://github.com/omerxx/tmux-floax)
-
-### Sorting
-
-If you'd like to change the order of the sessions shown, you can configure `sort_order` in your `sesh.toml` file
-
-```toml
-sort_order = [
-    "tmuxinator", # show first
-    "config",
-    "tmux",
-    "zoxide", # show last
-]
-```
-
-The default order is `tmux`, `config`, `tmuxinator`, and then `zoxide`.
-
-You can omit session types if you only care about the order of specific ones.
-
-```toml
-sort_order = [
-  "config", # resulting order: config, tmux, tmuxinator, zoxide
-]
-```
-
-### Cache
-
-> [!WARNING]
-> This feature is experimental and may not work as expected.
-
-Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores results at `$XDG_CACHE_HOME/sesh/sessions.gob` (default `~/.cache/sesh/sessions.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
-
-- **Cold start**: no cache exists, fetches live data and writes the cache
-- **Fresh hit** (within 5s): returns cached data instantly
-- **Stale hit** (after 5s): returns cached data instantly and refreshes the cache in the background
-
-The cache is also refreshed automatically after `sesh connect`.
-
-```toml
-cache = true
-```
-
-### Picker TUI
-
-The Picker TUI can be configured with some options that help you customize it's behaviour, this picker is a useful replacement to external fuzzy pickers.
-
-```toml
-[tui]
-prompt = "> "
-placeholder = "Filter sessions... "
-show_icons = false
-```
-
-### Default Session
-
-The default session can be configured to run a command when connecting to a session. This is useful for running a dev server or starting a tmux plugin.
-
-Additionally, you can define a preview command that runs when previewing the session's directory. This can be handy for displaying files with tools like [eza](https://github.com/eza-community/eza) or [lsd](https://github.com/lsd-rs/lsd).
-
-Note: The `{}` will be automatically replaced with the session's path.
-
-```toml
-[default_session]
-startup_command = "nvim -c ':Telescope find_files'"
-preview_command = "eza --all --git --icons --color=always {}"
-```
-
-If you want to disable the default start command on a specific session, you can set `disable_startup_command = true`.
-
-### Session Configuration
-
-A startup command is a command that is run when a session is created. It is useful for setting up your environment for a given project. For example, you may want to run `npm run dev` to automatically start a dev server.
-
-**Note:** If you use the `--command/-c` flag, then the startup script will not be run.
-
-**How startup commands run:** sesh injects your `startup_command` (and any window `startup_script`) as the pane's initial shell command via `$SHELL -i -c '<cmd>; exec $SHELL -i'`. This means the command executes as part of pane creation — no more races with slow shell init — but it also means the command is **not typed at a prompt** and **not added to shell history**. When the command exits, the pane drops into a fresh interactive `$SHELL`.
-
-I like to use a command that opens nvim on session startup.
-
-You can also define a preview command to display the contents of a specific file using [bat](https://github.com/sharkdp/bat) or any another file previewer of your choice.
-
-```toml
-[[session]]
-name = "Downloads 📥"
-path = "~/Downloads"
-startup_command = "ls"
-
-[[session]]
-name = "tmux config"
-path = "~/c/dotfiles/.config/tmux"
-startup_command = "nvim tmux.conf"
-preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
-```
-
-### Path substitution
-
-If you want to use the path of the selected session in your startup or preview command, you can use the `{}` placeholder.  
-This will be replaced with the session's path when the command is run.
-
-An example of this in use is the following, where the `tmuxinator` default_project uses the path as key/value pair using [ERB syntax](https://github.com/tmuxinator/tmuxinator?tab=readme-ov-file#erb):
-
-```toml
-[default_session]
-startup_command = "tmuxinator start default_project path={}"
-preview_command = "eza --all --git --icons --color=always {}"
-```
-
-### Multiple windows
-
-If you want your session to have multiple windows you can define windows in your configuration. You can then use these window layouts in your sessions. These windows can be reused as many times as you want and you can add as many windows to each session as you want.
-
-Note: If you do not specify a path in the window, it will use the session's path.
-
-```toml
-[[session]]
-name = "Downloads 📥"
-path = "~/Downloads"
-startup_command = "ls"
-
-[[session]]
-name = "tmux config"
-path = "~/c/dotfiles/.config/tmux"
-startup_command = "nvim tmux.conf"
-preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
-windows = [ "git" ]
-
-[[window]]
-name = "git"
-startup_script = "git pull"
-```
-
-### Wildcard Configuration
-
-Wildcard configs let you define session settings that apply to any directory matching a glob pattern, instead of creating a `[[session]]` entry for each project. This is useful when you have a directory full of projects that should all use the same startup command.
-
-```toml
-[[wildcard]]
-pattern = "~/projects/*"
-startup_command = "nvim"
-
-[[wildcard]]
-pattern = "~/work/*"
-startup_command = "make dev"
-preview_command = "ls -la"
-
-[[wildcard]]
-pattern = "~/repos/**"
-startup_command = "git status"
-```
-
-When you run `sesh connect ~/projects/myapp`, sesh matches the path against your wildcard patterns and automatically creates a session named from the directory (using git remote or folder name), runs the configured startup command, and adds the path to zoxide.
-
-Available fields:
-
-| Field | Description |
-|-------|-------------|
-| `pattern` | Glob pattern to match directories (e.g. `~/projects/*`) |
-| `startup_command` | Command to run on session creation (supports `{}` for path) |
-| `preview_command` | Command to run when previewing the session |
-| `disable_startup_command` | Set to `true` to suppress the startup command |
-| `windows` | Window layout to use (array of window names from `[[window]]` configs) |
-
-**Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
-
-### Listing Configurations
-
-Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
-
-```sh
-sesh list -c
-```
-
-Set the file as an executable and it will be run when you connect to the specified session.
-
-## Contributing
-
-Want to contribute? Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
-
-## Background (the "t" script)
-
-Sesh is the successor to my popular [t-smart-tmux-session-manager](https://github.com/joshmedeski/t-smart-tmux-session-manager) tmux plugin. After a year of development and over 250 stars, it's clear that people enjoy the idea of a smart session manager. However, I've always felt that the tmux plugin was a bit of a hack. It's a bash script that runs in the background and parses the output of tmux commands. It works, but it's not ideal and isn't flexible enough to support other terminal multiplexers.
-
-I've decided to start over and build a session manager from the ground up. This time, I'm using a language that's more suited for the task: Go. Go is a compiled language that's fast, statically typed, and has a great standard library. It's perfect for a project like this. I've also decided to make this session manager multiplexer agnostic. It will be able to work with any terminal multiplexer, including tmux, zellij, Wezterm, and more.
-
-The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
-
-## Contributors
-
-<a href="https://github.com/joshmedeski/sesh/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=joshmedeski/sesh" />
-</a>
-
-Made with [contrib.rocks](https://contrib.rocks).
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date)](https://www.star-history.com/#joshmedeski/sesh&Date)
+MIT，沿袭上游 [sesh 的 LICENSE](LICENSE)，版权署名 © 2023 Josh Medeski。本 fork 新增部分同样以 MIT 发布。
