@@ -94,13 +94,27 @@ cc-sesh 只在上游 sesh 之上做了**一件事**：让 picker 里能直接看
 
 ## 安装
 
+### Homebrew
+
+```sh
+brew install Wingsdh/cc-sesh/cc-sesh
+```
+
+通过我自维护的 [Homebrew tap](https://github.com/Wingsdh/homebrew-cc-sesh) 安装（不在 homebrew-core）。每次推 release tag 时由 GoReleaser 自动更新 formula。
+
+### Go install
+
 ```sh
 go install github.com/Wingsdh/cc-sesh/v2@latest
 ```
 
-需要 Go 1.25+。装完后二进制叫 `cc-sesh`，所有子命令名与上游 sesh 一致（`list / connect / picker / window / ...`）。
+需要 Go 1.25+。
 
-> 暂未提供 Homebrew / AUR / Conda / Nix 等打包，未来也大概率不会 —— 这是一个为了我自己用而 fork 的项目。
+---
+
+装完后二进制叫 `cc-sesh`，所有子命令名与上游 sesh 一致（`list / connect / picker / window / ...`）。
+
+> 暂未提供 AUR / Conda / Nix 等打包 —— 这是一个为了我自己用而 fork 的项目。
 
 ---
 

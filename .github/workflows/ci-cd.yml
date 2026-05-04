@@ -68,5 +68,5 @@ jobs:
     steps:
       - name: Install with brew
         run: |
-          brew install joshmedeski/sesh/sesh
+          brew install Wingsdh/cc-sesh/cc-sesh
       # TODO: assert the latest version was installed
