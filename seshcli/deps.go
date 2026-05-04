@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Wingsdh/cc-sesh/v2/cache"
+	"github.com/Wingsdh/cc-sesh/v2/claude/attention"
+	"github.com/Wingsdh/cc-sesh/v2/claude/live"
 	"github.com/Wingsdh/cc-sesh/v2/cloner"
 	"github.com/Wingsdh/cc-sesh/v2/configurator"
 	"github.com/Wingsdh/cc-sesh/v2/connector"
@@ -64,6 +66,8 @@ type Deps struct {
 	Icon          icon.Icon
 	Previewer     previewer.Previewer
 	Cloner        cloner.Cloner
+	LiveReader    *live.Reader
+	Attention     *attention.Store
 }
 
 // NewBaseDeps constructs all config-free dependencies.
@@ -129,6 +133,15 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	cl := cloner.NewCloner(c, b.Git)
 	pk := picker.NewPicker(config)
 
+	homeDir, _ := b.Os.UserHomeDir()
+	lr := live.NewReader(homeDir, live.NewProcessChecker())
+
+	attentionPath, err := attention.DefaultPath()
+	if err != nil {
+		slog.Warn("deps: cannot resolve attention path; attention will be disabled", "error", err)
+	}
+	att := attention.New(attentionPath)
+
 	return &Deps{
 		BaseDeps:      *b,
 		Config:        config,
@@ -142,6 +155,8 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		Icon:          ic,
 		Previewer:     p,
 		Cloner:        cl,
+		LiveReader:    lr,
+		Attention:     att,
 	}, nil
 }
 

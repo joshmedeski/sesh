@@ -22,6 +22,7 @@ func NewLastCommand(base *BaseDeps) *cobra.Command {
 				// TODO: silently fail?
 				return fmt.Errorf("No last session found")
 			}
+			_ = deps.Attention.Ack(lastSession.Name)
 			deps.Tmux.SwitchClient(lastSession.Name)
 			return nil
 		},

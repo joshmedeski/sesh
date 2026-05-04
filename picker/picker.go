@@ -14,11 +14,24 @@ const (
 	defaultPlaceholder = "Filter sessions..."
 )
 
+// Dismisser 由 picker 在用户按 alt+d 时调用，请求清除指定 session 的 attention 标记。
+type Dismisser interface {
+	Dismiss(name string) error
+}
+
+// Killer 由 picker 在用户按 ctrl+d 时调用，请求 kill 指定 tmux session。
+type Killer interface {
+	Kill(name string) error
+}
+
 type PickerOptions struct {
 	ShowIcons      *bool
 	SeparatorAware *bool
 	Prompt         *string
 	Placeholder    *string
+	Decorator      Decorator
+	Dismisser      Dismisser
+	Killer         Killer
 }
 
 type Picker interface {
@@ -55,7 +68,12 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		placeholder = p.config.TUI.Placeholder
 	}
 
-	m := New(fetchFunc, showIcons, p.config.SeparatorAware, prompt, placeholder)
+	dec := opts.Decorator
+	if dec == nil {
+		dec = NoDecoration{}
+	}
+
+	m := New(fetchFunc, dec, opts.Dismisser, opts.Killer, showIcons, p.config.SeparatorAware, prompt, placeholder)
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()
 	if err != nil {

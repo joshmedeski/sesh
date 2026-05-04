@@ -44,6 +44,8 @@ func NewConnectCommand(base *BaseDeps) *cobra.Command {
 
 			opts := model.ConnectOpts{Switch: switchFlag, Command: command, Tmuxinator: tmuxinator}
 			trimmedName := deps.Icon.RemoveIcon(name)
+			// 进入 session 即视为「点进去看一眼」，清掉粘性标记
+			_ = deps.Attention.Ack(trimmedName)
 			if _, err := deps.Connector.Connect(trimmedName, opts); err != nil {
 				// TODO: add to logging
 				return err

@@ -3,7 +3,9 @@ package picker
 import (
 	"fmt"
 	"image/color"
+	"sort"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -16,12 +18,13 @@ import (
 
 type sessionItem struct {
 	session    model.SeshSession
-	name       string // raw session name (no icons/ANSI)
-	searchName string // normalized name used for fuzzy matching
-	src        string // source type (tmux, config, zoxide, tmuxinator)
+	name       string
+	searchName string
+	src        string
+	decoration Decoration
 }
 
-// sessionItems implements fuzzy.Source for fuzzy matching.
+// sessionItems 实现 fuzzy.Source，让 fuzzy 匹配只看 searchName。
 type sessionItems []sessionItem
 
 func (s sessionItems) String(i int) string { return s[i].searchName }
@@ -32,13 +35,13 @@ type filteredItem struct {
 	matchedIndexes []int
 }
 
-// FetchFunc loads sessions asynchronously. It is called in a goroutine by Init().
-type FetchFunc func() (model.SeshSessions, error)
+// FetchFunc 在 Init 时被异步调用。返回 sessions 与 decorator —— 后者承载 live/attention 信息。
+type FetchFunc func() (model.SeshSessions, Decorator, error)
 
-// sessionsLoadedMsg carries the result of the async fetch back to Update().
 type sessionsLoadedMsg struct {
-	sessions model.SeshSessions
-	err      error
+	sessions  model.SeshSessions
+	decorator Decorator
+	err       error
 }
 
 type Model struct {
@@ -57,9 +60,13 @@ type Model struct {
 	loading        bool
 	fetchFunc      FetchFunc
 	loadErr        error
+	decorator      Decorator
+	dismisser      Dismisser
+	killer         Killer
+	now            func() time.Time
 }
 
-// srcIcon returns the nerd font icon and color for a session source.
+// srcIcon 返回 sesh 原本的来源 icon + ANSI 颜色。
 func srcIcon(src string) (string, color.Color) {
 	if g, ok := icon.Glyphs[src]; ok {
 		var ansi int
@@ -82,7 +89,10 @@ func normalizeSeparators(s string) string {
 	return separatorReplacer.Replace(s)
 }
 
-func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
+func buildItems(sessions model.SeshSessions, dec Decorator, separatorAware bool) sessionItems {
+	if dec == nil {
+		dec = NoDecoration{}
+	}
 	items := make(sessionItems, 0, len(sessions.OrderedIndex))
 	for _, key := range sessions.OrderedIndex {
 		s := sessions.Directory[key]
@@ -95,15 +105,20 @@ func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
 			name:       s.Name,
 			searchName: searchName,
 			src:        s.Src,
+			decoration: dec.Decorate(s),
 		})
 	}
 	return items
 }
 
-func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool, prompt string, placeholder string) Model {
+func New(fetchFunc FetchFunc, dec Decorator, dis Dismisser, kil Killer, showIcons, separatorAware bool, prompt, placeholder string) Model {
 	ti := textinput.New()
 	ti.Placeholder = placeholder
 	ti.Prompt = prompt
+
+	if dec == nil {
+		dec = NoDecoration{}
+	}
 
 	m := Model{
 		filterInput:    ti,
@@ -111,6 +126,10 @@ func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool, prompt string
 		separatorAware: separatorAware,
 		loading:        true,
 		fetchFunc:      fetchFunc,
+		decorator:      dec,
+		dismisser:      dis,
+		killer:         kil,
+		now:            time.Now,
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -122,8 +141,8 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) fetchSessions() tea.Cmd {
 	return func() tea.Msg {
-		sessions, err := m.fetchFunc()
-		return sessionsLoadedMsg{sessions: sessions, err: err}
+		sessions, dec, err := m.fetchFunc()
+		return sessionsLoadedMsg{sessions: sessions, decorator: dec, err: err}
 	}
 }
 
@@ -135,7 +154,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		m.loading = false
-		m.allItems = buildItems(msg.sessions, m.separatorAware)
+		if msg.decorator != nil {
+			m.decorator = msg.decorator
+		}
+		m.allItems = buildItems(msg.sessions, m.decorator, m.separatorAware)
 		m.applyFilter()
 		return m, nil
 
@@ -173,13 +195,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cursorUp(m.visibleCount() / 2)
 			return m, nil
 
-		case "ctrl+d":
+		case "pgdown":
 			m.cursorDown(m.visibleCount() / 2)
+			return m, nil
+
+		case "pgup":
+			m.cursorUp(m.visibleCount() / 2)
+			return m, nil
+
+		case "ctrl+d":
+			// kill 当前 cursor 所指 tmux session（与 fzf-tmux 习惯一致）。
+			// session 不存在后 attention 也会被自然 GC，无需额外清理。
+			m.killCurrent()
+			return m, nil
+
+		case "alt+d":
+			// 手动 dismiss 当前 attention 行。alt+d 避开和搜索字符 'd' 冲突。
+			m.dismissCurrent()
 			return m, nil
 		}
 	}
 
-	// Forward to text input
 	prevValue := m.filterInput.Value()
 	var cmd tea.Cmd
 	m.filterInput, cmd = m.filterInput.Update(msg)
@@ -195,27 +231,96 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// killCurrent kill 当前 cursor 所指的 tmux session。仅对 src=tmux 有效；
+// 其他类型（zoxide / config / tmuxinator template）没真实 session 可 kill，no-op。
+func (m *Model) killCurrent() {
+	if m.killer == nil || len(m.filtered) == 0 {
+		return
+	}
+	cur := m.filtered[m.cursor].item
+	if cur.session.Src != "tmux" {
+		return
+	}
+	if err := m.killer.Kill(cur.name); err != nil {
+		return
+	}
+	// 从 allItems 移除被 kill 的项，让列表立即同步
+	newItems := make(sessionItems, 0, len(m.allItems))
+	for _, it := range m.allItems {
+		if it.name == cur.name && it.session.Src == "tmux" {
+			continue
+		}
+		newItems = append(newItems, it)
+	}
+	m.allItems = newItems
+	m.applyFilter()
+	if m.cursor >= len(m.filtered) {
+		m.cursor = len(m.filtered) - 1
+		if m.cursor < 0 {
+			m.cursor = 0
+		}
+	}
+}
+
+// dismissCurrent 在 cursor 落在 attention 行时清除该行的 flag，并重新装饰所有项。
+func (m *Model) dismissCurrent() {
+	if m.dismisser == nil || len(m.filtered) == 0 {
+		return
+	}
+	cur := m.filtered[m.cursor].item
+	if !cur.decoration.Attention.Triggered {
+		return
+	}
+	if err := m.dismisser.Dismiss(cur.name); err != nil {
+		return
+	}
+	// 重新装饰：对所有 allItems 再调一次 decorator.Decorate
+	for i := range m.allItems {
+		m.allItems[i].decoration = m.decorator.Decorate(m.allItems[i].session)
+	}
+	m.applyFilter()
+}
+
 func (m *Model) applyFilter() {
 	pattern := m.filterInput.Value()
+
+	var matches []fuzzy.Match
+	if pattern != "" {
+		searchPat := pattern
+		if m.separatorAware {
+			searchPat = normalizeSeparators(pattern)
+		}
+		matches = fuzzy.FindFrom(searchPat, m.allItems)
+	}
+
 	if pattern == "" {
 		m.filtered = make([]filteredItem, len(m.allItems))
 		for i, item := range m.allItems {
 			m.filtered[i] = filteredItem{item: item}
 		}
-		return
-	}
-
-	if m.separatorAware {
-		pattern = normalizeSeparators(pattern)
-	}
-
-	matches := fuzzy.FindFrom(pattern, m.allItems)
-	m.filtered = make([]filteredItem, len(matches))
-	for i, match := range matches {
-		m.filtered[i] = filteredItem{
-			item:           m.allItems[match.Index],
-			matchedIndexes: match.MatchedIndexes,
+	} else {
+		m.filtered = make([]filteredItem, len(matches))
+		for i, match := range matches {
+			m.filtered[i] = filteredItem{
+				item:           m.allItems[match.Index],
+				matchedIndexes: match.MatchedIndexes,
+			}
 		}
+	}
+
+	// attention 项稳定排序到前面
+	sort.SliceStable(m.filtered, func(i, j int) bool {
+		ai := m.filtered[i].item.decoration.Attention.Triggered
+		aj := m.filtered[j].item.decoration.Attention.Triggered
+		if ai != aj {
+			return ai
+		}
+		return false
+	})
+
+	if m.cursor >= len(m.filtered) {
+		m.cursor = 0
+		m.offset = 0
 	}
 }
 
@@ -245,7 +350,6 @@ func (m *Model) cursorDown(n int) {
 }
 
 func (m Model) visibleCount() int {
-	// border(2) + title(1) + blank(1) + filter(1) + blank(1) + counter(1) + help(1) + blank before counter(1)
 	chrome := 9
 	available := m.height - chrome
 	if available < 1 {
@@ -268,10 +372,23 @@ func (m Model) contentWidth() int {
 	return w
 }
 
+// 颜色调色：尽量用 ANSI 数字，确保跨终端一致。
+var (
+	colorCursor   = lipgloss.ANSIColor(2)  // green
+	colorAttenFg  = lipgloss.ANSIColor(9)  // bright red
+	colorAttenBg  = lipgloss.ANSIColor(52) // 深红 256-color；不支持时退化为默认
+	colorBusy     = lipgloss.ANSIColor(12) // bright blue
+	colorSubagent = lipgloss.ANSIColor(11) // bright yellow
+	colorNeeding  = lipgloss.ANSIColor(9)  // bright red
+	colorIdle     = lipgloss.ANSIColor(8)  // bright black / dim
+	colorMatch    = lipgloss.ANSIColor(1)  // red
+	colorTail     = lipgloss.ANSIColor(8)
+	colorHeader   = lipgloss.ANSIColor(8)
+)
+
 func (m Model) View() tea.View {
 	var b strings.Builder
 
-	// Filter input
 	b.WriteString("  " + m.filterInput.View())
 	b.WriteString("\n\n")
 
@@ -281,48 +398,185 @@ func (m Model) View() tea.View {
 		loadingStyle := lipgloss.NewStyle().Faint(true)
 		b.WriteString(loadingStyle.Render("  Loading sessions..."))
 		b.WriteString("\n")
-		// Pad remaining visible lines to prevent layout jump
 		for i := 1; i < visible; i++ {
 			b.WriteString("\n")
 		}
 	} else {
-		// Session list
 		end := m.offset + visible
 		if end > len(m.filtered) {
 			end = len(m.filtered)
 		}
 
-		cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
-		matchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(1)).Bold(true)
-		normalStyle := lipgloss.NewStyle()
-
-		for i := m.offset; i < end; i++ {
-			item := m.filtered[i]
-			prefix := "  "
-			if i == m.cursor {
-				prefix = cursorStyle.Render("> ")
+		// 计算 needs-you 数；> 0 时第一行渲染分组标题（如果在可视范围内）。
+		needsCount := 0
+		for _, fi := range m.filtered {
+			if fi.item.decoration.Attention.Triggered {
+				needsCount++
 			}
-
-			var tag string
-			if m.showIcons {
-				icn, clr := srcIcon(item.item.src)
-				iconStyle := lipgloss.NewStyle().Foreground(clr)
-				tag = iconStyle.Render(icn)
-			}
-			name := highlightMatches(item.item.name, item.matchedIndexes, matchStyle, normalStyle)
-
-			b.WriteString(fmt.Sprintf("%s%s%s\n", prefix, tag, name))
 		}
 
-		// Pad remaining visible lines
-		for i := end - m.offset; i < visible; i++ {
+		linesPrinted := 0
+		printedHeader := needsCount == 0 // 没 attention 时不显示
+		printedDivider := false
+
+		for i := m.offset; i < end; i++ {
+			fi := m.filtered[i]
+
+			// 在第一条 attention 行前插 "needs you" header
+			if !printedHeader && fi.item.decoration.Attention.Triggered {
+				b.WriteString(renderHeader(fmt.Sprintf("needs you (%d)", needsCount)))
+				b.WriteString("\n")
+				printedHeader = true
+				linesPrinted++
+			}
+			// 在第一条非 attention 行前插分割线（前提是 attention 区有内容）
+			if needsCount > 0 && !printedDivider && !fi.item.decoration.Attention.Triggered {
+				b.WriteString(renderDivider())
+				b.WriteString("\n")
+				printedDivider = true
+				linesPrinted++
+			}
+
+			b.WriteString(m.renderRow(fi, i == m.cursor))
+			b.WriteString("\n")
+			linesPrinted++
+		}
+
+		for i := linesPrinted; i < visible; i++ {
 			b.WriteString("\n")
 		}
 	}
 
-	content := b.String()
+	return tea.NewView(b.String())
+}
 
-	return tea.NewView(content)
+func renderHeader(label string) string {
+	return lipgloss.NewStyle().Foreground(colorHeader).Faint(true).Render("  ─── " + label + " ──")
+}
+
+func renderDivider() string {
+	return lipgloss.NewStyle().Foreground(colorHeader).Faint(true).Render("  ───────────────")
+}
+
+func (m Model) renderRow(fi filteredItem, isCursor bool) string {
+	item := fi.item
+	dec := item.decoration
+
+	// 1. cursor 列
+	cursorPrefix := "  "
+	if isCursor {
+		cursorPrefix = lipgloss.NewStyle().Foreground(colorCursor).Bold(true).Render("> ")
+	}
+
+	// 2. attention 列：⚠ + 空格，或两个空格
+	attenCol := "  "
+	if dec.Attention.Triggered {
+		attenCol = lipgloss.NewStyle().Foreground(colorAttenFg).Bold(true).Render("⚠ ")
+	}
+
+	// 3. src icon 列
+	var srcCol string
+	if m.showIcons {
+		icn, clr := srcIcon(item.src)
+		srcCol = lipgloss.NewStyle().Foreground(clr).Render(icn)
+	}
+
+	// 4. live badge 列
+	liveCol := renderLiveBadge(dec.Live)
+
+	// 5. name 列（fuzzy 高亮）
+	nameStyle := lipgloss.NewStyle()
+	matchStyle := lipgloss.NewStyle().Foreground(colorMatch).Bold(true)
+	name := highlightMatches(item.name, fi.matchedIndexes, matchStyle, nameStyle)
+
+	// 6. tail 列
+	tail := m.renderTail(dec)
+
+	body := cursorPrefix + attenCol + srcCol + liveCol + name
+	if tail != "" {
+		body += "  " + tail
+	}
+
+	// attention 行整行染暗红色，区别于普通行
+	if dec.Attention.Triggered {
+		body = lipgloss.NewStyle().Foreground(colorAttenFg).Render(body)
+	}
+
+	return body
+}
+
+// renderLiveBadge 输出 8 字符宽的列：`● 2/2   ` / `○ 1     ` / `        `
+func renderLiveBadge(b LiveBadge) string {
+	if b.IsEmpty() {
+		return strings.Repeat(" ", 8)
+	}
+
+	var glyph rune
+	var clr color.Color
+	switch b.Severity() {
+	case SevNeeding:
+		glyph = '⚠'
+		clr = colorNeeding
+	case SevBusy:
+		glyph = '●'
+		clr = colorBusy
+	case SevSubagent:
+		glyph = '◐'
+		clr = colorSubagent
+	default:
+		glyph = '○'
+		clr = colorIdle
+	}
+
+	// 计数显示：idle 时只显示总数；其他时显示 active/total
+	var counter string
+	switch b.Severity() {
+	case SevIdle:
+		counter = fmt.Sprintf("%d", b.Total)
+	case SevSubagent:
+		counter = fmt.Sprintf("%d/%d", b.Subagent, b.Total)
+	case SevBusy:
+		counter = fmt.Sprintf("%d/%d", b.Busy, b.Total)
+	case SevNeeding:
+		counter = fmt.Sprintf("%d/%d", b.Needing, b.Total)
+	}
+
+	plain := fmt.Sprintf("%c %s", glyph, counter)
+	if width := lipgloss.Width(plain); width < 8 {
+		plain += strings.Repeat(" ", 8-width)
+	}
+	return lipgloss.NewStyle().Foreground(clr).Render(plain)
+}
+
+func (m Model) renderTail(dec Decoration) string {
+	if !dec.Attention.Triggered {
+		return ""
+	}
+	dur := durationShort(m.now().Sub(dec.Attention.FirstAt))
+	reason := dec.Attention.Reason
+	tailStyle := lipgloss.NewStyle().Foreground(colorTail).Faint(true)
+
+	if dec.Live.IsEmpty() || dec.Live.Severity() == SevIdle {
+		// "幽灵" 行：信号已消失但 attention 还在
+		return tailStyle.Render(fmt.Sprintf("was: %s · %s · resolved", reason, dur))
+	}
+	return tailStyle.Render(fmt.Sprintf("%s · %s", reason, dur))
+}
+
+func durationShort(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	switch {
+	case d < time.Minute:
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	case d < time.Hour:
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	case d < 24*time.Hour:
+		return fmt.Sprintf("%dh", int(d.Hours()))
+	default:
+		return fmt.Sprintf("%dd", int(d.Hours()/24))
+	}
 }
 
 func highlightMatches(s string, indexes []int, matchStyle, normalStyle lipgloss.Style) string {

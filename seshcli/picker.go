@@ -8,6 +8,7 @@ import (
 	"github.com/Wingsdh/cc-sesh/v2/picker"
 )
 
+
 func NewPickerCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "picker",
@@ -37,11 +38,11 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 				Tmuxinator:     tmuxinator,
 				HideDuplicates: hideDuplicates,
 			}
-			fetchFunc := func() (model.SeshSessions, error) {
-				return deps.Lister.List(listerOpts)
-			}
+			fetchFunc := makeClaudeFetcher(deps, listerOpts)
 
 			var pickerOpts picker.PickerOptions
+			pickerOpts.Dismisser = &claudeDismisser{store: deps.Attention}
+			pickerOpts.Killer = &tmuxKiller{tmux: deps.Tmux, attention: deps.Attention}
 			if cmd.Flags().Changed("icons") {
 				showIcons := true
 				pickerOpts.ShowIcons = &showIcons
@@ -74,6 +75,9 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			if chosen == "" {
 				return nil
 			}
+
+			// attach 之前先 ack：用户「点进去」的语义就是清掉粘性标记
+			_ = deps.Attention.Ack(chosen)
 
 			if _, err := deps.Connector.Connect(chosen, model.ConnectOpts{}); err != nil {
 				return err

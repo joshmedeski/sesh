@@ -49,6 +49,35 @@ func parseTmuxPanesOutput(rawList []string) ([]*model.TmuxPane, error) {
 	return panes, nil
 }
 
+// ListAllPanes 跨所有 tmux session 列出 pane（cwd / pid / 所属 session）。
+// 用于 cc-sesh 的 Claude → session 关联：通过 cwd 匹配。
+func (t *RealTmux) ListAllPanes() ([]*model.TmuxPaneAcrossSessions, error) {
+	format := strings.Join([]string{
+		"#{session_name}",
+		"#{pane_id}",
+		"#{pane_current_path}",
+		"#{pane_pid}",
+	}, separator)
+	output, err := t.shell.ListCmd("tmux", "list-panes", "-a", "-F", format)
+	if err != nil {
+		return []*model.TmuxPaneAcrossSessions{}, nil
+	}
+	out := make([]*model.TmuxPaneAcrossSessions, 0, len(output))
+	for _, line := range output {
+		fields := strings.Split(line, separator)
+		if len(fields) != 4 {
+			continue
+		}
+		out = append(out, &model.TmuxPaneAcrossSessions{
+			SessionName:     fields[0],
+			PaneID:          fields[1],
+			PaneCurrentPath: fields[2],
+			PanePID:         convert.StringToInt(fields[3]),
+		})
+	}
+	return out, nil
+}
+
 func (t *RealTmux) SelectPane(windowIndex int, paneIndex int) (string, error) {
 	sessionName, err := t.GetCurrentSession()
 	if err != nil {
