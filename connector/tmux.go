@@ -17,24 +17,10 @@ func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 
 func connectToTmux(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
 	if connection.New {
-		// Resolve the startup command BEFORE creating the session so we can
-		// inject it as the pane's initial shell-command. This eliminates the
-		// send-keys race with slow shell init
-		var rawCmd string
+		c.tmux.NewSession(connection.Session.Name, connection.Session.Path)
 		if opts.Command != "" {
-			rawCmd = opts.Command
+			c.tmux.SendKeys(connection.Session.Name, opts.Command)
 		} else {
-			resolved, err := c.startup.ResolveCommand(connection.Session)
-			if err != nil {
-				return "", err
-			}
-			rawCmd = resolved
-		}
-		shellCmd := c.startup.WrapForShell(rawCmd)
-		if _, err := c.tmux.NewSession(connection.Session.Name, connection.Session.Path, shellCmd); err != nil {
-			return "", err
-		}
-		if opts.Command == "" {
 			c.startup.Exec(connection.Session)
 		}
 	}

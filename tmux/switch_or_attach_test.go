@@ -63,7 +63,7 @@ func TestCustomBin(t *testing.T) {
 
 	t.Run("uses psmux binary for new session", func(t *testing.T) {
 		mockShell.On("Cmd", "psmux", "new-session", "-d", "-s", "dotfiles", "-c", "/home/user/dotfiles").Return("", nil)
-		_, err := psmux.NewSession("dotfiles", "/home/user/dotfiles", "")
+		_, err := psmux.NewSession("dotfiles", "/home/user/dotfiles")
 		assert.Nil(t, err)
 		mockShell.AssertCalled(t, "Cmd", "psmux", "new-session", "-d", "-s", "dotfiles", "-c", "/home/user/dotfiles")
 	})

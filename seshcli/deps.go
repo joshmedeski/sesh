@@ -121,7 +121,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		usedLister = cachedLi
 	}
 
-	s := startup.NewStartup(b.Os, config, usedLister, t, b.Home, b.Replacer)
+	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
 	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator)
 	ic := icon.NewIcon(config)

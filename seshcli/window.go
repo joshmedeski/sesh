@@ -92,7 +92,7 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			windowName := filepath.Base(absPath)
-			if _, err := deps.Tmux.NewWindowInSession(windowName, absPath, targetSession, ""); err != nil {
+			if _, err := deps.Tmux.NewWindowInSession(windowName, absPath, targetSession); err != nil {
 				return fmt.Errorf("failed to create window: %w", err)
 			}
 			return nil
