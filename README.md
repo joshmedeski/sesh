@@ -646,8 +646,6 @@ A startup command is a command that is run when a session is created. It is usef
 
 **Note:** If you use the `--command/-c` flag, then the startup script will not be run.
 
-**How startup commands run:** sesh injects your `startup_command` (and any window `startup_script`) as the pane's initial shell command via `$SHELL -i -c '<cmd>; exec $SHELL -i'`. This means the command executes as part of pane creation — no more races with slow shell init — but it also means the command is **not typed at a prompt** and **not added to shell history**. When the command exits, the pane drops into a fresh interactive `$SHELL`.
-
 I like to use a command that opens nvim on session startup.
 
 You can also define a preview command to display the contents of a specific file using [bat](https://github.com/sharkdp/bat) or any another file previewer of your choice.

@@ -6,21 +6,18 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigWildcardStartupStrategy(t *testing.T) {
-	mockOs := new(oswrap.MockOs)
 	mockLister := new(lister.MockLister)
 	mockTmux := new(tmux.MockTmux)
 	mockHome := new(home.MockHome)
 	mockReplacer := new(replacer.MockReplacer)
 
 	s := &RealStartup{
-		os:       mockOs,
 		lister:   mockLister,
 		tmux:     mockTmux,
 		config:   model.Config{},

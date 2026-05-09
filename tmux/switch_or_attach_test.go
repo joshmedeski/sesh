@@ -63,7 +63,7 @@ func TestCustomBin(t *testing.T) {
 
 	t.Run("uses psmux binary for new session", func(t *testing.T) {
 		mockShell.On("Cmd", "psmux", "new-session", "-d", "-s", "dotfiles", "-c", "/home/user/dotfiles").Return("", nil)
-		_, err := psmux.NewSession("dotfiles", "/home/user/dotfiles", "")
+		_, err := psmux.NewSession("dotfiles", "/home/user/dotfiles")
 		assert.Nil(t, err)
 		mockShell.AssertCalled(t, "Cmd", "psmux", "new-session", "-d", "-s", "dotfiles", "-c", "/home/user/dotfiles")
 	})
@@ -86,21 +86,5 @@ func TestCustomBin(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, "attaching to tmux session: dotfiles", response)
 		mockShell.AssertCalled(t, "Cmd", "psmux", "attach-session", "-t", "dotfiles")
-	})
-
-	t.Run("uses psmux binary for new window in session", func(t *testing.T) {
-		mockShell.ExpectedCalls = nil
-		mockShell.On("Cmd", "psmux", "new-window", "-n", "editor", "-c", "/home/user/dotfiles", "-t", "dotfiles").Return("", nil)
-		_, err := psmux.NewWindowInSession("editor", "/home/user/dotfiles", "dotfiles", "")
-		assert.Nil(t, err)
-		mockShell.AssertCalled(t, "Cmd", "psmux", "new-window", "-n", "editor", "-c", "/home/user/dotfiles", "-t", "dotfiles")
-	})
-
-	t.Run("uses psmux binary for select window", func(t *testing.T) {
-		mockShell.ExpectedCalls = nil
-		mockShell.On("Cmd", "psmux", "select-window", "-t", "dotfiles:^").Return("", nil)
-		_, err := psmux.SelectWindow("dotfiles:^")
-		assert.Nil(t, err)
-		mockShell.AssertCalled(t, "Cmd", "psmux", "select-window", "-t", "dotfiles:^")
 	})
 }
