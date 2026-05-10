@@ -351,6 +351,32 @@ func TestCachingLister_SourceFilter_ColdStart(t *testing.T) {
 	cl.Wait()
 }
 
+func TestCachingLister_HideAttached_BeforeHideDuplicates(t *testing.T) {
+	dir := t.TempDir()
+	fc := cache.NewFileCacheWithPath(filepath.Join(dir, "sessions.gob"))
+	inner := lister.NewMockLister(t)
+
+	sessions := model.SeshSessions{
+		OrderedIndex: []string{"tmux:project", "config:project", "tmux:other"},
+		Directory: model.SeshSessionMap{
+			"tmux:project":   {Src: "tmux", Name: "project", Path: "/p"},
+			"config:project": {Src: "config", Name: "project", Path: "/p"},
+			"tmux:other":     {Src: "tmux", Name: "other", Path: "/o"},
+		},
+	}
+	require.NoError(t, fc.Write(sessions))
+
+	inner.On("GetAttachedTmuxSession").Return(sessions.Directory["tmux:project"], true)
+
+	cl := lister.NewCachingLister(inner, fc)
+	got, err := cl.List(lister.ListOptions{HideAttached: true, HideDuplicates: true})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"config:project", "tmux:other"}, got.OrderedIndex)
+
+	cl.Wait()
+	inner.AssertNotCalled(t, "List")
+}
+
 func TestCachingLister_HideDuplicates_PostCache(t *testing.T) {
 	dir := t.TempDir()
 	fc := cache.NewFileCacheWithPath(filepath.Join(dir, "sessions.gob"))

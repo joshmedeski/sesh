@@ -79,36 +79,29 @@ func (cl *CachingLister) applyFilters(sessions model.SeshSessions, opts ListOpti
 		filtered = result
 	}
 
-	// 2. HideDuplicates: deduplicate by name, then by path.
-	if opts.HideDuplicates {
-		nameHash := make(map[string]bool)
-		pathHash := make(map[string]bool)
-		destIndex := 0
-		for _, index := range filtered {
-			session := sessions.Directory[index]
-			nameIsDuplicate := nameHash[session.Name]
-			pathIsDuplicate := session.Path != "" && pathHash[session.Path]
-			if !nameIsDuplicate && !pathIsDuplicate {
-				filtered[destIndex] = index
-				nameHash[session.Name] = true
-				pathHash[session.Path] = true
-				destIndex++
-			}
-		}
-		filtered = filtered[:destIndex]
-	}
-
-	// 3. HideAttached: remove the currently attached tmux session.
+	// 2. HideAttached runs before HideDuplicates so the attached tmux
+	// session is removed from the dedup input. Otherwise tmux would win
+	// the dedup against a same-named config/tmuxinator entry and then be
+	// hidden, leaving no entry for the user to pick.
 	if opts.HideAttached {
 		attached, ok := cl.inner.GetAttachedTmuxSession()
 		if ok {
 			for i, index := range filtered {
-				if sessions.Directory[index].Name == attached.Name {
+				s := sessions.Directory[index]
+				if s.Src == "tmux" && s.Name == attached.Name {
 					filtered = slices.Delete(slices.Clone(filtered), i, i+1)
 					break
 				}
 			}
 		}
+	}
+
+	// 3. HideDuplicates: per-source dedup rules (see applyDedup).
+	if opts.HideDuplicates {
+		filtered = applyDedup(model.SeshSessions{
+			OrderedIndex: filtered,
+			Directory:    sessions.Directory,
+		})
 	}
 
 	if len(filtered) == len(sessions.OrderedIndex) {

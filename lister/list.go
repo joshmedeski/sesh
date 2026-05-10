@@ -92,32 +92,27 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		fullDirectory = filteredDirectory
 	}
 
-	if opts.HideDuplicates {
-		directoryHash := make(map[string]int)
-		nameHash := make(map[string]int)
-		destIndex := 0
-		for _, index := range fullOrderedIndex {
-			session := fullDirectory[index]
-			nameIsDuplicate := nameHash[session.Name] != 0
-			pathIsDuplicate := session.Path != "" && directoryHash[session.Path] != 0
-			if !nameIsDuplicate && !pathIsDuplicate {
-				fullOrderedIndex[destIndex] = index
-				directoryHash[session.Path] = 1
-				nameHash[session.Name] = 1
-				destIndex = destIndex + 1
+	// HideAttached runs before HideDuplicates so the attached tmux session
+	// is removed from the dedup input. Otherwise tmux would win the dedup
+	// against a same-named config/tmuxinator entry and then be hidden,
+	// leaving no entry for the user to pick.
+	if opts.HideAttached {
+		if attachedSession, ok := GetAttachedTmuxSession(l); ok {
+			for i, index := range fullOrderedIndex {
+				s := fullDirectory[index]
+				if s.Src == "tmux" && s.Name == attachedSession.Name {
+					fullOrderedIndex = slices.Delete(fullOrderedIndex, i, i+1)
+					break
+				}
 			}
 		}
-		fullOrderedIndex = fullOrderedIndex[:destIndex]
 	}
 
-	if opts.HideAttached {
-		attachedSession, _ := GetAttachedTmuxSession(l)
-		for i, index := range fullOrderedIndex {
-			if fullDirectory[index].Name == attachedSession.Name {
-				fullOrderedIndex = slices.Delete(fullOrderedIndex, i, i+1)
-				break
-			}
-		}
+	if opts.HideDuplicates {
+		fullOrderedIndex = applyDedup(model.SeshSessions{
+			OrderedIndex: fullOrderedIndex,
+			Directory:    fullDirectory,
+		})
 	}
 
 	return model.SeshSessions{

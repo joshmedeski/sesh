@@ -35,7 +35,7 @@ func TestHideDuplicates(t *testing.T) {
 			expectedNames: []string{"session1", "session2"},
 		},
 		{
-			name: "name duplicates only",
+			name: "name_collision_kept_when_paths_differ",
 			tmuxSessions: []*model.TmuxSession{
 				{Name: "dev", Path: "/path/to/dev1"},
 			},
@@ -45,7 +45,7 @@ func TestHideDuplicates(t *testing.T) {
 			homeShortenHome: map[string]string{
 				"/path/to/dev2": "dev",
 			},
-			expectedNames: []string{"dev"},
+			expectedNames: []string{"dev", "dev"},
 		},
 		{
 			name: "path duplicates only",
@@ -61,16 +61,7 @@ func TestHideDuplicates(t *testing.T) {
 			expectedNames: []string{"dev1"},
 		},
 		{
-			name: "empty path tmuxinator sessions filtered by name only",
-			tmuxinatorConfigs: []*model.TmuxinatorConfig{
-				{Name: "tmux1"},
-				{Name: "tmux1"},
-				{Name: "tmux2"},
-			},
-			expectedNames: []string{"tmux1", "tmux2"},
-		},
-		{
-			name: "mixed empty path and regular sessions with name conflicts",
+			name: "tmuxinator_and_zoxide_kept_no_rule_between_them",
 			tmuxinatorConfigs: []*model.TmuxinatorConfig{
 				{Name: "dev"},
 			},
@@ -80,7 +71,7 @@ func TestHideDuplicates(t *testing.T) {
 			homeShortenHome: map[string]string{
 				"/path/to/dev": "dev",
 			},
-			expectedNames: []string{"dev"},
+			expectedNames: []string{"dev", "dev"},
 		},
 		{
 			name: "order preservation",
@@ -189,6 +180,35 @@ func TestHideDuplicates(t *testing.T) {
 			mockTmuxinator.AssertExpectations(t)
 		})
 	}
+}
+
+func TestHideAttachedBeforeHideDuplicates(t *testing.T) {
+	mockTmux := new(tmux.MockTmux)
+	mockZoxide := new(zoxide.MockZoxide)
+	mockHome := new(home.MockHome)
+	mockTmuxinator := new(tmuxinator.MockTmuxinator)
+
+	mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+		{Name: "project", Path: "/p", Attached: 1},
+	}, nil)
+	mockHome.On("ExpandPath", "/p").Return("/p", nil)
+
+	config := model.Config{
+		SessionConfigs: []model.SessionConfig{{Name: "project", Path: "/p"}},
+	}
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+
+	result, err := l.List(ListOptions{
+		Tmux:           true,
+		Config:         true,
+		HideAttached:   true,
+		HideDuplicates: true,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(result.OrderedIndex))
+	kept := result.Directory[result.OrderedIndex[0]]
+	assert.Equal(t, "config", kept.Src)
+	assert.Equal(t, "project", kept.Name)
 }
 
 func TestBlacklistedFlag(t *testing.T) {
