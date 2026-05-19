@@ -116,6 +116,9 @@ func (c *RealConfigurator) applyDefaults(config *model.Config) {
 	if config.DirLength < 1 {
 		config.DirLength = 1
 	}
+	if config.GitDirLength < 1 {
+		config.GitDirLength = 1
+	}
 	if config.TUI.Prompt == "" {
 		config.TUI.Prompt = "> "
 	}

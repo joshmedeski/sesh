@@ -107,7 +107,7 @@ func gitRootName(n *RealNamer, path string) (string, error) {
 	if n.config.GitNamerUseWorktreeRoot {
 		isGit, topLevel, err := n.git.ShowTopLevel(path)
 		if err != nil {
-			return "", err
+			return "", nil
 		}
 		if !isGit || topLevel == "" {
 			return "", nil
