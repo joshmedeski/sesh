@@ -161,11 +161,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quit = true
 			return m, tea.Quit
 
-		case "up", "ctrl+k":
+		case "up", "ctrl+k", "ctrl+p":
 			m.cursorUp(1)
 			return m, nil
 
-		case "down", "ctrl+j":
+		case "down", "ctrl+j", "ctrl+n":
 			m.cursorDown(1)
 			return m, nil
 
