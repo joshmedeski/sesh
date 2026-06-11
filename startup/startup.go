@@ -68,14 +68,14 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		}
 
 		// create the new window
-		if ret, err := s.tmux.NewWindow(windowConfig.Path, windowConfig.Name); err != nil {
+		if ret, err := s.tmux.NewWindowInSession(windowConfig.Name, windowConfig.Path, session.Name); err != nil {
 			return ret, err
 		}
 		if ret, err := s.tmux.SendKeys(session.Name, windowConfig.StartupScript); err != nil {
 			return ret, err
 		}
 	}
-	s.tmux.NextWindow()
+	s.tmux.NextWindowInSession(session.Name)
 
 	for _, strategy := range strategies {
 		if command, err := strategy(s, session); err != nil {
