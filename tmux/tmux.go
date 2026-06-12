@@ -10,14 +10,12 @@ type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
 	NewSession(sessionName string, startDir string) (string, error)
-	NewWindow(startDir string, name string) (string, error)
 	NewWindowInSession(name string, startDir string, targetSession string) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
-	NextWindow() (string, error)
 	NextWindowInSession(targetSession string) (string, error)
 	SelectWindow(targetWindow string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
@@ -55,16 +53,8 @@ func (t *RealTmux) NewSession(sessionName string, startDir string) (string, erro
 	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", sessionName, "-c", startDir)
 }
 
-func (t *RealTmux) NewWindow(startDir string, name string) (string, error) {
-	return t.shell.Cmd(t.bin, "new-window", "-n", name, "-c", startDir)
-}
-
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {
 	return t.shell.Cmd(t.bin, "capture-pane", "-e", "-p", "-t", targetSession)
-}
-
-func (t *RealTmux) NextWindow() (string, error) {
-	return t.shell.Cmd(t.bin, "next-window")
 }
 
 func (t *RealTmux) NextWindowInSession(targetSession string) (string, error) {
