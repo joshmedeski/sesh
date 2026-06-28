@@ -10,6 +10,16 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
+// maybeWarmStatus spawns a background status refresh after a connect so the
+// status bar is warm before its first render. The child resolves the
+// (now-attached) session path itself. No-op when caching is disabled.
+func maybeWarmStatus(deps *Deps) {
+	if deps.Config.Github.EffectiveTTL() == 0 {
+		return
+	}
+	_ = deps.Refresher.Spawn("")
+}
+
 func NewConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "connect",
@@ -53,6 +63,7 @@ func NewConnectCommand(base *BaseDeps) *cobra.Command {
 				deps.CachingLister.RefreshCache(lister.ListOptions{})
 				deps.CachingLister.Wait()
 			}
+			maybeWarmStatus(deps)
 			return nil
 		},
 	}
