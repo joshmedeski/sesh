@@ -461,6 +461,28 @@ Add the following to your `tmux.conf` to overwrite the default `last-session` co
 bind -N "last-session (via sesh) " L run-shell "sesh last"
 ```
 
+### Dynamic status bar
+
+`sesh status` prints a tmux-styled string describing the GitHub issue that
+matches the current session's branch — a state badge (green `OPEN` / red
+`CLOSED`) followed by the issue number and title. It is inspired by
+[gitmux](https://github.com/arl/gitmux).
+
+Add it to your `status-left` (or `status-right`):
+
+```sh
+set -g status-left "#[fg=blue,bold]#S #[fg=white,nobold]#(sesh status)"
+```
+
+The issue number is parsed from the branch name (`400` or `feat/400-status-bar`
+both resolve to issue `#400`), so it works best with a branch-per-issue
+workflow.
+
+**Requirements:** the [`gh` CLI](https://cli.github.com) must be installed and
+authenticated (`gh auth login`). When there is nothing to show — no number in
+the branch, no matching issue, or `gh` is unavailable — `sesh status` prints
+nothing, leaving the status bar clean.
+
 ### Connect to root
 
 While working in a nested session, you may way to connect to the root session of a git worktree or git repository. To do this, you can use the `--root` flag with the `sesh connect` command.
