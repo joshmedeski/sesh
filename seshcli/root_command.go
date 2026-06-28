@@ -23,6 +23,7 @@ func NewRootCommand(version string) *cobra.Command {
 		NewConnectCommand(base),
 		NewCloneCommand(base),
 		NewRootSessionCommand(base),
+		NewStatusCommand(base),
 		NewPreviewCommand(base),
 		NewPickerCommand(base),
 		NewWindowCommand(base),
