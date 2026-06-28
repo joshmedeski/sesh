@@ -14,6 +14,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
@@ -45,6 +46,7 @@ type BaseDeps struct {
 	Json       json.Json
 	Replacer   replacer.Replacer
 	Git        git.Git
+	Github     github.Github
 	Dir        dir.Dir
 	Zoxide     zoxide.Zoxide
 	Tmuxinator tmuxinator.Tmuxinator
@@ -79,6 +81,7 @@ func NewBaseDeps() *BaseDeps {
 	r := replacer.NewReplacer()
 
 	g := git.NewGit(sh)
+	gh := github.NewGithub(sh, g)
 	d := dir.NewDir(os, g, path)
 	z := zoxide.NewZoxide(sh)
 	ti := tmuxinator.NewTmuxinator(sh)
@@ -93,6 +96,7 @@ func NewBaseDeps() *BaseDeps {
 		Json:       j,
 		Replacer:   r,
 		Git:        g,
+		Github:     gh,
 		Dir:        d,
 		Zoxide:     z,
 		Tmuxinator: ti,
