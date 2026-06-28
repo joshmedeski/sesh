@@ -15,6 +15,7 @@ type (
 		SeparatorAware       bool                 `toml:"separator_aware"`
 		TmuxCommand          string               `toml:"tmux_command"`
 		TUI                  TUIConfig            `toml:"tui"`
+		Github               GithubConfig         `toml:"github"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
@@ -50,6 +51,14 @@ type (
 		Placeholder string `toml:"placeholder"`
 	}
 
+	// GithubConfig holds settings for GitHub integration in the status bar.
+	GithubConfig struct {
+		// IssueTTL is the status cache lifetime in seconds. A pointer so an absent
+		// section (nil → default 60) is distinguishable from an explicit 0 (disable
+		// caching, always fetch live).
+		IssueTTL *int `toml:"issue_ttl"`
+	}
+
 	WildcardConfig struct {
 		Pattern             string   `toml:"pattern"`
 		StartupCommand      string   `toml:"startup_command"`
@@ -58,3 +67,12 @@ type (
 		Windows             []string `toml:"windows"`
 	}
 )
+
+// EffectiveTTL returns the cache TTL in seconds: 60 when unset, otherwise the
+// configured value (0 means caching is disabled).
+func (g GithubConfig) EffectiveTTL() int {
+	if g.IssueTTL == nil {
+		return 60
+	}
+	return *g.IssueTTL
+}

@@ -10,6 +10,19 @@
       "description": "Enable caching for improved performance",
       "default": false
     },
+    "github": {
+      "type": "object",
+      "description": "GitHub integration settings for the status bar",
+      "properties": {
+        "issue_ttl": {
+          "type": "integer",
+          "description": "Status cache lifetime in seconds. 0 disables caching (always fetch live).",
+          "minimum": 0,
+          "default": 60
+        }
+      },
+      "additionalProperties": false
+    },
     "strict_mode": {
       "type": "boolean",
       "description": "Disallow unknown fields in the configuration file",
