@@ -54,5 +54,5 @@ func formatStatus(issue github.Issue) string {
 	if issue.State != "OPEN" {
 		color = "red"
 	}
-	return fmt.Sprintf("#[fg=%s,bold]%s#[default] #%d %s", color, issue.State, issue.Number, issue.Title)
+	return fmt.Sprintf("#[fg=%s,bold]%s#[default] #[fg=magenta]Issue #%d#[default] %s", color, issue.State, issue.Number, issue.Title)
 }

@@ -465,8 +465,8 @@ bind -N "last-session (via sesh) " L run-shell "sesh last"
 
 `sesh status` prints a tmux-styled string describing the GitHub issue that
 matches the current session's branch — a state badge (green `OPEN` / red
-`CLOSED`) followed by the issue number and title. It is inspired by
-[gitmux](https://github.com/arl/gitmux).
+`CLOSED`), a magenta `Issue #<number>` label, and the issue title. It is
+inspired by [gitmux](https://github.com/arl/gitmux).
 
 Add it to your `status-left` (or `status-right`):
 
