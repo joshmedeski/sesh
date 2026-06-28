@@ -1,11 +1,38 @@
 package seshcli
 
 import (
+	"os"
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/github"
+	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestStatusPath(t *testing.T) {
+	t.Run("returns the attached session path", func(t *testing.T) {
+		mockLister := new(lister.MockLister)
+		session := model.SeshSession{Path: "/Users/josh/c/sesh"}
+		mockLister.On("GetAttachedTmuxSession").Return(session, true)
+
+		deps := &Deps{Lister: mockLister}
+		got := statusPath(deps)
+
+		assert.Equal(t, "/Users/josh/c/sesh", got)
+	})
+
+	t.Run("falls back to cwd when not attached", func(t *testing.T) {
+		mockLister := new(lister.MockLister)
+		mockLister.On("GetAttachedTmuxSession").Return(model.SeshSession{}, false)
+
+		deps := &Deps{Lister: mockLister}
+		expectedCwd, _ := os.Getwd()
+		got := statusPath(deps)
+
+		assert.Equal(t, expectedCwd, got)
+	})
+}
 
 func TestFormatStatus(t *testing.T) {
 	t.Run("open issue gets a green OPEN badge", func(t *testing.T) {
