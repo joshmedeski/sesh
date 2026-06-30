@@ -62,6 +62,14 @@ func (g *RealGit) Clone(url string, cmdDir string, dir string, gitFlags ...strin
 	return "", nil
 }
 
+func (g *RealGit) CurrentBranch(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return false, "", err
+	}
+	return true, out, nil
+}
+
 func (g *RealGit) WorktreeList(path string) (bool, string, error) {
 	out, err := g.shell.Cmd("git", "-C", path, "worktree", "list", "--porcelain")
 	if err != nil {
@@ -84,12 +92,4 @@ func (g *RealGit) WorktreeAddDetached(repoPath, target, base string) (string, er
 
 func (g *RealGit) Pull(repoPath string) (string, error) {
 	return g.shell.CmdWithOutput("git", "-C", repoPath, "pull", "--ff-only")
-}
-
-func (g *RealGit) CurrentBranch(path string) (bool, string, error) {
-	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD")
-	if err != nil {
-		return false, "", err
-	}
-	return true, out, nil
 }

@@ -59,6 +59,7 @@ type (
 		Browser                 BrowserConfig        `toml:"browser"`
 		Frecency                FrecencyConfig       `toml:"frecency"`
 		TUI                     TUIConfig            `toml:"tui"`
+		Dashboard               DashboardConfig      `toml:"dashboard"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
@@ -193,6 +194,21 @@ type (
 		// with a flat sort_order every source is its own group, and a rule
 		// between each of them is more lines than most lists want.
 		GroupSeparator bool `toml:"group_separator"`
+	}
+
+	DashboardConfig struct {
+		Sections []DashboardSectionConfig `toml:"sections"`
+	}
+
+	DashboardSectionConfig struct {
+		Type   string           `toml:"type"`
+		Title  string           `toml:"title"`
+		Groups []DashboardGroup `toml:"groups,omitempty"`
+	}
+
+	DashboardGroup struct {
+		Name     string   `toml:"name"`
+		Patterns []string `toml:"patterns"`
 	}
 
 	WildcardConfig struct {

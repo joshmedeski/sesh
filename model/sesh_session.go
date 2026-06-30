@@ -31,6 +31,8 @@ type (
 		// what the picker draws its group separator from. It is not part of
 		// `sesh list --json`: it describes the list, not the session.
 		Group int `json:"-"`
+
+		Branch string // Current git branch (populated by dashboard)
 	}
 
 	SeshSrcs struct {
