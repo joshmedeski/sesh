@@ -25,6 +25,7 @@ type (
 		WindowConfigs         []WindowConfig // The windows used in session config
 		WindowNames           []string       // The names of the windows in session config
 		Score                 float64        // The score of the session (from Zoxide)
+		Branch                string         // Current git branch (populated by dashboard)
 	}
 
 	SeshSrcs struct {

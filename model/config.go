@@ -15,6 +15,7 @@ type (
 		SeparatorAware       bool                 `toml:"separator_aware"`
 		TmuxCommand          string               `toml:"tmux_command"`
 		TUI                  TUIConfig            `toml:"tui"`
+		Dashboard            DashboardConfig      `toml:"dashboard"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
@@ -48,6 +49,21 @@ type (
 		ShowIcons   bool   `toml:"show_icons"`
 		Prompt      string `toml:"prompt"`
 		Placeholder string `toml:"placeholder"`
+	}
+
+	DashboardConfig struct {
+		Sections []DashboardSectionConfig `toml:"sections"`
+	}
+
+	DashboardSectionConfig struct {
+		Type   string           `toml:"type"`
+		Title  string           `toml:"title"`
+		Groups []DashboardGroup `toml:"groups,omitempty"`
+	}
+
+	DashboardGroup struct {
+		Name     string   `toml:"name"`
+		Patterns []string `toml:"patterns"`
 	}
 
 	WildcardConfig struct {

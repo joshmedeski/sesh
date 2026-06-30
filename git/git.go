@@ -9,6 +9,7 @@ type Git interface {
 	GitCommonDir(name string) (bool, string, error)
 	Clone(url string, cmdDir string, dir string) (string, error)
 	WorktreeList(name string) (bool, string, error)
+	CurrentBranch(path string) (bool, string, error)
 }
 
 type RealGit struct {
@@ -49,6 +50,14 @@ func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
 		return "", err
 	}
 	return "", nil
+}
+
+func (g *RealGit) CurrentBranch(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return false, "", err
+	}
+	return true, out, nil
 }
 
 func (g *RealGit) WorktreeList(path string) (bool, string, error) {

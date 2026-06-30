@@ -202,6 +202,52 @@
         },
         "additionalProperties": false
       }
+    },
+    "dashboard": {
+      "type": "object",
+      "description": "Settings for the Sesh session dashboard",
+      "properties": {
+        "sections": {
+          "type": "array",
+          "description": "Dashboard sections to display",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Section type (e.g. 'sessions')"
+              },
+              "title": {
+                "type": "string",
+                "description": "Section title displayed in the dashboard"
+              },
+              "groups": {
+                "type": "array",
+                "description": "Session groups within this section",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Display name for the group"
+                    },
+                    "patterns": {
+                      "type": "array",
+                      "description": "Glob patterns matching session paths for this group",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false
