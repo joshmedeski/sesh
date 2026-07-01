@@ -23,6 +23,11 @@ type branchLoadedMsg struct {
 	branch string
 }
 
+type statusLoadedMsg struct {
+	path   string
+	status string
+}
+
 type group struct {
 	name      string
 	patterns  []string
@@ -84,10 +89,14 @@ func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		s.groupSessions(msg.sessions)
 		s.totalSessions = len(msg.sessions.OrderedIndex)
 		s.rebuildItems()
-		return s, s.fetchBranches(msg.sessions)
+		return s, tea.Batch(s.fetchBranches(msg.sessions), s.fetchStatuses(msg.sessions))
 
 	case branchLoadedMsg:
 		s.applyBranch(msg.path, msg.branch)
+		return s, nil
+
+	case statusLoadedMsg:
+		s.applyStatus(msg.path, msg.status)
 		return s, nil
 
 	case tea.KeyPressMsg:
@@ -214,6 +223,51 @@ func (s *SessionsSection) applyBranch(path, branch string) {
 	}
 }
 
+func (s *SessionsSection) fetchStatuses(sessions model.SeshSessions) tea.Cmd {
+	paths := make(map[string]bool)
+	for _, key := range sessions.OrderedIndex {
+		p := sessions.Directory[key].Path
+		if p != "" {
+			paths[p] = true
+		}
+	}
+	cmds := make([]tea.Cmd, 0, len(paths))
+	for p := range paths {
+		path := p
+		cmds = append(cmds, func() tea.Msg {
+			status, err := s.deps.Git.StatusSummary(path)
+			if err != nil {
+				return statusLoadedMsg{path: path, status: ""}
+			}
+			parts := make([]string, 0, 4)
+			if status.Staged > 0 {
+				parts = append(parts, fmt.Sprintf("+%d", status.Staged))
+			}
+			if status.Unstaged > 0 {
+				parts = append(parts, fmt.Sprintf("~%d", status.Unstaged))
+			}
+			if status.Deleted > 0 {
+				parts = append(parts, fmt.Sprintf("-%d", status.Deleted))
+			}
+			if status.Untracked > 0 {
+				parts = append(parts, fmt.Sprintf("!%d", status.Untracked))
+			}
+			return statusLoadedMsg{path: path, status: strings.Join(parts, " ")}
+		})
+	}
+	return tea.Batch(cmds...)
+}
+
+func (s *SessionsSection) applyStatus(path, status string) {
+	for _, g := range s.groups {
+		for i := range g.sessions {
+			if g.sessions[i].Path == path {
+				g.sessions[i].GitStatus = status
+			}
+		}
+	}
+}
+
 func (s *SessionsSection) cursorUp(n int) {
 	s.cursor -= n
 	if s.cursor < 0 {
@@ -331,24 +385,25 @@ func (s *SessionsSection) View(width, height int) string {
 	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 	sessionStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
 	branchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(12))
-	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
+	gitStatusStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(5))
+	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
 	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
 	attachedStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2))
 	numStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
 
 	b.WriteString(sectionStyle.Render("  " + s.config.Title))
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	margin := 2
 	gap := 2
 	prefixLen := 2
 	indent := 10
 	numW := 5
-	colArea := max(width-margin-prefixLen-indent-4*gap-numW, 20)
-	nameW := int(float64(colArea) * 0.05)
+	colArea := max(width-margin-prefixLen-indent-1*gap-numW, 25)
+	nameW := int(float64(colArea) * 0.10)
 	branchW := int(float64(colArea) * 0.15)
-	metaW := int(float64(colArea) * 0.45)
-	pathW := colArea - nameW - branchW - metaW
+	metaW := int(float64(colArea) * 0.55)
+	pathW := colArea - nameW - branchW - 45
 
 	for i := s.offset; i < end; i++ {
 		item := s.items[i]
@@ -382,8 +437,21 @@ func (s *SessionsSection) View(width, height int) string {
 				branch = colStyle.Render("")
 			}
 
+			colStyle = lipgloss.NewStyle().Width(branchW)
+			gitStatus := colStyle.Render(gitStatusStyle.Render("[" + sess.GitStatus + "]"))
+			if sess.GitStatus == "" {
+				gitStatus = colStyle.Render("")
+			}
+
+			// truncate the front of the path to show "~/Documents" instead of "/home/USER/Documents"
+			// TODO: make this go no longer than the width of the column
+			truncatePath := sess.Path
+			if after, ok := strings.CutPrefix(truncatePath, s.deps.HomeDir); ok {
+				truncatePath = filepath.Join("~", after)
+			}
+
 			colStyle = lipgloss.NewStyle().Width(pathW)
-			path := colStyle.Render(pathStyle.Render(sess.Path))
+			path := colStyle.Render(pathStyle.Render(truncatePath))
 
 			right := ""
 			if sess.Windows > 0 {
@@ -398,7 +466,7 @@ func (s *SessionsSection) View(width, height int) string {
 			colStyle = lipgloss.NewStyle().Width(metaW)
 			meta := colStyle.Render(right)
 
-			line := fmt.Sprintf("     %s%s  %s  %s  %s", num, name, branch, path, meta)
+			line := fmt.Sprintf("     %s%s  %s  %s  %s  %s", num, name, branch, gitStatus, path, meta)
 			b.WriteString(prefix)
 			b.WriteString(line)
 			b.WriteString("\n")
