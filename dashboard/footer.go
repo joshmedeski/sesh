@@ -11,11 +11,11 @@ func renderFooter(width int) string {
 	if width < 10 {
 		return ""
 	}
-	controls := "  j/k Navigate  |  Enter Attach  |  t Toggle  |  Ctrl+d Kill  |  q Exit"
+	controls := "├─ CONTROLS \n j/k Navigate  |  Enter Attach  |  t Toggle  |  Ctrl+d Kill  |  q Exit"
 	controlsStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
 	colStyle := lipgloss.NewStyle().Width(width - 14)
 	controls = colStyle.Render(controlsStyle.Render(controls))
-	return fmt.Sprintf("├─ CONTROLS %s┤\n%s\n", strings.Repeat("─", width-14), controls)
+	return fmt.Sprintf("%s", controls)
 }
 
 func renderHeader(title string, totalItems int, width int) string {
