@@ -1,7 +1,6 @@
 package dashboard
 
 import (
-	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -14,6 +13,7 @@ import (
 )
 
 type Model struct {
+	config        model.DashboardConfig
 	sections      []Section
 	focused       int
 	width         int
@@ -23,14 +23,7 @@ type Model struct {
 	totalSessions int
 }
 
-func New(
-	config model.DashboardConfig,
-	tmux tmux.Tmux,
-	lister lister.Lister,
-	git git.Git,
-	connector connector.Connector,
-	homeDir string,
-) Model {
+func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, homeDir string) Model {
 	deps := SectionDeps{
 		Tmux:      tmux,
 		Lister:    lister,
@@ -39,9 +32,11 @@ func New(
 		HomeDir:   homeDir,
 	}
 
+	// build sections based on config and dependencies
 	sections := BuildSections(config, deps)
 
 	return Model{
+		config:   config,
 		sections: sections,
 		focused:  0,
 		width:    80,
@@ -71,11 +66,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			if len(m.sections) > 0 {
+				var cmd tea.Cmd
+				m.sections[m.focused], cmd = m.sections[m.focused].Update(msg)
 				chosen := m.sections[m.focused].Chosen()
 				if chosen != "" {
 					m.chosen = chosen
 					return m, tea.Quit
 				}
+				return m, cmd
 			}
 			return m, nil
 		}
@@ -103,12 +101,18 @@ func (m Model) View() tea.View {
 		m.totalSessions += s.TotalItems()
 	}
 
-	w := max(m.width, 20)
-	sep := strings.Repeat("─", w-2)
-	b.WriteString(fmt.Sprintf("┌%s┐\n", sep))
-	header := renderHeader("SESH COMMAND CENTER", m.totalSessions, w)
+	if m.width < 20 || m.height < 5 {
+		return tea.NewView("Terminal too small for dashboard")
+	}
+
+	w := m.width
+	title := m.config.Title
+	if title == "" {
+		title = "SESH COMMAND CENTER"
+	}
+	header := renderHeader(title, m.totalSessions, w)
 	b.WriteString(header)
-	b.WriteString("\n")
+	b.WriteString("\n\n")
 
 	contentHeight := max(m.height-5, 1)
 

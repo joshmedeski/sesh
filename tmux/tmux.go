@@ -23,6 +23,7 @@ type Tmux interface {
 	ListTmuxPanes() ([]*model.TmuxPane, error)
 	SelectPane(windowIndex int, paneIndex int) (string, error)
 	GetCurrentSession() (string, error)
+	KillSession(session string) (string, error)
 }
 
 type RealTmux struct {
@@ -68,4 +69,8 @@ func (t *RealTmux) NextWindow() (string, error) {
 
 func (t *RealTmux) IsAttached() bool {
 	return len(t.os.Getenv("TMUX")) > 0
+}
+
+func (t *RealTmux) KillSession(session string) (string, error) {
+	return t.shell.Cmd(t.bin, "kill-session", "-t", session)
 }

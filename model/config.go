@@ -52,6 +52,7 @@ type (
 	}
 
 	DashboardConfig struct {
+		Title    string                   `toml:"title"`
 		Sections []DashboardSectionConfig `toml:"sections"`
 	}
 
