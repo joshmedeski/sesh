@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path"    // This is used to create the path where the log files will be stored
-	"strings" // This is required to conpare the evironment variables
+	"strings" // This is required to compare the evironment variables
 	"time"    // This is used to get the current date and create the log file
 
 	"charm.land/fang/v2"

@@ -56,14 +56,17 @@ func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Sect
 	}
 }
 
+// name of the section
 func (s *SessionsSection) Name() string {
 	return s.config.Title
 }
 
+// number of items in the section
 func (s *SessionsSection) TotalItems() int {
 	return s.totalSessions
 }
 
+// fetch tmux sessions
 func (s *SessionsSection) Init() tea.Cmd {
 	return func() tea.Msg {
 		sessions, err := s.deps.Lister.List(lister.ListOptions{Tmux: true})
@@ -88,7 +91,8 @@ func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		return s, nil
 
 	case tea.KeyPressMsg:
-		return s.handleKey(msg), nil
+		s, cmd := s.handleKey(msg)
+		return s, cmd
 	}
 	return s, nil
 }
@@ -97,7 +101,7 @@ func (s *SessionsSection) Chosen() string {
 	return s.chosen
 }
 
-func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) *SessionsSection {
+func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.Cmd) {
 	switch msg.String() {
 	case "j", "down":
 		s.cursorDown(1)
@@ -107,22 +111,25 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) *SessionsSection {
 		s.toggleGroup()
 	case "enter":
 		s.selectItem()
+	case "ctrl+d":
+		return s, s.killSession()
 	}
-	return s
+	return s, nil
 }
 
 func (s *SessionsSection) groupSessions(sessions model.SeshSessions) {
 	expanded := make([]*group, 0, len(s.config.Groups))
 	for i := range s.config.Groups {
 		g := &group{
-			name:     s.config.Groups[i].Name,
-			patterns: s.config.Groups[i].Patterns,
+			name:      s.config.Groups[i].Name,
+			patterns:  s.config.Groups[i].Patterns,
+			collapsed: true, // start with group collapsed. user can toggle to expand.
 		}
 		expanded = append(expanded, g)
 	}
 
 	homeDir, _ := os.UserHomeDir()
-	other := &group{name: "Other"}
+	other := &group{name: "Other", collapsed: true} // start with group collapsed
 
 	for _, key := range sessions.OrderedIndex {
 		sess := sessions.Directory[key]
@@ -249,6 +256,19 @@ func (s *SessionsSection) toggleGroup() {
 	s.rebuildItems()
 }
 
+func (s *SessionsSection) killSession() tea.Cmd {
+	if len(s.items) == 0 {
+		return nil
+	}
+	item := s.items[s.cursor]
+	if item.isGroup {
+		return nil
+	}
+	g := s.groups[item.groupIdx]
+	_, _ = s.deps.Tmux.KillSession(g.sessions[item.sessIdx].Name)
+	return s.Init()
+}
+
 func (s *SessionsSection) selectItem() {
 	if len(s.items) == 0 {
 		return
@@ -259,7 +279,7 @@ func (s *SessionsSection) selectItem() {
 		return
 	}
 	g := s.groups[item.groupIdx]
-	s.chosen = g.sessions[item.sessIdx].Name
+	_, _ = s.deps.Tmux.AttachSession(g.sessions[item.sessIdx].Name)
 }
 
 func (s *SessionsSection) View(width, height int) string {
@@ -285,6 +305,16 @@ func (s *SessionsSection) View(width, height int) string {
 		return b.String()
 	}
 
+	if width < 50 {
+		var bb strings.Builder
+		msg := lipgloss.NewStyle().Faint(true).Render(fmt.Sprintf("  Enlarge pane to see sessions (need ≥50 cols, have %d)", width))
+		bb.WriteString(msg)
+		for i := 1; i < height; i++ {
+			bb.WriteString("\n")
+		}
+		return bb.String()
+	}
+
 	chrome := 2
 	available := height - chrome
 	if available < 1 {
@@ -295,16 +325,30 @@ func (s *SessionsSection) View(width, height int) string {
 
 	var b strings.Builder
 
+	// TODO: make the colors configurable
 	sectionStyle := lipgloss.NewStyle().Bold(true)
-	groupStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.ANSIColor(33))
+	groupStyle := lipgloss.NewStyle().Bold(true).Background(lipgloss.ANSIColor(5)).Foreground(lipgloss.ANSIColor(33))
 	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 	sessionStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
-	branchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
+	branchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(12))
 	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
 	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
 	attachedStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2))
+	numStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
 
-	b.WriteString(sectionStyle.Render("  "+s.config.Title) + "\n\n")
+	b.WriteString(sectionStyle.Render("  " + s.config.Title))
+	b.WriteString("\n\n")
+
+	margin := 2
+	gap := 2
+	prefixLen := 2
+	indent := 10
+	numW := 5
+	colArea := max(width-margin-prefixLen-indent-4*gap-numW, 20)
+	nameW := int(float64(colArea) * 0.05)
+	branchW := int(float64(colArea) * 0.15)
+	metaW := int(float64(colArea) * 0.45)
+	pathW := colArea - nameW - branchW - metaW
 
 	for i := s.offset; i < end; i++ {
 		item := s.items[i]
@@ -326,12 +370,20 @@ func (s *SessionsSection) View(width, height int) string {
 			g := s.groups[item.groupIdx]
 			sess := g.sessions[item.sessIdx]
 
-			name := sessionStyle.Render(sess.Name)
-			branch := ""
-			if sess.Branch != "" {
-				branch = branchStyle.Render("[" + sess.Branch + "]")
+			colStyle := lipgloss.NewStyle().Width(numW)
+			num := colStyle.Render(numStyle.Render(fmt.Sprintf("%3d.", item.sessIdx+1)))
+
+			colStyle = lipgloss.NewStyle().Width(nameW)
+			name := colStyle.Render(sessionStyle.Render(sess.Name))
+
+			colStyle = lipgloss.NewStyle().Width(branchW)
+			branch := colStyle.Render(branchStyle.Render("[" + sess.Branch + "]"))
+			if sess.Branch == "" {
+				branch = colStyle.Render("")
 			}
-			path := pathStyle.Render(sess.Path)
+
+			colStyle = lipgloss.NewStyle().Width(pathW)
+			path := colStyle.Render(pathStyle.Render(sess.Path))
 
 			right := ""
 			if sess.Windows > 0 {
@@ -341,11 +393,15 @@ func (s *SessionsSection) View(width, height int) string {
 				if right != "" {
 					right += "  "
 				}
-				right += attachedStyle.Render("attached")
+				right += attachedStyle.Render("*")
 			}
+			colStyle = lipgloss.NewStyle().Width(metaW)
+			meta := colStyle.Render(right)
 
-			line := fmt.Sprintf("  %s  %s  %s  %s", name, branch, path, right)
-			b.WriteString(prefix + line + "\n")
+			line := fmt.Sprintf("     %s%s  %s  %s  %s", num, name, branch, path, meta)
+			b.WriteString(prefix)
+			b.WriteString(line)
+			b.WriteString("\n")
 		}
 	}
 

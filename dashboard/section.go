@@ -30,6 +30,7 @@ type SectionFactory func(cfg model.DashboardSectionConfig, deps SectionDeps) Sec
 
 type Registry map[string]SectionFactory
 
+// TODO: add more sections eg. system, ssh, etc.
 var registry = Registry{
 	"sessions": NewSessionsSection,
 }
