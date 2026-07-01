@@ -1,8 +1,17 @@
 package git
 
 import (
+	"strings"
+
 	"github.com/joshmedeski/sesh/v2/shell"
 )
+
+type StatusSummary struct {
+	Staged    int
+	Unstaged  int
+	Untracked int
+	Deleted   int
+}
 
 type Git interface {
 	ShowTopLevel(name string) (bool, string, error)
@@ -10,6 +19,7 @@ type Git interface {
 	Clone(url string, cmdDir string, dir string) (string, error)
 	WorktreeList(name string) (bool, string, error)
 	CurrentBranch(path string) (bool, string, error)
+	StatusSummary(path string) (StatusSummary, error)
 }
 
 type RealGit struct {
@@ -66,4 +76,34 @@ func (g *RealGit) WorktreeList(path string) (bool, string, error) {
 		return false, "", err
 	}
 	return true, out, nil
+}
+
+func (g *RealGit) StatusSummary(path string) (StatusSummary, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "status", "--porcelain")
+	if err != nil {
+		return StatusSummary{}, err
+	}
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
+		return StatusSummary{}, nil
+	}
+	var s StatusSummary
+	for _, line := range lines {
+		if strings.HasPrefix(line, "?? ") {
+			s.Untracked++
+			continue
+		}
+		first := line[0]
+		second := line[1]
+		if first != ' ' {
+			s.Staged++
+		}
+		if second == 'M' {
+			s.Unstaged++
+		}
+		if first == 'D' || second == 'D' {
+			s.Deleted++
+		}
+	}
+	return s, nil
 }
