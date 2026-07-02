@@ -294,7 +294,7 @@ func (s *SessionsSection) cursorDown(n int) {
 }
 
 func (s *SessionsSection) visibleCount() int {
-	return 20
+	return 10
 }
 
 func (s *SessionsSection) toggleGroup() {
@@ -332,8 +332,7 @@ func (s *SessionsSection) selectItem() {
 		s.toggleGroup()
 		return
 	}
-	g := s.groups[item.groupIdx]
-	_, _ = s.deps.Tmux.AttachSession(g.sessions[item.sessIdx].Name)
+	s.chosen = s.groups[item.groupIdx].sessions[item.sessIdx].Name
 }
 
 func (s *SessionsSection) View(width, height int) string {
@@ -394,16 +393,61 @@ func (s *SessionsSection) View(width, height int) string {
 	b.WriteString(sectionStyle.Render("  " + s.config.Title))
 	b.WriteString("\n")
 
+	// TODO: could refactor this to be more DRY. A bit hacky atm.
+	// dynamically set branchW based on the longest branch name
+	maxBranch := 0
+	for _, g := range s.groups {
+		for _, s := range g.sessions {
+			if len(s.Branch) > maxBranch {
+				maxBranch = len(s.Branch)
+			}
+		}
+	}
+	branchW := maxBranch + 2
+
+	// dynamically set gitStatusW based on the longest git status name
+	maxGitStatus := 0
+	for _, g := range s.groups {
+		for _, s := range g.sessions {
+			if len(s.GitStatus) > maxGitStatus {
+				maxGitStatus = len(s.GitStatus)
+			}
+		}
+	}
+	gitStatusW := maxGitStatus + 4
+
+	// dynamically set pathW based on the longest path name
+	maxPath := 0
+	for _, g := range s.groups {
+		for _, s := range g.sessions {
+			if len(s.Path) > maxPath {
+				maxPath = len(s.Path)
+			}
+		}
+	}
+	pathW := maxPath + 4
+
+	// dynamically set nameW based on the longest name
+	maxName := 0
+	for _, g := range s.groups {
+		for _, s := range g.sessions {
+			if len(s.Name) > maxName {
+				maxName = len(s.Name)
+			}
+		}
+	}
+	nameW := maxName + 2
+
 	margin := 2
 	gap := 2
 	prefixLen := 2
 	indent := 10
 	numW := 5
 	colArea := max(width-margin-prefixLen-indent-1*gap-numW, 25)
-	nameW := int(float64(colArea) * 0.10)
-	branchW := int(float64(colArea) * 0.15)
+	// nameW := int(float64(colArea) * 0.10)
+	// gitStatusW := int(float64(colArea) * 0.15)
 	metaW := int(float64(colArea) * 0.55)
-	pathW := colArea - nameW - branchW - 45
+	// pathW := max(colArea-nameW-branchW-gitStatusW-metaW, 20)
 
 	for i := s.offset; i < end; i++ {
 		item := s.items[i]
@@ -437,7 +481,7 @@ func (s *SessionsSection) View(width, height int) string {
 				branch = colStyle.Render("")
 			}
 
-			colStyle = lipgloss.NewStyle().Width(branchW)
+			colStyle = lipgloss.NewStyle().Width(gitStatusW)
 			gitStatus := colStyle.Render(gitStatusStyle.Render("[" + sess.GitStatus + "]"))
 			if sess.GitStatus == "" {
 				gitStatus = colStyle.Render("")
@@ -466,7 +510,7 @@ func (s *SessionsSection) View(width, height int) string {
 			colStyle = lipgloss.NewStyle().Width(metaW)
 			meta := colStyle.Render(right)
 
-			line := fmt.Sprintf("     %s%s  %s  %s  %s  %s", num, name, branch, gitStatus, path, meta)
+			line := fmt.Sprintf("     %s%s%s%s%s%s", num, name, branch, gitStatus, path, meta)
 			b.WriteString(prefix)
 			b.WriteString(line)
 			b.WriteString("\n")
