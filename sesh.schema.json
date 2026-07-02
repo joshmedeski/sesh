@@ -215,11 +215,16 @@
             "properties": {
               "type": {
                 "type": "string",
-                "description": "Section type (e.g. 'sessions')"
+                "description": "Section type ('sessions' or 'details')"
               },
               "title": {
                 "type": "string",
                 "description": "Section title displayed in the dashboard"
+              },
+              "width": {
+                "type": "number",
+                "description": "Fraction of terminal width for this section (0.0–1.0, default 0.0 = auto)",
+                "default": 0.0
               },
               "groups": {
                 "type": "array",

@@ -59,6 +59,7 @@ type (
 	DashboardSectionConfig struct {
 		Type   string           `toml:"type"`
 		Title  string           `toml:"title"`
+		Width  float64          `toml:"width"`
 		Groups []DashboardGroup `toml:"groups,omitempty"`
 	}
 

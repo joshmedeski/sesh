@@ -16,6 +16,7 @@ type Section interface {
 	View(width, height int) string
 	Chosen() string
 	TotalItems() int
+	Width() float64
 }
 
 type SectionDeps struct {
@@ -33,6 +34,13 @@ type Registry map[string]SectionFactory
 // TODO: add more sections eg. system, ssh, etc.
 var registry = Registry{
 	"sessions": NewSessionsSection,
+	"details":  NewDetailsSection,
+	// "system":   NewSystemSection,
+	// "ssh":      NewSshSection,
+	// "git":      NewGitSection,
+	// "aiagent":  NewAiAgentSection,
+	// "custom":   NewCustomSection,
+	// "docker":   NewDockerSection,
 }
 
 func BuildSections(cfg model.DashboardConfig, deps SectionDeps) []Section {

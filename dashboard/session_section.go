@@ -51,6 +51,7 @@ type SessionsSection struct {
 	loading       bool
 	chosen        string
 	totalSessions int
+	viewHeight    int
 }
 
 func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -59,6 +60,10 @@ func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Sect
 		deps:    deps,
 		loading: true,
 	}
+}
+
+func (s *SessionsSection) Width() float64 {
+	return s.config.Width
 }
 
 // name of the section
@@ -117,7 +122,7 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 	case "k", "up":
 		s.cursorUp(1)
 	case "t":
-		s.toggleGroup()
+		s.selectItem()
 	case "enter":
 		s.selectItem()
 	case "ctrl+d":
@@ -223,6 +228,7 @@ func (s *SessionsSection) applyBranch(path, branch string) {
 	}
 }
 
+// TODO: review this
 func (s *SessionsSection) fetchStatuses(sessions model.SeshSessions) tea.Cmd {
 	paths := make(map[string]bool)
 	for _, key := range sessions.OrderedIndex {
@@ -294,7 +300,14 @@ func (s *SessionsSection) cursorDown(n int) {
 }
 
 func (s *SessionsSection) visibleCount() int {
-	return 10
+	if s.viewHeight <= 0 {
+		return 20
+	}
+	available := s.viewHeight - 2
+	if available < 1 {
+		return 1
+	}
+	return available
 }
 
 func (s *SessionsSection) toggleGroup() {
@@ -332,10 +345,32 @@ func (s *SessionsSection) selectItem() {
 		s.toggleGroup()
 		return
 	}
-	s.chosen = s.groups[item.groupIdx].sessions[item.sessIdx].Name
+	g := s.groups[item.groupIdx]
+	s.chosen = g.sessions[item.sessIdx].Name
+}
+
+// HoveredSession returns the name and path of the session under the cursor.
+// Returns empty strings if cursor is on a group or items are empty.
+func (s *SessionsSection) HoveredSession() (name, path string) {
+	if len(s.items) == 0 {
+		return "", ""
+	}
+	item := s.items[s.cursor]
+	if item.isGroup {
+		return "", ""
+	}
+	g := s.groups[item.groupIdx]
+	sess := g.sessions[item.sessIdx]
+	name = sess.Name
+	path = sess.Path
+	if after, ok := strings.CutPrefix(path, s.deps.HomeDir); ok {
+		path = filepath.Join("~", after)
+	}
+	return name, path
 }
 
 func (s *SessionsSection) View(width, height int) string {
+	s.viewHeight = height
 	if s.loading {
 		msg := lipgloss.NewStyle().Faint(true).Render("  Loading sessions...")
 		lines := strings.Count(msg, "\n")
@@ -358,9 +393,10 @@ func (s *SessionsSection) View(width, height int) string {
 		return b.String()
 	}
 
-	if width < 50 {
+	const minWidth = 34
+	if width < minWidth {
 		var bb strings.Builder
-		msg := lipgloss.NewStyle().Faint(true).Render(fmt.Sprintf("  Enlarge pane to see sessions (need ≥50 cols, have %d)", width))
+		msg := lipgloss.NewStyle().Faint(true).Render(fmt.Sprintf("  Enlarge pane to see sessions (need ≥%d cols, have %d)", minWidth, width))
 		bb.WriteString(msg)
 		for i := 1; i < height; i++ {
 			bb.WriteString("\n")
@@ -380,74 +416,67 @@ func (s *SessionsSection) View(width, height int) string {
 
 	// TODO: make the colors configurable
 	sectionStyle := lipgloss.NewStyle().Bold(true)
-	groupStyle := lipgloss.NewStyle().Bold(true).Background(lipgloss.ANSIColor(5)).Foreground(lipgloss.ANSIColor(33))
+	groupStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
 	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 	sessionStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
 	branchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(12))
 	gitStatusStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(5))
-	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
-	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
+	// metaStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
 	attachedStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2))
 	numStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
+	// cursorBg := lipgloss.NewStyle().Background(lipgloss.ANSIColor(25))
 
-	b.WriteString(sectionStyle.Render("  " + s.config.Title))
-	b.WriteString("\n")
+	b.WriteString(sectionStyle.Render("" + s.config.Title))
+	b.WriteString("\n\n")
 
-	// TODO: could refactor this to be more DRY. A bit hacky atm.
-	// dynamically set branchW based on the longest branch name
-	maxBranch := 0
-	for _, g := range s.groups {
-		for _, s := range g.sessions {
-			if len(s.Branch) > maxBranch {
-				maxBranch = len(s.Branch)
-			}
-		}
-	}
-	branchW := maxBranch + 2
-
-	// dynamically set gitStatusW based on the longest git status name
-	maxGitStatus := 0
-	for _, g := range s.groups {
-		for _, s := range g.sessions {
-			if len(s.GitStatus) > maxGitStatus {
-				maxGitStatus = len(s.GitStatus)
-			}
-		}
-	}
-	gitStatusW := maxGitStatus + 4
-
-	// dynamically set pathW based on the longest path name
-	maxPath := 0
-	for _, g := range s.groups {
-		for _, s := range g.sessions {
-			if len(s.Path) > maxPath {
-				maxPath = len(s.Path)
-			}
-		}
-	}
-	pathW := maxPath + 4
-
-	// dynamically set nameW based on the longest name
-	maxName := 0
-	for _, g := range s.groups {
-		for _, s := range g.sessions {
-			if len(s.Name) > maxName {
-				maxName = len(s.Name)
-			}
-		}
-	}
-	nameW := maxName + 2
-
-	margin := 2
-	gap := 2
-	prefixLen := 2
-	indent := 10
+	// Content-aware column widths based on actual session data
 	numW := 5
-	colArea := max(width-margin-prefixLen-indent-1*gap-numW, 25)
-	// nameW := int(float64(colArea) * 0.10)
-	// gitStatusW := int(float64(colArea) * 0.15)
-	metaW := int(float64(colArea) * 0.55)
-	// pathW := max(colArea-nameW-branchW-gitStatusW-metaW, 20)
+	overhead := 8 // "   "(3) + numW(5) + gaps(3*1)
+	colSpace := width - overhead
+
+	maxName := 5
+	maxBranch := 0
+	maxGit := 0
+	for _, g := range s.groups {
+		for _, sess := range g.sessions {
+			if l := len(sess.Name); l > maxName {
+				maxName = l
+			}
+			if l := len(sess.Branch); l > maxBranch {
+				maxBranch = l
+			}
+			if l := len(sess.GitStatus); l > maxGit {
+				maxGit = l
+			}
+		}
+	}
+
+	// Ideal widths from content (capped)
+	nameW := max(int(float64(colSpace)*0.25), 15)
+	branchW := max(int(float64(colSpace)*0.25), 10)
+	gitW := max(int(float64(colSpace)*0.45), 15)
+	metaW := max(int(float64(colSpace)*0.25), 25)
+
+	// Shrink iteratively until everything fits in colSpace
+	for nameW+branchW+gitW+metaW > colSpace {
+		if metaW > 2 {
+			metaW--
+			continue
+		}
+		if gitW > 2 {
+			gitW--
+			continue
+		}
+		if branchW > 3 {
+			branchW--
+			continue
+		}
+		if nameW > 3 {
+			nameW--
+			continue
+		}
+		break
+	}
 
 	for i := s.offset; i < end; i++ {
 		item := s.items[i]
@@ -460,58 +489,82 @@ func (s *SessionsSection) View(width, height int) string {
 
 		if item.isGroup {
 			g := s.groups[item.groupIdx]
-			if g.collapsed {
-				fmt.Fprintf(&b, "%s%s ▶ %s (%d)\n", prefix, groupStyle.Render(""), g.name, len(g.sessions))
-			} else {
-				fmt.Fprintf(&b, "%s%s ▼ %s\n", prefix, groupStyle.Render(""), g.name)
-			}
+			groupLine := prefix + groupStyle.Render("") + g.name + groupStyle.Render(fmt.Sprintf(" (%d)", len(g.sessions)))
+			b.WriteString(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(groupLine))
+			b.WriteString("\n")
+
 		} else {
 			g := s.groups[item.groupIdx]
 			sess := g.sessions[item.sessIdx]
 
 			colStyle := lipgloss.NewStyle().Width(numW)
-			num := colStyle.Render(numStyle.Render(fmt.Sprintf("%3d.", item.sessIdx+1)))
+			num := colStyle.Render(numStyle.Render(fmt.Sprintf("%4d.", item.sessIdx+1)))
 
-			colStyle = lipgloss.NewStyle().Width(nameW)
+			colStyle = lipgloss.NewStyle().Width(nameW).MaxWidth(nameW)
 			name := colStyle.Render(sessionStyle.Render(sess.Name))
+			// if len(name) > nameW-2 {
+			// 	name = name[:nameW-2] + "…"
+			// }
 
-			colStyle = lipgloss.NewStyle().Width(branchW)
-			branch := colStyle.Render(branchStyle.Render("[" + sess.Branch + "]"))
+			colStyle = lipgloss.NewStyle().Width(branchW).MaxWidth(branchW)
+			branchContent := sess.Branch
+			// if len(branchContent) > branchW-2 {
+			// 	branchContent = branchContent[:max(branchW-3, 0)] + "…"
+			// }
+			// if no branch, don't show the brackets
+			branch := ""
 			if sess.Branch == "" {
+				branchContent = ""
 				branch = colStyle.Render("")
+			} else {
+				branch = colStyle.Render(branchStyle.Render("[" + branchContent + "]"))
 			}
 
-			colStyle = lipgloss.NewStyle().Width(gitStatusW)
-			gitStatus := colStyle.Render(gitStatusStyle.Render("[" + sess.GitStatus + "]"))
+			colStyle = lipgloss.NewStyle().Width(gitW).MaxWidth(gitW)
+			gitContent := sess.GitStatus
+			// if len(gitContent) > gitW-2 {
+			// 	gitContent = gitContent[:max(gitW-3, 0)] + "…"
+			// }
+			// if no status, don't show the brackets
+			gitStatus := ""
 			if sess.GitStatus == "" {
+				gitContent = ""
 				gitStatus = colStyle.Render("")
+			} else {
+				gitStatus = colStyle.Render(gitStatusStyle.Render("[" + gitContent + "]"))
 			}
-
-			// truncate the front of the path to show "~/Documents" instead of "/home/USER/Documents"
-			// TODO: make this go no longer than the width of the column
-			truncatePath := sess.Path
-			if after, ok := strings.CutPrefix(truncatePath, s.deps.HomeDir); ok {
-				truncatePath = filepath.Join("~", after)
-			}
-
-			colStyle = lipgloss.NewStyle().Width(pathW)
-			path := colStyle.Render(pathStyle.Render(truncatePath))
 
 			right := ""
-			if sess.Windows > 0 {
-				right = metaStyle.Render(fmt.Sprintf("%d windows", sess.Windows))
-			}
 			if sess.Attached > 0 {
-				if right != "" {
-					right += "  "
-				}
-				right += attachedStyle.Render("*")
+				right += attachedStyle.Render("∗")
 			}
-			colStyle = lipgloss.NewStyle().Width(metaW)
+			colStyle = lipgloss.NewStyle().Width(metaW).MaxWidth(metaW)
 			meta := colStyle.Render(right)
 
-			line := fmt.Sprintf("     %s%s%s%s%s%s", num, name, branch, gitStatus, path, meta)
-			b.WriteString(prefix)
+			// if i == s.cursor {
+			// 	num = cursorBg.Render(num)
+			// 	name = cursorBg.Render(name)
+			// 	branch = cursorBg.Render(branch)
+			// 	gitStatus = cursorBg.Render(gitStatus)
+			// 	meta = cursorBg.Render(meta)
+			// }
+
+			line := fmt.Sprintf("%s%s %s %s %s", num, name, branch, gitStatus, meta)
+
+			// if i == s.cursor {
+			// 	lineWidth := lipgloss.Width(line) // Correctly ignores hidden ANSI style codes
+			//
+			// 	if lineWidth < width {
+			// 		// Create the padding spaces
+			// 		padding := strings.Repeat(" ", width-lineWidth)
+			// 		// Render BOTH the text and the spaces inside the background color
+			// 		line = cursorBg.Render(line + padding)
+			// 	} else {
+			// 		line = cursorBg.Render(line)
+			// 	}
+			// }
+
+			// b.WriteString(prefix)
 			b.WriteString(line)
 			b.WriteString("\n")
 		}
