@@ -1,8 +1,7 @@
 package dashboard
 
 import (
-	"strings"
-
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
@@ -19,9 +18,26 @@ type Model struct {
 	focused       int
 	width         int
 	height        int
+	tooSmall      bool
 	chosen        string
 	quit          bool
 	totalSessions int
+	sectionWidths []int
+	contentHeight int
+}
+
+type keyMap struct {
+	Quit       key.Binding
+	FocusLeft  key.Binding
+	FocusRight key.Binding
+	Select     key.Binding
+}
+
+var keys = keyMap{
+	Quit:       key.NewBinding(key.WithKeys("q", "esc", "ctrl+c"), key.WithHelp("q", "quit")),
+	FocusLeft:  key.NewBinding(key.WithKeys("left", "h"), key.WithHelp("←/h", "focus left")),
+	FocusRight: key.NewBinding(key.WithKeys("right", "l"), key.WithHelp("→/l", "focus right")),
+	Select:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
 }
 
 func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, homeDir string) Model {
@@ -37,11 +53,12 @@ func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git
 	sections := BuildSections(config, deps)
 
 	return Model{
-		config:   config,
-		sections: sections,
-		focused:  0,
-		width:    80,
-		height:   24,
+		config:        config,
+		sections:      sections,
+		focused:       0,
+		width:         80,
+		height:        24,
+		contentHeight: 20,
 	}
 }
 
@@ -61,22 +78,85 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
+		// Check width and height constraints
+		// with early return if too small
+		if m.width < 20 || m.height < 5 {
+			m.tooSmall = true
+			return m, tea.Quit
+		}
+		m.tooSmall = false
+
+		// Set footer height to 4 lines
+		// and calculate available content height
+		headerFooterHeight := 4
+		contentHeight := max(m.height-headerFooterHeight, 1)
+
+		// Allocate pixel widths to each section
+		n := len(m.sections)
+		sepCount := max(n-1, 0)
+		availableWidth := m.width - sepCount // Subtract separators
+		pw := make([]int, n)
+		allocated := 0
+
+		// Calculate available width for each section
+		for i, s := range m.sections {
+			if w := s.Width(); w > 0 {
+				pw[i] = int(float64(availableWidth) * w)
+				allocated += pw[i]
+			}
+		}
+
+		// Calculate remaining available width
+		remaining := availableWidth - allocated
+		flexCount := 0
+		for _, p := range pw {
+			if p == 0 {
+				flexCount++
+			}
+		}
+
+		// Distribute remaining width to flex sections
+		if flexCount > 0 {
+			each := remaining / flexCount
+			for i := range pw {
+				if pw[i] == 0 {
+					pw[i] = each
+					remaining -= each
+				}
+			}
+			for i := n - 1; i >= 0 && remaining > 0; i-- {
+				if pw[i] == each {
+					pw[i] += remaining
+					remaining--
+				}
+			}
+		} else if remaining > 0 {
+			pw[n-1] += remaining
+		}
+
+		// Update each section's dimensions directly
+		m.sectionWidths = pw
+		m.contentHeight = contentHeight
+
+		return m, nil
+
+	// Handle keypresses
 	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
+		switch {
+		case key.Matches(msg, keys.Quit):
 			m.quit = true
 			return m, tea.Quit
-		case "left", "h":
+		case key.Matches(msg, keys.FocusLeft):
 			m.focused--
 			if m.focused < 0 {
 				m.focused = len(m.sections) - 1
 			}
-		case "right", "l":
+		case key.Matches(msg, keys.FocusRight):
 			m.focused++
 			if m.focused >= len(m.sections) {
 				m.focused = 0
 			}
-		case "enter":
+		case key.Matches(msg, keys.Select):
 			if len(m.sections) > 0 {
 				m.sections[m.focused], cmd = m.sections[m.focused].Update(msg)
 				if chosen := m.sections[m.focused].Chosen(); chosen != "" {
@@ -92,8 +172,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = m.syncHoveredSession()
 		return m, cmd
 
+	// Non-keypress messages -> all sections
 	default:
-		// Non-keypress messages -> all sections
 		if len(m.sections) > 0 {
 			var cmds []tea.Cmd
 			for i := range m.sections {
@@ -108,8 +188,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = m.syncHoveredSession()
 		return m, cmd
 	}
-
-	return m, nil
 }
 
 func (m Model) syncHoveredSession() Model {
@@ -136,87 +214,49 @@ func (m Model) View() tea.View {
 	if m.quit {
 		return tea.NewView("")
 	}
-
-	var b strings.Builder
-
-	m.totalSessions = 0
-	for _, s := range m.sections {
-		m.totalSessions += s.TotalItems()
-	}
-
-	if m.width < 20 || m.height < 5 {
+	if m.tooSmall {
 		return tea.NewView("Terminal too small for dashboard")
 	}
 
-	w := m.width
+	// Render Header & Footer strings
 	title := m.config.Title
 	if title == "" {
 		title = "SESH COMMAND CENTER"
 	}
-	header := renderHeader(title, m.totalSessions, w)
-	b.WriteString(header)
-	b.WriteString("\n\n")
+	header := renderHeader(title, m.totalSessions, m.width)
+	footer := renderFooter(m.width)
 
-	contentHeight := max(m.height-5, 1)
-
-	// Allocate pixel widths to each section
-	n := len(m.sections)
-	sepCount := max(n-1, 0)
-	availableWidth := m.width - sepCount
-	pw := make([]int, n)
-	allocated := 0
-	for i, s := range m.sections {
-		if w := s.Width(); w > 0 {
-			pw[i] = int(float64(availableWidth) * w)
-			allocated += pw[i]
-		}
-	}
-	remaining := availableWidth - allocated
-	flexCount := 0
-	for _, p := range pw {
-		if p == 0 {
-			flexCount++
-		}
-	}
-	if flexCount > 0 {
-		each := remaining / flexCount
-		for i := range pw {
-			if pw[i] == 0 {
-				pw[i] = each
-				remaining -= each
-			}
-		}
-		for i := n - 1; i >= 0 && remaining > 0; i-- {
-			if pw[i] == each {
-				pw[i] += remaining
-			}
-		}
-	} else if remaining > 0 {
-		pw[n-1] += remaining
-	}
-
-	// Render sections side by side
+	// Render and join sub-sections horizontally
 	var views []string
 	for i, section := range m.sections {
-		view := section.View(pw[i], contentHeight)
-		if view != "" {
-			views = append(views, view)
+		w := m.width
+		h := m.height
+		if m.sectionWidths != nil && i < len(m.sectionWidths) {
+			w = m.sectionWidths[i]
+		}
+		if m.contentHeight > 0 {
+			h = m.contentHeight
+		}
+		if v := section.View(w, h); v != "" {
+			views = append(views, v)
 		}
 	}
-	if len(views) > 0 {
-		b.WriteString(joinViews(views, pw))
-	}
 
-	b.WriteString(renderFooter(w))
+	// Combine them side-by-side using Lipgloss
+	mainContent := lipgloss.JoinHorizontal(lipgloss.Top, views...)
 
-	// Pad to full terminal height
-	lines := strings.Count(b.String(), "\n")
-	for i := lines; i < m.height; i++ {
-		b.WriteString("\n")
-	}
+	// Stack everything vertically
+	ui := lipgloss.JoinVertical(lipgloss.Top, header, mainContent, footer)
 
-	v := tea.NewView(b.String())
-	v.AltScreen = true
+	// Force the layout to exactly fit the terminal window using Lipgloss padding
+	finalString := lipgloss.NewStyle().
+		Width(m.width).
+		Height(m.height).
+		MaxHeight(m.height).
+		Render(ui)
+
+	v := tea.NewView(finalString)
+	v.AltScreen = true // Full-screen mode
 	return v
 }
 
@@ -226,48 +266,4 @@ func (m Model) Chosen() string {
 
 func (m Model) Quit() bool {
 	return m.quit
-}
-
-func joinViews(views []string, widths []int) string {
-	if len(views) == 0 {
-		return ""
-	}
-	if len(views) == 1 {
-		return views[0]
-	}
-	var allLines [][]string
-	maxLines := 0
-	for i, v := range views {
-		lines := strings.Split(v, "\n")
-		if len(lines) > 0 && lines[len(lines)-1] == "" {
-			lines = lines[:len(lines)-1]
-		}
-		for j, line := range lines {
-			if w := lipgloss.Width(line); w < widths[i] {
-				lines[j] = line + strings.Repeat(" ", widths[i]-w)
-			}
-		}
-		allLines = append(allLines, lines)
-		if len(lines) > maxLines {
-			maxLines = len(lines)
-		}
-	}
-	var b strings.Builder
-	for line := 0; line < maxLines; line++ {
-		for i, lines := range allLines {
-			if line < len(lines) {
-				b.WriteString(lines[line])
-			} else {
-				b.WriteString(strings.Repeat(" ", widths[i]))
-			}
-			if i < len(views)-1 {
-				separatorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
-				b.WriteString(separatorStyle.Render("│"))
-			}
-		}
-		if line < maxLines-1 {
-			b.WriteString("\n")
-		}
-	}
-	return b.String()
 }

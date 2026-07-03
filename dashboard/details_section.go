@@ -2,7 +2,6 @@ package dashboard
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -17,10 +16,11 @@ type hoveredSessionMsg struct {
 }
 
 type DetailsSection struct {
-	config        model.DashboardSectionConfig
-	hoveredName   string
-	hoveredPath   string
-	hoveredUptime tea.Cmd
+	config      model.DashboardSectionConfig
+	viewHeight  int
+	hoveredName string
+	hoveredPath string
+	// hoveredUptime tea.Cmd
 }
 
 func NewDetailsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -42,46 +42,77 @@ func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		s.hoveredName = msg.Name
 		s.hoveredPath = msg.Path
 		// function to get uptime of hovered tmux session
-		s.hoveredUptime = tea.Cmd(func() tea.Msg {
-			pipeline := fmt.Sprintf("tmux ls | awk -F: '$1 == \"%s\" {print $2}'", s.hoveredName)
-			c := exec.Command("sh", "-c", pipeline)
-			out, err := c.Output()
-			if err != nil {
-				return hoveredSessionMsg{Name: "", Path: ""}
-			}
-			return hoveredSessionMsg{Name: s.hoveredName, Path: strings.TrimSpace(string(out))}
-		})
+		// s.hoveredUptime = tea.Cmd(func() tea.Msg {
+		// 	pipeline := fmt.Sprintf("tmux ls | awk -F: '$1 == \"%s\" {print $2}'", s.hoveredName)
+		// 	c := exec.Command("sh", "-c", pipeline)
+		// 	out, err := c.Output()
+		// 	if err != nil {
+		// 		return hoveredSessionMsg{Name: "", Path: ""}
+		// 	}
+		// 	return hoveredSessionMsg{Name: s.hoveredName, Path: strings.TrimSpace(string(out))}
+		// })
 	}
 	return s, nil
 }
 
 func (s *DetailsSection) View(width, height int) string {
+	s.viewHeight = height
+
+	// Guard: Minimum layout size checks
+	const minWidth = 64
+	if width < minWidth {
+		msg := fmt.Sprintf("  Enlarge pane to see sessions (need ≥%d cols, have %d)", minWidth, width)
+		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render(msg)
+	}
+
+	// Calculate internal view height
+	internalWidth := max(width-2, 1)
+	internalHeight := max(height-2, 1)
+
+	// Calculate active available viewing rows
+	chrome := 2 // Accounts for title header line space
+	available := height - chrome
+	if available < 1 {
+		available = 5
+	}
+
+	if s.hoveredName == "" {
+		return NewStyleBorder(internalWidth, internalWidth, internalHeight, internalHeight, 15, false, []int{0, 0, 0, 0}).Render("")
+	}
+
 	var b strings.Builder
 
-	sectionStyle := lipgloss.NewStyle().Bold(true).Padding(0, 2)
-	b.WriteString(sectionStyle.Render("" + s.config.Title))
+	// Style Definitions
+	sectionStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0})
+	b.WriteString(sectionStyle.Render(s.config.Title))
 	b.WriteString("\n\n")
 
-	if s.hoveredName != "" {
-		sessionNameStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Padding(0, 1)
-		sessionStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
-		pathNameStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Padding(0, 1)
-		pathStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
-		fmt.Fprintf(&b, "%s%s\n", sessionNameStyle.Render("Name:"), sessionStyle.Render(s.hoveredName))
-		if s.hoveredPath != "" {
-			fmt.Fprintf(&b, "%s%s\n", pathNameStyle.Render("Path:"), pathStyle.Render(s.hoveredPath))
-		}
-		// uptimeNameStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Padding(0, 1)
-		// uptimeStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Width(55)
-		// fmt.Fprintf(&b, "%s%s\n", uptimeNameStyle.Render("Uptime:"), uptimeStyle.Render(s.hoveredUptime))
-	} else {
-		b.WriteString(lipgloss.NewStyle().Faint(true).Render(""))
-	}
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
+	valueStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 
-	lines := strings.Count(b.String(), "\n")
-	for i := lines; i < height; i++ {
-		b.WriteString("\n")
-	}
+	nameRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Name:"), valueStyle.Render(s.hoveredName))
+	pathRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Path:"), valueStyle.Render(s.hoveredPath))
 
-	return b.String()
+	b.WriteString(nameRow)
+	b.WriteString("\n\n")
+	b.WriteString(pathRow)
+	b.WriteString("\n")
+
+	// sessionNameStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, "Name:")
+	// sessionStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, s.hoveredName)
+	// pathNameStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, "Path:")
+	// pathStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, s.hoveredPath)
+	//
+
+	// lines := strings.Count(b.String(), "\n")
+	// for i := lines; i < internalHeight; i++ {
+	// 	b.WriteString("\n")
+	// }
+
+	return lipgloss.NewStyle().
+		Width(internalWidth).
+		Height(internalHeight). // Account for border
+		MaxHeight(height).
+		Border(lipgloss.RoundedBorder()).
+		Render(b.String())
 }
