@@ -137,7 +137,7 @@ func (s *SessionsSection) groupSessions(sessions model.SeshSessions) {
 		g := &group{
 			name:      s.config.Groups[i].Name,
 			patterns:  s.config.Groups[i].Patterns,
-			collapsed: true, // start with group collapsed. user can toggle to expand.
+			collapsed: false,
 		}
 		expanded = append(expanded, g)
 	}
@@ -371,40 +371,24 @@ func (s *SessionsSection) HoveredSession() (name, path string) {
 
 func (s *SessionsSection) View(width, height int) string {
 	s.viewHeight = height
-	if s.loading {
-		msg := lipgloss.NewStyle().Faint(true).Render("  Loading sessions...")
-		lines := strings.Count(msg, "\n")
-		var b strings.Builder
-		b.WriteString(msg)
-		for i := lines + 1; i < height; i++ {
-			b.WriteString("\n")
-		}
-		return b.String()
-	}
 
-	if len(s.items) == 0 {
-		msg := lipgloss.NewStyle().Faint(true).Render("  No sessions found")
-		lines := strings.Count(msg, "\n")
-		var b strings.Builder
-		b.WriteString(msg)
-		for i := lines + 1; i < height; i++ {
-			b.WriteString("\n")
-		}
-		return b.String()
-	}
-
+	// Guard: Minimum layout size checks
 	const minWidth = 34
 	if width < minWidth {
-		var bb strings.Builder
-		msg := lipgloss.NewStyle().Faint(true).Render(fmt.Sprintf("  Enlarge pane to see sessions (need ≥%d cols, have %d)", minWidth, width))
-		bb.WriteString(msg)
-		for i := 1; i < height; i++ {
-			bb.WriteString("\n")
-		}
-		return bb.String()
+		msg := fmt.Sprintf("  Enlarge pane to see sessions (need ≥%d cols, have %d)", minWidth, width)
+		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render(msg)
 	}
 
-	chrome := 2
+	// State Guards: Loading or Empty List
+	if s.loading {
+		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  Loading sessions...")
+	}
+	if len(s.items) == 0 {
+		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  No sessions found")
+	}
+
+	// Calculate active available viewing rows
+	chrome := 2 // Accounts for title header line space
 	available := height - chrome
 	if available < 1 {
 		available = 5
@@ -414,69 +398,14 @@ func (s *SessionsSection) View(width, height int) string {
 
 	var b strings.Builder
 
-	// TODO: make the colors configurable
-	sectionStyle := lipgloss.NewStyle().Bold(true)
+	// Style Definitions
 	groupStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
 	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
-	sessionStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
-	branchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(12))
-	gitStatusStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(5))
-	// metaStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
-	attachedStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2))
-	numStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8))
-	// cursorBg := lipgloss.NewStyle().Background(lipgloss.ANSIColor(25))
 
-	b.WriteString(sectionStyle.Render("" + s.config.Title))
+	// Render the section title
+	groupName := GroupNameRender(s.config.Title, width)
+	b.WriteString(groupName.Render(s.config.Title))
 	b.WriteString("\n\n")
-
-	// Content-aware column widths based on actual session data
-	numW := 5
-	overhead := 8 // "   "(3) + numW(5) + gaps(3*1)
-	colSpace := width - overhead
-
-	maxName := 5
-	maxBranch := 0
-	maxGit := 0
-	for _, g := range s.groups {
-		for _, sess := range g.sessions {
-			if l := len(sess.Name); l > maxName {
-				maxName = l
-			}
-			if l := len(sess.Branch); l > maxBranch {
-				maxBranch = l
-			}
-			if l := len(sess.GitStatus); l > maxGit {
-				maxGit = l
-			}
-		}
-	}
-
-	// Ideal widths from content (capped)
-	nameW := max(int(float64(colSpace)*0.25), 15)
-	branchW := max(int(float64(colSpace)*0.25), 10)
-	gitW := max(int(float64(colSpace)*0.45), 15)
-	metaW := max(int(float64(colSpace)*0.25), 25)
-
-	// Shrink iteratively until everything fits in colSpace
-	for nameW+branchW+gitW+metaW > colSpace {
-		if metaW > 2 {
-			metaW--
-			continue
-		}
-		if gitW > 2 {
-			gitW--
-			continue
-		}
-		if branchW > 3 {
-			branchW--
-			continue
-		}
-		if nameW > 3 {
-			nameW--
-			continue
-		}
-		break
-	}
 
 	for i := s.offset; i < end; i++ {
 		item := s.items[i]
@@ -492,89 +421,40 @@ func (s *SessionsSection) View(width, height int) string {
 			groupLine := prefix + groupStyle.Render("") + g.name + groupStyle.Render(fmt.Sprintf(" (%d)", len(g.sessions)))
 			b.WriteString(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(groupLine))
 			b.WriteString("\n")
-
-		} else {
-			g := s.groups[item.groupIdx]
-			sess := g.sessions[item.sessIdx]
-
-			colStyle := lipgloss.NewStyle().Width(numW)
-			num := colStyle.Render(numStyle.Render(fmt.Sprintf("%4d.", item.sessIdx+1)))
-
-			colStyle = lipgloss.NewStyle().Width(nameW).MaxWidth(nameW)
-			name := colStyle.Render(sessionStyle.Render(sess.Name))
-			// if len(name) > nameW-2 {
-			// 	name = name[:nameW-2] + "…"
-			// }
-
-			colStyle = lipgloss.NewStyle().Width(branchW).MaxWidth(branchW)
-			branchContent := sess.Branch
-			// if len(branchContent) > branchW-2 {
-			// 	branchContent = branchContent[:max(branchW-3, 0)] + "…"
-			// }
-			// if no branch, don't show the brackets
-			branch := ""
-			if sess.Branch == "" {
-				branchContent = ""
-				branch = colStyle.Render("")
-			} else {
-				branch = colStyle.Render(branchStyle.Render("[" + branchContent + "]"))
-			}
-
-			colStyle = lipgloss.NewStyle().Width(gitW).MaxWidth(gitW)
-			gitContent := sess.GitStatus
-			// if len(gitContent) > gitW-2 {
-			// 	gitContent = gitContent[:max(gitW-3, 0)] + "…"
-			// }
-			// if no status, don't show the brackets
-			gitStatus := ""
-			if sess.GitStatus == "" {
-				gitContent = ""
-				gitStatus = colStyle.Render("")
-			} else {
-				gitStatus = colStyle.Render(gitStatusStyle.Render("[" + gitContent + "]"))
-			}
-
-			right := ""
-			if sess.Attached > 0 {
-				right += attachedStyle.Render("∗")
-			}
-			colStyle = lipgloss.NewStyle().Width(metaW).MaxWidth(metaW)
-			meta := colStyle.Render(right)
-
-			// if i == s.cursor {
-			// 	num = cursorBg.Render(num)
-			// 	name = cursorBg.Render(name)
-			// 	branch = cursorBg.Render(branch)
-			// 	gitStatus = cursorBg.Render(gitStatus)
-			// 	meta = cursorBg.Render(meta)
-			// }
-
-			line := fmt.Sprintf("%s%s %s %s %s", num, name, branch, gitStatus, meta)
-
-			// if i == s.cursor {
-			// 	lineWidth := lipgloss.Width(line) // Correctly ignores hidden ANSI style codes
-			//
-			// 	if lineWidth < width {
-			// 		// Create the padding spaces
-			// 		padding := strings.Repeat(" ", width-lineWidth)
-			// 		// Render BOTH the text and the spaces inside the background color
-			// 		line = cursorBg.Render(line + padding)
-			// 	} else {
-			// 		line = cursorBg.Render(line)
-			// 	}
-			// }
-
-			// b.WriteString(prefix)
-			b.WriteString(line)
-			b.WriteString("\n")
+			continue
 		}
-	}
 
-	// Pad to fill allocated height
-	lines := strings.Count(b.String(), "\n")
-	for i := lines; i < height; i++ {
+		g := s.groups[item.groupIdx]
+		sess := g.sessions[item.sessIdx]
+
+		windNum := fmt.Sprintf("%4d.", item.sessIdx+1)
+		name := sess.Name
+
+		branch := ""
+		if sess.Branch != "" {
+			branch = fmt.Sprintf("[%s]", sess.Branch)
+		}
+
+		gitStatus := ""
+		if sess.GitStatus != "" {
+			gitStatus = fmt.Sprintf("[%s]", sess.GitStatus)
+		}
+
+		meta := ""
+		if sess.Attached > 0 {
+			meta = "∗"
+		}
+
+		// Join columns together line by line
+		line := SessionLineRender(windNum, name, branch, gitStatus, meta, width)
+		b.WriteString(line)
 		b.WriteString("\n")
 	}
 
-	return b.String()
+	return lipgloss.NewStyle().
+		Width(width).
+		Height(height).
+		MaxHeight(height).
+		Border(lipgloss.RoundedBorder()).
+		Render(b.String())
 }
