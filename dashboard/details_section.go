@@ -11,15 +11,18 @@ import (
 )
 
 type hoveredSessionMsg struct {
-	Name string
-	Path string
+	Name    string
+	Path    string
+	Windows int
 }
 
 type DetailsSection struct {
-	config      model.DashboardSectionConfig
-	viewHeight  int
-	hoveredName string
-	hoveredPath string
+	config         model.DashboardSectionConfig
+	groups         []*group
+	viewHeight     int
+	hoveredName    string
+	hoveredPath    string
+	hoveredWindows int
 	// hoveredUptime tea.Cmd
 }
 
@@ -29,10 +32,11 @@ func NewDetailsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Secti
 	}
 }
 
-func (s *DetailsSection) Name() string    { return s.config.Title }
-func (s *DetailsSection) TotalItems() int { return 0 }
-func (s *DetailsSection) Width() float64  { return s.config.Width }
-func (s *DetailsSection) Chosen() string  { return "" }
+func (s *DetailsSection) Name() string     { return s.config.Title }
+func (s *DetailsSection) TotalItems() int  { return 0 }
+func (s *DetailsSection) Width() float64   { return s.config.Width }
+func (s *DetailsSection) Chosen() string   { return "" }
+func (s *DetailsSection) WindowCount() int { return s.hoveredWindows }
 
 func (s *DetailsSection) Init() tea.Cmd { return nil }
 
@@ -41,6 +45,7 @@ func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	case hoveredSessionMsg:
 		s.hoveredName = msg.Name
 		s.hoveredPath = msg.Path
+		s.hoveredWindows = msg.Windows
 		// function to get uptime of hovered tmux session
 		// s.hoveredUptime = tea.Cmd(func() tea.Msg {
 		// 	pipeline := fmt.Sprintf("tmux ls | awk -F: '$1 == \"%s\" {print $2}'", s.hoveredName)
@@ -77,7 +82,7 @@ func (s *DetailsSection) View(width, height int) string {
 	}
 
 	if s.hoveredName == "" {
-		return NewStyleBorder(internalWidth, internalWidth, internalHeight, internalHeight, 15, false, []int{0, 0, 0, 0}).Render("")
+		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 0}).Render("")
 	}
 
 	var b strings.Builder
@@ -87,16 +92,18 @@ func (s *DetailsSection) View(width, height int) string {
 	b.WriteString(sectionStyle.Render(s.config.Title))
 	b.WriteString("\n\n")
 
-	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
 	valueStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 
-	nameRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Name:"), valueStyle.Render(s.hoveredName))
-	pathRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Path:"), valueStyle.Render(s.hoveredPath))
+	nameRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Name: "), valueStyle.Render(s.hoveredName))
+	pathRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Path: "), valueStyle.Render(s.hoveredPath))
+	windowsRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Windows: "), valueStyle.Render(fmt.Sprintf("%d", s.hoveredWindows)))
 
 	b.WriteString(nameRow)
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 	b.WriteString(pathRow)
 	b.WriteString("\n")
+	b.WriteString(windowsRow)
 
 	// sessionNameStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, "Name:")
 	// sessionStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, s.hoveredName)
@@ -109,10 +116,13 @@ func (s *DetailsSection) View(width, height int) string {
 	// 	b.WriteString("\n")
 	// }
 
-	return lipgloss.NewStyle().
-		Width(internalWidth).
-		Height(internalHeight). // Account for border
-		MaxHeight(height).
-		Border(lipgloss.RoundedBorder()).
-		Render(b.String())
+	details := NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 0}).Render(b.String())
+	return details
+
+	// return lipgloss.NewStyle().
+	// 	Width(internalWidth).
+	// 	Height(internalHeight). // Account for border
+	// 	MaxHeight(height).
+	// 	Border(lipgloss.RoundedBorder()).
+	// 	Render(b.String())
 }

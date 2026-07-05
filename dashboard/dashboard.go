@@ -204,8 +204,8 @@ func (m Model) syncHoveredSession() Model {
 		return m
 	}
 	ss := m.sections[ssIdx].(*SessionsSection)
-	name, path := ss.HoveredSession()
-	updated, _ := m.sections[dsIdx].Update(hoveredSessionMsg{Name: name, Path: path})
+	name, path, windows := ss.HoveredSession()
+	updated, _ := m.sections[dsIdx].Update(hoveredSessionMsg{Name: name, Path: path, Windows: windows})
 	m.sections[dsIdx] = updated
 	return m
 }

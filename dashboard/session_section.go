@@ -351,13 +351,13 @@ func (s *SessionsSection) selectItem() {
 
 // HoveredSession returns the name and path of the session under the cursor.
 // Returns empty strings if cursor is on a group or items are empty.
-func (s *SessionsSection) HoveredSession() (name, path string) {
+func (s *SessionsSection) HoveredSession() (name, path string, windows int) {
 	if len(s.items) == 0 {
-		return "", ""
+		return "", "", 0
 	}
 	item := s.items[s.cursor]
 	if item.isGroup {
-		return "", ""
+		return "", "", 0
 	}
 	g := s.groups[item.groupIdx]
 	sess := g.sessions[item.sessIdx]
@@ -366,7 +366,8 @@ func (s *SessionsSection) HoveredSession() (name, path string) {
 	if after, ok := strings.CutPrefix(path, s.deps.HomeDir); ok {
 		path = filepath.Join("~", after)
 	}
-	return name, path
+	windows = sess.Windows
+	return name, path, windows
 }
 
 func (s *SessionsSection) View(width, height int) string {
