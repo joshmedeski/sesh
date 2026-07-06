@@ -35,7 +35,7 @@ type Registry map[string]SectionFactory
 var registry = Registry{
 	"sessions": NewSessionsSection,
 	"details":  NewDetailsSection,
-	// "system":   NewSystemSection,
+	"system":   NewSystemSection,
 	// "ssh":      NewSshSection,
 	// "git":      NewGitSection,
 	// "aiagent":  NewAiAgentSection,

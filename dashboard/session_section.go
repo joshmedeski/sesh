@@ -389,7 +389,7 @@ func (s *SessionsSection) View(width, height int) string {
 	}
 
 	// Calculate active available viewing rows
-	chrome := 2 // Accounts for title header line space
+	chrome := 4 // Accounts for title header line space
 	available := height - chrome
 	if available < 1 {
 		available = 5
@@ -420,7 +420,7 @@ func (s *SessionsSection) View(width, height int) string {
 		if item.isGroup {
 			g := s.groups[item.groupIdx]
 			groupLine := prefix + groupStyle.Render("") + g.name + groupStyle.Render(fmt.Sprintf(" (%d)", len(g.sessions)))
-			b.WriteString(lipgloss.NewStyle().Width(width).MaxWidth(width).Render(groupLine))
+			b.WriteString(lipgloss.NewStyle().Width(width).Render(groupLine))
 			b.WriteString("\n")
 			continue
 		}
@@ -448,6 +448,7 @@ func (s *SessionsSection) View(width, height int) string {
 
 		// Join columns together line by line
 		line := SessionLineRender(windNum, name, branch, gitStatus, meta, width)
+		b.WriteString(prefix)
 		b.WriteString(line)
 		b.WriteString("\n")
 	}
@@ -455,7 +456,7 @@ func (s *SessionsSection) View(width, height int) string {
 	return lipgloss.NewStyle().
 		Width(width).
 		Height(height).
-		MaxHeight(height).
+		// MaxHeight(height).
 		Border(lipgloss.RoundedBorder()).
 		Render(b.String())
 }
