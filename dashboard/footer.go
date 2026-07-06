@@ -11,7 +11,7 @@ func renderFooter(width int) string {
 	// if width < 10 {
 	// 	return ""
 	// }
-	controls := "\nj/k Navigate  |  Enter Attach  |  t Toggle  |  Ctrl+d Kill  |  q Exit"
+	controls := "j/k Navigate  |  Enter Attach  |  t Toggle  |  Ctrl+d Kill  |  q Exit"
 	controlsStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
 	colStyle := lipgloss.NewStyle().Width(width)
 	controls = colStyle.Render(controlsStyle.Render(controls))

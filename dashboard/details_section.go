@@ -2,7 +2,9 @@ package dashboard
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -23,9 +25,14 @@ type windowNamesLoadedMsg struct {
 	ActiveWindow string
 }
 
+type venvLoadedMsg struct {
+	active string
+	name   string
+}
+
 type DetailsSection struct {
 	config              model.DashboardSectionConfig
-	groups              []*group
+	deps                SectionDeps
 	viewHeight          int
 	hoveredName         string
 	hoveredPath         string
@@ -33,12 +40,15 @@ type DetailsSection struct {
 	hoveredWindowNames  []string
 	hoveredActiveWindow string
 	hoveredWindowIdx    []string
+	hoveredVenvName     string
+	hoveredVenvActive   string
 	// hoveredUptime tea.Cmd
 }
 
 func NewDetailsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
 	return &DetailsSection{
 		config: cfg,
+		deps:   deps,
 	}
 }
 
@@ -69,7 +79,43 @@ func (s *DetailsSection) WindowNames(name string) tea.Cmd {
 				idx = append(idx, parts[0])
 			}
 		}
+
 		return windowNamesLoadedMsg{WindowIdx: idx, WindowNames: names, ActiveWindow: active}
+	}
+}
+
+func (s *DetailsSection) VenvCheck(path string) tea.Cmd {
+	return func() tea.Msg {
+		if path == "" {
+			return venvLoadedMsg{active: "no", name: "none"}
+		}
+
+		// Expand paths like "~" if necessary, otherwise use as-is
+		targetPath := path
+		if strings.HasPrefix(targetPath, "~") {
+			home, err := os.UserHomeDir()
+			if err == nil {
+				targetPath = filepath.Join(home, targetPath[1:])
+			}
+		}
+
+		// Common virtual environment folder names
+		venvDirs := []string{".venv", "venv", "env"}
+
+		for _, dir := range venvDirs {
+			fullPath := filepath.Join(targetPath, dir)
+			info, err := os.Stat(fullPath)
+
+			// If the directory exists, we found an inactive/available venv for this path
+			if err == nil && info.IsDir() {
+				return venvLoadedMsg{
+					active: "yes",
+					name:   dir, // returns ".venv", "venv", etc.
+				}
+			}
+		}
+
+		return venvLoadedMsg{active: "no", name: "none"}
 	}
 }
 
@@ -78,14 +124,23 @@ func (s *DetailsSection) Init() tea.Cmd { return nil }
 func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case hoveredSessionMsg:
+		// If the hovered session is the same as the current one, don't update
+		if s.hoveredName == msg.Name && s.hoveredPath == msg.Path && s.hoveredWindows == msg.Windows {
+			return s, nil
+		}
+
 		s.hoveredName = msg.Name
 		s.hoveredPath = msg.Path
 		s.hoveredWindows = msg.Windows
-		return s, s.WindowNames(msg.Name)
+
+		return s, tea.Batch(s.WindowNames(msg.Name), s.VenvCheck(msg.Path))
 	case windowNamesLoadedMsg:
 		s.hoveredWindowNames = msg.WindowNames
 		s.hoveredActiveWindow = msg.ActiveWindow
 		s.hoveredWindowIdx = msg.WindowIdx
+	case venvLoadedMsg:
+		s.hoveredVenvName = msg.name
+		s.hoveredVenvActive = msg.active
 	}
 	return s, nil
 }
@@ -112,7 +167,7 @@ func (s *DetailsSection) View(width, height int) string {
 	}
 
 	if s.hoveredName == "" {
-		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 0}).Render(s.config.Title)
+		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}).Render(s.config.Title)
 	}
 
 	var b strings.Builder
@@ -122,19 +177,19 @@ func (s *DetailsSection) View(width, height int) string {
 	b.WriteString(sectionStyle.Render(s.config.Title))
 	b.WriteString("\n\n")
 
-	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true).Padding(0, 0, 0, 1)
 	valueStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 
 	nameRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Name: "), valueStyle.Render(s.hoveredName))
 	pathRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Path: "), valueStyle.Render(s.hoveredPath))
 	windowsRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Windows: "))
+	venvCheck := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Venv: "), valueStyle.Render(s.hoveredVenvName))
 
 	b.WriteString(nameRow)
 	b.WriteString("\n")
 	b.WriteString(pathRow)
 	b.WriteString("\n")
 	b.WriteString(windowsRow)
-	// b.WriteString("\n")
 	for i, w := range s.hoveredWindowNames {
 		idx := ""
 		row := ""
@@ -154,25 +209,14 @@ func (s *DetailsSection) View(width, height int) string {
 		}
 		b.WriteString(row)
 	}
+	b.WriteString("\n")
+	b.WriteString(venvCheck)
 
-	// sessionNameStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, "Name:")
-	// sessionStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, s.hoveredName)
-	// pathNameStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, "Path:")
-	// pathStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, s.hoveredPath)
-	//
+	lines := strings.Count(b.String(), "\n")
+	for i := lines + 1; i < internalHeight; i++ {
+		b.WriteString("\n")
+	}
 
-	// lines := strings.Count(b.String(), "\n")
-	// for i := lines; i < internalHeight; i++ {
-	// 	b.WriteString("\n")
-	// }
-
-	details := NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 0}).Render(b.String())
+	details := NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}).Render(b.String())
 	return details
-
-	// return lipgloss.NewStyle().
-	// 	Width(internalWidth).
-	// 	Height(internalHeight). // Account for border
-	// 	MaxHeight(height).
-	// 	Border(lipgloss.RoundedBorder()).
-	// 	Render(b.String())
 }

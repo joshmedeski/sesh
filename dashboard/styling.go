@@ -1,12 +1,14 @@
 package dashboard
 
 import (
+	"strings"
+
 	"charm.land/lipgloss/v2"
 )
 
 // GroupNameRender returns a lipgloss style for the given group name
 func GroupNameRender(name string, width int) lipgloss.Style {
-	return NewStyle(width, width, 1, 1, 15, false, []int{0, 1, 0, 1})
+	return NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
 }
 
 // Session line styling
@@ -16,10 +18,10 @@ func SessionLineRender(num, name, branch, gitStatus, meta string, totalWidth int
 	overhead := 8
 	colSpace := max(totalWidth-overhead, 1)
 
-	nameW := max(int(float64(colSpace)*0.30), 5)
+	nameW := max(int(float64(colSpace)*0.35), 5)
 	branchW := max(int(float64(colSpace)*0.30), 0)
-	gitW := max(int(float64(colSpace)*0.25), 0)
-	metaW := max(int(float64(colSpace)*0.05), 2)
+	gitW := max(int(float64(colSpace)*0.30), 0)
+	metaW := max(int(float64(colSpace)*0.05), 5)
 
 	// Use Lipgloss layout blocks for columns to bypass manual loop padding math
 	numPart := NewStyle(5, 5, 1, 1, 7, true, []int{0, 0, 0, 0}).Render(num)
@@ -34,12 +36,12 @@ func SessionLineRender(num, name, branch, gitStatus, meta string, totalWidth int
 	rightSide := lipgloss.JoinHorizontal(lipgloss.Top, branchPart, gitPart, metaPart)
 
 	// Calculate space between left and right sides
-	// leftWidth := lipgloss.Width(leftSide)
-	// rightWidth := lipgloss.Width(rightSide)
-	//
-	// gapWidth := max(totalWidth-leftWidth-rightWidth, 0)
-	//
-	// spaceGap := strings.Repeat(" ", gapWidth)
+	leftWidth := lipgloss.Width(leftSide)
+	rightWidth := lipgloss.Width(rightSide)
 
-	return lipgloss.JoinHorizontal(lipgloss.Center, leftSide, rightSide)
+	gapWidth := max(totalWidth-leftWidth-rightWidth, 0)
+
+	spaceGap := strings.Repeat(" ", gapWidth)
+
+	return lipgloss.JoinHorizontal(lipgloss.Center, leftSide, spaceGap, rightSide)
 }

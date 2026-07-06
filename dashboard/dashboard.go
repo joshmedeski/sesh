@@ -18,6 +18,7 @@ type Model struct {
 	focused       int
 	width         int
 	height        int
+	row           int
 	tooSmall      bool
 	chosen        string
 	quit          bool
@@ -168,6 +169,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(m.sections) > 0 {
 				m.sections[m.focused], cmd = m.sections[m.focused].Update(msg)
 			}
+			for i := range m.sections {
+				if ss, ok := m.sections[i].(*SessionsSection); ok {
+					m.totalSessions = ss.totalSessions
+				}
+			}
 		}
 		m, syncCmd := m.syncHoveredSession()
 		return m, tea.Batch(cmd, syncCmd)
@@ -227,6 +233,9 @@ func (m Model) View() tea.View {
 	footer := renderFooter(m.width)
 
 	// Render and join sub-sections horizontally
+	// TODO: write better logic to handle different section types
+	// this just renders everything as a single column
+	// for now, but we can add a column-based layout in the future
 	var views []string
 	for i, section := range m.sections {
 		w := m.width
@@ -252,7 +261,7 @@ func (m Model) View() tea.View {
 	finalString := lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
-		MaxHeight(m.height).
+		// MaxHeight(m.height).
 		Render(ui)
 
 	v := tea.NewView(finalString)
