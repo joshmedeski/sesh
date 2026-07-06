@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -16,13 +17,22 @@ type hoveredSessionMsg struct {
 	Windows int
 }
 
+type windowNamesLoadedMsg struct {
+	WindowIdx    []string
+	WindowNames  []string
+	ActiveWindow string
+}
+
 type DetailsSection struct {
-	config         model.DashboardSectionConfig
-	groups         []*group
-	viewHeight     int
-	hoveredName    string
-	hoveredPath    string
-	hoveredWindows int
+	config              model.DashboardSectionConfig
+	groups              []*group
+	viewHeight          int
+	hoveredName         string
+	hoveredPath         string
+	hoveredWindows      int
+	hoveredWindowNames  []string
+	hoveredActiveWindow string
+	hoveredWindowIdx    []string
 	// hoveredUptime tea.Cmd
 }
 
@@ -38,6 +48,31 @@ func (s *DetailsSection) Width() float64   { return s.config.Width }
 func (s *DetailsSection) Chosen() string   { return "" }
 func (s *DetailsSection) WindowCount() int { return s.hoveredWindows }
 
+func (s *DetailsSection) WindowNames(name string) tea.Cmd {
+	return func() tea.Msg {
+		format := "#{window_index}|#{window_active}|#{pane_current_command}"
+		out, err := exec.Command("tmux", "list-windows", "-t", name, "-F", format).Output()
+		if err != nil {
+			return windowNamesLoadedMsg{}
+		}
+
+		var names []string
+		var active string
+		var idx []string
+		for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
+			parts := strings.Split(line, "|")
+			if len(parts) >= 3 {
+				if parts[1] == "1" {
+					active = parts[1]
+				}
+				names = append(names, parts[2])
+				idx = append(idx, parts[0])
+			}
+		}
+		return windowNamesLoadedMsg{WindowIdx: idx, WindowNames: names, ActiveWindow: active}
+	}
+}
+
 func (s *DetailsSection) Init() tea.Cmd { return nil }
 
 func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
@@ -46,16 +81,11 @@ func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		s.hoveredName = msg.Name
 		s.hoveredPath = msg.Path
 		s.hoveredWindows = msg.Windows
-		// function to get uptime of hovered tmux session
-		// s.hoveredUptime = tea.Cmd(func() tea.Msg {
-		// 	pipeline := fmt.Sprintf("tmux ls | awk -F: '$1 == \"%s\" {print $2}'", s.hoveredName)
-		// 	c := exec.Command("sh", "-c", pipeline)
-		// 	out, err := c.Output()
-		// 	if err != nil {
-		// 		return hoveredSessionMsg{Name: "", Path: ""}
-		// 	}
-		// 	return hoveredSessionMsg{Name: s.hoveredName, Path: strings.TrimSpace(string(out))}
-		// })
+		return s, s.WindowNames(msg.Name)
+	case windowNamesLoadedMsg:
+		s.hoveredWindowNames = msg.WindowNames
+		s.hoveredActiveWindow = msg.ActiveWindow
+		s.hoveredWindowIdx = msg.WindowIdx
 	}
 	return s, nil
 }
@@ -82,7 +112,7 @@ func (s *DetailsSection) View(width, height int) string {
 	}
 
 	if s.hoveredName == "" {
-		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 0}).Render("")
+		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 0}).Render(s.config.Title)
 	}
 
 	var b strings.Builder
@@ -97,13 +127,33 @@ func (s *DetailsSection) View(width, height int) string {
 
 	nameRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Name: "), valueStyle.Render(s.hoveredName))
 	pathRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Path: "), valueStyle.Render(s.hoveredPath))
-	windowsRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Windows: "), valueStyle.Render(fmt.Sprintf("%d", s.hoveredWindows)))
+	windowsRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Windows: "))
 
 	b.WriteString(nameRow)
 	b.WriteString("\n")
 	b.WriteString(pathRow)
 	b.WriteString("\n")
 	b.WriteString(windowsRow)
+	// b.WriteString("\n")
+	for i, w := range s.hoveredWindowNames {
+		idx := ""
+		row := ""
+		if i < len(s.hoveredWindowIdx) {
+			idx = s.hoveredWindowIdx[i]
+		}
+		if len(s.hoveredWindowNames) == 1 {
+			row = lipgloss.JoinHorizontal(lipgloss.Left,
+				labelStyle.Render(fmt.Sprintf("%s.", idx)),
+				valueStyle.Render(fmt.Sprintf("%s", w)),
+			)
+		} else {
+			row = lipgloss.JoinHorizontal(lipgloss.Left,
+				labelStyle.Render(fmt.Sprintf("%s.", idx)),
+				valueStyle.Render(fmt.Sprintf("%s | ", w)),
+			)
+		}
+		b.WriteString(row)
+	}
 
 	// sessionNameStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, "Name:")
 	// sessionStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0}, s.hoveredName)

@@ -169,8 +169,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.sections[m.focused], cmd = m.sections[m.focused].Update(msg)
 			}
 		}
-		m = m.syncHoveredSession()
-		return m, cmd
+		m, syncCmd := m.syncHoveredSession()
+		return m, tea.Batch(cmd, syncCmd)
 
 	// Non-keypress messages -> all sections
 	default:
@@ -185,12 +185,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmd = tea.Batch(cmds...)
 		}
-		m = m.syncHoveredSession()
-		return m, cmd
+		m, syncCmd := m.syncHoveredSession()
+		return m, tea.Batch(cmd, syncCmd)
 	}
 }
 
-func (m Model) syncHoveredSession() Model {
+func (m Model) syncHoveredSession() (Model, tea.Cmd) {
 	var ssIdx, dsIdx int = -1, -1
 	for i, s := range m.sections {
 		switch s.(type) {
@@ -201,13 +201,13 @@ func (m Model) syncHoveredSession() Model {
 		}
 	}
 	if ssIdx < 0 || dsIdx < 0 {
-		return m
+		return m, nil
 	}
 	ss := m.sections[ssIdx].(*SessionsSection)
 	name, path, windows := ss.HoveredSession()
-	updated, _ := m.sections[dsIdx].Update(hoveredSessionMsg{Name: name, Path: path, Windows: windows})
+	updated, cmd := m.sections[dsIdx].Update(hoveredSessionMsg{Name: name, Path: path, Windows: windows})
 	m.sections[dsIdx] = updated
-	return m
+	return m, cmd
 }
 
 func (m Model) View() tea.View {
