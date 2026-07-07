@@ -32,13 +32,10 @@ func NewSystemSection(cfg model.DashboardSectionConfig, deps SectionDeps) Sectio
 	}
 }
 
-func (s *SystemSection) Name() string { return s.config.Title }
-
-func (s *SystemSection) Chosen() string { return "" }
-
+func (s *SystemSection) Name() string    { return s.config.Title }
+func (s *SystemSection) Chosen() string  { return "" }
 func (s *SystemSection) TotalItems() int { return 0 }
-
-func (s *SystemSection) Width() float64 { return s.config.Width }
+func (s *SystemSection) Width() float64  { return s.config.Width }
 
 func fetchSystemMetrics() tea.Msg {
 	// Get virtual memory usage

@@ -52,11 +52,10 @@ func NewDetailsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Secti
 	}
 }
 
-func (s *DetailsSection) Name() string     { return s.config.Title }
-func (s *DetailsSection) TotalItems() int  { return 0 }
-func (s *DetailsSection) Width() float64   { return s.config.Width }
-func (s *DetailsSection) Chosen() string   { return "" }
-func (s *DetailsSection) WindowCount() int { return s.hoveredWindows }
+func (s *DetailsSection) Name() string    { return s.config.Title }
+func (s *DetailsSection) TotalItems() int { return 0 }
+func (s *DetailsSection) Width() float64  { return s.config.Width }
+func (s *DetailsSection) Chosen() string  { return "" }
 
 func (s *DetailsSection) WindowNames(name string) tea.Cmd {
 	return func() tea.Msg {

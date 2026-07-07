@@ -36,7 +36,7 @@ var registry = Registry{
 	"sessions": NewSessionsSection,
 	"details":  NewDetailsSection,
 	"system":   NewSystemSection,
-	// "ssh":      NewSshSection,
+	"ssh":      NewSSHSection,
 	// "git":      NewGitSection,
 	// "aiagent":  NewAiAgentSection,
 	// "custom":   NewCustomSection,
