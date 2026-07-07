@@ -247,6 +247,34 @@
                   "additionalProperties": false
                 }
               }
+              "ssh" : {
+                  "type": "array",
+                  "description": "SSH hosts to display in the dashboard",
+                  "items": {
+                      "type": "object",
+                      "properties": {
+                          "name": {
+                              "type": "string",
+                              "description": "Display name for the host"
+                          },
+                          "host": {
+                              "type": "string",
+                              "description": "Hostname or IP address"
+                          },
+                          "port": {
+                              "type": "integer",
+                              "description": "SSH port (default 22)"
+                              "default": 22
+                          },
+                          "username": {
+                              "type": "string",
+                              "description": "SSH username"
+                          }
+                      },
+                      "requird": ["host"],
+                      "additionalProperties": false
+                  }
+              }
             },
             "additionalProperties": false
           }
