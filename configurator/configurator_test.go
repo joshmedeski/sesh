@@ -65,6 +65,10 @@ func (o *testOs) Stat(name string) (os.FileInfo, error) {
 	return nil, nil
 }
 
+func (o *testOs) MkdirAll(path string, perm os.FileMode) error {
+	return nil
+}
+
 func testdataPath(name string) string {
 	abs, _ := filepath.Abs(filepath.Join("testdata", name))
 	return abs
