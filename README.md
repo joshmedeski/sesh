@@ -30,6 +30,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
 - **Clone and connect** - clone a git repo and start a session in one step
+- **Mkdir and connect** - create a new directory (relative or absolute path) and start a session in one step
 - **Last session switching** - seamlessly bounce between your two most recent sessions
 - **Root session navigation** - jump to the root of a git worktree or repository
 - **Nerd Font icons** - display session type icons in your picker
@@ -388,6 +389,22 @@ Or as a tmux keybind:
 
 ```sh
 bind-key "W" run-shell "sesh window \"$(sesh window | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
+```
+
+### Create a directory and connect
+
+`sesh mkdir` (alias `md`) combines `mkdir` and `sesh connect` into a single step: it creates the directory if it doesn't already exist, then connects to it as a session — no need to `cd` into it first or wait for zoxide to pick it up.
+
+```sh
+sesh mkdir my-new-project
+```
+
+`<path>` accepts both **relative** paths (resolved against your current working directory) and **absolute** paths, as well as `~` for your home directory:
+
+```sh
+sesh mkdir my-new-project        # relative to the current directory
+sesh mkdir ~/projects/my-app     # relative to your home directory
+sesh mkdir /Users/josh/dev/api   # absolute path
 ```
 
 ## gum + tmux

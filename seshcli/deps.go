@@ -19,6 +19,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/json"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/joshmedeski/sesh/v2/mkdirer"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -64,6 +65,7 @@ type Deps struct {
 	Icon          icon.Icon
 	Previewer     previewer.Previewer
 	Cloner        cloner.Cloner
+	Mkdirer       mkdirer.Mkdirer
 }
 
 // NewBaseDeps constructs all config-free dependencies.
@@ -128,6 +130,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
 	pk := picker.NewPicker(config)
+	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{
 		BaseDeps:      *b,
@@ -142,6 +145,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		Icon:          ic,
 		Previewer:     p,
 		Cloner:        cl,
+		Mkdirer:       mk,
 	}, nil
 }
 
