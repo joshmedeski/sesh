@@ -630,6 +630,19 @@ The cache is also refreshed automatically after `sesh connect`.
 cache = true
 ```
 
+Sessions created or killed outside `sesh connect` (e.g. plain `tmux new-session`, closing a session's last window) are missing from the cache until the next stale-hit refresh. To keep the cache current, run `sesh cache refresh` when those events happen — it fetches live data and rewrites the cache, and does nothing when the cache is disabled. With tmux hooks this covers both events:
+
+```sh
+set-hook -g session-created 'run-shell -b "sesh cache refresh"'
+set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
+```
+
+If you use a kill binding in an fzf picker (like `ctrl-d` in the example above), refresh the cache before reloading the list so the killed session disappears immediately:
+
+```sh
+--bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
+```
+
 ### Picker TUI
 
 The Picker TUI can be configured with some options that help you customize it's behaviour, this picker is a useful replacement to external fuzzy pickers.
