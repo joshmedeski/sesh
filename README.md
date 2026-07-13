@@ -461,27 +461,23 @@ Add the following to your `tmux.conf` to overwrite the default `last-session` co
 bind -N "last-session (via sesh) " L run-shell "sesh last"
 ```
 
-### Dynamic status bar
+### Enrich session names with the GitHub issue title
 
-`sesh status` prints a tmux-styled string describing the GitHub issue that
-matches the current session's branch — a state badge (green `OPEN` / red
-`CLOSED`), a magenta `Issue #<number>` label, and the issue title. It is
-inspired by [gitmux](https://github.com/arl/gitmux).
+`sesh` can rename a session to include its branch's GitHub issue title, e.g.
+`400-status` → `400-status — warm the status cache`. It parses the issue number
+from the branch name and looks it up with the `gh` CLI (which must be installed
+and authenticated).
 
-Add it to your `status-left` (or `status-right`):
+Add an opt-in tmux hook so every new session is enriched in the background:
 
-```sh
-set -g status-left "#[fg=blue,bold]#S #[fg=white,nobold]#(sesh status)"
+```tmux
+set-hook -g session-created 'run-shell -b "sesh rename --enrich"'
 ```
 
-The issue number is parsed from the branch name (`400` or `feat/400-status-bar`
-both resolve to issue `#400`), so it works best with a branch-per-issue
-workflow.
-
-**Requirements:** the [`gh` CLI](https://cli.github.com) must be installed and
-authenticated (`gh auth login`). When there is nothing to show — no number in
-the branch, no matching issue, or `gh` is unavailable — `sesh status` prints
-nothing, leaving the status bar clean.
+The command is a no-op when the branch has no resolvable issue (the session
+keeps its plain name), and it self-heals: switching to a branch without an issue
+renames the session back to its base name. Reconnecting to the directory
+reattaches to the enriched session rather than creating a duplicate.
 
 ### Connect to root
 
