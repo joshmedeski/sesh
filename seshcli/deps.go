@@ -82,7 +82,6 @@ func NewBaseDeps() *BaseDeps {
 
 	g := git.NewGit(sh)
 	d := dir.NewDir(os, g, path)
-	z := zoxide.NewZoxide(sh)
 	ti := tmuxinator.NewTmuxinator(sh)
 
 	return &BaseDeps{
@@ -96,7 +95,6 @@ func NewBaseDeps() *BaseDeps {
 		Replacer:   r,
 		Git:        g,
 		Dir:        d,
-		Zoxide:     z,
 		Tmuxinator: ti,
 	}
 }
@@ -109,6 +107,10 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	}
 
 	slog.Debug("deps: BuildAll", "config", config)
+
+	// Zoxide is the frecency backend; its commands come from config, so it
+	// is constructed here rather than in the config-free NewBaseDeps.
+	b.Zoxide = zoxide.NewZoxide(b.Shell, config.Frecency)
 
 	t := tmux.NewTmux(b.Os, b.Shell, config.TmuxCommand)
 

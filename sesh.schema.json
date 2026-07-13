@@ -63,6 +63,28 @@
       "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",
       "default": "tmux"
     },
+    "frecency": {
+      "type": "object",
+      "description": "Override the frecency directory-jumping backend commands to use an alternative to zoxide (e.g. fasd, autojump, memy). Empty fields fall back to the zoxide defaults.",
+      "properties": {
+        "list_command": {
+          "type": "string",
+          "description": "Command that lists all tracked entries, one path per line. A leading numeric score is detected and used when present.",
+          "default": "zoxide query --list --score"
+        },
+        "query_command": {
+          "type": "string",
+          "description": "Command that resolves a single input to a path. The {} placeholder is replaced with the query string.",
+          "default": "zoxide query {}"
+        },
+        "add_command": {
+          "type": "string",
+          "description": "Command that records a path to bump its frecency after connecting. The {} placeholder is replaced with the path.",
+          "default": "zoxide add {}"
+        }
+      },
+      "additionalProperties": false
+    },
     "tui": {
       "type": "object",
       "description": "Settings for the Sesh Picker TUI",
