@@ -29,49 +29,6 @@ func TestParseIssueNumber(t *testing.T) {
 	}
 }
 
-func TestResolve(t *testing.T) {
-	t.Run("numeric branch resolves repo, branch, and number", func(t *testing.T) {
-		mockShell := new(shell.MockShell)
-		mockGit := new(git.MockGit)
-		gh := NewGithub(mockShell, mockGit)
-		path := "/Users/josh/c/sesh"
-		mockGit.On("CurrentBranch", path).Return(true, "feat/400-status-bar", nil)
-		mockGit.On("ShowTopLevel", path).Return(true, "/Users/josh/c/sesh", nil)
-
-		ref, ok := gh.Resolve(path)
-
-		assert.True(t, ok)
-		assert.Equal(t, BranchRef{RepoRoot: "/Users/josh/c/sesh", Branch: "feat/400-status-bar", Number: 400, HasNumber: true}, ref)
-	})
-
-	t.Run("non-numeric branch resolves with HasNumber false", func(t *testing.T) {
-		mockShell := new(shell.MockShell)
-		mockGit := new(git.MockGit)
-		gh := NewGithub(mockShell, mockGit)
-		path := "/Users/josh/c/sesh"
-		mockGit.On("CurrentBranch", path).Return(true, "main", nil)
-		mockGit.On("ShowTopLevel", path).Return(true, "/Users/josh/c/sesh", nil)
-
-		ref, ok := gh.Resolve(path)
-
-		assert.True(t, ok)
-		assert.Equal(t, "main", ref.Branch)
-		assert.False(t, ref.HasNumber)
-		assert.Equal(t, 0, ref.Number)
-	})
-
-	t.Run("not a git repo => ok false", func(t *testing.T) {
-		mockShell := new(shell.MockShell)
-		mockGit := new(git.MockGit)
-		gh := NewGithub(mockShell, mockGit)
-		path := "/tmp/x"
-		mockGit.On("CurrentBranch", path).Return(false, "", fmt.Errorf("not a git repo"))
-
-		_, ok := gh.Resolve(path)
-		assert.False(t, ok)
-	})
-}
-
 func TestIssue(t *testing.T) {
 	t.Run("returns the issue on success", func(t *testing.T) {
 		mockShell := new(shell.MockShell)
@@ -79,7 +36,6 @@ func TestIssue(t *testing.T) {
 		gh := NewGithub(mockShell, mockGit)
 		path := "/Users/josh/c/sesh"
 		mockGit.On("CurrentBranch", path).Return(true, "feat/400-status-bar", nil)
-		mockGit.On("ShowTopLevel", path).Return(true, "/Users/josh/c/sesh", nil)
 		mockShell.On("Cmd", "gh", "issue", "view", "400", "--json", "number,title,state").
 			Return(`{"number":400,"state":"OPEN","title":"Dynamic tmux status bar"}`, nil)
 
@@ -96,7 +52,6 @@ func TestIssue(t *testing.T) {
 		gh := NewGithub(mockShell, mockGit)
 		path := "/Users/josh/c/sesh"
 		mockGit.On("CurrentBranch", path).Return(true, "main", nil)
-		mockGit.On("ShowTopLevel", path).Return(true, "/Users/josh/c/sesh", nil)
 
 		issue, found, err := gh.Issue(path)
 
@@ -126,7 +81,6 @@ func TestIssue(t *testing.T) {
 		gh := NewGithub(mockShell, mockGit)
 		path := "/Users/josh/c/sesh"
 		mockGit.On("CurrentBranch", path).Return(true, "400", nil)
-		mockGit.On("ShowTopLevel", path).Return(true, "/Users/josh/c/sesh", nil)
 		mockShell.On("Cmd", "gh", "issue", "view", "400", "--json", "number,title,state").
 			Return("", fmt.Errorf("gh: not found"))
 
@@ -142,7 +96,6 @@ func TestIssue(t *testing.T) {
 		gh := NewGithub(mockShell, mockGit)
 		path := "/Users/josh/c/sesh"
 		mockGit.On("CurrentBranch", path).Return(true, "400", nil)
-		mockGit.On("ShowTopLevel", path).Return(true, "/Users/josh/c/sesh", nil)
 		mockShell.On("Cmd", "gh", "issue", "view", "400", "--json", "number,title,state").
 			Return("not json", nil)
 
