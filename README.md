@@ -531,6 +531,23 @@ tmux_command = "psmux"
 
 This replaces the `tmux` binary in all commands sesh runs (session creation, switching, attaching, etc.). The configured multiplexer must support tmux's CLI interface.
 
+### Custom Frecency Backend (fasd, autojump, etc.)
+
+Sesh uses [zoxide](https://github.com/ajeetdsouza/zoxide) as its default frecency directory-jumping backend, but you can point it at an alternative such as [fasd](https://github.com/clvv/fasd), [fasder](https://github.com/khwang0/fasder), [autojump](https://github.com/wting/autojump), or [memy](https://github.com/xvello/memy) by overriding the commands in a `[frecency]` table. This is useful for tools that track files _and_ directories, unlike zoxide which tracks directories only.
+
+```toml
+[frecency]
+list_command  = "fasd -d -l -R"  # list all tracked entries
+query_command = "fasd -d {}"     # resolve one input to a path
+add_command   = "fasd -A {}"     # record a path after connecting
+```
+
+- The `{}` placeholder is replaced with the query string (`query_command`) or the path (`add_command`), the same substitution used by `preview_command`.
+- `list_command` output is parsed one path per line, most-frecent first. A leading numeric score is detected automatically when present (as with zoxide's `--score`); otherwise the score is `0`.
+- Any command runs as a single binary (no shell), so pipes/redirects aren't supported.
+- Any field you omit falls back to its zoxide default (`zoxide query --list --score`, `zoxide query {}`, `zoxide add {}`), so an absent `[frecency]` table leaves behavior unchanged.
+- The source label in `sesh list` output stays `zoxide`, so existing integrations that read the `--json` output keep working.
+
 ### Schema (Editor Autocomplete)
 
 Sesh provides a [JSON Schema](https://json-schema.org/) for `sesh.toml` that enables autocomplete, validation, and documentation in your editor. This works with any editor that supports the [taplo](https://taplo.tamasfe.dev/) TOML language server.
