@@ -26,12 +26,10 @@ import (
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/joshmedeski/sesh/v2/picker"
 	"github.com/joshmedeski/sesh/v2/previewer"
-	"github.com/joshmedeski/sesh/v2/refresher"
 	"github.com/joshmedeski/sesh/v2/replacer"
 	"github.com/joshmedeski/sesh/v2/runtimewrap"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/startup"
-	"github.com/joshmedeski/sesh/v2/statuscache"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
@@ -52,8 +50,6 @@ type BaseDeps struct {
 	Dir         dir.Dir
 	Zoxide      zoxide.Zoxide
 	Tmuxinator  tmuxinator.Tmuxinator
-	StatusCache statuscache.StatusCache
-	Refresher   refresher.Refresher
 }
 
 // Deps holds all dependencies including config-dependent ones.
@@ -89,8 +85,6 @@ func NewBaseDeps() *BaseDeps {
 	d := dir.NewDir(os, g, path)
 	z := zoxide.NewZoxide(sh)
 	ti := tmuxinator.NewTmuxinator(sh)
-	sc := statuscache.NewFileStatusCache()
-	rf := refresher.NewRefresher()
 
 	return &BaseDeps{
 		Exec:        exec,
@@ -106,8 +100,6 @@ func NewBaseDeps() *BaseDeps {
 		Dir:         d,
 		Zoxide:      z,
 		Tmuxinator:  ti,
-		StatusCache: sc,
-		Refresher:   rf,
 	}
 }
 
