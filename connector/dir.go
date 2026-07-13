@@ -17,6 +17,14 @@ func dirStrategy(c *RealConnector, name string) (model.Connection, error) {
 	if err != nil {
 		return model.Connection{}, err
 	}
+	if existing, ok := c.lister.FindTmuxSessionByBase(nameFromPath); ok {
+		return model.Connection{
+			Found:       true,
+			New:         false,
+			AddToZoxide: true,
+			Session:     existing,
+		}, nil
+	}
 	return model.Connection{
 		Found:       true,
 		New:         true,
