@@ -42,6 +42,17 @@
       "minimum": 1,
       "default": 1
     },
+    "git_namer_use_worktree_root": {
+      "type": "boolean",
+      "description": "Derive git session names from the current worktree's top-level directory instead of the main repo root. Useful when worktrees are added as siblings of the main clone (e.g. `git worktree add ../feat`).",
+      "default": false
+    },
+    "git_dir_length": {
+      "type": "integer",
+      "description": "Number of directory components to use when naming git-detected sessions (minimum 1). Mirrors dir_length but applies to git strategies.",
+      "minimum": 1,
+      "default": 1
+    },
     "separator_aware": {
       "type": "boolean",
       "description": "Enable separator-aware configuration for the picker",
