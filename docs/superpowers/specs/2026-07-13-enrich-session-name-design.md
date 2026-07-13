@@ -36,7 +36,7 @@ status-bar configuration, and collapses the feature to a single command.
 | Scope | Replace the status-bar feature; remove cache + refresher |
 | Issue vs PR | Issue only, as today (`github.Issue` — number parsed from branch) |
 | Command | `sesh rename --enrich [name]` |
-| No-issue case | Force the name back to the bare base (self-healing) — *pending user confirmation* |
+| No-issue case | Force the name back to the bare base (self-healing) |
 
 ## Behavior
 
@@ -73,10 +73,10 @@ Lives in `seshcli/rename.go` (replacing `seshcli/status.go`).
 
 ### `sanitizeTitle`
 
-Keep spaces and original casing; remove the two characters tmux forbids in
-session names:
+Keep spaces and original casing; neutralize the two characters tmux forbids in
+session names by replacing each with a space:
 
-- replace `.` → removed (or space), `:` → removed (or space)
+- `.` → space, `:` → space
 - collapse resulting double spaces; trim
 
 (Distinct from `namer/convert.go:convertToValidName`, which additionally
@@ -149,7 +149,7 @@ when the branch has no resolvable issue.
 
 ## Testing
 
-- `sanitizeTitle`: strips `:`/`.`, preserves spaces + casing, collapses/trims.
+- `sanitizeTitle`: replaces `:`/`.` with space, preserves other spaces + casing, collapses/trims.
 - rename command: found issue → `base — title`; no issue → bare `base`;
   idempotent on re-run (already-enriched name → recomputed identical name, no
   spurious rename); arg vs attached-session resolution.
@@ -158,8 +158,7 @@ when the branch has no resolvable issue.
   reattach (no duplicate).
 - `Tmux.RenameSession`: correct argv, spaces preserved.
 
-## Open questions (for user review)
+## Resolved
 
-1. **No-issue case** — confirm "force back to bare base" (self-healing) vs
-   "leave current name untouched".
-2. `sanitizeTitle` on `:`/`.` — remove entirely vs replace with a space.
+- **No-issue case:** force the name back to the bare base (self-healing).
+- **`sanitizeTitle` on `:`/`.`:** replace each with a space, then collapse/trim.
