@@ -15,6 +15,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/focuser"
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
@@ -33,6 +34,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/worktree"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -47,6 +49,8 @@ type BaseDeps struct {
 	Json       json.Json
 	Replacer   replacer.Replacer
 	Git        git.Git
+	Github     github.Github
+	Focuser    focuser.Focuser
 	Dir        dir.Dir
 	Zoxide     zoxide.Zoxide
 	Tmuxinator tmuxinator.Tmuxinator
@@ -66,6 +70,7 @@ type Deps struct {
 	Icon          icon.Icon
 	Previewer     previewer.Previewer
 	Cloner        cloner.Cloner
+	Worktree      worktree.Worktree
 	Mkdirer       mkdirer.Mkdirer
 }
 
@@ -82,6 +87,8 @@ func NewBaseDeps() *BaseDeps {
 	r := replacer.NewReplacer()
 
 	g := git.NewGit(sh)
+	gh := github.NewGithub(sh)
+	fo := focuser.NewFocuser(runtime, sh)
 	d := dir.NewDir(os, g, path)
 	ti := tmuxinator.NewTmuxinator(sh)
 
@@ -95,6 +102,8 @@ func NewBaseDeps() *BaseDeps {
 		Json:       j,
 		Replacer:   r,
 		Git:        g,
+		Github:     gh,
+		Focuser:    fo,
 		Dir:        d,
 		Tmuxinator: ti,
 	}
@@ -128,10 +137,11 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
-	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Runtime, focuser.NewFocuser(b.Runtime, b.Shell))
+	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Runtime, b.Focuser)
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
+	wt := worktree.NewWorktree(config, b.Git, b.Github, c, b.Home, b.Os, b.Path)
 	pk := picker.NewPicker(config)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
@@ -148,6 +158,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		Icon:          ic,
 		Previewer:     p,
 		Cloner:        cl,
+		Worktree:      wt,
 		Mkdirer:       mk,
 	}, nil
 }
