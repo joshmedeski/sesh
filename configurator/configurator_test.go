@@ -69,6 +69,10 @@ func (o *testOs) MkdirAll(path string, perm os.FileMode) error {
 	return nil
 }
 
+func (o *testOs) Getwd() (string, error) {
+	return "", nil
+}
+
 func testdataPath(name string) string {
 	abs, _ := filepath.Abs(filepath.Join("testdata", name))
 	return abs
