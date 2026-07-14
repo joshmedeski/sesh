@@ -114,6 +114,64 @@ func TestCreateForeignPrDetachCheckout(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestCreateResolvesConfigFromCwd(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+
+	// No --repo override: resolveConfig detects the repo from cwd via
+	// `git worktree list --porcelain` on the main worktree.
+	mOs.EXPECT().Getwd().Return("/repo/w/2345", nil)
+	mGit.EXPECT().WorktreeList("/repo/w/2345").Return(true,
+		"worktree /repo\nHEAD abc\nbranch refs/heads/main\n\n"+
+			"worktree /repo/w/2345\nHEAD def\nbranch refs/heads/jam/2345-1\n",
+		nil)
+
+	// Not a PR => issue path
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+
+	mOs.EXPECT().Stat("/repo/w/2345").Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	_, err := w.Create(model.WorktreeCreateOpts{Number: 2345, Switch: true})
+	require.NoError(t, err)
+}
+
+func TestCreateOwnPrFirstIssueRefFallback(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+
+	// PR authored by me, no ClosingIssues, but body references "#7"
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 100).
+		Return(github.PullRequest{Author: "me", Body: "fixes #7"}, true, nil)
+	mGh.EXPECT().CurrentUser().Return("me", nil)
+
+	// Keyed on issue 7 scanned from title+body, normal branch create (not detached/PrCheckout)
+	mOs.EXPECT().Stat("/repo/w/7").Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/7", "jam/7-1", "origin/main").Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/7", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	_, err := w.Create(model.WorktreeCreateOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
+	require.NoError(t, err)
+}
+
 func TestCreateNoConfigMatch(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)

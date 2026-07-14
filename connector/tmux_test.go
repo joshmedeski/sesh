@@ -9,7 +9,6 @@ import (
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
-	"github.com/joshmedeski/sesh/v2/runtimewrap"
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
@@ -39,7 +38,6 @@ func TestEstablishTmuxConnection(t *testing.T) {
 		mockTmux,
 		mockZoxide,
 		mockTmuxinator,
-		nil,
 		nil,
 	}
 	mockTmux.On("AttachSession", mock.Anything).Return("attaching", nil)
@@ -71,7 +69,6 @@ func TestEstablishTmuxConnection(t *testing.T) {
 func TestConnectToTmuxDetachedSwitchesClientAndFocuses(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
 	mFocuser := focuser.NewMockFocuser(t)
-	mRuntime := runtimewrap.NewMockRuntime(t)
 
 	// New session path
 	mTmux.EXPECT().NewSession("nutiliti/2345", "/repo/w/2345").Return("", nil)
@@ -87,7 +84,7 @@ func TestConnectToTmuxDetachedSwitchesClientAndFocuses(t *testing.T) {
 
 	c := NewConnector(
 		model.Config{Terminal: "wezterm"},
-		nil, nil, nil, nil, mStartup, mTmux, nil, nil, mRuntime, mFocuser,
+		nil, nil, nil, nil, mStartup, mTmux, nil, nil, mFocuser,
 	).(*RealConnector)
 
 	conn := model.Connection{

@@ -820,9 +820,11 @@ sesh worktree create 2345 --pr                  # force the pull-request path
 sesh worktree create 2345 --switch              # switch (not attach) — for invocation outside tmux
 ```
 
+Each flag also has a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`.
+
 `sesh` auto-detects whether `<number>` is an issue or a PR via `gh`. For your own
 PRs it resolves the closing issue (falling back to the first `#N` reference in the
-PR body); for others' PRs it creates a detached worktree and runs `gh pr checkout`.
+PR title or body); for others' PRs it creates a detached worktree and runs `gh pr checkout`.
 When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
 the new session and (on macOS) activates the `terminal` app.
 
