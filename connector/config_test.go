@@ -36,6 +36,8 @@ func TestConfigStrategy(t *testing.T) {
 		mockTmux,
 		mockZoxide,
 		mockTmuxinator,
+		nil,
+		nil,
 	}
 	mockTmux.On("AttachSession", mock.Anything).Return("attaching", nil)
 	mockZoxide.On("Add", mock.Anything).Return(nil)

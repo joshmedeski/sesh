@@ -2,10 +2,12 @@ package connector
 
 import (
 	"github.com/joshmedeski/sesh/v2/dir"
+	"github.com/joshmedeski/sesh/v2/focuser"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
+	"github.com/joshmedeski/sesh/v2/runtimewrap"
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
@@ -26,6 +28,8 @@ type RealConnector struct {
 	tmux       tmux.Tmux
 	zoxide     zoxide.Zoxide
 	tmuxinator tmuxinator.Tmuxinator
+	runtime    runtimewrap.Runtime
+	focuser    focuser.Focuser
 }
 
 func NewConnector(
@@ -38,6 +42,8 @@ func NewConnector(
 	tmux tmux.Tmux,
 	zoxide zoxide.Zoxide,
 	tmuxinator tmuxinator.Tmuxinator,
+	runtime runtimewrap.Runtime,
+	focuser focuser.Focuser,
 ) Connector {
 	return &RealConnector{
 		config,
@@ -49,5 +55,7 @@ func NewConnector(
 		tmux,
 		zoxide,
 		tmuxinator,
+		runtime,
+		focuser,
 	}
 }

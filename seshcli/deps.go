@@ -13,6 +13,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
+	"github.com/joshmedeski/sesh/v2/focuser"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
@@ -127,7 +128,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
-	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator)
+	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Runtime, focuser.NewFocuser(b.Runtime, b.Shell))
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)

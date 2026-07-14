@@ -35,6 +35,8 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		mockTmux,
 		mockZoxide,
 		mockTmuxinator,
+		nil,
+		nil,
 	}
 
 	t.Run("should connect via wildcard when pattern matches a directory", func(t *testing.T) {

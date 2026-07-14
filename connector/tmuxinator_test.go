@@ -30,6 +30,8 @@ func newConnectorWithMocks() (*RealConnector, *tmuxinator.MockTmuxinator, *tmux.
 		mockTmux,
 		new(zoxide.MockZoxide),
 		mockTmuxinator,
+		nil,
+		nil,
 	}
 	return c, mockTmuxinator, mockTmux
 }
