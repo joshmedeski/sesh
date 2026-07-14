@@ -780,6 +780,52 @@ Available fields:
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 
+### Worktrees
+
+`sesh worktree create <number>` creates (or reconnects to) a git worktree for a
+GitHub issue or pull request and connects to it as a tmux session. Configure each
+repository with a `[[worktree]]` block:
+
+```toml
+# macOS: activate this terminal app after connecting from outside tmux
+terminal = "wezterm"
+
+[[worktree]]
+name = "nutiliti/nutiliti"          # GitHub org/repo
+path = "~/c/nu"                      # local repo root
+worktree_dir = "w"                   # worktrees go here (relative to path, or absolute); default ".wk"
+branch_template = "jam/{number}-1"   # {number} is the issue/PR number; default "{number}"
+base_branch = "origin/main"          # branch new worktrees from this; default "origin/main"
+fetch = true                         # git fetch before creating; default true
+startup_command = "nu_setup"         # runs when the worktree session is created
+
+[[worktree]]
+name = "joshmedeski/joshmedeski.com"
+path = "~/c/joshmedeski_com"
+worktree_dir = "w"
+startup_command = "pnpm i"
+
+[[worktree]]
+name = "joshmedeski/sesh"
+path = "~/c/sesh"
+worktree_dir = "w"
+```
+
+Usage:
+
+```bash
+sesh worktree create 2345                       # detect repo from cwd, create worktree for issue/PR 2345
+sesh worktree create 2345 --repo joshmedeski/sesh   # target a repo explicitly (no cwd needed)
+sesh worktree create 2345 --pr                  # force the pull-request path
+sesh worktree create 2345 --switch              # switch (not attach) — for invocation outside tmux
+```
+
+`sesh` auto-detects whether `<number>` is an issue or a PR via `gh`. For your own
+PRs it resolves the closing issue (falling back to the first `#N` reference in the
+PR body); for others' PRs it creates a detached worktree and runs `gh pr checkout`.
+When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
+the new session and (on macOS) activates the `terminal` app.
+
 ### Listing Configurations
 
 Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
