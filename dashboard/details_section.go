@@ -2,8 +2,6 @@ package dashboard
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -42,7 +40,6 @@ type DetailsSection struct {
 	hoveredWindowIdx    []string
 	hoveredVenvName     string
 	hoveredVenvActive   string
-	// hoveredUptime tea.Cmd
 }
 
 func NewDetailsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -60,7 +57,7 @@ func (s *DetailsSection) Chosen() string  { return "" }
 func (s *DetailsSection) WindowNames(name string) tea.Cmd {
 	return func() tea.Msg {
 		format := "#{window_index}|#{window_active}|#{pane_current_command}"
-		out, err := exec.Command("tmux", "list-windows", "-t", name, "-F", format).Output()
+		out, err := runCommand("tmux", "list-windows", "-t", name, "-F", format)
 		if err != nil {
 			return windowNamesLoadedMsg{}
 		}
@@ -68,11 +65,11 @@ func (s *DetailsSection) WindowNames(name string) tea.Cmd {
 		var names []string
 		var active string
 		var idx []string
-		for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
+		for line := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
 			parts := strings.Split(line, "|")
 			if len(parts) >= 3 {
 				if parts[1] == "1" {
-					active = parts[1]
+					active = parts[2]
 				}
 				names = append(names, parts[2])
 				idx = append(idx, parts[0])
@@ -89,27 +86,20 @@ func (s *DetailsSection) VenvCheck(path string) tea.Cmd {
 			return venvLoadedMsg{active: "no", name: "none"}
 		}
 
-		// Expand paths like "~" if necessary, otherwise use as-is
 		targetPath := path
 		if strings.HasPrefix(targetPath, "~") {
-			home, err := os.UserHomeDir()
-			if err == nil {
-				targetPath = filepath.Join(home, targetPath[1:])
-			}
+			targetPath = filepath.Join(s.deps.HomeDir, targetPath[1:])
 		}
 
-		// Common virtual environment folder names
 		venvDirs := []string{".venv", "venv", "env"}
 
 		for _, dir := range venvDirs {
 			fullPath := filepath.Join(targetPath, dir)
-			info, err := os.Stat(fullPath)
-
-			// If the directory exists, we found an inactive/available venv for this path
-			if err == nil && info.IsDir() {
+			info, err := filepath.Glob(fullPath)
+			if err == nil && len(info) > 0 {
 				return venvLoadedMsg{
 					active: "yes",
-					name:   dir, // returns ".venv", "venv", etc.
+					name:   dir,
 				}
 			}
 		}
@@ -148,7 +138,7 @@ func (s *DetailsSection) View(width, height int) string {
 	s.viewHeight = height
 
 	// Guard: Minimum layout size checks
-	const minWidth = 64
+	const minWidth = 30
 	if width < minWidth {
 		msg := fmt.Sprintf("  Enlarge pane to see sessions (need ≥%d cols, have %d)", minWidth, width)
 		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render(msg)
@@ -169,53 +159,44 @@ func (s *DetailsSection) View(width, height int) string {
 		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}).Render(s.config.Title)
 	}
 
-	var b strings.Builder
+	var lines []string
 
-	// Style Definitions
-	sectionStyle := NewStyle(internalWidth, internalWidth, 1, 1, 15, false, []int{0, 0, 0, 0})
-	b.WriteString(sectionStyle.Render(s.config.Title))
-	b.WriteString("\n\n")
+	lines = append(lines, s.config.Title)
+	lines = append(lines, "")
+	lines = append(lines, fmt.Sprintf("  Name: %s", s.hoveredName))
+	lines = append(lines, fmt.Sprintf("  Path: %s", s.hoveredPath))
 
-	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true).Padding(0, 0, 0, 1)
-	valueStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
-
-	nameRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Name: "), valueStyle.Render(s.hoveredName))
-	pathRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Path: "), valueStyle.Render(s.hoveredPath))
-	windowsRow := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Windows: "))
-	venvCheck := lipgloss.JoinHorizontal(lipgloss.Left, labelStyle.Render("Venv: "), valueStyle.Render(s.hoveredVenvName))
-
-	b.WriteString(nameRow)
-	b.WriteString("\n")
-	b.WriteString(pathRow)
-	b.WriteString("\n")
-	b.WriteString(windowsRow)
-	for i, w := range s.hoveredWindowNames {
+	winLabel := "  Windows:"
+	if len(s.hoveredWindowNames) == 0 {
+		lines = append(lines, winLabel)
+	} else if len(s.hoveredWindowNames) == 1 {
 		idx := ""
-		row := ""
-		if i < len(s.hoveredWindowIdx) {
-			idx = s.hoveredWindowIdx[i]
+		if len(s.hoveredWindowIdx) > 0 {
+			idx = s.hoveredWindowIdx[0]
 		}
-		if len(s.hoveredWindowNames) == 1 {
-			row = lipgloss.JoinHorizontal(lipgloss.Left,
-				labelStyle.Render(fmt.Sprintf("%s.", idx)),
-				valueStyle.Render(fmt.Sprintf("%s", w)),
-			)
-		} else {
-			row = lipgloss.JoinHorizontal(lipgloss.Left,
-				labelStyle.Render(fmt.Sprintf("%s.", idx)),
-				valueStyle.Render(fmt.Sprintf("%s | ", w)),
-			)
+		lines = append(lines, fmt.Sprintf("%s %s.%s", winLabel, idx, s.hoveredWindowNames[0]))
+	} else {
+		lines = append(lines, winLabel)
+		for i, w := range s.hoveredWindowNames {
+			idx := ""
+			if i < len(s.hoveredWindowIdx) {
+				idx = s.hoveredWindowIdx[i]
+			}
+			lines = append(lines, fmt.Sprintf("    %s.%s", idx, w))
 		}
-		b.WriteString(row)
-	}
-	b.WriteString("\n")
-	b.WriteString(venvCheck)
-
-	lines := strings.Count(b.String(), "\n")
-	for i := lines + 1; i < internalHeight; i++ {
-		b.WriteString("\n")
 	}
 
-	details := NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}).Render(b.String())
-	return details
+	lines = append(lines, fmt.Sprintf("  Venv: %s", s.hoveredVenvName))
+
+	maxContentLines := internalHeight
+	if len(lines) > maxContentLines {
+		lines = lines[:maxContentLines]
+	}
+
+	for len(lines) < maxContentLines {
+		lines = append(lines, "")
+	}
+
+	content := strings.Join(lines, "\n")
+	return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}).Render(content)
 }

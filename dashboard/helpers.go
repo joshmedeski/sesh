@@ -10,7 +10,7 @@ func NewStyle(width int, maxWidth int, height int, maxHeight int, color int, fai
 		Width(width).
 		MaxWidth(maxWidth).
 		Height(height).
-		// MaxHeight(maxHeight).
+		MaxHeight(maxHeight).
 		Foreground(lipgloss.ANSIColor(color)).
 		Faint(faint).
 		Padding(padding[0], padding[1], padding[2], padding[3])
@@ -22,7 +22,7 @@ func NewStyleBorder(width int, maxWidth int, height int, maxHeight int, color in
 		Width(width).
 		MaxWidth(maxWidth).
 		Height(height).
-		// MaxHeight(maxHeight).
+		MaxHeight(maxHeight).
 		Foreground(lipgloss.ANSIColor(color)).
 		Faint(faint).
 		Padding(padding[0], padding[1], padding[2], padding[3]).

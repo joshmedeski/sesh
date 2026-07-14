@@ -33,7 +33,7 @@ func NewDashboardCommand(base *BaseDeps) *cobra.Command {
 				return fmt.Errorf("couldn't get home directory: %w", err)
 			}
 
-			m := dashboard.New(deps.Config.Dashboard, deps.Tmux, deps.Lister, deps.Git, deps.Connector, homeDir)
+			m := dashboard.New(deps.Config.Dashboard, deps.Tmux, deps.Lister, deps.Git, deps.Connector, deps.Shell, homeDir)
 			prog := tea.NewProgram(m)
 			result, err := prog.Run()
 			if err != nil {

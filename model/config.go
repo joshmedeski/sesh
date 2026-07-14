@@ -60,12 +60,39 @@ type (
 		Type   string           `toml:"type"`
 		Title  string           `toml:"title"`
 		Width  float64          `toml:"width"`
+		Row    int              `toml:"row"`
 		Groups []DashboardGroup `toml:"groups,omitempty"`
+		SSH    []SSHHostConfig  `toml:"ssh,omitempty"`
+		Custom CustomConfig     `toml:"custom"`
+		Docker DockerConfig     `toml:"docker"`
+		Git    GitConfig         `toml:"git"`
 	}
 
 	DashboardGroup struct {
 		Name     string   `toml:"name"`
 		Patterns []string `toml:"patterns"`
+	}
+
+	SSHHostConfig struct {
+		Name     string `toml:"name"`
+		Host     string `toml:"host"`
+		Port     int    `toml:"port"`
+		Username string `toml:"username"`
+	}
+
+	CustomConfig struct {
+		Command string `toml:"command"`
+		Refresh int    `toml:"refresh"`
+	}
+
+	DockerConfig struct {
+		All    bool     `toml:"all"`
+		Filters []string `toml:"filters"`
+	}
+
+	GitConfig struct {
+		Paths   []string `toml:"paths"`
+		Refresh int      `toml:"refresh"`
 	}
 
 	WildcardConfig struct {

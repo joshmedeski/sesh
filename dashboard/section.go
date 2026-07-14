@@ -6,6 +6,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
 )
 
@@ -24,6 +25,7 @@ type SectionDeps struct {
 	Lister    lister.Lister
 	Git       git.Git
 	Connector connector.Connector
+	Shell     shell.Shell
 	HomeDir   string
 }
 
@@ -31,16 +33,15 @@ type SectionFactory func(cfg model.DashboardSectionConfig, deps SectionDeps) Sec
 
 type Registry map[string]SectionFactory
 
-// TODO: add more sections eg. system, ssh, etc.
 var registry = Registry{
 	"sessions": NewSessionsSection,
 	"details":  NewDetailsSection,
 	"system":   NewSystemSection,
 	"ssh":      NewSSHSection,
-	// "git":      NewGitSection,
-	// "aiagent":  NewAiAgentSection,
-	// "custom":   NewCustomSection,
-	// "docker":   NewDockerSection,
+	"git":      NewGitSection,
+	"aiagent":  NewAIAgentSection,
+	"custom":   NewCustomSection,
+	"docker":   NewDockerSection,
 }
 
 func BuildSections(cfg model.DashboardConfig, deps SectionDeps) []Section {

@@ -9,6 +9,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
 )
 
@@ -18,40 +19,74 @@ type Model struct {
 	focused       int
 	width         int
 	height        int
-	row           int
 	tooSmall      bool
 	chosen        string
 	quit          bool
 	totalSessions int
 	sectionWidths []int
 	contentHeight int
+	rows          [][]int // rows[rowIdx] = []section indices
 }
 
 type keyMap struct {
-	Quit       key.Binding
-	FocusLeft  key.Binding
-	FocusRight key.Binding
-	Select     key.Binding
+	Quit   key.Binding
+	Next   key.Binding
+	Prev   key.Binding
+	Select key.Binding
 }
 
 var keys = keyMap{
-	Quit:       key.NewBinding(key.WithKeys("q", "esc", "ctrl+c"), key.WithHelp("q", "quit")),
-	FocusLeft:  key.NewBinding(key.WithKeys("left", "h"), key.WithHelp("←/h", "focus left")),
-	FocusRight: key.NewBinding(key.WithKeys("right", "l"), key.WithHelp("→/l", "focus right")),
-	Select:     key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
+	Quit:   key.NewBinding(key.WithKeys("q", "esc", "ctrl+c"), key.WithHelp("q", "quit")),
+	Next:   key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next section")),
+	Prev:   key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("shift+tab", "prev section")),
+	Select: key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
 }
 
-func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, homeDir string) Model {
+func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, sh shell.Shell, homeDir string) Model {
 	deps := SectionDeps{
 		Tmux:      tmux,
 		Lister:    lister,
 		Git:       git,
 		Connector: connector,
+		Shell:     sh,
 		HomeDir:   homeDir,
 	}
 
-	// build sections based on config and dependencies
 	sections := BuildSections(config, deps)
+
+	// Build row assignments from config
+	sectionRows := make([]int, len(sections))
+	for i, sc := range config.Sections {
+		if i >= len(sections) {
+			break
+		}
+		sectionRows[i] = sc.Row
+	}
+	// For default sections (no config), all go to row 0
+	for i := len(config.Sections); i < len(sections); i++ {
+		sectionRows[i] = 0
+	}
+
+	// Group sections by row
+	rowMap := make(map[int][]int)
+	for i, row := range sectionRows {
+		rowMap[row] = append(rowMap[row], i)
+	}
+	// Sort rows by key for stable ordering
+	var rows [][]int
+	for {
+		minRow := -1
+		for r := range rowMap {
+			if minRow == -1 || r < minRow {
+				minRow = r
+			}
+		}
+		if minRow == -1 {
+			break
+		}
+		rows = append(rows, rowMap[minRow])
+		delete(rowMap, minRow)
+	}
 
 	return Model{
 		config:        config,
@@ -60,6 +95,7 @@ func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git
 		width:         80,
 		height:        24,
 		contentHeight: 20,
+		rows:          rows,
 	}
 }
 
@@ -79,84 +115,103 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-		// Check width and height constraints
-		// with early return if too small
 		if m.width < 20 || m.height < 5 {
 			m.tooSmall = true
 			return m, tea.Quit
 		}
 		m.tooSmall = false
 
-		// Set footer height to 4 lines
-		// and calculate available content height
 		headerFooterHeight := 4
 		contentHeight := max(m.height-headerFooterHeight, 1)
-
-		// Allocate pixel widths to each section
-		n := len(m.sections)
-		sepCount := max(n-1, 0)
-		availableWidth := m.width - sepCount // Subtract separators
-		pw := make([]int, n)
-		allocated := 0
-
-		// Calculate available width for each section
-		for i, s := range m.sections {
-			if w := s.Width(); w > 0 {
-				pw[i] = int(float64(availableWidth) * w)
-				allocated += pw[i]
-			}
-		}
-
-		// Calculate remaining available width
-		remaining := availableWidth - allocated
-		flexCount := 0
-		for _, p := range pw {
-			if p == 0 {
-				flexCount++
-			}
-		}
-
-		// Distribute remaining width to flex sections
-		if flexCount > 0 {
-			each := remaining / flexCount
-			for i := range pw {
-				if pw[i] == 0 {
-					pw[i] = each
-					remaining -= each
-				}
-			}
-			for i := n - 1; i >= 0 && remaining > 0; i-- {
-				if pw[i] == each {
-					pw[i] += remaining
-					remaining--
-				}
-			}
-		} else if remaining > 0 {
-			pw[n-1] += remaining
-		}
-
-		// Update each section's dimensions directly
-		m.sectionWidths = pw
 		m.contentHeight = contentHeight
+
+		// Calculate heights per row (equal distribution)
+		numRows := len(m.rows)
+		if numRows == 0 {
+			numRows = 1
+		}
+		// Separators between rows cost (numRows - 1) lines
+		sepLines := max(numRows-1, 0)
+		availableForRows := contentHeight - sepLines
+		if availableForRows < numRows {
+			availableForRows = numRows
+		}
+		// Calculate widths per-row
+		m.sectionWidths = make([]int, len(m.sections))
+		for _, rowSections := range m.rows {
+			n := len(rowSections)
+			sepCount := max(n-1, 0)
+			availableWidth := m.width - sepCount
+			pw := make([]int, n)
+
+			flexCount := 0
+			totalFraction := 0.0
+			for _, si := range rowSections {
+				if w := m.sections[si].Width(); w > 0 {
+					totalFraction += w
+				} else {
+					flexCount++
+				}
+			}
+
+			scale := 1.0
+			if totalFraction > 1.0 {
+				scale = 1.0 / totalFraction
+			}
+
+			allocated := 0
+			for j, si := range rowSections {
+				if w := m.sections[si].Width(); w > 0 {
+					pw[j] = int(float64(availableWidth) * w * scale)
+					allocated += pw[j]
+				}
+			}
+
+			remaining := availableWidth - allocated
+			if flexCount > 0 {
+				each := remaining / flexCount
+				for j := range pw {
+					if pw[j] == 0 {
+						pw[j] = each
+						remaining -= each
+					}
+				}
+				for j := n - 1; j >= 0 && remaining > 0; j-- {
+					if pw[j] == each {
+						pw[j] += remaining
+						remaining--
+					}
+				}
+			} else if remaining > 0 {
+				pw[n-1] += remaining
+			}
+
+			for j, si := range rowSections {
+				m.sectionWidths[si] = pw[j]
+			}
+		}
 
 		return m, nil
 
-	// Handle keypresses
 	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, keys.Quit):
 			m.quit = true
 			return m, tea.Quit
-		case key.Matches(msg, keys.FocusLeft):
-			m.focused--
-			if m.focused < 0 {
-				m.focused = len(m.sections) - 1
+
+		case key.Matches(msg, keys.Next):
+			if len(m.sections) > 0 {
+				m.focused = (m.focused + 1) % len(m.sections)
 			}
-		case key.Matches(msg, keys.FocusRight):
-			m.focused++
-			if m.focused >= len(m.sections) {
-				m.focused = 0
+
+		case key.Matches(msg, keys.Prev):
+			if len(m.sections) > 0 {
+				m.focused--
+				if m.focused < 0 {
+					m.focused = len(m.sections) - 1
+				}
 			}
+
 		case key.Matches(msg, keys.Select):
 			if len(m.sections) > 0 {
 				m.sections[m.focused], cmd = m.sections[m.focused].Update(msg)
@@ -165,6 +220,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 			}
+
 		default:
 			if len(m.sections) > 0 {
 				m.sections[m.focused], cmd = m.sections[m.focused].Update(msg)
@@ -178,7 +234,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m, syncCmd := m.syncHoveredSession()
 		return m, tea.Batch(cmd, syncCmd)
 
-	// Non-keypress messages -> all sections
 	default:
 		if len(m.sections) > 0 {
 			var cmds []tea.Cmd
@@ -224,7 +279,6 @@ func (m Model) View() tea.View {
 		return tea.NewView("Terminal too small for dashboard")
 	}
 
-	// Render Header & Footer strings
 	title := m.config.Title
 	if title == "" {
 		title = "SESH COMMAND CENTER"
@@ -232,40 +286,51 @@ func (m Model) View() tea.View {
 	header := renderHeader(title, m.totalSessions, m.width)
 	footer := renderFooter(m.width)
 
-	// Render and join sub-sections horizontally
-	// TODO: write better logic to handle different section types
-	// this just renders everything as a single column
-	// for now, but we can add a column-based layout in the future
-	var views []string
-	for i, section := range m.sections {
-		w := m.width
-		h := m.height
-		if m.sectionWidths != nil && i < len(m.sectionWidths) {
-			w = m.sectionWidths[i]
+	numRows := len(m.rows)
+	if numRows == 0 {
+		numRows = 1
+	}
+	sepLines := max(numRows-1, 0)
+	availableForRows := m.contentHeight - sepLines
+	if availableForRows < numRows {
+		availableForRows = numRows
+	}
+	baseHeight := availableForRows / numRows
+	extra := availableForRows - baseHeight*numRows
+
+	// Render each row horizontally, then stack rows vertically
+	var rowViews []string
+	for ri, rowSections := range m.rows {
+		h := baseHeight
+		if ri < extra {
+			h++
 		}
-		if m.contentHeight > 0 {
-			h = m.contentHeight
+		var views []string
+		for _, si := range rowSections {
+			w := m.width
+			if m.sectionWidths != nil && si < len(m.sectionWidths) && m.sectionWidths[si] > 0 {
+				w = m.sectionWidths[si]
+			}
+			if v := m.sections[si].View(w, h); v != "" {
+				views = append(views, v)
+			}
 		}
-		if v := section.View(w, h); v != "" {
-			views = append(views, v)
+		if len(views) > 0 {
+			rowViews = append(rowViews, lipgloss.JoinHorizontal(lipgloss.Top, views...))
 		}
 	}
 
-	// Combine them side-by-side using Lipgloss
-	mainContent := lipgloss.JoinHorizontal(lipgloss.Top, views...)
+	mainContent := lipgloss.JoinVertical(lipgloss.Top, rowViews...)
 
-	// Stack everything vertically
 	ui := lipgloss.JoinVertical(lipgloss.Top, header, mainContent, footer)
 
-	// Force the layout to exactly fit the terminal window using Lipgloss padding
 	finalString := lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
-		// MaxHeight(m.height).
 		Render(ui)
 
 	v := tea.NewView(finalString)
-	v.AltScreen = true // Full-screen mode
+	v.AltScreen = true
 	return v
 }
 

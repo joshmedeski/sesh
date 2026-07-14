@@ -207,15 +207,20 @@
       "type": "object",
       "description": "Settings for the Sesh session dashboard",
       "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title displayed in the dashboard header",
+          "default": "SESH COMMAND CENTER"
+        },
         "sections": {
           "type": "array",
-          "description": "Dashboard sections to display",
+          "description": "Dashboard sections to display (order determines layout position)",
           "items": {
             "type": "object",
             "properties": {
               "type": {
                 "type": "string",
-                "description": "Section type ('sessions' or 'details')"
+                "description": "Section type: 'sessions', 'details', 'system', 'ssh', 'git', 'aiagent', 'custom', or 'docker'"
               },
               "title": {
                 "type": "string",
@@ -226,9 +231,14 @@
                 "description": "Fraction of terminal width for this section (0.0–1.0, default 0.0 = auto)",
                 "default": 0.0
               },
+              "row": {
+                "type": "integer",
+                "description": "Row index for vertical stacking. Sections with the same row are side by side; different rows stack vertically. Default 0.",
+                "default": 0
+              },
               "groups": {
                 "type": "array",
-                "description": "Session groups within this section",
+                "description": "Session groups within a 'sessions' section",
                 "items": {
                   "type": "object",
                   "properties": {
@@ -246,36 +256,91 @@
                   },
                   "additionalProperties": false
                 }
-              }
-              "ssh" : {
-                  "type": "array",
-                  "description": "SSH hosts to display in the dashboard",
-                  "items": {
-                      "type": "object",
-                      "properties": {
-                          "name": {
-                              "type": "string",
-                              "description": "Display name for the host"
-                          },
-                          "host": {
-                              "type": "string",
-                              "description": "Hostname or IP address"
-                          },
-                          "port": {
-                              "type": "integer",
-                              "description": "SSH port (default 22)"
-                              "default": 22
-                          },
-                          "username": {
-                              "type": "string",
-                              "description": "SSH username"
-                          }
-                      },
-                      "requird": ["host"],
-                      "additionalProperties": false
+              },
+              "ssh": {
+                "type": "array",
+                "description": "SSH hosts to display in an 'ssh' section",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Display name for the host"
+                    },
+                    "host": {
+                      "type": "string",
+                      "description": "Hostname or IP address"
+                    },
+                    "port": {
+                      "type": "integer",
+                      "description": "SSH port (default 22)",
+                      "default": 22
+                    },
+                    "username": {
+                      "type": "string",
+                      "description": "SSH username"
+                    }
+                  },
+                  "required": ["host"],
+                  "additionalProperties": false
+                }
+              },
+              "custom": {
+                "type": "object",
+                "description": "Configuration for a 'custom' section that runs a command",
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "description": "Shell command to execute and display output"
+                  },
+                  "refresh": {
+                    "type": "integer",
+                    "description": "Refresh interval in seconds (0 = no auto-refresh)",
+                    "default": 0
                   }
+                },
+                "additionalProperties": false
+              },
+              "docker": {
+                "type": "object",
+                "description": "Configuration for a 'docker' section showing containers",
+                "properties": {
+                  "all": {
+                    "type": "boolean",
+                    "description": "Show all containers including stopped ones",
+                    "default": false
+                  },
+                  "filters": {
+                    "type": "array",
+                    "description": "Docker filter expressions (e.g. 'status=running')",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "git": {
+                "type": "object",
+                "description": "Configuration for a 'git' section showing repository status",
+                "properties": {
+                  "paths": {
+                    "type": "array",
+                    "description": "Repository paths to monitor (supports ~ for home directory)",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "refresh": {
+                    "type": "integer",
+                    "description": "Refresh interval in seconds (0 = no auto-refresh)",
+                    "default": 0
+                  }
+                },
+                "additionalProperties": false
               }
             },
+            "required": ["type"],
             "additionalProperties": false
           }
         }
