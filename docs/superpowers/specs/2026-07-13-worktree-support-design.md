@@ -38,6 +38,15 @@ startup_command = "nu_setup"         # runs on connect (reuses existing startup 
 Field defaults: `worktree_dir` → `.wk`, `branch_template` → `{number}`,
 `base_branch` → `origin/main`, `fetch` → `true`. `path` supports `~` expansion.
 
+### Top-level `terminal` option
+
+```toml
+terminal = "wezterm"   # macOS: osascript activates this app after an out-of-tmux connect
+```
+
+Added to `Config` as `Terminal string \`toml:"terminal"\``. General-purpose (not
+worktree-scoped) so any connect benefits. Empty → no activation.
+
 ### Go model
 
 ```go
@@ -86,19 +95,43 @@ Ported from `browser-dispatch`:
    fall back to a PR-branch checkout keyed on the PR number.
 4. Existing target dir + PR path → `gh pr checkout` + `git pull --ff-only` before connecting.
 
+## Out-of-tmux switch + terminal focus
+
+Ported from the tail of `browser-dispatch` (parts 4 & 5). Folded into the connect/switch
+path — **not** the worktree service — so plain `sesh connect --switch` invoked from
+osascript benefits too. It's a general fix, not worktree-specific.
+
+Triggered only when `opts.Switch` is true **and** `$TMUX` is empty (the exact "invoked from
+osascript, no client to act on" condition):
+
+```
+after session created/attached:
+  if opts.Switch && os.Getenv("TMUX") == "":
+      client := tmux list-clients → first #{client_name}
+      if client != "": tmux switch-client -c <client> -t <session>        # part 4
+      if runtime.GOOS == "darwin" && cfg.Terminal != "":
+          osascript -e 'tell application "<terminal>" to activate'        # part 5
+```
+
+sesh already knows the target session name, so it switch-clients directly rather than
+re-deriving it from the worktree path like the bash does. New plumbing: a mockable
+`osascript`/activate capability (macOS-gated via `runtime.GOOS`, wrapped like the other
+`*wrap` packages), and `tmux` methods `ListClients()` + `SwitchClient(client, session)`.
+
 ## Architecture
 
 Follows the existing `cloner` pattern (external git op → derive path → `Connect`).
 
 | Layer | File | Responsibility |
 |---|---|---|
-| Config | `model/config.go`, `sesh.schema.json` | `[[worktree]]` model + schema |
+| Config | `model/config.go`, `sesh.schema.json` | `[[worktree]]` model, top-level `terminal`, schema |
 | Git wrapper | `git/git.go` | `WorktreeAdd`, `Fetch` (+ regen mock) |
 | GitHub wrapper | `github/github.go` | `PrView`, `PrCheckout`, `CurrentUser` (+ regen mock) |
+| Terminal focus | `osawrap/` (new) or `tmux` + connector | `runtime.GOOS` gate, `osascript` activate, `tmux` client switch |
 | Service | `worktree/worktree.go` | `Create(opts)` — orchestrates resolve → gh → git → connect |
 | Command | `seshcli/worktree.go` | cobra `worktree create` |
 | Wiring | `seshcli/deps.go`, `seshcli/root_command.go` | build + register the service/command |
-| Docs | `README.md` | `[[worktree]]` + `sesh worktree` docs |
+| Docs | `README.md` | `[[worktree]]`, `terminal`, `sesh worktree` docs |
 
 The `worktree` service depends on `Config`, `Git`, `Github`, `Connector`, and the path/os
 wrappers — mirroring how `cloner.NewCloner(config, git)` is wired in `BuildAll`.
@@ -134,13 +167,43 @@ sesh worktree create <n> [--repo] [--pr]
   `git_test.go` / `github_test.go` patterns.
 - Regenerate mocks via `just mock`; run `just test`.
 
+## `browser-dispatch` landing map
+
+The six parts of the existing script and where each ends up:
+
+| Part | Lands in |
+|---|---|
+| 1. Repo maps (dirs, prefixes, worktree dirs, setup cmds) | `[[worktree]]` config |
+| 2. `github_worktree()` (issue/PR resolution, `git worktree add`, connect) | `worktree` service |
+| 3. `sesh connect --switch --command` | internal `Connect` |
+| 4. tmux `switch-client` fallback (no `$TMUX`) | connector out-of-tmux switch |
+| 5. `osascript … activate <terminal>` | connector + top-level `terminal` config |
+| 6. Read Helium tab URL + parse `org/repo/kind/number` | thin wrapper (out of scope) |
+
+After 1–5 land in sesh, the wrapper collapses to ~12 lines:
+
+```bash
+#!/usr/bin/env bash
+URL=$(osascript -e 'tell application "Helium" to return URL of active tab of front window' 2>/dev/null) || exit 1
+if [[ "$URL" =~ ^https://github\.com/([^/]+)/([^/]+)/(issues|pull)/([0-9]+) ]]; then
+  org="${BASH_REMATCH[1]}"; repo="${BASH_REMATCH[2]}"; kind="${BASH_REMATCH[3]}"; num="${BASH_REMATCH[4]}"
+  pr=""; [[ "$kind" == "pull" ]] && pr="--pr"
+  sesh worktree create --repo "$org/$repo" $pr --switch "$num"
+else
+  echo "No action for URL: $URL"; exit 1
+fi
+```
+
+The wrapper passes `--pr` (the URL already knows the kind) so sesh skips the gh probe.
+
 ## Scope
 
-**In (v1):** everything above — full dispatch parity for the worktree/gh logic, plus the
-three documented example configs (nutiliti, joshmedeski.com, sesh).
+**In (v1):** everything above — full dispatch parity for the worktree/gh logic, the
+out-of-tmux `switch-client` fallback, macOS terminal activation via the top-level `terminal`
+option, and the three documented example configs (nutiliti, joshmedeski.com, sesh).
 
-**Out (v1):** `sesh worktree list` / `remove` lifecycle commands; macOS/Helium browser
-activation (stays in the thin dispatcher wrapper that calls `sesh worktree create --repo … <n>`).
+**Out (v1):** `sesh worktree list` / `remove` lifecycle commands; reading the browser tab URL
+(part 6 stays in the thin dispatcher wrapper that calls `sesh worktree create --repo … <n>`).
 
 ## Housekeeping
 
