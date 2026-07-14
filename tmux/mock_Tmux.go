@@ -491,72 +491,6 @@ func (_c *MockTmux_NewSession_Call) RunAndReturn(run func(sessionName string, st
 	return _c
 }
 
-// NewWindow provides a mock function for the type MockTmux
-func (_mock *MockTmux) NewWindow(startDir string, name string) (string, error) {
-	ret := _mock.Called(startDir, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for NewWindow")
-	}
-
-	var r0 string
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string, string) (string, error)); ok {
-		return returnFunc(startDir, name)
-	}
-	if returnFunc, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = returnFunc(startDir, name)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-	if returnFunc, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = returnFunc(startDir, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockTmux_NewWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NewWindow'
-type MockTmux_NewWindow_Call struct {
-	*mock.Call
-}
-
-// NewWindow is a helper method to define mock.On call
-//   - startDir string
-//   - name string
-func (_e *MockTmux_Expecter) NewWindow(startDir interface{}, name interface{}) *MockTmux_NewWindow_Call {
-	return &MockTmux_NewWindow_Call{Call: _e.mock.On("NewWindow", startDir, name)}
-}
-
-func (_c *MockTmux_NewWindow_Call) Run(run func(startDir string, name string)) *MockTmux_NewWindow_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
-		if args[0] != nil {
-			arg0 = args[0].(string)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *MockTmux_NewWindow_Call) Return(s string, err error) *MockTmux_NewWindow_Call {
-	_c.Call.Return(s, err)
-	return _c
-}
-
-func (_c *MockTmux_NewWindow_Call) RunAndReturn(run func(startDir string, name string) (string, error)) *MockTmux_NewWindow_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewWindowInSession provides a mock function for the type MockTmux
 func (_mock *MockTmux) NewWindowInSession(name string, startDir string, targetSession string) (string, error) {
 	ret := _mock.Called(name, startDir, targetSession)
@@ -629,55 +563,62 @@ func (_c *MockTmux_NewWindowInSession_Call) RunAndReturn(run func(name string, s
 	return _c
 }
 
-// NextWindow provides a mock function for the type MockTmux
-func (_mock *MockTmux) NextWindow() (string, error) {
-	ret := _mock.Called()
+// NextWindowInSession provides a mock function for the type MockTmux
+func (_mock *MockTmux) NextWindowInSession(targetSession string) (string, error) {
+	ret := _mock.Called(targetSession)
 
 	if len(ret) == 0 {
-		panic("no return value specified for NextWindow")
+		panic("no return value specified for NextWindowInSession")
 	}
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func() (string, error)); ok {
-		return returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(string) (string, error)); ok {
+		return returnFunc(targetSession)
 	}
-	if returnFunc, ok := ret.Get(0).(func() string); ok {
-		r0 = returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(string) string); ok {
+		r0 = returnFunc(targetSession)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func() error); ok {
-		r1 = returnFunc()
+	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
+		r1 = returnFunc(targetSession)
 	} else {
 		r1 = ret.Error(1)
 	}
 	return r0, r1
 }
 
-// MockTmux_NextWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NextWindow'
-type MockTmux_NextWindow_Call struct {
+// MockTmux_NextWindowInSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NextWindowInSession'
+type MockTmux_NextWindowInSession_Call struct {
 	*mock.Call
 }
 
-// NextWindow is a helper method to define mock.On call
-func (_e *MockTmux_Expecter) NextWindow() *MockTmux_NextWindow_Call {
-	return &MockTmux_NextWindow_Call{Call: _e.mock.On("NextWindow")}
+// NextWindowInSession is a helper method to define mock.On call
+//   - targetSession string
+func (_e *MockTmux_Expecter) NextWindowInSession(targetSession interface{}) *MockTmux_NextWindowInSession_Call {
+	return &MockTmux_NextWindowInSession_Call{Call: _e.mock.On("NextWindowInSession", targetSession)}
 }
 
-func (_c *MockTmux_NextWindow_Call) Run(run func()) *MockTmux_NextWindow_Call {
+func (_c *MockTmux_NextWindowInSession_Call) Run(run func(targetSession string)) *MockTmux_NextWindowInSession_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
 
-func (_c *MockTmux_NextWindow_Call) Return(s string, err error) *MockTmux_NextWindow_Call {
+func (_c *MockTmux_NextWindowInSession_Call) Return(s string, err error) *MockTmux_NextWindowInSession_Call {
 	_c.Call.Return(s, err)
 	return _c
 }
 
-func (_c *MockTmux_NextWindow_Call) RunAndReturn(run func() (string, error)) *MockTmux_NextWindow_Call {
+func (_c *MockTmux_NextWindowInSession_Call) RunAndReturn(run func(targetSession string) (string, error)) *MockTmux_NextWindowInSession_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -10,12 +10,12 @@ import (
 
 func NewCloneCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "clone",
+		Use:     "clone <repo> [-- <extra git flags>]",
 		Aliases: []string{"cl"},
 		Short:   "Clone a git repo and connect to it as a session",
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
+			if len(args) < 1 {
 				return errors.New("please provide url to clone")
 			}
 			repo := args[0]
@@ -28,7 +28,13 @@ func NewCloneCommand(base *BaseDeps) *cobra.Command {
 			cmdDir, _ := cmd.Flags().GetString("cmdDir")
 			dir, _ := cmd.Flags().GetString("dir")
 
-			opts := model.GitCloneOptions{CmdDir: cmdDir, Repo: repo, Dir: dir}
+			var gitFlags []string
+			dashIdx := cmd.ArgsLenAtDash()
+			if dashIdx != -1 {
+				gitFlags = args[dashIdx:]
+			}
+
+			opts := model.GitCloneOptions{CmdDir: cmdDir, Repo: repo, Dir: dir, GitFlags: gitFlags}
 			if _, err := deps.Cloner.Clone(opts); err != nil {
 				return err
 			} else {

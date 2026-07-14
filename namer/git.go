@@ -56,18 +56,47 @@ func getGitRootPath(n *RealNamer, path string) (bool, string, error) {
 	return true, rootPath, nil
 }
 
+// gitAnchor returns the path used as the naming anchor for git strategies.
+// When git_namer_use_worktree_root is true, the current worktree's top-level
+// directory (`git rev-parse --show-toplevel`) is used so sibling worktrees
+// (e.g. `git worktree add ../feat`) get named after themselves rather than
+// the main clone. Otherwise the main working tree root is used.
+func gitAnchor(n *RealNamer, path string) (bool, string, error) {
+	if n.config.GitNamerUseWorktreeRoot {
+		isGit, topLevel, err := n.git.ShowTopLevel(path)
+		if err != nil {
+			return false, "", nil
+		}
+		if !isGit || topLevel == "" {
+			return false, "", nil
+		}
+		return true, topLevel, nil
+	}
+	return getGitRootPath(n, path)
+}
+
+// anchorRepoName returns the repo-name segment for a git anchor path, applying
+// git_dir_length when set (mirrors dir_length behavior, but scoped to git).
+func anchorRepoName(n *RealNamer, anchor string) string {
+	if n.config.GitDirLength > 1 {
+		return lastNComponents(anchor, n.config.GitDirLength)
+	}
+	return n.pathwrap.Base(anchor)
+}
+
 // Names a session as <repoName>/<relativePath> where repoName is the basename
-// of the main working tree and relativePath is the input path's offset from it.
+// of the anchor (main working tree or current worktree top-level, depending on
+// config) and relativePath is the input path's offset from that anchor.
 func gitName(n *RealNamer, path string) (string, error) {
-	isGit, rootPath, err := getGitRootPath(n, path)
+	isGit, anchor, err := gitAnchor(n, path)
 	if err != nil {
 		return "", err
 	}
-	if !isGit || rootPath == "" {
+	if !isGit || anchor == "" {
 		return "", nil
 	}
-	repoName := n.pathwrap.Base(rootPath)
-	relativePath := strings.TrimPrefix(path, rootPath)
+	repoName := anchorRepoName(n, anchor)
+	relativePath := strings.TrimPrefix(path, anchor)
 	return repoName + relativePath, nil
 }
 
@@ -75,6 +104,17 @@ func gitName(n *RealNamer, path string) (string, error) {
 // path is derived from the current worktree's top-level directory. This collapses
 // nested subdirectories to their containing worktree (main tree or linked worktree).
 func gitRootName(n *RealNamer, path string) (string, error) {
+	if n.config.GitNamerUseWorktreeRoot {
+		isGit, topLevel, err := n.git.ShowTopLevel(path)
+		if err != nil {
+			return "", nil
+		}
+		if !isGit || topLevel == "" {
+			return "", nil
+		}
+		return anchorRepoName(n, topLevel), nil
+	}
+
 	isGit, rootPath, err := getGitRootPath(n, path)
 	if err != nil {
 		return "", err
@@ -82,7 +122,7 @@ func gitRootName(n *RealNamer, path string) (string, error) {
 	if !isGit || rootPath == "" {
 		return "", nil
 	}
-	repoName := n.pathwrap.Base(rootPath)
+	repoName := anchorRepoName(n, rootPath)
 	_, topLevel, _ := n.git.ShowTopLevel(path)
 	if topLevel == "" {
 		return repoName, nil

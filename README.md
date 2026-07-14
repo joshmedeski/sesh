@@ -30,6 +30,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
 - **Clone and connect** - clone a git repo and start a session in one step
+- **Mkdir and connect** - create a new directory (relative or absolute path) and start a session in one step
 - **Last session switching** - seamlessly bounce between your two most recent sessions
 - **Root session navigation** - jump to the root of a git worktree or repository
 - **Nerd Font icons** - display session type icons in your picker
@@ -390,6 +391,22 @@ Or as a tmux keybind:
 bind-key "W" run-shell "sesh window \"$(sesh window | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
 ```
 
+### Create a directory and connect
+
+`sesh mkdir` (alias `md`) combines `mkdir` and `sesh connect` into a single step: it creates the directory if it doesn't already exist, then connects to it as a session — no need to `cd` into it first or wait for zoxide to pick it up.
+
+```sh
+sesh mkdir my-new-project
+```
+
+`<path>` accepts both **relative** paths (resolved against your current working directory) and **absolute** paths, as well as `~` for your home directory:
+
+```sh
+sesh mkdir my-new-project        # relative to the current directory
+sesh mkdir ~/projects/my-app     # relative to your home directory
+sesh mkdir /Users/josh/dev/api   # absolute path
+```
+
 ## gum + tmux
 
 If you prefer to use [charmbracelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
@@ -532,6 +549,23 @@ tmux_command = "psmux"
 
 This replaces the `tmux` binary in all commands sesh runs (session creation, switching, attaching, etc.). The configured multiplexer must support tmux's CLI interface.
 
+### Custom Frecency Backend (fasd, autojump, etc.)
+
+Sesh uses [zoxide](https://github.com/ajeetdsouza/zoxide) as its default frecency directory-jumping backend, but you can point it at an alternative such as [fasd](https://github.com/clvv/fasd), [fasder](https://github.com/khwang0/fasder), [autojump](https://github.com/wting/autojump), or [memy](https://github.com/xvello/memy) by overriding the commands in a `[frecency]` table. This is useful for tools that track files _and_ directories, unlike zoxide which tracks directories only.
+
+```toml
+[frecency]
+list_command  = "fasd -d -l -R"  # list all tracked entries
+query_command = "fasd -d {}"     # resolve one input to a path
+add_command   = "fasd -A {}"     # record a path after connecting
+```
+
+- The `{}` placeholder is replaced with the query string (`query_command`) or the path (`add_command`), the same substitution used by `preview_command`.
+- `list_command` output is parsed one path per line, most-frecent first. A leading numeric score is detected automatically when present (as with zoxide's `--score`); otherwise the score is `0`.
+- Any command runs as a single binary (no shell), so pipes/redirects aren't supported.
+- Any field you omit falls back to its zoxide default (`zoxide query --list --score`, `zoxide query {}`, `zoxide add {}`), so an absent `[frecency]` table leaves behavior unchanged.
+- The source label in `sesh list` output stays `zoxide`, so existing integrations that read the `--json` output keep working.
+
 ### Schema (Editor Autocomplete)
 
 Sesh provides a [JSON Schema](https://json-schema.org/) for `sesh.toml` that enables autocomplete, validation, and documentation in your editor. This works with any editor that supports the [taplo](https://taplo.tamasfe.dev/) TOML language server.
@@ -629,6 +663,19 @@ The cache is also refreshed automatically after `sesh connect`.
 
 ```toml
 cache = true
+```
+
+Sessions created or killed outside `sesh connect` (e.g. plain `tmux new-session`, closing a session's last window) are missing from the cache until the next stale-hit refresh. To keep the cache current, run `sesh cache refresh` when those events happen — it fetches live data and rewrites the cache, and does nothing when the cache is disabled. With tmux hooks this covers both events:
+
+```sh
+set-hook -g session-created 'run-shell -b "sesh cache refresh"'
+set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
+```
+
+If you use a kill binding in an fzf picker (like `ctrl-d` in the example above), refresh the cache before reloading the list so the killed session disappears immediately:
+
+```sh
+--bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
 ```
 
 ### Picker TUI

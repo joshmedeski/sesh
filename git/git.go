@@ -7,7 +7,7 @@ import (
 type Git interface {
 	ShowTopLevel(name string) (bool, string, error)
 	GitCommonDir(name string) (bool, string, error)
-	Clone(url string, cmdDir string, dir string) (string, error)
+	Clone(url string, cmdDir string, dir string, gitFlags ...string) (string, error)
 	WorktreeList(name string) (bool, string, error)
 	CurrentBranch(path string) (bool, string, error)
 }
@@ -36,11 +36,17 @@ func (g *RealGit) GitCommonDir(path string) (bool, string, error) {
 	return true, out, nil
 }
 
-func (g *RealGit) Clone(url string, cmdDir string, dir string) (string, error) {
-	args := []string{"clone", url}
+func (g *RealGit) Clone(url string, cmdDir string, dir string, gitFlags ...string) (string, error) {
+	args := []string{}
+
 	if cmdDir != "" {
-		args = append([]string{"-C", cmdDir}, args...)
+		args = append(args, "-C", cmdDir)
 	}
+
+	args = append(args, "clone")
+	args = append(args, gitFlags...)
+	args = append(args, url)
+
 	if dir != "" {
 		args = append(args, dir)
 	}

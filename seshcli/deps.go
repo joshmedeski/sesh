@@ -20,6 +20,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/json"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/joshmedeski/sesh/v2/mkdirer"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -66,6 +67,7 @@ type Deps struct {
 	Icon          icon.Icon
 	Previewer     previewer.Previewer
 	Cloner        cloner.Cloner
+	Mkdirer       mkdirer.Mkdirer
 }
 
 // NewBaseDeps constructs all config-free dependencies.
@@ -83,23 +85,21 @@ func NewBaseDeps() *BaseDeps {
 	g := git.NewGit(sh)
 	gh := github.NewGithub(sh, g)
 	d := dir.NewDir(os, g, path)
-	z := zoxide.NewZoxide(sh)
 	ti := tmuxinator.NewTmuxinator(sh)
 
 	return &BaseDeps{
-		Exec:        exec,
-		Os:          os,
-		Path:        path,
-		Runtime:     runtime,
-		Home:        h,
-		Shell:       sh,
-		Json:        j,
-		Replacer:    r,
-		Git:         g,
-		Github:      gh,
-		Dir:         d,
-		Zoxide:      z,
-		Tmuxinator:  ti,
+		Exec:       exec,
+		Os:         os,
+		Path:       path,
+		Runtime:    runtime,
+		Home:       h,
+		Shell:      sh,
+		Json:       j,
+		Replacer:   r,
+		Git:        g,
+		Github:     gh,
+		Dir:        d,
+		Tmuxinator: ti,
 	}
 }
 
@@ -111,6 +111,10 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	}
 
 	slog.Debug("deps: BuildAll", "config", config)
+
+	// Zoxide is the frecency backend; its commands come from config, so it
+	// is constructed here rather than in the config-free NewBaseDeps.
+	b.Zoxide = zoxide.NewZoxide(b.Shell, config.Frecency)
 
 	t := tmux.NewTmux(b.Os, b.Shell, config.TmuxCommand)
 
@@ -132,6 +136,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
 	pk := picker.NewPicker(config)
+	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{
 		BaseDeps:      *b,
@@ -146,6 +151,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		Icon:          ic,
 		Previewer:     p,
 		Cloner:        cl,
+		Mkdirer:       mk,
 	}, nil
 }
 

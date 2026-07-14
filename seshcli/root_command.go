@@ -18,10 +18,12 @@ func NewRootCommand(version string) *cobra.Command {
 	rootCmd.PersistentFlags().StringP("config", "C", "", "path to config file")
 
 	rootCmd.AddCommand(
+		NewCacheCommand(base),
 		NewListCommand(base),
 		NewLastCommand(base),
 		NewConnectCommand(base),
 		NewCloneCommand(base),
+		NewMkdirCommand(base),
 		NewRootSessionCommand(base),
 		NewRenameCommand(base),
 		NewPreviewCommand(base),

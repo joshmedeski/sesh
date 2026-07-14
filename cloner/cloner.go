@@ -27,7 +27,7 @@ func NewCloner(connector connector.Connector, git git.Git) Cloner {
 }
 
 func (c *RealCloner) Clone(opts model.GitCloneOptions) (string, error) {
-	if _, err := c.git.Clone(opts.Repo, opts.CmdDir, opts.Dir); err != nil {
+	if _, err := c.git.Clone(opts.Repo, opts.CmdDir, opts.Dir, opts.GitFlags...); err != nil {
 		return "", err
 	}
 
