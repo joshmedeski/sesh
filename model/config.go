@@ -11,11 +11,13 @@ type (
 		SortOrder               []string             `toml:"sort_order"`
 		WindowConfigs           []WindowConfig       `toml:"window"`
 		WildcardConfigs         []WildcardConfig     `toml:"wildcard"`
+		WorktreeConfigs         []WorktreeConfig     `toml:"worktree"`
 		DirLength               int                  `toml:"dir_length"`
 		GitNamerUseWorktreeRoot bool                 `toml:"git_namer_use_worktree_root"`
 		GitDirLength            int                  `toml:"git_dir_length"`
 		SeparatorAware          bool                 `toml:"separator_aware"`
 		TmuxCommand             string               `toml:"tmux_command"`
+		Terminal                string               `toml:"terminal"`
 		Frecency                FrecencyConfig       `toml:"frecency"`
 		TUI                     TUIConfig            `toml:"tui"`
 	}
@@ -77,5 +79,18 @@ type (
 		DisableStartCommand bool     `toml:"disable_startup_command"`
 		PreviewCommand      string   `toml:"preview_command"`
 		Windows             []string `toml:"windows"`
+	}
+
+	// WorktreeConfig maps a GitHub "org/repo" to a local repository so
+	// `sesh worktree create <number>` knows where to add worktrees, how to
+	// name their branches, and what to run on connect.
+	WorktreeConfig struct {
+		Name           string `toml:"name"`            // GitHub "org/repo"
+		Path           string `toml:"path"`            // local repo root (supports ~)
+		WorktreeDir    string `toml:"worktree_dir"`    // default ".wk"; relative to Path or absolute
+		BranchTemplate string `toml:"branch_template"` // default "{number}"
+		BaseBranch     string `toml:"base_branch"`     // default "origin/main"
+		Fetch          *bool  `toml:"fetch"`           // default true (nil => true)
+		StartupCommand string `toml:"startup_command"` // runs on connect
 	}
 )

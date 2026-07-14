@@ -63,6 +63,10 @@
       "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",
       "default": "tmux"
     },
+    "terminal": {
+      "type": "string",
+      "description": "Terminal emulator app to activate (macOS only) after an out-of-tmux connect, e.g. \"wezterm\""
+    },
     "frecency": {
       "type": "object",
       "description": "Override the frecency directory-jumping backend commands to use an alternative to zoxide (e.g. fasd, autojump, memy). Empty fields fall back to the zoxide defaults.",
@@ -231,6 +235,48 @@
             "items": {
               "type": "string"
             }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "worktree": {
+      "type": "array",
+      "description": "Per-repo git worktree configurations for `sesh worktree`",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "GitHub repository as org/repo"
+          },
+          "path": {
+            "type": "string",
+            "description": "Local repository root (supports ~ for home directory)"
+          },
+          "worktree_dir": {
+            "type": "string",
+            "description": "Where worktrees are created; relative to path or absolute",
+            "default": ".wk"
+          },
+          "branch_template": {
+            "type": "string",
+            "description": "Branch name template; {number} is replaced with the issue/PR number",
+            "default": "{number}"
+          },
+          "base_branch": {
+            "type": "string",
+            "description": "Ref new worktrees branch from",
+            "default": "origin/main"
+          },
+          "fetch": {
+            "type": "boolean",
+            "description": "Run git fetch before creating the worktree",
+            "default": true
+          },
+          "startup_command": {
+            "type": "string",
+            "description": "Shell command to run when connecting to the worktree session"
           }
         },
         "additionalProperties": false
