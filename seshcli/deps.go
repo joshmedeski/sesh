@@ -87,7 +87,7 @@ func NewBaseDeps() *BaseDeps {
 	r := replacer.NewReplacer()
 
 	g := git.NewGit(sh)
-	gh := github.NewGithub(sh)
+	gh := github.NewGithub(sh, g)
 	fo := focuser.NewFocuser(runtime, sh)
 	d := dir.NewDir(os, g, path)
 	ti := tmuxinator.NewTmuxinator(sh)

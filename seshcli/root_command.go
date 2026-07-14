@@ -25,6 +25,7 @@ func NewRootCommand(version string) *cobra.Command {
 		NewCloneCommand(base),
 		NewMkdirCommand(base),
 		NewRootSessionCommand(base),
+		NewRenameCommand(base),
 		NewPreviewCommand(base),
 		NewPickerCommand(base),
 		NewWindowCommand(base),

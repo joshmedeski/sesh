@@ -24,6 +24,7 @@ type Tmux interface {
 	GetCurrentSession() (string, error)
 	ListClients() ([]string, error)
 	SwitchClientTarget(client string, targetSession string) (string, error)
+	RenameSession(target string, newName string) (string, error)
 }
 
 type RealTmux struct {

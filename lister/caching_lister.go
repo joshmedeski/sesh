@@ -175,6 +175,10 @@ func (cl *CachingLister) FindTmuxSession(name string) (model.SeshSession, bool) 
 	return cl.inner.FindTmuxSession(name)
 }
 
+func (cl *CachingLister) FindTmuxSessionByBase(base string) (model.SeshSession, bool) {
+	return cl.inner.FindTmuxSessionByBase(base)
+}
+
 func (cl *CachingLister) GetAttachedTmuxSession() (model.SeshSession, bool) {
 	return cl.inner.GetAttachedTmuxSession()
 }

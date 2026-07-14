@@ -2,6 +2,7 @@ package lister
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -48,6 +49,29 @@ func (l *RealLister) FindTmuxSession(name string) (model.SeshSession, bool) {
 	} else {
 		return model.SeshSession{}, false
 	}
+}
+
+// FindTmuxSessionByBase finds a live tmux session for a namer-produced base
+// name. It prefers an exact name match; failing that it returns the first
+// session whose name is the base followed by the enrichment separator
+// (e.g. "base — issue title"). This keeps reconnection working after a
+// session has been renamed to include its issue title.
+func (l *RealLister) FindTmuxSessionByBase(base string) (model.SeshSession, bool) {
+	sessions, err := listTmux(l)
+	if err != nil {
+		return model.SeshSession{}, false
+	}
+	if session, exists := sessions.Directory[tmuxKey(base)]; exists {
+		return session, true
+	}
+	prefix := base + model.SessionNameSeparator
+	for _, key := range sessions.OrderedIndex {
+		session := sessions.Directory[key]
+		if strings.HasPrefix(session.Name, prefix) {
+			return session, true
+		}
+	}
+	return model.SeshSession{}, false
 }
 
 func (l *RealLister) GetLastTmuxSession() (model.SeshSession, bool) {

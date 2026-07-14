@@ -13,6 +13,7 @@ type Git interface {
 	WorktreeAdd(repoPath, target, branch, base string) (string, error)
 	WorktreeAddDetached(repoPath, target, base string) (string, error)
 	Pull(repoPath string) (string, error)
+	CurrentBranch(path string) (bool, string, error)
 }
 
 type RealGit struct {
@@ -83,4 +84,12 @@ func (g *RealGit) WorktreeAddDetached(repoPath, target, base string) (string, er
 
 func (g *RealGit) Pull(repoPath string) (string, error) {
 	return g.shell.CmdWithOutput("git", "-C", repoPath, "pull", "--ff-only")
+}
+
+func (g *RealGit) CurrentBranch(path string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return false, "", err
+	}
+	return true, out, nil
 }

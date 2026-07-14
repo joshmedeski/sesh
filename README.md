@@ -478,6 +478,24 @@ Add the following to your `tmux.conf` to overwrite the default `last-session` co
 bind -N "last-session (via sesh) " L run-shell "sesh last"
 ```
 
+### Enrich session names with the GitHub issue title
+
+`sesh` can rename a session to include its branch's GitHub issue title, e.g.
+`400-status` → `400-status — warm the status cache`. It parses the issue number
+from the branch name and looks it up with the `gh` CLI (which must be installed
+and authenticated).
+
+Add an opt-in tmux hook so every new session is enriched in the background:
+
+```tmux
+set-hook -g session-created 'run-shell -b "sesh rename --enrich"'
+```
+
+The command is a no-op when the branch has no resolvable issue (the session
+keeps its plain name), and it self-heals: switching to a branch without an issue
+renames the session back to its base name. Reconnecting to the directory
+reattaches to the enriched session rather than creating a duplicate.
+
 ### Connect to root
 
 While working in a nested session, you may way to connect to the root session of a git worktree or git repository. To do this, you can use the `--root` flag with the `sesh connect` command.

@@ -12,6 +12,7 @@ type Lister interface {
 	List(opts ListOptions) (model.SeshSessions, error)
 	ListTmuxPanes() (model.SeshSessions, error)
 	FindTmuxSession(name string) (model.SeshSession, bool)
+	FindTmuxSessionByBase(base string) (model.SeshSession, bool)
 	GetAttachedTmuxSession() (model.SeshSession, bool)
 	GetLastTmuxSession() (model.SeshSession, bool)
 	FindConfigSession(name string) (model.SeshSession, bool)

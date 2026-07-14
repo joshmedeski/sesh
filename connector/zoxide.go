@@ -23,6 +23,14 @@ func zoxideStrategy(c *RealConnector, path string) (model.Connection, error) {
 	if err != nil {
 		return model.Connection{}, err
 	}
+	if existing, ok := c.lister.FindTmuxSessionByBase(name); ok {
+		return model.Connection{
+			Found:       true,
+			Session:     existing,
+			New:         false,
+			AddToZoxide: true,
+		}, nil
+	}
 	session.Name = name
 	return model.Connection{
 		Found:       true,
