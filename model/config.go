@@ -18,6 +18,7 @@ type (
 		SeparatorAware          bool                 `toml:"separator_aware"`
 		TmuxCommand             string               `toml:"tmux_command"`
 		Terminal                string               `toml:"terminal"`
+		Browser                 BrowserConfig        `toml:"browser"`
 		Frecency                FrecencyConfig       `toml:"frecency"`
 		TUI                     TUIConfig            `toml:"tui"`
 	}
@@ -92,5 +93,13 @@ type (
 		BaseBranch     string `toml:"base_branch"`     // default "origin/main"
 		Fetch          *bool  `toml:"fetch"`           // default true (nil => true)
 		StartupCommand string `toml:"startup_command"` // runs on connect
+	}
+
+	// BrowserConfig configures reading the active browser tab's URL so
+	// `sesh worktree create --browser` can derive the target issue/PR.
+	// macOS-only (osascript). An empty Application disables the feature.
+	BrowserConfig struct {
+		Application string `toml:"application"` // browser app name, e.g. "Helium"
+		URLCommand  string `toml:"url_command"` // AppleScript fragment; default "URL of active tab of front window"
 	}
 )

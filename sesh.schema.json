@@ -67,6 +67,21 @@
       "type": "string",
       "description": "Terminal emulator app to activate (macOS only) after an out-of-tmux connect, e.g. \"wezterm\""
     },
+    "browser": {
+      "type": "object",
+      "description": "Read the active browser tab URL (macOS only) for `sesh worktree create --browser`.",
+      "additionalProperties": false,
+      "properties": {
+        "application": {
+          "type": "string",
+          "description": "Browser application name, e.g. \"Helium\"."
+        },
+        "url_command": {
+          "type": "string",
+          "description": "AppleScript fragment yielding the URL. Default: \"URL of active tab of front window\"."
+        }
+      }
+    },
     "frecency": {
       "type": "object",
       "description": "Override the frecency directory-jumping backend commands to use an alternative to zoxide (e.g. fasd, autojump, memy). Empty fields fall back to the zoxide defaults.",
