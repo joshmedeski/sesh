@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/configurator"
@@ -71,6 +72,7 @@ type Deps struct {
 	Previewer     previewer.Previewer
 	Cloner        cloner.Cloner
 	Worktree      worktree.Worktree
+	Browser       browser.Browser
 	Mkdirer       mkdirer.Mkdirer
 }
 
@@ -141,7 +143,8 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
-	wt := worktree.NewWorktree(config, b.Git, b.Github, c, b.Home, b.Os, b.Path)
+	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
+	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path)
 	pk := picker.NewPicker(config)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
@@ -159,6 +162,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		Previewer:     p,
 		Cloner:        cl,
 		Worktree:      wt,
+		Browser:       br,
 		Mkdirer:       mk,
 	}, nil
 }
