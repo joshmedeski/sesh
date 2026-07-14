@@ -22,6 +22,7 @@ type Tmux interface {
 	ListTmuxPanes() ([]*model.TmuxPane, error)
 	SelectPane(windowIndex int, paneIndex int) (string, error)
 	GetCurrentSession() (string, error)
+	RenameSession(target string, newName string) (string, error)
 }
 
 type RealTmux struct {

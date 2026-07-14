@@ -14,6 +14,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
@@ -37,18 +38,19 @@ import (
 
 // BaseDeps holds config-free dependencies that can be constructed eagerly.
 type BaseDeps struct {
-	Exec       execwrap.Exec
-	Os         oswrap.Os
-	Path       pathwrap.Path
-	Runtime    runtimewrap.Runtime
-	Home       home.Home
-	Shell      shell.Shell
-	Json       json.Json
-	Replacer   replacer.Replacer
-	Git        git.Git
-	Dir        dir.Dir
-	Zoxide     zoxide.Zoxide
-	Tmuxinator tmuxinator.Tmuxinator
+	Exec        execwrap.Exec
+	Os          oswrap.Os
+	Path        pathwrap.Path
+	Runtime     runtimewrap.Runtime
+	Home        home.Home
+	Shell       shell.Shell
+	Json        json.Json
+	Replacer    replacer.Replacer
+	Git         git.Git
+	Github      github.Github
+	Dir         dir.Dir
+	Zoxide      zoxide.Zoxide
+	Tmuxinator  tmuxinator.Tmuxinator
 }
 
 // Deps holds all dependencies including config-dependent ones.
@@ -81,6 +83,7 @@ func NewBaseDeps() *BaseDeps {
 	r := replacer.NewReplacer()
 
 	g := git.NewGit(sh)
+	gh := github.NewGithub(sh, g)
 	d := dir.NewDir(os, g, path)
 	ti := tmuxinator.NewTmuxinator(sh)
 
@@ -94,6 +97,7 @@ func NewBaseDeps() *BaseDeps {
 		Json:       j,
 		Replacer:   r,
 		Git:        g,
+		Github:     gh,
 		Dir:        d,
 		Tmuxinator: ti,
 	}
