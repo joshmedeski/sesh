@@ -47,6 +47,71 @@ func TestCreateFromBrowserIssue(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestCreateFromBrowserRepoOverrideWins(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+
+	// Browser tab points at a DIFFERENT repo than the caller's --repo.
+	mBrowser.EXPECT().ActiveTabURL().
+		Return("https://github.com/someone/other/issues/2345", true, nil)
+
+	// The caller's --repo ("nutiliti/nutiliti") must win over the URL's repo
+	// ("someone/other"); only the number (2345) comes from the URL.
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+
+	mOs.EXPECT().Stat("/repo/w/2345").Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
+	mConn.EXPECT().
+		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
+		Return("", nil)
+
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	_, err := w.Create(model.WorktreeCreateOpts{FromBrowser: true, Repo: "nutiliti/nutiliti", Switch: true})
+	require.NoError(t, err)
+}
+
+func TestCreateFromBrowserPR(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+
+	// Browser resolves a PR URL for the configured repo.
+	mBrowser.EXPECT().ActiveTabURL().
+		Return("https://github.com/nutiliti/nutiliti/pull/678", true, nil)
+
+	// PR authored by someone else => foreign PR, detached checkout keyed on
+	// the PR number.
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 678).
+		Return(github.PullRequest{Author: "octocat"}, true, nil)
+	mGh.EXPECT().CurrentUser().Return("me", nil)
+
+	mOs.EXPECT().Stat("/repo/w/678").Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAddDetached("/repo", "/repo/w/678", "origin/main").Return("", nil)
+	mGh.EXPECT().PrCheckout("/repo/w/678", "nutiliti/nutiliti", 678).Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/678", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	_, err := w.Create(model.WorktreeCreateOpts{FromBrowser: true, Switch: true})
+	require.NoError(t, err)
+}
+
 func TestCreateFromBrowserUnparseableURL(t *testing.T) {
 	mBrowser := browser.NewMockBrowser(t)
 	mBrowser.EXPECT().ActiveTabURL().Return("https://example.com/", true, nil)

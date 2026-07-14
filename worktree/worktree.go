@@ -129,7 +129,9 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeCreateOpts) (model.
 	if !ok {
 		return opts, fmt.Errorf("could not parse a GitHub issue/PR from browser URL %q", url)
 	}
-	opts.Repo = repo
+	if opts.Repo == "" {
+		opts.Repo = repo
+	}
 	opts.Number = number
 	opts.Pr = opts.Pr || isPR
 	return opts, nil
@@ -245,7 +247,7 @@ func firstIssueRef(text string) int {
 // githubRefRe matches a GitHub issue or PR URL, capturing org/repo, the kind
 // ("issues"|"pull"), and the number. Tolerant of scheme, trailing path,
 // query, and fragment.
-var githubRefRe = regexp.MustCompile(`github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
+var githubRefRe = regexp.MustCompile(`(?:^|https?://)(?:www\.)?github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
 
 // parseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
 // ok is false for any URL that is not a recognizable issue/PR reference.

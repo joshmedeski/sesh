@@ -19,6 +19,7 @@ func TestParseGitHubRef(t *testing.T) {
 		{"no scheme", "github.com/joshmedeski/sesh/issues/409", "joshmedeski/sesh", 409, false, true},
 		{"repo home", "https://github.com/joshmedeski/sesh", "", 0, false, false},
 		{"non-github", "https://gitlab.com/joshmedeski/sesh/issues/409", "", 0, false, false},
+		{"lookalike host", "https://mygithub.com/joshmedeski/sesh/issues/409", "", 0, false, false},
 		{"garbage", "not a url", "", 0, false, false},
 		{"empty", "", "", 0, false, false},
 	}
