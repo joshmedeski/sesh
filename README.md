@@ -846,6 +846,26 @@ PR title or body); for others' PRs it creates a detached worktree and runs `gh p
 When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
 the new session and (on macOS) activates the `terminal` app.
 
+#### Creating a worktree from the browser (macOS)
+
+With a `[browser]` configured, `sesh worktree create --browser` reads the URL of
+your browser's active tab, extracts the GitHub `org/repo` and issue/PR number, and
+creates the matching worktree — no need to type the number or be inside the repo.
+
+```toml
+[browser]
+application = "Helium"
+# url_command = "URL of active tab of front window"  # optional; Safari uses "URL of current tab of front window"
+```
+
+```bash
+# With github.com/joshmedeski/sesh/issues/409 open in the front tab:
+sesh worktree create --browser   # or: sesh wt c -b
+```
+
+The URL's `org/repo` is matched against your `[[worktree]]` entries by `name`. Both
+`/issues/N` and `/pull/N` URLs are supported. macOS only.
+
 ### Listing Configurations
 
 Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.
