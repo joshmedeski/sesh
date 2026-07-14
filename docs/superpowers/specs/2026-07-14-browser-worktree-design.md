@@ -139,14 +139,11 @@ func parseGitHubRef(rawURL string) (repo string, number int, isPR bool, ok bool)
 
 ### DI (`seshcli/deps.go`)
 
-- Add `Browser browser.Browser` to `BaseDeps`.
-- Construct in `NewBaseDeps`: `br := browser.NewBrowser(runtime, sh, ...)`.
-  Because the browser config is config-dependent, construction moves to
-  `BuildAll` (like `Zoxide`), or `NewBrowser` takes config at build time in
-  `BuildAll`. Decision: construct the `Browser` in `BuildAll` (it needs
-  `config.Browser`) and store it on `Deps`, then pass it into
-  `worktree.NewWorktree`. `BaseDeps` keeps only config-free deps, consistent
-  with the existing split.
+- `Browser` needs `config.Browser`, so it is config-dependent. Construct it in
+  `BuildAll` (like `Zoxide`), not in `NewBaseDeps`:
+  `br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)`. `BaseDeps`
+  keeps only config-free deps, consistent with the existing split.
+- Add `Browser browser.Browser` to the `Deps` struct.
 - Pass the browser into `worktree.NewWorktree(config, git, github, connector,
   browser, home, os, path)` in `BuildAll`.
 
