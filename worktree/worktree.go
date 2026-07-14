@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
@@ -25,6 +26,7 @@ type RealWorktree struct {
 	git       git.Git
 	github    github.Github
 	connector connector.Connector
+	browser   browser.Browser
 	home      home.Home
 	os        oswrap.Os
 	path      pathwrap.Path
@@ -35,11 +37,12 @@ func NewWorktree(
 	g git.Git,
 	gh github.Github,
 	c connector.Connector,
+	b browser.Browser,
 	h home.Home,
 	os oswrap.Os,
 	p pathwrap.Path,
 ) Worktree {
-	return &RealWorktree{config, g, gh, c, h, os, p}
+	return &RealWorktree{config, g, gh, c, b, h, os, p}
 }
 
 // createPlan captures the decisions derived from gh before touching git.
@@ -49,6 +52,14 @@ type createPlan struct {
 }
 
 func (w *RealWorktree) Create(opts model.WorktreeCreateOpts) (string, error) {
+	if opts.FromBrowser {
+		resolved, err := w.resolveFromBrowser(opts)
+		if err != nil {
+			return "", err
+		}
+		opts = resolved
+	}
+
 	cfg, err := w.resolveConfig(opts.Repo)
 	if err != nil {
 		return "", err
@@ -102,6 +113,26 @@ func (w *RealWorktree) Create(opts model.WorktreeCreateOpts) (string, error) {
 		Switch:  opts.Switch,
 		Command: cfg.StartupCommand,
 	})
+}
+
+// resolveFromBrowser reads the active browser tab URL and fills Number/Repo/Pr
+// from the GitHub issue/PR it points at.
+func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeCreateOpts) (model.WorktreeCreateOpts, error) {
+	url, ok, err := w.browser.ActiveTabURL()
+	if err != nil {
+		return opts, err
+	}
+	if !ok {
+		return opts, fmt.Errorf("browser tab lookup unavailable: set [browser].application (macOS only)")
+	}
+	repo, number, isPR, ok := parseGitHubRef(url)
+	if !ok {
+		return opts, fmt.Errorf("could not parse a GitHub issue/PR from browser URL %q", url)
+	}
+	opts.Repo = repo
+	opts.Number = number
+	opts.Pr = opts.Pr || isPR
+	return opts, nil
 }
 
 func (w *RealWorktree) planCreate(cfg model.WorktreeConfig, opts model.WorktreeCreateOpts) (createPlan, error) {

@@ -3,6 +3,7 @@ package worktree
 import (
 	"testing"
 
+	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
@@ -35,6 +36,7 @@ func TestCreateIssueWithRepoOverride(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -56,7 +58,7 @@ func TestCreateIssueWithRepoOverride(t *testing.T) {
 		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
 	_, err := w.Create(model.WorktreeCreateOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -65,6 +67,7 @@ func TestCreateOwnPrWithClosingIssue(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -82,7 +85,7 @@ func TestCreateOwnPrWithClosingIssue(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/42", "jam/42-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/42", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
 	_, err := w.Create(model.WorktreeCreateOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -91,6 +94,7 @@ func TestCreateForeignPrDetachCheckout(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -109,7 +113,7 @@ func TestCreateForeignPrDetachCheckout(t *testing.T) {
 	mGh.EXPECT().PrCheckout("/repo/w/200", "nutiliti/nutiliti", 200).Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/200", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
 	_, err := w.Create(model.WorktreeCreateOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -118,6 +122,7 @@ func TestCreateResolvesConfigFromCwd(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -141,7 +146,7 @@ func TestCreateResolvesConfigFromCwd(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
 	_, err := w.Create(model.WorktreeCreateOpts{Number: 2345, Switch: true})
 	require.NoError(t, err)
 }
@@ -150,6 +155,7 @@ func TestCreateOwnPrFirstIssueRefFallback(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -167,7 +173,7 @@ func TestCreateOwnPrFirstIssueRefFallback(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/7", "jam/7-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/7", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
 	_, err := w.Create(model.WorktreeCreateOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -176,11 +182,12 @@ func TestCreateNoConfigMatch(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
 	_, err := w.Create(model.WorktreeCreateOpts{Number: 1, Repo: "unknown/repo"})
 	require.Error(t, err)
 }

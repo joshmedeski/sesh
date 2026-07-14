@@ -7,8 +7,9 @@ type ConnectOpts struct {
 }
 
 type WorktreeCreateOpts struct {
-	Number int
-	Repo   string // GitHub "org/repo" override; empty => detect from cwd
-	Pr     bool   // force the pull-request path
-	Switch bool
+	Number      int
+	Repo        string // GitHub "org/repo" override; empty => detect from cwd
+	Pr          bool   // force the pull-request path
+	Switch      bool
+	FromBrowser bool // resolve Number/Repo/Pr from the active browser tab URL
 }
