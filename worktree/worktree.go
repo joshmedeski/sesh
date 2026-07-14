@@ -211,6 +211,25 @@ func firstIssueRef(text string) int {
 	return n
 }
 
+// githubRefRe matches a GitHub issue or PR URL, capturing org/repo, the kind
+// ("issues"|"pull"), and the number. Tolerant of scheme, trailing path,
+// query, and fragment.
+var githubRefRe = regexp.MustCompile(`github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
+
+// parseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
+// ok is false for any URL that is not a recognizable issue/PR reference.
+func parseGitHubRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
+	m := githubRefRe.FindStringSubmatch(rawURL)
+	if len(m) < 4 {
+		return "", 0, false, false
+	}
+	n, err := strconv.Atoi(m[3])
+	if err != nil {
+		return "", 0, false, false
+	}
+	return m[1], n, m[2] == "pull", true
+}
+
 func fetchEnabled(cfg model.WorktreeConfig) bool {
 	if cfg.Fetch == nil {
 		return true
