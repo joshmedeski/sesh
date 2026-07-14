@@ -2,7 +2,6 @@ package dashboard
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -122,7 +121,7 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 	case "k", "up":
 		s.cursorUp(1)
 	case "t":
-		s.selectItem()
+		s.toggleGroup()
 	case "enter":
 		s.selectItem()
 	case "ctrl+d":
@@ -142,8 +141,7 @@ func (s *SessionsSection) groupSessions(sessions model.SeshSessions) {
 		expanded = append(expanded, g)
 	}
 
-	homeDir, _ := os.UserHomeDir()
-	other := &group{name: "Other", collapsed: true} // start with group collapsed
+	other := &group{name: "Other", collapsed: true}
 
 	for _, key := range sessions.OrderedIndex {
 		sess := sessions.Directory[key]
@@ -152,7 +150,7 @@ func (s *SessionsSection) groupSessions(sessions model.SeshSessions) {
 			for _, pattern := range g.patterns {
 				p := pattern
 				if strings.HasPrefix(p, "~/") {
-					p = filepath.Join(homeDir, p[2:])
+					p = filepath.Join(s.deps.HomeDir, p[2:])
 				}
 				if ok, _ := filepath.Match(p, sess.Path); ok {
 					g.sessions = append(g.sessions, sess)
@@ -228,7 +226,6 @@ func (s *SessionsSection) applyBranch(path, branch string) {
 	}
 }
 
-// TODO: review this
 func (s *SessionsSection) fetchStatuses(sessions model.SeshSessions) tea.Cmd {
 	paths := make(map[string]bool)
 	for _, key := range sessions.OrderedIndex {
@@ -332,7 +329,7 @@ func (s *SessionsSection) killSession() tea.Cmd {
 		return nil
 	}
 	g := s.groups[item.groupIdx]
-	_, _ = s.deps.Tmux.KillSession(g.sessions[item.sessIdx].Name)
+	s.deps.Tmux.KillSession(g.sessions[item.sessIdx].Name)
 	return s.Init()
 }
 
@@ -456,7 +453,6 @@ func (s *SessionsSection) View(width, height int) string {
 	return lipgloss.NewStyle().
 		Width(width).
 		Height(height).
-		// MaxHeight(height).
 		Border(lipgloss.RoundedBorder()).
 		Render(b.String())
 }

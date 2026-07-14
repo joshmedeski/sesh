@@ -30,8 +30,6 @@ func SessionLineRender(num, name, branch, gitStatus, meta string, totalWidth int
 	gitPart := NewStyle(gitW, gitW, 1, 1, 10, false, []int{0, 0, 0, 0}).Render(gitStatus)
 	metaPart := NewStyle(metaW, metaW, 1, 1, 15, false, []int{0, 0, 0, 0}).Render(meta)
 
-	// TODO: make the colors configurable/use the current terminal theme
-
 	leftSide := lipgloss.JoinHorizontal(lipgloss.Top, numPart, namePart)
 	rightSide := lipgloss.JoinHorizontal(lipgloss.Top, branchPart, gitPart, metaPart)
 

@@ -105,10 +105,3 @@ func (s *SystemSection) View(width, height int) string {
 
 	return b.String()
 }
-
-// func renderProgressBar(percent float64, barWidth int) string {
-// 	filledCells := max(min(int((percent/100.0)*float64(barWidth)), barWidth), 0)
-//
-// 	return lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render(strings.Repeat("█", filledCells)) +
-// 		lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(strings.Repeat("░", barWidth-filledCells))
-// }
