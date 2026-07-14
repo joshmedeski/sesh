@@ -17,11 +17,6 @@ import (
 var version = "dev"
 
 func main() {
-	slog.Debug("Debug")
-	slog.Info("Information")
-	slog.Warn("Warning")
-	slog.Error("Error")
-
 	cmd := seshcli.NewRootCommand(version)
 	if err := fang.Execute(context.TODO(), cmd, fang.WithColorSchemeFunc(fang.AnsiColorScheme), fang.WithoutVersion()); err != nil {
 		slog.Error("main file: ", "error", err)
