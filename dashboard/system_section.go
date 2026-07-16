@@ -16,6 +16,7 @@ type systemMetricsMsg struct {
 	cpuPercent float64
 	memPercent float64
 	memTotal   uint64
+	err        error
 }
 
 type SystemSection struct {
@@ -24,6 +25,7 @@ type SystemSection struct {
 	memUsage   float64
 	memTotal   float64
 	lastUpdate time.Time
+	hasError   bool
 }
 
 func NewSystemSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -41,7 +43,7 @@ func fetchSystemMetrics() tea.Msg {
 	// Get virtual memory usage
 	vMem, err := mem.VirtualMemory()
 	if err != nil {
-		return systemMetricsMsg{}
+		return systemMetricsMsg{err: err}
 	}
 
 	cpuPercent, err := cpu.Percent(0, false) // Using false aggregates all cores into one overall percentage
@@ -70,9 +72,15 @@ func (s *SystemSection) Init() tea.Cmd {
 func (s *SystemSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case systemMetricsMsg:
-		s.cpuUsage = msg.cpuPercent
-		s.memUsage = msg.memPercent
-		s.memTotal = float64(msg.memTotal)
+		if msg.err == nil {
+			s.cpuUsage = msg.cpuPercent
+			s.memUsage = msg.memPercent
+			s.memTotal = float64(msg.memTotal)
+			s.lastUpdate = time.Now()
+			s.hasError = false
+		} else {
+			s.hasError = true
+		}
 		s.lastUpdate = time.Now()
 
 		return s, systemTick()
@@ -80,19 +88,18 @@ func (s *SystemSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *SystemSection) View(width, height int) string {
-	b := strings.Builder{}
-
+func (s *SystemSection) View(width, height int, focused bool) string {
+	var b strings.Builder
 	labelStyle := lipgloss.NewStyle().Bold(true).Width(6)
-	// valueStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15))
 
-	// RAM
+	if s.hasError && s.lastUpdate.IsZero() {
+		return lipgloss.NewStyle().Faint(true).Render("Metrics unavailable")
+	}
+
 	totalGB := float64(s.memTotal) / (1024 * 1024 * 1024)
 	usedGB := totalGB * (s.memUsage / 100.0)
 
 	cpuRow := fmt.Sprintf("%s %.1f%%\n", labelStyle.Render("CPU:"), s.cpuUsage)
-
-	// Displays clean readings like: "RAM:  45.2% (7.2 / 16.0 GB)"
 	ramRow := fmt.Sprintf("%s %.1f%% (%.1f / %.1f GB)\n",
 		labelStyle.Render("RAM:"),
 		s.memUsage,
@@ -102,6 +109,11 @@ func (s *SystemSection) View(width, height int) string {
 
 	b.WriteString(cpuRow)
 	b.WriteString(ramRow)
+
+	// Append small indicator warning if current frames rely on fallback values
+	if s.hasError {
+		b.WriteString(lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("9")).Render(" (stale metrics)"))
+	}
 
 	return b.String()
 }

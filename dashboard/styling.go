@@ -1,3 +1,4 @@
+// styling.go
 package dashboard
 
 import (
@@ -6,15 +7,11 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// GroupNameRender returns a lipgloss style for the given group name
 func GroupNameRender(name string, width int) lipgloss.Style {
 	return NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
 }
 
-// Session line styling
 func SessionLineRender(num, name, branch, gitStatus, meta string, totalWidth int) string {
-
-	// Calculate proportional column widths (Let Lipgloss handle truncation via .Width().MaxWidth())
 	overhead := 8
 	colSpace := max(totalWidth-overhead, 1)
 
@@ -23,22 +20,19 @@ func SessionLineRender(num, name, branch, gitStatus, meta string, totalWidth int
 	gitW := max(int(float64(colSpace)*0.30), 0)
 	metaW := max(int(float64(colSpace)*0.05), 5)
 
-	// Use Lipgloss layout blocks for columns to bypass manual loop padding math
-	numPart := NewStyle(5, 5, 1, 1, 7, true, []int{0, 0, 0, 0}).Render(num)
-	namePart := NewStyle(nameW, nameW, 1, 1, 15, false, []int{0, 0, 0, 2}).Render(name)
-	branchPart := NewStyle(branchW, branchW, 1, 1, 5, false, []int{0, 0, 0, 0}).Render(branch)
-	gitPart := NewStyle(gitW, gitW, 1, 1, 10, false, []int{0, 0, 0, 0}).Render(gitStatus)
-	metaPart := NewStyle(metaW, metaW, 1, 1, 15, false, []int{0, 0, 0, 0}).Render(meta)
+	// Fix: Apply Height/MaxHeight rules directly onto strings via lipgloss styles to restrict output to 1 line
+	numPart := lipgloss.NewStyle().Width(5).MaxWidth(5).Height(1).MaxHeight(1).Foreground(lipgloss.ANSIColor(7)).Render(num)
+	namePart := lipgloss.NewStyle().Width(nameW).MaxWidth(nameW).Height(1).MaxHeight(1).Foreground(lipgloss.ANSIColor(15)).Render(name)
+	branchPart := lipgloss.NewStyle().Width(branchW).MaxWidth(branchW).Height(1).MaxHeight(1).Foreground(lipgloss.ANSIColor(5)).Render(branch)
+	gitPart := lipgloss.NewStyle().Width(gitW).MaxWidth(gitW).Height(1).MaxHeight(1).Foreground(lipgloss.ANSIColor(10)).Render(gitStatus)
+	metaPart := lipgloss.NewStyle().Width(metaW).MaxWidth(metaW).Height(1).MaxHeight(1).Foreground(lipgloss.ANSIColor(15)).Render(meta)
 
 	leftSide := lipgloss.JoinHorizontal(lipgloss.Top, numPart, namePart)
 	rightSide := lipgloss.JoinHorizontal(lipgloss.Top, branchPart, gitPart, metaPart)
 
-	// Calculate space between left and right sides
 	leftWidth := lipgloss.Width(leftSide)
 	rightWidth := lipgloss.Width(rightSide)
-
 	gapWidth := max(totalWidth-leftWidth-rightWidth, 0)
-
 	spaceGap := strings.Repeat(" ", gapWidth)
 
 	return lipgloss.JoinHorizontal(lipgloss.Center, leftSide, spaceGap, rightSide)

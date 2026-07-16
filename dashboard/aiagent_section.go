@@ -21,11 +21,11 @@ type aiAgent struct {
 }
 
 type AIAgentSection struct {
-	config model.DashboardSectionConfig
-	deps   SectionDeps
-	agents []aiAgent
-	cursor int
-	chosen string
+	config  model.DashboardSectionConfig
+	deps    SectionDeps
+	agents  []aiAgent
+	cursor  int
+	chosen  string
 	loading bool
 }
 
@@ -47,8 +47,7 @@ func (s *AIAgentSection) Init() tea.Cmd {
 }
 
 func (s *AIAgentSection) fetchAgents() tea.Msg {
-	out, err := runCommand("sh", "-c",
-		`ps aux | grep -E '(claude|copilot|aider|cursor|chatgpt|openai|ollama|llm)' | grep -v grep || true`)
+	out, err := runShellCommand(`ps aux | grep -E '(claude|copilot|aider|cursor|chatgpt|openai|ollama|llm)' | grep -v grep || true`)
 	if err != nil {
 		return aiAgentsLoadedMsg{agents: nil}
 	}
@@ -128,7 +127,7 @@ func (s *AIAgentSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *AIAgentSection) View(width, height int) string {
+func (s *AIAgentSection) View(width, height int, focused bool) string {
 	const minWidth = 20
 	if width < minWidth {
 		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  AI")
@@ -148,13 +147,13 @@ func (s *AIAgentSection) View(width, height int) string {
 
 	if s.loading {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  Scanning..."))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 			Render(b.String())
 	}
 
 	if len(s.agents) == 0 {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  No agents detected"))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 			Render(b.String())
 	}
 
@@ -188,6 +187,6 @@ func (s *AIAgentSection) View(width, height int) string {
 		))
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 		Render(b.String())
 }

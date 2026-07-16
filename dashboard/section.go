@@ -14,7 +14,7 @@ type Section interface {
 	Name() string
 	Init() tea.Cmd
 	Update(msg tea.Msg) (Section, tea.Cmd)
-	View(width, height int) string
+	View(width, height int, focused bool) string
 	Chosen() string
 	TotalItems() int
 	Width() float64

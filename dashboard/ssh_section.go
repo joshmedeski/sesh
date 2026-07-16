@@ -25,12 +25,12 @@ type SSHHost struct {
 }
 
 type SSHSection struct {
-	config   model.DashboardSectionConfig
-	deps     SectionDeps
-	hosts    []SSHHost
-	cursor   int
-	chosen   string
-	loading  bool
+	config  model.DashboardSectionConfig
+	deps    SectionDeps
+	hosts   []SSHHost
+	cursor  int
+	chosen  string
+	loading bool
 }
 
 func NewSSHSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -48,7 +48,7 @@ func NewSSHSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
 		config:  cfg,
 		deps:    deps,
 		hosts:   hosts,
-		loading: len(hosts) == 0,
+		loading: len(hosts) > 0,
 	}
 }
 
@@ -130,14 +130,16 @@ func (s *SSHSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *SSHSection) View(width, height int) string {
+func (s *SSHSection) View(width, height int, focused bool) string {
+	var b strings.Builder
+
 	const minWidth = 20
 	if width < minWidth {
 		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  SSH")
 	}
 
 	if len(s.hosts) == 0 {
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 			Render(s.config.Title + "\n\n  No hosts configured")
 	}
 
@@ -146,8 +148,6 @@ func (s *SSHSection) View(width, height int) string {
 	if available < 1 {
 		available = 5
 	}
-
-	var b strings.Builder
 
 	titleStyle := NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
 	b.WriteString(titleStyle.Render(s.config.Title))
@@ -196,6 +196,6 @@ func (s *SSHSection) View(width, height int) string {
 		b.WriteString("\n")
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 		Render(b.String())
 }

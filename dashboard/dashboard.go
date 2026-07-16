@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"slices"
+
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -14,18 +16,19 @@ import (
 )
 
 type Model struct {
-	config        model.DashboardConfig
-	sections      []Section
-	focused       int
-	width         int
-	height        int
-	tooSmall      bool
-	chosen        string
-	quit          bool
-	totalSessions int
-	sectionWidths []int
-	contentHeight int
-	rows          [][]int // rows[rowIdx] = []section indices
+	config             model.DashboardConfig
+	sections           []Section
+	focused            int
+	width              int
+	height             int
+	tooSmall           bool
+	chosen             string
+	quit               bool
+	totalSessions      int
+	sectionWidths      []int
+	contentHeight      int
+	rows               [][]int // rows[rowIdx] = []section indices
+	lastHoveredSession string
 }
 
 type keyMap struct {
@@ -72,20 +75,17 @@ func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git
 	for i, row := range sectionRows {
 		rowMap[row] = append(rowMap[row], i)
 	}
+
 	// Sort rows by key for stable ordering
+	rowKeys := make([]int, 0, len(rowMap))
+	for r := range rowMap {
+		rowKeys = append(rowKeys, r)
+	}
+	slices.Sort(rowKeys)
+
 	var rows [][]int
-	for {
-		minRow := -1
-		for r := range rowMap {
-			if minRow == -1 || r < minRow {
-				minRow = r
-			}
-		}
-		if minRow == -1 {
-			break
-		}
-		rows = append(rows, rowMap[minRow])
-		delete(rowMap, minRow)
+	for _, r := range rowKeys {
+		rows = append(rows, rowMap[r])
 	}
 
 	return Model{
@@ -131,11 +131,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			numRows = 1
 		}
 		// Separators between rows cost (numRows - 1) lines
-		sepLines := max(numRows-1, 0)
-		availableForRows := contentHeight - sepLines
-		if availableForRows < numRows {
-			availableForRows = numRows
-		}
+		// sepLines := max(numRows-1, 0)
+		// availableForRows := contentHeight - sepLines
+		// if availableForRows < numRows {
+		// 	availableForRows = numRows
+		// }
+
 		// Calculate widths per-row
 		m.sectionWidths = make([]int, len(m.sections))
 		for _, rowSections := range m.rows {
@@ -178,7 +179,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				for j := n - 1; j >= 0 && remaining > 0; j-- {
 					if pw[j] == each {
-						pw[j] += remaining
+						pw[j]++
 						remaining--
 					}
 				}
@@ -190,8 +191,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.sectionWidths[si] = pw[j]
 			}
 		}
-
-		return m, nil
+		var cmds []tea.Cmd
+		for i := range m.sections {
+			var c tea.Cmd
+			m.sections[i], c = m.sections[i].Update(msg)
+			if c != nil {
+				cmds = append(cmds, c)
+			}
+		}
+		return m, tea.Batch(cmds...)
 
 	case tea.KeyPressMsg:
 		switch {
@@ -266,6 +274,13 @@ func (m Model) syncHoveredSession() (Model, tea.Cmd) {
 	}
 	ss := m.sections[ssIdx].(*SessionsSection)
 	name, path, windows := ss.HoveredSession()
+
+	// ONLY update details and execute background commands if the selection changed!
+	if name == m.lastHoveredSession {
+		return m, nil
+	}
+	m.lastHoveredSession = name
+
 	updated, cmd := m.sections[dsIdx].Update(hoveredSessionMsg{Name: name, Path: path, Windows: windows})
 	m.sections[dsIdx] = updated
 	return m, cmd
@@ -291,10 +306,7 @@ func (m Model) View() tea.View {
 		numRows = 1
 	}
 	sepLines := max(numRows-1, 0)
-	availableForRows := m.contentHeight - sepLines
-	if availableForRows < numRows {
-		availableForRows = numRows
-	}
+	availableForRows := max(m.contentHeight-sepLines, numRows)
 	baseHeight := availableForRows / numRows
 	extra := availableForRows - baseHeight*numRows
 
@@ -311,7 +323,7 @@ func (m Model) View() tea.View {
 			if m.sectionWidths != nil && si < len(m.sectionWidths) && m.sectionWidths[si] > 0 {
 				w = m.sectionWidths[si]
 			}
-			if v := m.sections[si].View(w, h); v != "" {
+			if v := m.sections[si].View(w, h, si == m.focused); v != "" {
 				views = append(views, v)
 			}
 		}

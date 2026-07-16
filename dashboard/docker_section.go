@@ -110,7 +110,7 @@ func (s *DockerSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *DockerSection) View(width, height int) string {
+func (s *DockerSection) View(width, height int, focused bool) string {
 	const minWidth = 24
 	if width < minWidth {
 		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  Docker")
@@ -130,13 +130,13 @@ func (s *DockerSection) View(width, height int) string {
 
 	if s.loading {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  Loading..."))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 			Render(b.String())
 	}
 
 	if len(s.containers) == 0 {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  No containers found"))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 			Render(b.String())
 	}
 
@@ -183,7 +183,7 @@ func (s *DockerSection) View(width, height int) string {
 		))
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 		Render(b.String())
 }
 
