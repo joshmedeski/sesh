@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
 
@@ -329,7 +330,9 @@ func (s *SessionsSection) killSession() tea.Cmd {
 		return nil
 	}
 	g := s.groups[item.groupIdx]
-	s.deps.Tmux.KillSession(g.sessions[item.sessIdx].Name)
+	if _, err := s.deps.Tmux.KillSession(g.sessions[item.sessIdx].Name); err != nil {
+		slog.Error("failed to kill session", "name", g.sessions[item.sessIdx].Name, "error", err)
+	}
 	return s.Init()
 }
 

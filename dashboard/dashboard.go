@@ -130,12 +130,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if numRows == 0 {
 			numRows = 1
 		}
-		// Separators between rows cost (numRows - 1) lines
-		// sepLines := max(numRows-1, 0)
-		// availableForRows := contentHeight - sepLines
-		// if availableForRows < numRows {
-		// 	availableForRows = numRows
-		// }
 
 		// Calculate widths per-row
 		m.sectionWidths = make([]int, len(m.sections))

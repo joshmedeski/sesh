@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"log/slog"
+
 	tea "charm.land/bubbletea/v2"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
@@ -47,6 +49,11 @@ var registry = Registry{
 func BuildSections(cfg model.DashboardConfig, deps SectionDeps) []Section {
 	var sections []Section
 	for _, sc := range cfg.Sections {
+		// simple error log on unknown section type
+		if sc.Type == "" {
+			slog.Warn("unknown dashboard section type")
+			continue
+		}
 		if factory, ok := registry[sc.Type]; ok {
 			sections = append(sections, factory(sc, deps))
 		}

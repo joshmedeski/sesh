@@ -47,7 +47,7 @@ func (s *CustomSection) fetchOutput() tea.Msg {
 	if err != nil {
 		return customOutputMsg{err: err}
 	}
-	return customOutputMsg{output: out}
+	return customOutputMsg{output: string(out)}
 }
 
 func (s *CustomSection) Update(msg tea.Msg) (Section, tea.Cmd) {
