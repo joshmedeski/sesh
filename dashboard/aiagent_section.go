@@ -55,7 +55,7 @@ func (s *AIAgentSection) fetchAgents() tea.Msg {
 	var agents []aiAgent
 	seen := make(map[string]bool)
 
-	for line := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 		if line == "" {
 			continue
 		}

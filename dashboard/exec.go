@@ -1,40 +1,29 @@
 package dashboard
 
 import (
-	"bytes"
-	"context"
-	"os/exec"
 	"runtime"
 	"strings"
-	"time"
+
+	"github.com/joshmedeski/sesh/v2/execwrap"
 )
 
-func runShellCommand(cmd string) (string, error) {
+func runShellCommand(cmd string) ([]byte, error) {
 	if runtime.GOOS == "windows" {
-		return runCommand("cmd", "/c", cmd)
+		useCmd := execwrap.NewExec().Command("cmd", "/c", cmd)
+		return useCmd.CombinedOutput()
 	}
-	return runCommand("sh", "-c", cmd)
+	useCmd := execwrap.NewExec().Command("sh", "-c", cmd)
+	return useCmd.CombinedOutput()
 }
 
-// runCommand executes a command without connecting stdin (safe for BubbleTea).
-// This prevents interference with BubbleTea's terminal control.
 func runCommand(name string, args ...string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	command := exec.CommandContext(ctx, name, args...)
-	var stdout, stderr bytes.Buffer
-	command.Stdout = &stdout
-	command.Stderr = &stderr
-	if err := command.Start(); err != nil {
-		return "", err
-	}
-	if err := command.Wait(); err != nil {
-		errString := strings.TrimSpace(stderr.String())
-		if strings.HasPrefix(errString, "no server running on") {
+	out, err := execwrap.NewExec().Command(name, args...).Output()
+	if err != nil {
+		errString := strings.TrimSpace(err.Error())
+		if strings.Contains(errString, "no server running on") {
 			return "", nil
 		}
 		return "", err
 	}
-	return strings.TrimSuffix(stdout.String(), "\n"), nil
+	return strings.TrimSuffix(string(out), "\n"), nil
 }
