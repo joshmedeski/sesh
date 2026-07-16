@@ -16,19 +16,19 @@ type gitReposLoadedMsg struct {
 }
 
 type gitRepo struct {
-	Path    string
-	Name    string
-	Branch  string
-	Status  string
-	IsRepo  bool
+	Path   string
+	Name   string
+	Branch string
+	Status string
+	IsRepo bool
 }
 
 type GitSection struct {
-	config model.DashboardSectionConfig
-	deps   SectionDeps
-	repos  []gitRepo
-	cursor int
-	chosen string
+	config  model.DashboardSectionConfig
+	deps    SectionDeps
+	repos   []gitRepo
+	cursor  int
+	chosen  string
 	loading bool
 }
 
@@ -77,23 +77,47 @@ func (s *GitSection) fetchRepos() tea.Msg {
 		if err == nil {
 			lines := strings.Split(strings.TrimSpace(statusOut), "\n")
 			if len(lines) > 0 && lines[0] != "" {
-				parts := make([]string, 0, 4)
+				// 1. Initialize counters to aggregate values
+				var added, modified, deleted, untracked int
+
 				for _, line := range lines {
-					if strings.HasPrefix(line, "?? ") {
-						parts = append(parts, fmt.Sprintf("!%d", 1))
+					// Guard against out-of-bounds panics on empty or short lines
+					if len(line) < 2 {
 						continue
 					}
+
+					if strings.HasPrefix(line, "?? ") {
+						untracked++
+						continue
+					}
+
 					first := line[0]
 					second := line[1]
+
 					if first != ' ' {
-						parts = append(parts, fmt.Sprintf("+%d", 1))
+						added++
 					}
 					if second == 'M' {
-						parts = append(parts, fmt.Sprintf("~%d", 1))
+						modified++
 					}
 					if first == 'D' || second == 'D' {
-						parts = append(parts, fmt.Sprintf("-%d", 1))
+						deleted++
 					}
+				}
+
+				// 2. Format the aggregated totals only once at the end
+				parts := make([]string, 0, 4)
+				if added > 0 {
+					parts = append(parts, fmt.Sprintf("+%d", added))
+				}
+				if modified > 0 {
+					parts = append(parts, fmt.Sprintf("~%d", modified))
+				}
+				if deleted > 0 {
+					parts = append(parts, fmt.Sprintf("-%d", deleted))
+				}
+				if untracked > 0 {
+					parts = append(parts, fmt.Sprintf("!%d", untracked))
 				}
 				status = strings.Join(parts, " ")
 			}
@@ -138,7 +162,7 @@ func (s *GitSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *GitSection) View(width, height int) string {
+func (s *GitSection) View(width, height int, focused bool) string {
 	const minWidth = 24
 	if width < minWidth {
 		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  Git")
@@ -158,13 +182,13 @@ func (s *GitSection) View(width, height int) string {
 
 	if s.loading {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  Loading..."))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 			Render(b.String())
 	}
 
 	if len(s.repos) == 0 {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  No repos configured"))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 			Render(b.String())
 	}
 
@@ -198,17 +222,17 @@ func (s *GitSection) View(width, height int) string {
 
 		branch := ""
 		if repo.Branch != "" {
-			branch = branchStyle.Render(" ["+repo.Branch+"]")
+			branch = branchStyle.Render(" [" + repo.Branch + "]")
 		}
 
 		status := ""
 		if repo.Status != "" {
-			status = statusStyle.Render(" "+repo.Status)
+			status = statusStyle.Render(" " + repo.Status)
 		}
 
 		b.WriteString(fmt.Sprintf("%s%s%s%s\n", prefix, nameStyle.Render(repo.Name), branch, status))
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 		Render(b.String())
 }

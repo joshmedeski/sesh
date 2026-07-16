@@ -66,14 +66,18 @@ func (s *DetailsSection) WindowNames(name string) tea.Cmd {
 		var active string
 		var idx []string
 		for line := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
-			parts := strings.Split(line, "|")
-			if len(parts) >= 3 {
-				if parts[1] == "1" {
-					active = parts[2]
-				}
-				names = append(names, parts[2])
-				idx = append(idx, parts[0])
+			if line == "" {
+				continue
 			}
+			parts := strings.Split(line, "|")
+			if len(parts) < 3 {
+				continue
+			}
+			if parts[1] == "1" {
+				active = parts[2]
+			}
+			names = append(names, parts[2])
+			idx = append(idx, parts[0])
 		}
 
 		return windowNamesLoadedMsg{WindowIdx: idx, WindowNames: names, ActiveWindow: active}
@@ -134,7 +138,7 @@ func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *DetailsSection) View(width, height int) string {
+func (s *DetailsSection) View(width, height int, focused bool) string {
 	s.viewHeight = height
 
 	// Guard: Minimum layout size checks
@@ -156,7 +160,7 @@ func (s *DetailsSection) View(width, height int) string {
 	}
 
 	if s.hoveredName == "" {
-		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}).Render(s.config.Title)
+		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}, focused).Render(s.config.Title)
 	}
 
 	var lines []string
@@ -198,5 +202,5 @@ func (s *DetailsSection) View(width, height int) string {
 	}
 
 	content := strings.Join(lines, "\n")
-	return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}).Render(content)
+	return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}, focused).Render(content)
 }

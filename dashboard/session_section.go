@@ -367,7 +367,7 @@ func (s *SessionsSection) HoveredSession() (name, path string, windows int) {
 	return name, path, windows
 }
 
-func (s *SessionsSection) View(width, height int) string {
+func (s *SessionsSection) View(width, height int, focused bool) string {
 	s.viewHeight = height
 
 	// Guard: Minimum layout size checks
@@ -450,9 +450,12 @@ func (s *SessionsSection) View(width, height int) string {
 		b.WriteString("\n")
 	}
 
-	return lipgloss.NewStyle().
+	style := lipgloss.NewStyle().
 		Width(width).
 		Height(height).
-		Border(lipgloss.RoundedBorder()).
-		Render(b.String())
+		Border(lipgloss.RoundedBorder())
+	if focused {
+		style = style.BorderForeground(lipgloss.Color("14"))
+	}
+	return style.Render(b.String())
 }

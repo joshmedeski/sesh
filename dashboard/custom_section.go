@@ -43,7 +43,7 @@ func (s *CustomSection) fetchOutput() tea.Msg {
 	if cmd == "" {
 		return customOutputMsg{output: "No command configured"}
 	}
-	out, err := runCommand("sh", "-c", cmd)
+	out, err := runShellCommand(cmd)
 	if err != nil {
 		return customOutputMsg{err: err}
 	}
@@ -68,7 +68,7 @@ func (s *CustomSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *CustomSection) View(width, height int) string {
+func (s *CustomSection) View(width, height int, focused bool) string {
 	const minWidth = 16
 	if width < minWidth {
 		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  Custom")
@@ -89,6 +89,6 @@ func (s *CustomSection) View(width, height int) string {
 		b.WriteString(outputStyle.Render(s.output))
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}).
+	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
 		Render(b.String())
 }
