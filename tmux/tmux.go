@@ -59,7 +59,8 @@ func (t *RealTmux) CapturePane(targetSession string) (string, error) {
 }
 
 func (t *RealTmux) NextWindowInSession(targetSession string) (string, error) {
-	return t.shell.Cmd(t.bin, "next-window", "-t", targetSession)
+	// trailing colon forces session (not window) target resolution
+	return t.shell.Cmd(t.bin, "next-window", "-t", targetSession+":")
 }
 
 func (t *RealTmux) IsAttached() bool {
