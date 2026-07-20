@@ -820,6 +820,16 @@ I've decided to start over and build a session manager from the ground up. This 
 
 The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
 
+## StarMapper
+
+<a href="https://starmapper.bruniaux.com/joshmedeski/sesh?utm_source=map-embed&utm_medium=readme&utm_campaign=stargazer-map">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh?theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh?theme=light" />
+    <img alt="StarMapper" src="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh" />
+  </picture>
+</a>
+
 ## Contributors
 
 <a href="https://github.com/joshmedeski/sesh/graphs/contributors">
