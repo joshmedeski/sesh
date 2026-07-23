@@ -24,12 +24,7 @@ func (g *RealLs) ListDirectory(path string) (string, error) {
 		command = "ls {}"
 	}
 
-	cmdParts, err := g.shell.PrepareCmd(command, map[string]string{"{}": path})
-	if err != nil {
-		return "", err
-	}
-
-	cmdOutput, err := g.shell.Cmd(cmdParts[0], cmdParts[1:]...)
+	cmdOutput, err := g.shell.ShellCmd(command, map[string]string{"{}": path})
 	if err != nil {
 		return "", err
 	}

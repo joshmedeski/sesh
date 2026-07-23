@@ -78,3 +78,48 @@ func TestShellPrepareCmd(t *testing.T) {
 		assert.Equal(t, []string{"/opt/tool", "--flag"}, cmdParts)
 	})
 }
+
+func TestShellShellCmd(t *testing.T) {
+	t.Run("runs compound commands with shell operators (&&, ||, |, ;)", func(t *testing.T) {
+		mockExec := new(execwrap.MockExec)
+		mockExec.On("LookPath", mock.Anything).Return("/bin/sh", nil)
+		shell := &RealShell{exec: mockExec}
+
+		out, err := shell.ShellCmd("echo one && echo two", map[string]string{})
+		assert.Nil(t, err)
+		assert.Equal(t, "one\ntwo", out)
+	})
+
+	t.Run("substitutes placeholders with shell-quoted values", func(t *testing.T) {
+		mockExec := new(execwrap.MockExec)
+		mockExec.On("LookPath", mock.Anything).Return("/bin/sh", nil)
+		shell := &RealShell{exec: mockExec}
+
+		// A path containing a space and a shell metacharacter must be
+		// treated as a single literal argument, not split or interpreted.
+		out, err := shell.ShellCmd(`echo {} && echo done`, map[string]string{
+			"{}": "hello world && rm -rf /tmp/should-not-run",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, "hello world && rm -rf /tmp/should-not-run\ndone", out)
+	})
+
+	t.Run("returns an error when the command fails", func(t *testing.T) {
+		mockExec := new(execwrap.MockExec)
+		mockExec.On("LookPath", mock.Anything).Return("/bin/sh", nil)
+		shell := &RealShell{exec: mockExec}
+
+		_, err := shell.ShellCmd("exit 1", map[string]string{})
+		assert.Error(t, err)
+	})
+}
+
+func TestShellQuote(t *testing.T) {
+	t.Run("wraps plain values in single quotes", func(t *testing.T) {
+		assert.Equal(t, "'hello'", shellQuote("hello"))
+	})
+
+	t.Run("escapes embedded single quotes", func(t *testing.T) {
+		assert.Equal(t, `'it'\''s'`, shellQuote("it's"))
+	})
+}
