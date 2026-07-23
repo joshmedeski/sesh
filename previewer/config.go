@@ -27,12 +27,7 @@ func (s *ConfigPreviewStrategy) Execute(name string) (string, error) {
 	replacements := map[string]string{
 		"{}": session.Path,
 	}
-	cmdParts, err := s.shell.PrepareCmd(session.PreviewCommand, replacements)
-	if err != nil {
-		return "", err
-	}
-
-	cmdOutput, err := s.shell.Cmd(cmdParts[0], cmdParts[1:]...)
+	cmdOutput, err := s.shell.ShellCmd(session.PreviewCommand, replacements)
 	if err != nil {
 		return "", err
 	}
