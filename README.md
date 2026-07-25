@@ -688,6 +688,7 @@ prompt = "> "
 placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
+alias_auto_connect_delay = "150ms"
 ```
 
 With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
@@ -700,6 +701,8 @@ With `show_windows = true`, each row also lists the names of the windows inside 
 ```
 
 Window names are display-only: selecting a row still returns just the session name, and typing a window name does not match its session. The names for live tmux sessions are fetched in a single tmux call, so the option costs the same regardless of how many sessions you have.
+
+`alias_auto_connect_delay` is the grace period before an alias auto-connects — see [Session Aliases](#session-aliases).
 
 ### Default Session
 
@@ -739,6 +742,39 @@ path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
+
+### Session Aliases
+
+Fuzzy matching is great for discovery, but the top result for `wp` shifts as sessions come and go, so muscle memory never quite forms. An alias gives a session a short, fixed name you can always count on:
+
+```toml
+[[session]]
+name = "wallpaper"
+path = "~/c/wallpaper"
+alias = "wp"
+alias_auto_connect = true
+
+[[session]]
+name = "dotfiles"
+path = "~/.config"
+alias = "dot"
+```
+
+Aliases must be unique (case-insensitively) — sesh reports an error at startup if two sessions share one.
+
+An alias does two things. On the command line, `sesh connect wp` behaves exactly like `sesh connect wallpaper`. In the picker, the session is tagged with its alias so it stays discoverable:
+
+```
+>  wp wallpaper
+   dot dotfiles
+   my-project
+```
+
+With `alias_auto_connect = true`, typing the full alias in the picker connects immediately — no <kbd>Enter</kbd>. It is opt-in per session because it is only worth it for the handful you jump to constantly. Filtering is unaffected either way: an aliased session appears wherever fuzzy matching ranks it, and a partial alias behaves like any other query.
+
+Aliases that share a prefix (`w` and `wp`) are allowed. `[tui] alias_auto_connect_delay` (default `150ms`) is the grace period before auto-connect fires, which leaves room to finish typing the longer one. Raise it if you type slowly, or lower it to `"0s"` to fire the instant the alias is complete.
+
+To keep typing past an alias in a one-off invocation, run the picker with `--no-alias-auto`.
 
 ### Path substitution
 

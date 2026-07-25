@@ -8,6 +8,8 @@ import (
 
 // TODO: send to logging (local txt file?)
 func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, error) {
+	name = c.resolveAlias(name)
+
 	// TODO: make it configurable to change the order of connection establishments?
 	// ["tmux", "config", "dir", "zoxide"]
 	// TODO: make it configurable to disable certain strategies (including flags for optimized fzf commands)

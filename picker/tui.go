@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -41,6 +42,42 @@ type sessionsLoadedMsg struct {
 	err      error
 }
 
+// aliasAutoConnectMsg fires once the auto-connect grace period has elapsed. The
+// seq identifies the filter change that scheduled it so later keystrokes can
+// invalidate it.
+type aliasAutoConnectMsg struct {
+	seq   int
+	alias string
+}
+
+// Alias is a picker shortcut for a single session, derived from an
+// [[session]] config block.
+type Alias struct {
+	// Alias is the shortcut as written in the config, used for display.
+	Alias string
+	// Target is the name of the session the alias resolves to.
+	Target string
+	// AutoConnect connects to Target as soon as the alias is fully typed.
+	AutoConnect bool
+}
+
+// Options configures the picker model. Zero values are valid and mean
+// "off"/"unset", except Prompt and Placeholder which are passed through as-is.
+type Options struct {
+	ShowIcons      bool
+	ShowWindows    bool
+	SeparatorAware bool
+	Prompt         string
+	Placeholder    string
+	// Aliases is keyed by lowercased alias.
+	Aliases map[string]Alias
+	// AliasAutoConnectDelay is the grace period before auto-connect fires,
+	// leaving room to finish typing a longer alias that shares a prefix.
+	AliasAutoConnectDelay time.Duration
+	// DisableAliasAutoConnect suppresses auto-connect for this invocation.
+	DisableAliasAutoConnect bool
+}
+
 type Model struct {
 	allItems       sessionItems
 	filtered       []filteredItem
@@ -58,6 +95,16 @@ type Model struct {
 	loading        bool
 	fetchFunc      FetchFunc
 	loadErr        error
+
+	// aliases is keyed by lowercased alias; aliasByName is keyed by session
+	// name so rows can be tagged while rendering.
+	aliases                 map[string]Alias
+	aliasByName             map[string]string
+	aliasAutoConnectDelay   time.Duration
+	disableAliasAutoConnect bool
+	// aliasSeq increments on every filter change so a pending auto-connect
+	// tick can tell whether it is stale.
+	aliasSeq int
 }
 
 // srcIcon returns the nerd font icon and color for a session source.
@@ -75,6 +122,37 @@ func srcIcon(src string) (string, color.Color) {
 		return g.Icon + " ", lipgloss.ANSIColor(ansi)
 	}
 	return "? ", lipgloss.ANSIColor(8)
+}
+
+// Powerline half circles used to round off the alias chip. They are nerd font
+// glyphs, so they are only used when icons are enabled.
+const (
+	chipLeftGlyph  = ""
+	chipRightGlyph = ""
+)
+
+// aliasChip renders the alias of a session as a chip that sits before the
+// session name, e.g. ` wp ` with nerd fonts or `[wp] ` without. It returns ""
+// for sessions that have no alias.
+//
+// The label uses reverse video rather than an explicit fg/bg pair so the text
+// is always the terminal's background color on its foreground color, which
+// stays legible under any color scheme. The half circles are left unstyled for
+// the same reason: their default foreground is exactly the color the reversed
+// label fills with, so the chip reads as one shape.
+func (m Model) aliasChip(name string) string {
+	alias, ok := m.aliasByName[name]
+	if !ok {
+		return ""
+	}
+
+	label := lipgloss.NewStyle().Reverse(true)
+	if !m.showIcons {
+		// Without nerd fonts the half circles render as tofu, so fall back to
+		// brackets that still read as a chip.
+		return label.Render("["+alias+"]") + " "
+	}
+	return chipLeftGlyph + label.Render(alias) + chipRightGlyph + " "
 }
 
 var separatorReplacer = strings.NewReplacer("-", " ", "_", " ", "/", " ", "\\", " ")
@@ -101,18 +179,27 @@ func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
 	return items
 }
 
-func New(fetchFunc FetchFunc, showIcons bool, showWindows bool, separatorAware bool, prompt string, placeholder string) Model {
+func New(fetchFunc FetchFunc, opts Options) Model {
 	ti := textinput.New()
-	ti.Placeholder = placeholder
-	ti.Prompt = prompt
+	ti.Placeholder = opts.Placeholder
+	ti.Prompt = opts.Prompt
+
+	aliasByName := make(map[string]string, len(opts.Aliases))
+	for _, alias := range opts.Aliases {
+		aliasByName[alias.Target] = alias.Alias
+	}
 
 	m := Model{
-		filterInput:    ti,
-		showIcons:      showIcons,
-		showWindows:    showWindows,
-		separatorAware: separatorAware,
-		loading:        true,
-		fetchFunc:      fetchFunc,
+		filterInput:             ti,
+		showIcons:               opts.ShowIcons,
+		showWindows:             opts.ShowWindows,
+		separatorAware:          opts.SeparatorAware,
+		loading:                 true,
+		fetchFunc:               fetchFunc,
+		aliases:                 opts.Aliases,
+		aliasByName:             aliasByName,
+		aliasAutoConnectDelay:   opts.AliasAutoConnectDelay,
+		disableAliasAutoConnect: opts.DisableAliasAutoConnect,
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -131,6 +218,19 @@ func (m Model) fetchSessions() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case aliasAutoConnectMsg:
+		// The tick can't be cancelled, so a stale one still arrives: ignore it
+		// unless it is the latest and the filter still reads as that alias.
+		if msg.seq != m.aliasSeq {
+			return m, nil
+		}
+		alias, ok := m.aliases[strings.ToLower(m.filterInput.Value())]
+		if !ok || alias.Alias != msg.alias || !alias.AutoConnect || m.disableAliasAutoConnect {
+			return m, nil
+		}
+		m.chosen = alias.Target
+		return m, tea.Quit
+
 	case sessionsLoadedMsg:
 		if msg.err != nil {
 			m.loadErr = msg.err
@@ -192,9 +292,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.cursor = 0
 		m.offset = 0
+		if tick := m.scheduleAliasAutoConnect(); tick != nil {
+			return m, tea.Batch(cmd, tick)
+		}
 	}
 
 	return m, cmd
+}
+
+// scheduleAliasAutoConnect invalidates any pending auto-connect and, when the
+// filter now reads as an alias that opted into auto-connect, arms a fresh one.
+// It returns nil when there is nothing to schedule. Auto-connect deliberately
+// works while sessions are still loading: the target comes from the config, not
+// from the list, so there is no reason to make the user wait.
+func (m *Model) scheduleAliasAutoConnect() tea.Cmd {
+	m.aliasSeq++
+
+	if m.disableAliasAutoConnect {
+		return nil
+	}
+	// Matched against the raw input: separator-aware normalization must not
+	// turn `w p` into a match for the alias `w-p`.
+	alias, ok := m.aliases[strings.ToLower(m.filterInput.Value())]
+	if !ok || !alias.AutoConnect {
+		return nil
+	}
+
+	msg := aliasAutoConnectMsg{seq: m.aliasSeq, alias: alias.Alias}
+	if m.aliasAutoConnectDelay <= 0 {
+		return func() tea.Msg { return msg }
+	}
+	return tea.Tick(m.aliasAutoConnectDelay, func(time.Time) tea.Msg { return msg })
 }
 
 func (m *Model) applyFilter() {
@@ -312,19 +440,20 @@ func (m Model) View() tea.View {
 				iconStyle := lipgloss.NewStyle().Foreground(clr)
 				tag = iconStyle.Render(icn)
 			}
+			chip := m.aliasChip(item.item.name)
 			name := highlightMatches(item.item.name, item.matchedIndexes, matchStyle, normalStyle)
 
 			var windows string
 			if m.showWindows {
 				// Window names are display-only: they are never highlighted as
 				// matches and never become part of the selected value.
-				used := lipgloss.Width(prefix) + lipgloss.Width(tag) + lipgloss.Width(item.item.name)
+				used := lipgloss.Width(prefix) + lipgloss.Width(tag) + lipgloss.Width(chip) + lipgloss.Width(item.item.name)
 				if text := windowsText(item.item.session.WindowNames, m.contentWidth()-used); text != "" {
 					windows = windowStyle.Render(text)
 				}
 			}
 
-			b.WriteString(fmt.Sprintf("%s%s%s%s\n", prefix, tag, name, windows))
+			b.WriteString(fmt.Sprintf("%s%s%s%s%s\n", prefix, tag, chip, name, windows))
 		}
 
 		// Pad remaining visible lines

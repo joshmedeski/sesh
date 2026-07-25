@@ -1,5 +1,9 @@
 package model
 
+// DefaultAliasAutoConnectDelay is the grace period used when
+// [tui] alias_auto_connect_delay is not set.
+const DefaultAliasAutoConnectDelay = "150ms"
+
 type (
 	Config struct {
 		Cache                   bool                 `toml:"cache"`
@@ -55,6 +59,14 @@ type (
 		Name                string `toml:"name"`
 		Path                string `toml:"path"`
 		DisableStartCommand bool   `toml:"disable_startup_command"`
+		// Alias is a short, exact-match shortcut for this session. Typing it in
+		// the picker marks the session with a chip, and `sesh connect <alias>`
+		// resolves to this session's name.
+		Alias string `toml:"alias"`
+		// AliasAutoConnect connects to this session as soon as its alias is
+		// fully typed in the picker, without pressing enter. Opt-in per session
+		// since it is only desirable for sessions you jump to constantly.
+		AliasAutoConnect bool `toml:"alias_auto_connect"`
 		DefaultSessionConfig
 	}
 
@@ -70,6 +82,10 @@ type (
 		ShowWindows bool   `toml:"show_windows"`
 		Prompt      string `toml:"prompt"`
 		Placeholder string `toml:"placeholder"`
+		// AliasAutoConnectDelay is the grace period between typing an alias and
+		// auto-connecting to it, giving longer aliases that share a prefix time
+		// to be typed. Any duration string time.ParseDuration accepts.
+		AliasAutoConnectDelay string `toml:"alias_auto_connect_delay"`
 	}
 
 	WildcardConfig struct {
