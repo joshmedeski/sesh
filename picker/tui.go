@@ -52,6 +52,7 @@ type Model struct {
 	chosen         string
 	quit           bool
 	showIcons      bool
+	showWindows    bool
 	separatorAware bool
 	focusCmd       tea.Cmd
 	loading        bool
@@ -100,7 +101,7 @@ func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
 	return items
 }
 
-func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool, prompt string, placeholder string) Model {
+func New(fetchFunc FetchFunc, showIcons bool, showWindows bool, separatorAware bool, prompt string, placeholder string) Model {
 	ti := textinput.New()
 	ti.Placeholder = placeholder
 	ti.Prompt = prompt
@@ -108,6 +109,7 @@ func New(fetchFunc FetchFunc, showIcons bool, separatorAware bool, prompt string
 	m := Model{
 		filterInput:    ti,
 		showIcons:      showIcons,
+		showWindows:    showWindows,
 		separatorAware: separatorAware,
 		loading:        true,
 		fetchFunc:      fetchFunc,
@@ -295,6 +297,7 @@ func (m Model) View() tea.View {
 		cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 		matchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(1)).Bold(true)
 		normalStyle := lipgloss.NewStyle()
+		windowStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
 
 		for i := m.offset; i < end; i++ {
 			item := m.filtered[i]
@@ -311,7 +314,17 @@ func (m Model) View() tea.View {
 			}
 			name := highlightMatches(item.item.name, item.matchedIndexes, matchStyle, normalStyle)
 
-			b.WriteString(fmt.Sprintf("%s%s%s\n", prefix, tag, name))
+			var windows string
+			if m.showWindows {
+				// Window names are display-only: they are never highlighted as
+				// matches and never become part of the selected value.
+				used := lipgloss.Width(prefix) + lipgloss.Width(tag) + lipgloss.Width(item.item.name)
+				if text := windowsText(item.item.session.WindowNames, m.contentWidth()-used); text != "" {
+					windows = windowStyle.Render(text)
+				}
+			}
+
+			b.WriteString(fmt.Sprintf("%s%s%s%s\n", prefix, tag, name, windows))
 		}
 
 		// Pad remaining visible lines
@@ -323,6 +336,50 @@ func (m Model) View() tea.View {
 	content := b.String()
 
 	return tea.NewView(content)
+}
+
+// windowGap separates the session name from the window names, and each window
+// name from the next.
+const windowGap = "  "
+
+// windowsText renders window names inline within budget columns, eliding the
+// ones that don't fit as "+N". It returns "" when there are no names or not
+// even one name fits.
+func windowsText(names []string, budget int) string {
+	if len(names) == 0 || budget <= 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	used, shown := 0, 0
+	for i, name := range names {
+		entry := windowGap + name
+		need := used + lipgloss.Width(entry)
+		// Reserve room for the elision label in case a later name doesn't fit.
+		if remaining := len(names) - i - 1; remaining > 0 {
+			need += lipgloss.Width(elisionLabel(remaining))
+		}
+		if need > budget {
+			break
+		}
+		b.WriteString(entry)
+		used += lipgloss.Width(entry)
+		shown++
+	}
+
+	if shown == len(names) {
+		return b.String()
+	}
+
+	label := elisionLabel(len(names) - shown)
+	if used+lipgloss.Width(label) <= budget {
+		return b.String() + label
+	}
+	return b.String()
+}
+
+func elisionLabel(hidden int) string {
+	return fmt.Sprintf("%s+%d", windowGap, hidden)
 }
 
 func highlightMatches(s string, indexes []int, matchStyle, normalStyle lipgloss.Style) string {

@@ -48,6 +48,18 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	resultsChan := make(chan strategyResult, len(srcsOrderedIndex))
 	var wg sync.WaitGroup
 
+	// Window names are display-only and fetched once for all sessions, in
+	// parallel with the source strategies, so they never cost a tmux call per
+	// session.
+	var windowNames map[string][]string
+	if l.config.TUI.ShowWindows && slices.Contains(srcsOrderedIndex, "tmux") {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			windowNames = tmuxWindowNames(l)
+		}()
+	}
+
 	for _, src := range srcsOrderedIndex {
 		wg.Add(1)
 		go func(s string) {
@@ -115,8 +127,11 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		})
 	}
 
-	return model.SeshSessions{
+	sessions := model.SeshSessions{
 		OrderedIndex: fullOrderedIndex,
 		Directory:    fullDirectory,
-	}, nil
+	}
+	attachWindowNames(sessions, windowNames)
+
+	return sessions, nil
 }

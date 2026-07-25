@@ -36,7 +36,7 @@ func testFetchFunc(sessions model.SeshSessions) FetchFunc {
 // newTestModel creates a model and simulates the async load completing.
 func newTestModel() Model {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model)
 }
@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 
 func TestNew_StartsInLoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 	assert.True(t, m.loading)
 	assert.Len(t, m.allItems, 0)
 	assert.Len(t, m.filtered, 0)
@@ -202,7 +202,7 @@ func TestUpdate_Enter_EmptyList(t *testing.T) {
 
 func TestUpdate_Enter_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 	assert.True(t, m.loading)
 
 	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -215,7 +215,7 @@ func TestUpdate_Enter_WhileLoading(t *testing.T) {
 
 func TestUpdate_Escape_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 
 	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
 	resultModel := result.(Model)
@@ -225,7 +225,7 @@ func TestUpdate_Escape_WhileLoading(t *testing.T) {
 
 func TestUpdate_SessionsLoaded(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 	assert.True(t, m.loading)
 
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
@@ -239,7 +239,7 @@ func TestUpdate_SessionsLoaded(t *testing.T) {
 
 func TestUpdate_SessionsLoaded_WithPreTypedFilter(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 
 	// Simulate typing "dot" before sessions arrive
 	m.filterInput.SetValue("dot")
@@ -257,7 +257,7 @@ func TestUpdate_SessionsLoadError(t *testing.T) {
 	fetchErr := errors.New("zoxide not found")
 	m := New(func() (model.SeshSessions, error) {
 		return model.SeshSessions{}, fetchErr
-	}, false, false, "> ", "Filter sessions...")
+	}, false, false, false, "> ", "Filter sessions...")
 
 	result, _ := m.Update(sessionsLoadedMsg{err: fetchErr})
 	resultModel := result.(Model)
@@ -307,7 +307,7 @@ func TestView_ReturnsNonEmpty(t *testing.T) {
 
 func TestView_LoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 	m.width = 60
 	m.height = 24
 
@@ -352,7 +352,7 @@ func TestHalfPageMovement(t *testing.T) {
 		index[i] = key
 	}
 	sessions := model.SeshSessions{OrderedIndex: index, Directory: dir}
-	m := New(testFetchFunc(sessions), false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	m = result.(Model)
 	m.height = 20
@@ -366,7 +366,7 @@ func TestHalfPageMovement(t *testing.T) {
 // newTestModelSeparatorAware creates a model with separator-aware matching enabled.
 func newTestModelSeparatorAware() Model {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, true, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), false, false, true, "> ", "Filter sessions...")
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model)
 }
@@ -444,5 +444,143 @@ func TestApplyFilter_SeparatorAware_Disabled(t *testing.T) {
 	for _, f := range m.filtered {
 		assert.NotEqual(t, "my-project", f.item.name,
 			"space should NOT match dash when separator-aware is disabled")
+	}
+}
+
+// sessionsWithWindows returns sessions carrying window names for display.
+func sessionsWithWindows() model.SeshSessions {
+	dir := model.SeshSessionMap{
+		"s1": {Name: "sesh", Src: "tmux", WindowNames: []string{"editor", "server", "logs"}},
+		"s2": {Name: "dotfiles", Src: "tmux", WindowNames: []string{"nvim", "shell"}},
+		"s3": {Name: "scratch", Src: "tmux"},
+	}
+	return model.SeshSessions{
+		OrderedIndex: []string{"s1", "s2", "s3"},
+		Directory:    dir,
+	}
+}
+
+// newTestModelWithWindows creates a loaded model with window display enabled.
+func newTestModelWithWindows() Model {
+	sessions := sessionsWithWindows()
+	m := New(testFetchFunc(sessions), false, true, false, "> ", "Filter sessions...")
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+	return m
+}
+
+func TestView_ShowWindows(t *testing.T) {
+	m := newTestModelWithWindows()
+	out := fmt.Sprintf("%v", m.View())
+
+	assert.Contains(t, out, "sesh")
+	assert.Contains(t, out, "editor")
+	assert.Contains(t, out, "server")
+	assert.Contains(t, out, "nvim")
+}
+
+func TestView_ShowWindows_Disabled(t *testing.T) {
+	sessions := sessionsWithWindows()
+	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+
+	out := fmt.Sprintf("%v", m.View())
+	assert.Contains(t, out, "sesh")
+	assert.NotContains(t, out, "editor")
+}
+
+func TestView_ShowWindows_NoWindowsRendersCleanly(t *testing.T) {
+	m := newTestModelWithWindows()
+	out := fmt.Sprintf("%v", m.View())
+
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "scratch") {
+			assert.Equal(t, "  scratch", strings.TrimRight(line, " \r"),
+				"a session without window names should render exactly as before")
+		}
+	}
+}
+
+func TestView_ShowWindows_RowsFitContentWidth(t *testing.T) {
+	dir := model.SeshSessionMap{
+		"s1": {Name: "sesh", Src: "tmux", WindowNames: []string{
+			"editor", "server", "logs", "database", "tests", "docs", "shell",
+			"migrations", "worker", "queue", "metrics",
+		}},
+	}
+	sessions := model.SeshSessions{OrderedIndex: []string{"s1"}, Directory: dir}
+	m := New(testFetchFunc(sessions), false, true, false, "> ", "Filter sessions...")
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+
+	out := fmt.Sprintf("%v", m.View())
+	var row string
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "sesh") {
+			row = line
+			break
+		}
+	}
+	assert.NotEmpty(t, row)
+	assert.LessOrEqual(t, lipgloss.Width(row), m.contentWidth(),
+		"row must not exceed the content width")
+	assert.Contains(t, row, "+", "elided windows should be summarized as +N")
+}
+
+func TestEnter_SelectsSessionNameOnly(t *testing.T) {
+	m := newTestModelWithWindows()
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	resultModel := result.(Model)
+
+	assert.Equal(t, "sesh", resultModel.Chosen(),
+		"selection must be the session name, never window names")
+}
+
+func TestApplyFilter_DoesNotMatchWindowNames(t *testing.T) {
+	m := newTestModelWithWindows()
+	m.filterInput.SetValue("editor")
+	m.applyFilter()
+
+	assert.Empty(t, m.filtered, "typing a window name must not match its session")
+}
+
+func TestSessionItems_StringIgnoresWindowNames(t *testing.T) {
+	items := buildItems(sessionsWithWindows(), false)
+	for i := range items {
+		assert.Equal(t, items[i].name, items.String(i),
+			"fuzzy source must expose the session name only")
+	}
+}
+
+func TestWindowsText(t *testing.T) {
+	tests := []struct {
+		name     string
+		names    []string
+		budget   int
+		expected string
+	}{
+		{"no names", nil, 40, ""},
+		{"zero budget", []string{"editor"}, 0, ""},
+		{"negative budget", []string{"editor"}, -5, ""},
+		{"all fit", []string{"editor", "server"}, 40, "  editor  server"},
+		{"one fits, rest elided", []string{"editor", "server", "logs"}, 14, "  editor  +2"},
+		{"none fit, count still shown", []string{"editorwindow"}, 6, "  +1"},
+		{"nothing fits at all", []string{"editorwindow"}, 3, ""},
+		{"exact fit", []string{"editor"}, 8, "  editor"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := windowsText(tt.names, tt.budget)
+			assert.Equal(t, tt.expected, got)
+			assert.LessOrEqual(t, lipgloss.Width(got), max(tt.budget, 0))
+		})
 	}
 }

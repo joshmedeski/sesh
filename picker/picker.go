@@ -16,6 +16,7 @@ const (
 
 type PickerOptions struct {
 	ShowIcons      *bool
+	ShowWindows    *bool
 	SeparatorAware *bool
 	Prompt         *string
 	Placeholder    *string
@@ -41,6 +42,11 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		showIcons = p.config.TUI.ShowIcons
 	}
 
+	showWindows := p.config.TUI.ShowWindows
+	if opts.ShowWindows != nil {
+		showWindows = *opts.ShowWindows
+	}
+
 	prompt := defaultPrompt
 	if opts.Prompt != nil {
 		prompt = *opts.Prompt
@@ -55,7 +61,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		placeholder = p.config.TUI.Placeholder
 	}
 
-	m := New(fetchFunc, showIcons, p.config.SeparatorAware, prompt, placeholder)
+	m := New(fetchFunc, showIcons, showWindows, p.config.SeparatorAware, prompt, placeholder)
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()
 	if err != nil {

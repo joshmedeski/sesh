@@ -67,6 +67,7 @@ type (
 	TUIConfig struct {
 		// TODO: keybindings and more
 		ShowIcons   bool   `toml:"show_icons"`
+		ShowWindows bool   `toml:"show_windows"`
 		Prompt      string `toml:"prompt"`
 		Placeholder string `toml:"placeholder"`
 	}
