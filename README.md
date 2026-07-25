@@ -687,7 +687,19 @@ The Picker TUI can be configured with some options that help you customize it's 
 prompt = "> "
 placeholder = "Filter sessions... "
 show_icons = false
+show_windows = false
 ```
+
+With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
+
+```
+>  sesh editor server logs
+   dotfiles nvim shell
+   my-project code server db +2
+   scratch
+```
+
+Window names are display-only: selecting a row still returns just the session name, and typing a window name does not match its session. The names for live tmux sessions are fetched in a single tmux call, so the option costs the same regardless of how many sessions you have.
 
 ### Default Session
 

@@ -93,6 +93,10 @@
           "type": "boolean",
           "description": "Show icons in the picker TUI"
         },
+        "show_windows": {
+          "type": "boolean",
+          "description": "Show the window names of each session in the picker TUI (display only, never part of the selected value)"
+        },
         "prompt": {
           "type": "string",
           "description": "The prompt shown in the picker TUI"

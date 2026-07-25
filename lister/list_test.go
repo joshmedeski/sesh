@@ -291,3 +291,49 @@ func TestBlacklistedFlag(t *testing.T) {
 		})
 	}
 }
+
+func TestList_ShowWindows(t *testing.T) {
+	newLister := func(showWindows bool, mockTmux *tmux.MockTmux) Lister {
+		config := model.Config{}
+		config.TUI.ShowWindows = showWindows
+		return NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+	}
+
+	t.Run("attaches window names when enabled", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+			{Name: "sesh", Path: "/p"},
+		}, nil)
+		mockTmux.EXPECT().ListAllWindowNames().Return(map[string][]string{
+			"sesh": {"editor", "server"},
+		}, nil).Once()
+
+		result, err := newLister(true, mockTmux).List(ListOptions{Tmux: true})
+		assert.NoError(t, err)
+		session := result.Directory[result.OrderedIndex[0]]
+		assert.Equal(t, []string{"editor", "server"}, session.WindowNames)
+		// One tmux call for all sessions, not one per session.
+		mockTmux.AssertExpectations(t)
+	})
+
+	t.Run("does not call tmux when disabled", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+			{Name: "sesh", Path: "/p"},
+		}, nil)
+
+		result, err := newLister(false, mockTmux).List(ListOptions{Tmux: true})
+		assert.NoError(t, err)
+		session := result.Directory[result.OrderedIndex[0]]
+		assert.Nil(t, session.WindowNames)
+		mockTmux.AssertNotCalled(t, "ListAllWindowNames")
+	})
+
+	t.Run("does not call tmux when tmux is not a listed source", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+
+		_, err := newLister(true, mockTmux).List(ListOptions{Config: true})
+		assert.NoError(t, err)
+		mockTmux.AssertNotCalled(t, "ListAllWindowNames")
+	})
+}
