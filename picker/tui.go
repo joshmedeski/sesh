@@ -340,7 +340,7 @@ func (m Model) View() tea.View {
 
 // windowGap separates the session name from the window names, and each window
 // name from the next.
-const windowGap = "  "
+const windowGap = " "
 
 // windowsText renders window names inline within budget columns, eliding the
 // ones that don't fit as "+N". It returns "" when there are no names or not

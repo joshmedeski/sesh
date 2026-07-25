@@ -693,9 +693,9 @@ show_windows = false
 With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
 
 ```
->  sesh  editor  server  logs
-   dotfiles  nvim  shell
-   my-project  code  server  db  +2
+>  sesh editor server logs
+   dotfiles nvim shell
+   my-project code server db +2
    scratch
 ```
 

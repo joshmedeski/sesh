@@ -570,11 +570,11 @@ func TestWindowsText(t *testing.T) {
 		{"no names", nil, 40, ""},
 		{"zero budget", []string{"editor"}, 0, ""},
 		{"negative budget", []string{"editor"}, -5, ""},
-		{"all fit", []string{"editor", "server"}, 40, "  editor  server"},
-		{"one fits, rest elided", []string{"editor", "server", "logs"}, 14, "  editor  +2"},
-		{"none fit, count still shown", []string{"editorwindow"}, 6, "  +1"},
-		{"nothing fits at all", []string{"editorwindow"}, 3, ""},
-		{"exact fit", []string{"editor"}, 8, "  editor"},
+		{"all fit", []string{"editor", "server"}, 40, " editor server"},
+		{"one fits, rest elided", []string{"editor", "server", "logs"}, 14, " editor +2"},
+		{"none fit, count still shown", []string{"editorwindow"}, 6, " +1"},
+		{"nothing fits at all", []string{"editorwindow"}, 2, ""},
+		{"exact fit", []string{"editor"}, 7, " editor"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
