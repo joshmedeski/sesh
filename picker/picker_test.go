@@ -1529,6 +1529,54 @@ func TestPreviewMinWidth_Resolution(t *testing.T) {
 	assert.Equal(t, 80, previewMinWidth(80))
 }
 
+func TestPreviewBorder_Resolution(t *testing.T) {
+	assert.Equal(t, model.DefaultPreviewBorder, previewBorder(""), "unset falls back")
+	assert.Equal(t, model.DefaultPreviewBorder, previewBorder("squiggly"),
+		"an unrecognized style falls back rather than failing the picker")
+	assert.Equal(t, model.PreviewBorderNone, previewBorder("none"))
+	assert.Equal(t, model.PreviewBorderThick, previewBorder("thick"))
+	assert.Equal(t, model.PreviewBorderDouble, previewBorder("double"))
+}
+
+func TestPreview_BorderStyles(t *testing.T) {
+	tests := []struct {
+		name       string
+		configured string
+		divider    string
+		chrome     int
+	}{
+		{"unset draws a line", "", "│", 2},
+		{"line", model.PreviewBorderLine, "│", 2},
+		{"thick", model.PreviewBorderThick, "┃", 2},
+		{"double", model.PreviewBorderDouble, "║", 2},
+		{"none draws nothing", model.PreviewBorderNone, "", 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, _ := previewModel(func(o *Options) { o.PreviewBorder = tt.configured })
+			result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = loadPreview(t, result.(Model), cmd)
+
+			assert.Equal(t, tt.chrome, m.previewChrome(),
+				"a hidden divider should give its column to the preview text")
+
+			out := m.View().Content
+			require.Contains(t, out, "preview of dotfiles")
+			for _, glyph := range []string{"│", "┃", "║"} {
+				if glyph == tt.divider {
+					assert.Contains(t, out, glyph)
+					continue
+				}
+				assert.NotContains(t, out, glyph, "only the configured divider may be drawn")
+			}
+			for i, line := range strings.Split(out, "\n") {
+				assert.LessOrEqual(t, lipgloss.Width(line), m.width,
+					"line %d may not exceed the terminal width", i)
+			}
+		})
+	}
+}
+
 func TestView_FillsTerminalHeight(t *testing.T) {
 	for _, height := range []int{10, 24, 50, 120} {
 		t.Run(fmt.Sprintf("height %d", height), func(t *testing.T) {

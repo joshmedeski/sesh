@@ -133,6 +133,12 @@
           "description": "Narrowest terminal, in columns, that still gets a preview pane. Below this the picker renders the session list only.",
           "default": 100,
           "minimum": 1
+        },
+        "preview_border": {
+          "type": "string",
+          "description": "Divider drawn between the session list and the preview pane. Use \"none\" for no divider.",
+          "enum": ["line", "thick", "double", "none"],
+          "default": "line"
         }
       },
       "additionalProperties": false

@@ -21,6 +21,18 @@ const (
 	DefaultPreviewMinWidth = 100
 )
 
+// The dividers [tui] preview_border accepts between the picker's session list
+// and its preview pane. PreviewBorderNone draws no divider at all.
+const (
+	PreviewBorderNone   = "none"
+	PreviewBorderLine   = "line"
+	PreviewBorderThick  = "thick"
+	PreviewBorderDouble = "double"
+	// DefaultPreviewBorder is the divider used when [tui] preview_border is
+	// not set.
+	DefaultPreviewBorder = PreviewBorderLine
+)
+
 type (
 	Config struct {
 		Cache                   bool                 `toml:"cache"`
@@ -119,6 +131,10 @@ type (
 		// PreviewMinWidth is the narrowest terminal that still gets a preview
 		// pane; below it the picker renders list-only. Zero means unset.
 		PreviewMinWidth int `toml:"preview_min_width"`
+		// PreviewBorder is the divider drawn between the list and the preview
+		// pane: "line" (default), "thick", "double", or "none" for no divider.
+		// Empty means unset.
+		PreviewBorder string `toml:"preview_border"`
 	}
 
 	WildcardConfig struct {

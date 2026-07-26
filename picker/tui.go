@@ -115,6 +115,10 @@ type Options struct {
 	PreviewWidth int
 	// PreviewMinWidth is the narrowest terminal that gets a preview pane.
 	PreviewMinWidth int
+	// PreviewBorder names the divider drawn between the list and the preview
+	// pane, one of the model.PreviewBorder* values. Empty or unrecognized
+	// means the default.
+	PreviewBorder string
 	// PreviewFunc renders previews. Nil disables the pane entirely.
 	PreviewFunc PreviewFunc
 }
@@ -155,8 +159,11 @@ type Model struct {
 	// previewName is the session the current content belongs to, and
 	// previewPending the one being fetched. Together they keep the cursor
 	// landing back on an already-previewed row from refetching it.
-	previewName    string
-	previewPending string
+	// previewBorderName is the resolved divider style, so an unset or bogus
+	// config value never reaches the renderer.
+	previewBorderName string
+	previewName       string
+	previewPending    string
 	previewContent string
 	previewErr     error
 	// previewSeq increments on every request so a result that arrives after the
@@ -280,6 +287,7 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		previewOn:               opts.Preview,
 		previewWidthPct:         previewWidth(opts.PreviewWidth),
 		previewMinWidth:         previewMinWidth(opts.PreviewMinWidth),
+		previewBorderName:       previewBorder(opts.PreviewBorder),
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -688,10 +696,35 @@ const (
 	// minListWidth is the narrowest list worth splitting off; the preview gives
 	// columns back to stay above it.
 	minListWidth = 40
-	// previewChrome is the divider column plus the padding after it. Both sit
-	// inside the pane's width, so the text gets that much less room.
-	previewChrome = 2
+	// previewPadding is the gap between the divider — or the list itself, with
+	// the divider off — and the preview text. It sits inside the pane's width.
+	previewPadding = 1
 )
+
+// previewBorderStyle returns the lipgloss border for a resolved divider name,
+// and whether a divider is drawn at all.
+func previewBorderStyle(name string) (lipgloss.Border, bool) {
+	switch name {
+	case model.PreviewBorderNone:
+		return lipgloss.Border{}, false
+	case model.PreviewBorderThick:
+		return lipgloss.ThickBorder(), true
+	case model.PreviewBorderDouble:
+		return lipgloss.DoubleBorder(), true
+	default:
+		return lipgloss.NormalBorder(), true
+	}
+}
+
+// previewChrome is how much of the pane's width goes to the divider and the
+// padding after it, leaving the text that much less room. Without a divider
+// only the padding is charged, so disabling it gives that column to the text.
+func (m Model) previewChrome() int {
+	if _, drawn := previewBorderStyle(m.previewBorderName); drawn {
+		return previewPadding + 1
+	}
+	return previewPadding
+}
 
 // splitActive reports whether this frame renders a preview pane. Width is
 // checked here rather than at toggle time so growing the window is enough to
@@ -715,7 +748,7 @@ func (m Model) previewCols() int {
 	if max := m.width - minListWidth; cols > max {
 		cols = max
 	}
-	if cols <= previewChrome {
+	if cols <= m.previewChrome() {
 		return 0
 	}
 	return cols
@@ -847,12 +880,14 @@ func (m Model) previewView(cols, rows int) string {
 	}
 
 	// The divider and padding live inside Width, so the text gets less room.
-	body = clipLines(body, cols-previewChrome, rows)
+	body = clipLines(body, cols-m.previewChrome(), rows)
+
+	border, drawn := previewBorderStyle(m.previewBorderName)
 
 	return lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), false, false, false, true).
+		Border(border, false, false, false, drawn).
 		BorderForeground(lipgloss.ANSIColor(8)).
-		PaddingLeft(1).
+		PaddingLeft(previewPadding).
 		PaddingTop(headerLines).
 		Width(cols).
 		Height(headerLines + rows).

@@ -94,6 +94,19 @@ func previewMinWidth(configured int) int {
 	return configured
 }
 
+// previewBorder resolves the divider drawn between the list and the preview
+// pane, falling back to the default on an empty or unrecognized value rather
+// than failing the picker (the JSON schema flags those in the editor, but
+// nothing rejects them at load).
+func previewBorder(configured string) string {
+	switch configured {
+	case model.PreviewBorderNone, model.PreviewBorderLine, model.PreviewBorderThick, model.PreviewBorderDouble:
+		return configured
+	default:
+		return model.DefaultPreviewBorder
+	}
+}
+
 // aliasFilterPrefix resolves the sigil that enters alias-filter mode. A nil
 // value means the key is absent (the configurator normally fills it in, but the
 // picker can be constructed with a bare config), while an explicit empty string
@@ -162,6 +175,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		Preview:                 preview,
 		PreviewWidth:            previewWidth(p.config.TUI.PreviewWidth),
 		PreviewMinWidth:         previewMinWidth(p.config.TUI.PreviewMinWidth),
+		PreviewBorder:           p.config.TUI.PreviewBorder,
 		PreviewFunc:             previewFunc,
 	})
 	prog := tea.NewProgram(m)

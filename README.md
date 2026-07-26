@@ -693,6 +693,7 @@ alias_filter_prefix = "/"
 preview = false
 preview_width = 60
 preview_min_width = 100
+preview_border = "line"
 ```
 
 With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
@@ -721,6 +722,19 @@ With `preview = true`, the highlighted session is previewed beside the list, usi
 The pane is off by default, and `ctrl+o` toggles it at any time.
 
 `preview_width` is the share of the terminal, in percent, guaranteed to the pane. The session list is capped at 60 columns, so on a wide terminal everything past that cap goes to the preview on top of this share; on a narrow one the list is never squeezed below 40 columns.
+
+`preview_border` picks the divider between the two panes: `line` (default), `thick`, `double`, or `none` for no divider at all. Turning it off gives the divider's column to the preview text:
+
+```toml
+[tui]
+preview_border = "none"
+```
+
+```
+> sesh                 $ eza --icons
+  dotfiles              README.md    main.go
+  my-project            picker/      previewer/
+```
 
 `preview_min_width` (default `100`) is the narrowest terminal that gets a split at all. Below it the picker renders the list only, and the pane comes back on its own once the window has room — handy in small tmux popups. Preview commands run in the background as the cursor moves, so a slow one never blocks the list, and a failing one is reported in the pane instead of taking the picker down.
 
