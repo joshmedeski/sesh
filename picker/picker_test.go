@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -33,10 +36,27 @@ func testFetchFunc(sessions model.SeshSessions) FetchFunc {
 	}
 }
 
+func testOptions() Options {
+	return Options{
+		Prompt:                "> ",
+		Placeholder:           "Filter sessions...",
+		AliasAutoConnectDelay: 150 * time.Millisecond,
+		AliasFilterPrefix:     model.DefaultAliasFilterPrefix,
+	}
+}
+
+// testOptionsWith builds the default test options and lets a test tweak the
+// handful of fields it cares about.
+func testOptionsWith(fn func(*Options)) Options {
+	opts := testOptions()
+	fn(&opts)
+	return opts
+}
+
 // newTestModel creates a model and simulates the async load completing.
 func newTestModel() Model {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model)
 }
@@ -53,7 +73,7 @@ func TestNew(t *testing.T) {
 
 func TestNew_StartsInLoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 	assert.True(t, m.loading)
 	assert.Len(t, m.allItems, 0)
 	assert.Len(t, m.filtered, 0)
@@ -202,7 +222,7 @@ func TestUpdate_Enter_EmptyList(t *testing.T) {
 
 func TestUpdate_Enter_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 	assert.True(t, m.loading)
 
 	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -215,7 +235,7 @@ func TestUpdate_Enter_WhileLoading(t *testing.T) {
 
 func TestUpdate_Escape_WhileLoading(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 
 	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
 	resultModel := result.(Model)
@@ -225,7 +245,7 @@ func TestUpdate_Escape_WhileLoading(t *testing.T) {
 
 func TestUpdate_SessionsLoaded(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 	assert.True(t, m.loading)
 
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
@@ -239,7 +259,7 @@ func TestUpdate_SessionsLoaded(t *testing.T) {
 
 func TestUpdate_SessionsLoaded_WithPreTypedFilter(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 
 	// Simulate typing "dot" before sessions arrive
 	m.filterInput.SetValue("dot")
@@ -257,7 +277,7 @@ func TestUpdate_SessionsLoadError(t *testing.T) {
 	fetchErr := errors.New("zoxide not found")
 	m := New(func() (model.SeshSessions, error) {
 		return model.SeshSessions{}, fetchErr
-	}, false, false, false, "> ", "Filter sessions...")
+	}, testOptions())
 
 	result, _ := m.Update(sessionsLoadedMsg{err: fetchErr})
 	resultModel := result.(Model)
@@ -307,7 +327,7 @@ func TestView_ReturnsNonEmpty(t *testing.T) {
 
 func TestView_LoadingState(t *testing.T) {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 	m.width = 60
 	m.height = 24
 
@@ -352,7 +372,7 @@ func TestHalfPageMovement(t *testing.T) {
 		index[i] = key
 	}
 	sessions := model.SeshSessions{OrderedIndex: index, Directory: dir}
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	m = result.(Model)
 	m.height = 20
@@ -366,7 +386,7 @@ func TestHalfPageMovement(t *testing.T) {
 // newTestModelSeparatorAware creates a model with separator-aware matching enabled.
 func newTestModelSeparatorAware() Model {
 	sessions := testSessions()
-	m := New(testFetchFunc(sessions), false, false, true, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) { o.SeparatorAware = true }))
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model)
 }
@@ -463,7 +483,7 @@ func sessionsWithWindows() model.SeshSessions {
 // newTestModelWithWindows creates a loaded model with window display enabled.
 func newTestModelWithWindows() Model {
 	sessions := sessionsWithWindows()
-	m := New(testFetchFunc(sessions), false, true, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) { o.ShowWindows = true }))
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	m = result.(Model)
 	m.width = 60
@@ -483,7 +503,7 @@ func TestView_ShowWindows(t *testing.T) {
 
 func TestView_ShowWindows_Disabled(t *testing.T) {
 	sessions := sessionsWithWindows()
-	m := New(testFetchFunc(sessions), false, false, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptions())
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	m = result.(Model)
 	m.width = 60
@@ -514,7 +534,7 @@ func TestView_ShowWindows_RowsFitContentWidth(t *testing.T) {
 		}},
 	}
 	sessions := model.SeshSessions{OrderedIndex: []string{"s1"}, Directory: dir}
-	m := New(testFetchFunc(sessions), false, true, false, "> ", "Filter sessions...")
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) { o.ShowWindows = true }))
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	m = result.(Model)
 	m.width = 60
@@ -558,6 +578,566 @@ func TestSessionItems_StringIgnoresWindowNames(t *testing.T) {
 		assert.Equal(t, items[i].name, items.String(i),
 			"fuzzy source must expose the session name only")
 	}
+}
+
+// testAliases mirrors what buildAliases produces for a config with `wp` on
+// wallpaper (auto-connect) and `dot` on dotfiles (no auto-connect).
+func testAliases() map[string]Alias {
+	return map[string]Alias{
+		"wp":  {Alias: "wp", Target: "my-project", AutoConnect: true},
+		"dot": {Alias: "dot", Target: "dotfiles"},
+	}
+}
+
+// newAliasModel returns a loaded model with testAliases applied. The delay is
+// kept tiny so tests that wait out a real tick stay fast.
+func newAliasModel(tweak ...func(*Options)) Model {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.Aliases = testAliases()
+		o.AliasAutoConnectDelay = time.Millisecond
+		for _, fn := range tweak {
+			fn(o)
+		}
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+	return m
+}
+
+// typeFilter types a value one key at a time, exercising the same code path as
+// a real user, and returns the model plus the command from the last keystroke.
+func typeFilter(m Model, value string) (Model, tea.Cmd) {
+	var cmd tea.Cmd
+	for _, r := range value {
+		var result tea.Model
+		result, cmd = m.Update(tea.KeyPressMsg{Code: r, Text: string(r)})
+		m = result.(Model)
+	}
+	return m, cmd
+}
+
+// aliasTick runs a command and digs out the auto-connect message it produces,
+// returning nil when no auto-connect was scheduled. The text input always
+// returns a cursor-blink command, so the command being non-nil says nothing on
+// its own.
+func aliasTick(cmd tea.Cmd) *aliasAutoConnectMsg {
+	if cmd == nil {
+		return nil
+	}
+	switch msg := cmd().(type) {
+	case aliasAutoConnectMsg:
+		return &msg
+	case tea.BatchMsg:
+		for _, batched := range msg {
+			if found := aliasTick(batched); found != nil {
+				return found
+			}
+		}
+	}
+	return nil
+}
+
+func TestBuildAliases(t *testing.T) {
+	aliases := buildAliases([]model.SessionConfig{
+		{Name: "wallpaper", Alias: "WP", AliasAutoConnect: true},
+		{Name: "dotfiles", Alias: "dot"},
+		{Name: "notes"},
+		{Name: "", Alias: "orphan"},
+	})
+
+	assert.Len(t, aliases, 2, "sessions without an alias or name are skipped")
+	assert.Equal(t, Alias{Alias: "WP", Target: "wallpaper", AutoConnect: true}, aliases["wp"],
+		"aliases are keyed lowercased but keep their configured casing for display")
+	assert.False(t, aliases["dot"].AutoConnect)
+}
+
+func TestAliasAutoConnectDelay(t *testing.T) {
+	assert.Equal(t, 300*time.Millisecond, aliasAutoConnectDelay("300ms"))
+	assert.Equal(t, 150*time.Millisecond, aliasAutoConnectDelay(""), "empty falls back to the default")
+	assert.Equal(t, 150*time.Millisecond, aliasAutoConnectDelay("nonsense"), "invalid falls back to the default")
+}
+
+// reverseVideo is the escape sequence that swaps foreground and background,
+// which is what keeps the chip label legible under any color scheme.
+const reverseVideo = "\x1b[7m"
+
+func TestAliasChip(t *testing.T) {
+	m := newAliasModel(func(o *Options) { o.ShowIcons = true })
+	chip := m.aliasChip("my-project", 0)
+	assert.Contains(t, chip, "wp")
+	assert.Contains(t, chip, chipLeftGlyph)
+	assert.Contains(t, chip, chipRightGlyph)
+	assert.Contains(t, chip, reverseVideo, "the chip label must be inverted to stay legible")
+	assert.Equal(t, "", m.aliasChip("notes", 0), "sessions without an alias get no chip")
+
+	plain := newAliasModel()
+	assert.Contains(t, ansi.Strip(plain.aliasChip("my-project", 0)), "[wp]")
+	assert.Contains(t, plain.aliasChip("my-project", 0), reverseVideo)
+	assert.NotContains(t, plain.aliasChip("my-project", 0), chipLeftGlyph,
+		"nerd font glyphs are only used when icons are enabled")
+}
+
+func TestAliasChip_HighlightsMatchedPrefix(t *testing.T) {
+	m := newAliasModel()
+
+	// The matched runes carry a color on top of reverse video, so they read as a
+	// colored block; the rest of the label stays plain reverse video.
+	assert.NotEqual(t, m.aliasChip("my-project", 0), m.aliasChip("my-project", 1),
+		"a matched prefix must be styled differently from an unmatched label")
+	assert.Equal(t, "[wp] ", ansi.Strip(m.aliasChip("my-project", 1)),
+		"highlighting must not change the text of the chip")
+	assert.Equal(t, m.aliasChip("my-project", 2), m.aliasChip("my-project", 99),
+		"a match longer than the alias is clamped rather than panicking")
+}
+
+func TestView_AliasChip(t *testing.T) {
+	m := newAliasModel()
+	out := ansi.Strip(fmt.Sprintf("%v", m.View()))
+
+	assert.Contains(t, out, "[wp] my-project")
+	assert.Contains(t, out, "[dot] dotfiles")
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "notes") {
+			assert.Equal(t, "  notes", strings.TrimRight(line, " \r"),
+				"a session without an alias should render exactly as before")
+		}
+	}
+}
+
+func TestView_AliasChip_RowsFitContentWidth(t *testing.T) {
+	dir := model.SeshSessionMap{
+		"s1": {Name: "sesh", Src: "tmux", WindowNames: []string{
+			"editor", "server", "logs", "database", "tests", "docs", "shell",
+		}},
+	}
+	sessions := model.SeshSessions{OrderedIndex: []string{"s1"}, Directory: dir}
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.ShowWindows = true
+		o.Aliases = map[string]Alias{"sh": {Alias: "sh", Target: "sesh"}}
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+
+	out := fmt.Sprintf("%v", m.View())
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "sesh") {
+			assert.LessOrEqual(t, lipgloss.Width(line), m.contentWidth(),
+				"the chip must be counted against the row's width budget")
+			return
+		}
+	}
+	t.Fatal("expected a row for the sesh session")
+}
+
+func TestApplyFilter_NonAliasQueriesAreUnaffected(t *testing.T) {
+	plain := newTestModel()
+	plain.filterInput.SetValue("o")
+	plain.applyFilter()
+
+	aliased := newAliasModel()
+	aliased.filterInput.SetValue("o")
+	aliased.applyFilter()
+
+	assert.Equal(t, len(plain.filtered), len(aliased.filtered))
+	for i := range plain.filtered {
+		assert.Equal(t, plain.filtered[i].item.name, aliased.filtered[i].item.name,
+			"anything short of an exact alias must rank exactly as before")
+	}
+}
+
+func TestApplyFilter_ExactAliasIsTheOnlyResult(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("wp")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1, "an exact alias resolves to its session, whatever the ranking")
+	assert.Equal(t, "my-project", m.filtered[0].item.name)
+	assert.Empty(t, m.filtered[0].matchedIndexes,
+		"the alias matched the session, not characters within its name")
+	assert.Equal(t, "tmux", m.filtered[0].item.src,
+		"the listed session is reused so its source and windows come along")
+}
+
+func TestApplyFilter_ExactAliasIsCaseInsensitive(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("WP")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1)
+	assert.Equal(t, "my-project", m.filtered[0].item.name)
+}
+
+func TestApplyFilter_AliasTargetMissingFromList(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{"wp": {Alias: "wp", Target: "wallpaper"}}
+	})
+	m.filterInput.SetValue("wp")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1,
+		"an alias always names a [[session]], so it stays selectable when unlisted")
+	assert.Equal(t, "wallpaper", m.filtered[0].item.name)
+	assert.Equal(t, "config", m.filtered[0].item.src)
+}
+
+func TestApplyFilter_PartialAliasFallsBackToFuzzy(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("do")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1)
+	assert.NotEmpty(t, m.filtered[0].matchedIndexes,
+		"a partial alias is fuzzy-matched like any other query")
+}
+
+func TestApplyFilter_TypingPastAnAliasFallsBackToFuzzy(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("dotf")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1)
+	assert.NotEmpty(t, m.filtered[0].matchedIndexes,
+		"past the alias the query is fuzzy-matched again")
+}
+
+func TestApplyFilter_ExactAliasIgnoresSeparatorNormalization(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.SeparatorAware = true
+		o.Aliases = map[string]Alias{"w-p": {Alias: "w-p", Target: "my-project"}}
+	})
+
+	m.filterInput.SetValue("w p")
+	m.applyFilter()
+	assert.NotEqual(t, 1, len(m.filtered),
+		"normalized input must not resolve an alias containing a separator")
+
+	m.filterInput.SetValue("w-p")
+	m.applyFilter()
+	require.Len(t, m.filtered, 1)
+	assert.Equal(t, "my-project", m.filtered[0].item.name)
+}
+
+func TestEnter_AfterTypingAliasSelectsTheTarget(t *testing.T) {
+	m, _ := typeFilter(newAliasModel(), "dot")
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	assert.Equal(t, "dotfiles", result.(Model).Chosen(),
+		"enter must land on the aliased session even without auto-connect")
+}
+
+func TestAliasAutoConnect_FiresOnExactAlias(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(), "wp")
+	tick := aliasTick(cmd)
+	if assert.NotNil(t, tick, "typing an auto-connect alias should schedule a tick") {
+		assert.Equal(t, m.aliasSeq, tick.seq)
+	}
+
+	result, quitCmd := m.Update(*tick)
+	resultModel := result.(Model)
+
+	assert.Equal(t, "my-project", resultModel.Chosen())
+	assert.NotNil(t, quitCmd)
+	assert.False(t, resultModel.Quit(), "auto-connect is a selection, not a cancel")
+}
+
+func TestAliasAutoConnect_MatchesCaseInsensitively(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(), "WP")
+	assert.NotNil(t, aliasTick(cmd))
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "wp"})
+	assert.Equal(t, "my-project", result.(Model).Chosen())
+}
+
+func TestAliasAutoConnect_IgnoresStaleTick(t *testing.T) {
+	m, _ := typeFilter(newAliasModel(), "wp")
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq - 1, alias: "wp"})
+	assert.Equal(t, "", result.(Model).Chosen(),
+		"a tick from an earlier keystroke must not connect")
+}
+
+func TestAliasAutoConnect_IgnoresTickAfterFilterChanged(t *testing.T) {
+	m, _ := typeFilter(newAliasModel(), "wp")
+	seq := m.aliasSeq
+	m.filterInput.SetValue("wpx")
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: seq, alias: "wp"})
+	assert.Equal(t, "", result.(Model).Chosen(),
+		"keeping typing past an alias must not connect to it")
+}
+
+func TestAliasAutoConnect_SkipsAliasesWithoutAutoConnect(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(), "dot")
+	assert.Nil(t, aliasTick(cmd), "an alias without alias_auto_connect should not schedule a tick")
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "dot"})
+	assert.Equal(t, "", result.(Model).Chosen(),
+		"even a hand-delivered tick must not connect without alias_auto_connect")
+}
+
+func TestAliasAutoConnect_PartialAliasDoesNothing(t *testing.T) {
+	_, cmd := typeFilter(newAliasModel(), "w")
+	assert.Nil(t, aliasTick(cmd), "a partial alias behaves like a normal fuzzy query")
+}
+
+func TestAliasAutoConnect_TrailingWhitespaceDoesNotMatch(t *testing.T) {
+	_, cmd := typeFilter(newAliasModel(), "wp ")
+	assert.Nil(t, aliasTick(cmd), "the alias must match the raw input exactly")
+}
+
+func TestAliasAutoConnect_Suppressed(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(func(o *Options) { o.DisableAliasAutoConnect = true }), "wp")
+	assert.Nil(t, aliasTick(cmd), "--no-alias-auto should stop the tick from being scheduled")
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "wp"})
+	assert.Equal(t, "", result.(Model).Chosen())
+}
+
+func TestAliasAutoConnect_FiresWhileLoading(t *testing.T) {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.Aliases = testAliases()
+		o.AliasAutoConnectDelay = time.Millisecond
+	}))
+	assert.True(t, m.loading)
+
+	m, cmd := typeFilter(m, "wp")
+	assert.NotNil(t, aliasTick(cmd),
+		"the alias target comes from config, so loading must not block it")
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "wp"})
+	assert.Equal(t, "my-project", result.(Model).Chosen())
+}
+
+func TestScheduleAliasAutoConnect_ZeroDelaySkipsTimer(t *testing.T) {
+	m := newAliasModel(func(o *Options) { o.AliasAutoConnectDelay = 0 })
+	m.filterInput.SetValue("wp")
+
+	cmd := m.scheduleAliasAutoConnect()
+	if assert.NotNil(t, cmd) {
+		assert.Equal(t, aliasAutoConnectMsg{seq: m.aliasSeq, alias: "wp"}, cmd(),
+			"a zero delay should not go through a timer")
+	}
+}
+
+func TestScheduleAliasAutoConnect_BumpsSeqOnEveryChange(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("notes")
+
+	assert.Nil(t, m.scheduleAliasAutoConnect(), "a non-alias schedules nothing")
+	assert.Equal(t, 1, m.aliasSeq,
+		"the sequence still advances so any pending tick is invalidated")
+}
+
+func TestAliasAutoConnect_SeparatorAwareDoesNotMangleAliases(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.SeparatorAware = true
+		o.Aliases = map[string]Alias{"w-p": {Alias: "w-p", Target: "my-project", AutoConnect: true}}
+	})
+
+	_, cmd := typeFilter(m, "w p")
+	assert.Nil(t, aliasTick(cmd), "normalized input must not match an alias containing a separator")
+
+	_, cmd = typeFilter(m, "w-p")
+	assert.NotNil(t, aliasTick(cmd), "the raw alias still matches with separator_aware on")
+}
+
+// filteredNames lists the session names currently shown, for asserting on both
+// membership and order.
+func filteredNames(m Model) []string {
+	names := make([]string, 0, len(m.filtered))
+	for _, item := range m.filtered {
+		names = append(names, item.item.name)
+	}
+	return names
+}
+
+// filterAliasMode types a query into alias-filter mode, sigil included.
+func filterAliasMode(m Model, query string) Model {
+	m.filterInput.SetValue(m.aliasFilterPrefix + query)
+	m.applyFilter()
+	return m
+}
+
+func TestApplyFilter_AliasModeShowsEveryAlias(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "")
+
+	assert.Equal(t, []string{"my-project", "dotfiles"}, filteredNames(m),
+		"the bare sigil narrows to aliased sessions, in list order")
+	for _, item := range m.filtered {
+		assert.Equal(t, 0, item.chipMatchLen, "nothing is typed yet, so nothing is highlighted")
+	}
+}
+
+func TestApplyFilter_AliasModeMatchesAliasPrefix(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "d")
+
+	require.Equal(t, []string{"dotfiles"}, filteredNames(m))
+	assert.Equal(t, 1, m.filtered[0].chipMatchLen, "the matched part of the chip is highlighted")
+
+	// `xy` on a session whose name shares no letters with the query isolates the
+	// alias tier from the session-name fallback.
+	mid := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{"xy": {Alias: "xy", Target: "notes"}}
+	})
+	assert.Empty(t, filteredNames(filterAliasMode(mid, "y")),
+		"aliases match by prefix, so a mid-alias substring finds nothing")
+}
+
+func TestApplyFilter_AliasModeIsCaseInsensitive(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "DO")
+	assert.Equal(t, []string{"dotfiles"}, filteredNames(m))
+}
+
+func TestApplyFilter_AliasModeFallsBackToSessionName(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "project")
+
+	require.Equal(t, []string{"my-project"}, filteredNames(m),
+		"a session name is matched by substring, since names are multi-word")
+	assert.Equal(t, 0, m.filtered[0].chipMatchLen,
+		"the query matched the name, not the chip, so the chip is left plain")
+}
+
+func TestApplyFilter_AliasModeRanksAliasMatchesFirst(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{
+			"do": {Alias: "do", Target: "my-project"},
+			"z":  {Alias: "z", Target: "dotfiles"},
+		}
+	})
+	m = filterAliasMode(m, "do")
+
+	assert.Equal(t, []string{"my-project", "dotfiles"}, filteredNames(m),
+		"an alias match outranks a session whose name merely contains the query")
+}
+
+func TestApplyFilter_AliasModeIncludesUnlistedAliases(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{
+			"dot": {Alias: "dot", Target: "dotfiles"},
+			"wp":  {Alias: "wp", Target: "wallpaper"},
+			"aa":  {Alias: "aa", Target: "archive"},
+		}
+	})
+	m = filterAliasMode(m, "")
+
+	assert.Equal(t, []string{"dotfiles", "archive", "wallpaper"}, filteredNames(m),
+		"unlisted aliases trail the listed ones, sorted so the order never shifts")
+	for _, item := range m.filtered[1:] {
+		assert.Equal(t, "config", item.item.src)
+	}
+}
+
+func TestApplyFilter_AliasModeWithNoMatches(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "zzz")
+	assert.Empty(t, m.filtered)
+}
+
+func TestApplyFilter_AliasModeWithNoAliasesConfigured(t *testing.T) {
+	m := newTestModel()
+	m.width, m.height = 60, 24
+	m = filterAliasMode(m, "")
+
+	assert.Empty(t, m.filtered)
+	assert.Contains(t, ansi.Strip(fmt.Sprintf("%v", m.View())), "No aliases configured",
+		"the sigil should read as unconfigured rather than broken")
+}
+
+func TestApplyFilter_SigilPastTheStartIsANormalQuery(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("code/app")
+	m.applyFilter()
+
+	require.Equal(t, []string{"~/code/app"}, filteredNames(m),
+		"only a leading sigil enters alias mode, so path-like queries still work")
+	assert.NotEmpty(t, m.filtered[0].matchedIndexes)
+}
+
+func TestApplyFilter_CustomAliasFilterPrefix(t *testing.T) {
+	m := newAliasModel(func(o *Options) { o.AliasFilterPrefix = "@" })
+
+	m = filterAliasMode(m, "")
+	assert.Equal(t, []string{"my-project", "dotfiles"}, filteredNames(m))
+
+	m.filterInput.SetValue("/")
+	m.applyFilter()
+	assert.NotEmpty(t, m.filtered, "the default sigil is inert once one is configured")
+}
+
+func TestApplyFilter_AliasFilterPrefixDisabled(t *testing.T) {
+	m := newAliasModel(func(o *Options) { o.AliasFilterPrefix = "" })
+	m.filterInput.SetValue("/")
+	m.applyFilter()
+
+	assert.Equal(t, []string{"~/code/app"}, filteredNames(m),
+		"an empty prefix disables the mode, leaving the sigil a normal query")
+}
+
+func ptr[T any](v T) *T { return &v }
+
+func TestAliasFilterPrefix(t *testing.T) {
+	assert.Equal(t, "/", aliasFilterPrefix(nil), "an absent key falls back to the default")
+	assert.Equal(t, "", aliasFilterPrefix(ptr("")), "an explicit empty string disables the mode")
+	assert.Equal(t, "@", aliasFilterPrefix(ptr("@")))
+}
+
+func TestAliasAutoConnect_AliasModeFiresWithoutTheOptIn(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(), "/dot")
+	require.NotNil(t, aliasTick(cmd),
+		"reaching for the sigil is itself the intent, so alias_auto_connect isn't required")
+
+	result, quitCmd := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "dot"})
+	assert.Equal(t, "dotfiles", result.(Model).Chosen())
+	assert.NotNil(t, quitCmd)
+}
+
+func TestAliasAutoConnect_AliasModePartialAliasDoesNothing(t *testing.T) {
+	_, cmd := typeFilter(newAliasModel(), "/d")
+	assert.Nil(t, aliasTick(cmd), "only an exact alias auto-connects")
+}
+
+func TestAliasAutoConnect_AliasModeSessionNameMatchDoesNothing(t *testing.T) {
+	_, cmd := typeFilter(newAliasModel(), "/project")
+	assert.Nil(t, aliasTick(cmd), "matching a session name is not typing an alias")
+}
+
+func TestAliasAutoConnect_AliasModeLeavesRoomForALongerAlias(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{
+			"w":  {Alias: "w", Target: "my-project"},
+			"wp": {Alias: "wp", Target: "dotfiles"},
+		}
+	})
+
+	m, cmd := typeFilter(m, "/w")
+	tick := aliasTick(cmd)
+	require.NotNil(t, tick)
+
+	m, _ = typeFilter(m, "p")
+	result, _ := m.Update(*tick)
+	assert.Equal(t, "", result.(Model).Chosen(),
+		"the tick armed by the shorter alias must not fire once the longer one is typed")
+}
+
+func TestAliasAutoConnect_AliasModeSuppressed(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(func(o *Options) { o.DisableAliasAutoConnect = true }), "/wp")
+	assert.Nil(t, aliasTick(cmd), "--no-alias-auto covers alias mode too")
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "wp"})
+	assert.Equal(t, "", result.(Model).Chosen())
+}
+
+func TestEnter_InAliasModeSelectsTheTarget(t *testing.T) {
+	m, _ := typeFilter(newAliasModel(), "/do")
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	assert.Equal(t, "dotfiles", result.(Model).Chosen(),
+		"the sigil must never leak into the chosen session name")
 }
 
 func TestWindowsText(t *testing.T) {

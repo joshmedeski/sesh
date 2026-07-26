@@ -59,6 +59,10 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			} else if deps.Config.TUI.Prompt != "" {
 				pickerOpts.Prompt = &deps.Config.TUI.Prompt
 			}
+			if cmd.Flags().Changed("no-alias-auto") {
+				disableAliasAutoConnect, _ := cmd.Flags().GetBool("no-alias-auto")
+				pickerOpts.DisableAliasAutoConnect = &disableAliasAutoConnect
+			}
 			if cmd.Flags().Changed("placeholder") {
 				placeholder, _ := cmd.Flags().GetString("placeholder")
 				pickerOpts.Placeholder = &placeholder
@@ -93,6 +97,7 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("separator-aware", "s", false, "match spaces to separators (-_/\\)")
 	cmd.Flags().StringP("prompt", "p", "", "prompt shown in the picker TUI")
 	cmd.Flags().String("placeholder", "", "placeholder text in the picker TUI")
+	cmd.Flags().Bool("no-alias-auto", false, "don't auto-connect when an alias is fully typed")
 
 	return cmd
 }

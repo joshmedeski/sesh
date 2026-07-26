@@ -688,6 +688,8 @@ prompt = "> "
 placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
+alias_auto_connect_delay = "150ms"
+alias_filter_prefix = "/"
 ```
 
 With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
@@ -700,6 +702,8 @@ With `show_windows = true`, each row also lists the names of the windows inside 
 ```
 
 Window names are display-only: selecting a row still returns just the session name, and typing a window name does not match its session. The names for live tmux sessions are fetched in a single tmux call, so the option costs the same regardless of how many sessions you have.
+
+`alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
 
 ### Default Session
 
@@ -738,6 +742,72 @@ name = "tmux config"
 path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
+```
+
+### Session Aliases
+
+Fuzzy matching is great for discovery, but the top result for `wp` shifts as sessions come and go, so muscle memory never quite forms. An alias gives a session a short, fixed name you can always count on:
+
+```toml
+[[session]]
+name = "wallpaper"
+path = "~/c/wallpaper"
+alias = "wp"
+alias_auto_connect = true
+
+[[session]]
+name = "dotfiles"
+path = "~/.config"
+alias = "dot"
+```
+
+Aliases must be unique (case-insensitively) — sesh reports an error at startup if two sessions share one.
+
+On the command line, `sesh connect wp` behaves exactly like `sesh connect wallpaper`. In the picker, aliased sessions are tagged with a chip so they stay discoverable:
+
+```
+>  wp wallpaper
+   dot dotfiles
+   my-project
+```
+
+Typing an alias exactly resolves to that session and nothing else, regardless of how fuzzy matching would have ranked it — the whole point being that the result never shifts:
+
+```
+filter: wp
+
+>  wp wallpaper
+```
+
+Anything short of an exact alias is fuzzy-matched as usual, so `w` and `wpx` behave like any other query. An alias resolves even when its session isn't in the current list — say you're running `sesh picker --tmux` and it isn't started yet.
+
+With `alias_auto_connect = true`, typing the full alias connects immediately — no <kbd>Enter</kbd>. It is opt-in per session because it is only worth it for the handful you jump to constantly.
+
+Aliases that share a prefix (`w` and `wp`) are allowed. `[tui] alias_auto_connect_delay` (default `150ms`) is the grace period before auto-connect fires, which leaves room to finish typing the longer one. Raise it if you type slowly, or lower it to `"0s"` to fire the instant the alias is complete.
+
+To keep typing past an alias in a one-off invocation, run the picker with `--no-alias-auto`.
+
+#### Browsing aliases
+
+Typing `/` as the first character narrows the picker to aliased sessions only, which is how you go from "I know I set up a shortcut for this" to the session without remembering the shortcut:
+
+```
+filter: /
+
+>  wp  wallpaper
+   dot dotfiles
+   tc  tmux config
+```
+
+What you type next narrows further, matching aliases by prefix (`/t` finds `tc`) and then falling back to session names (`/config` also finds `tc`, since aliases come first and names are matched anywhere). Aliases whose sessions aren't running still show up.
+
+Completing an alias in this mode connects immediately, whether or not it set `alias_auto_connect` — reaching for `/` says the next thing you type is a shortcut to jump to. `alias_auto_connect_delay` still applies, so `/w` leaves room to become `/wp`, and `--no-alias-auto` still holds it back.
+
+Only a leading `/` counts, so `code/app` filters normally. But a query that *starts* with a path — `/Users/you/code` — would enter alias mode instead, so pick a different sigil if you filter that way:
+
+```toml
+[tui]
+alias_filter_prefix = "@"   # or "" to turn the mode off
 ```
 
 ### Path substitution

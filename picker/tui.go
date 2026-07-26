@@ -3,7 +3,9 @@ package picker
 import (
 	"fmt"
 	"image/color"
+	"sort"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -30,6 +32,9 @@ func (s sessionItems) Len() int            { return len(s) }
 type filteredItem struct {
 	item           sessionItem
 	matchedIndexes []int
+	// chipMatchLen is how many leading runes of the alias chip matched the
+	// query, used to highlight the chip in alias-filter mode.
+	chipMatchLen int
 }
 
 // FetchFunc loads sessions asynchronously. It is called in a goroutine by Init().
@@ -39,6 +44,45 @@ type FetchFunc func() (model.SeshSessions, error)
 type sessionsLoadedMsg struct {
 	sessions model.SeshSessions
 	err      error
+}
+
+// aliasAutoConnectMsg fires once the auto-connect grace period has elapsed. The
+// seq identifies the filter change that scheduled it so later keystrokes can
+// invalidate it.
+type aliasAutoConnectMsg struct {
+	seq   int
+	alias string
+}
+
+// Alias is a picker shortcut for a single session, derived from an
+// [[session]] config block.
+type Alias struct {
+	// Alias is the shortcut as written in the config, used for display.
+	Alias string
+	// Target is the name of the session the alias resolves to.
+	Target string
+	// AutoConnect connects to Target as soon as the alias is fully typed.
+	AutoConnect bool
+}
+
+// Options configures the picker model. Zero values are valid and mean
+// "off"/"unset", except Prompt and Placeholder which are passed through as-is.
+type Options struct {
+	ShowIcons      bool
+	ShowWindows    bool
+	SeparatorAware bool
+	Prompt         string
+	Placeholder    string
+	// Aliases is keyed by lowercased alias.
+	Aliases map[string]Alias
+	// AliasFilterPrefix is the sigil that, typed first, narrows the list to
+	// aliased sessions. Empty disables the mode.
+	AliasFilterPrefix string
+	// AliasAutoConnectDelay is the grace period before auto-connect fires,
+	// leaving room to finish typing a longer alias that shares a prefix.
+	AliasAutoConnectDelay time.Duration
+	// DisableAliasAutoConnect suppresses auto-connect for this invocation.
+	DisableAliasAutoConnect bool
 }
 
 type Model struct {
@@ -58,6 +102,17 @@ type Model struct {
 	loading        bool
 	fetchFunc      FetchFunc
 	loadErr        error
+
+	// aliases is keyed by lowercased alias; aliasByName is keyed by session
+	// name so rows can be tagged while rendering.
+	aliases                 map[string]Alias
+	aliasByName             map[string]string
+	aliasFilterPrefix       string
+	aliasAutoConnectDelay   time.Duration
+	disableAliasAutoConnect bool
+	// aliasSeq increments on every filter change so a pending auto-connect
+	// tick can tell whether it is stale.
+	aliasSeq int
 }
 
 // srcIcon returns the nerd font icon and color for a session source.
@@ -75,6 +130,55 @@ func srcIcon(src string) (string, color.Color) {
 		return g.Icon + " ", lipgloss.ANSIColor(ansi)
 	}
 	return "? ", lipgloss.ANSIColor(8)
+}
+
+// Powerline half circles used to round off the alias chip. They are nerd font
+// glyphs, so they are only used when icons are enabled.
+const (
+	chipLeftGlyph  = ""
+	chipRightGlyph = ""
+)
+
+// aliasChip renders the alias of a session as a chip that sits before the
+// session name, e.g. ` wp ` with nerd fonts or `[wp] ` without. It returns ""
+// for sessions that have no alias. The first matchLen runes of the alias are
+// highlighted, for alias-filter mode.
+//
+// The label uses reverse video rather than an explicit fg/bg pair so the text
+// is always the terminal's background color on its foreground color, which
+// stays legible under any color scheme. The half circles are left unstyled for
+// the same reason: their default foreground is exactly the color the reversed
+// label fills with, so the chip reads as one shape.
+func (m Model) aliasChip(name string, matchLen int) string {
+	alias, ok := m.aliasByName[name]
+	if !ok {
+		return ""
+	}
+
+	label := lipgloss.NewStyle().Reverse(true)
+	text := highlightChipPrefix(alias, matchLen, label)
+	if !m.showIcons {
+		// Without nerd fonts the half circles render as tofu, so fall back to
+		// brackets that still read as a chip.
+		return label.Render("[") + text + label.Render("]") + " "
+	}
+	return chipLeftGlyph + text + chipRightGlyph + " "
+}
+
+// highlightChipPrefix styles the first matchLen runes of a chip label as
+// matched. Reverse video is kept throughout so the chip stays one shape;
+// setting a foreground under it paints the matched runes as a colored block,
+// which is the same red used to highlight matches in session names.
+func highlightChipPrefix(alias string, matchLen int, label lipgloss.Style) string {
+	runes := []rune(alias)
+	if matchLen <= 0 {
+		return label.Render(alias)
+	}
+	if matchLen > len(runes) {
+		matchLen = len(runes)
+	}
+	matched := label.Foreground(lipgloss.ANSIColor(1)).Render(string(runes[:matchLen]))
+	return matched + label.Render(string(runes[matchLen:]))
 }
 
 var separatorReplacer = strings.NewReplacer("-", " ", "_", " ", "/", " ", "\\", " ")
@@ -101,18 +205,28 @@ func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
 	return items
 }
 
-func New(fetchFunc FetchFunc, showIcons bool, showWindows bool, separatorAware bool, prompt string, placeholder string) Model {
+func New(fetchFunc FetchFunc, opts Options) Model {
 	ti := textinput.New()
-	ti.Placeholder = placeholder
-	ti.Prompt = prompt
+	ti.Placeholder = opts.Placeholder
+	ti.Prompt = opts.Prompt
+
+	aliasByName := make(map[string]string, len(opts.Aliases))
+	for _, alias := range opts.Aliases {
+		aliasByName[alias.Target] = alias.Alias
+	}
 
 	m := Model{
-		filterInput:    ti,
-		showIcons:      showIcons,
-		showWindows:    showWindows,
-		separatorAware: separatorAware,
-		loading:        true,
-		fetchFunc:      fetchFunc,
+		filterInput:             ti,
+		showIcons:               opts.ShowIcons,
+		showWindows:             opts.ShowWindows,
+		separatorAware:          opts.SeparatorAware,
+		loading:                 true,
+		fetchFunc:               fetchFunc,
+		aliases:                 opts.Aliases,
+		aliasByName:             aliasByName,
+		aliasFilterPrefix:       opts.AliasFilterPrefix,
+		aliasAutoConnectDelay:   opts.AliasAutoConnectDelay,
+		disableAliasAutoConnect: opts.DisableAliasAutoConnect,
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -131,6 +245,19 @@ func (m Model) fetchSessions() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case aliasAutoConnectMsg:
+		// The tick can't be cancelled, so a stale one still arrives: ignore it
+		// unless it is the latest and the filter still reads as that alias.
+		if msg.seq != m.aliasSeq {
+			return m, nil
+		}
+		alias, ok := m.exactAlias(m.filterInput.Value())
+		if !ok || alias.Alias != msg.alias || m.disableAliasAutoConnect {
+			return m, nil
+		}
+		m.chosen = alias.Target
+		return m, tea.Quit
+
 	case sessionsLoadedMsg:
 		if msg.err != nil {
 			m.loadErr = msg.err
@@ -192,18 +319,164 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.cursor = 0
 		m.offset = 0
+		if tick := m.scheduleAliasAutoConnect(); tick != nil {
+			return m, tea.Batch(cmd, tick)
+		}
 	}
 
 	return m, cmd
 }
 
+// exactAlias resolves the input to an alias when one is typed exactly, in
+// either normal or alias-filter mode, and reports whether that alias should
+// auto-connect.
+//
+// In alias-filter mode the per-session alias_auto_connect opt-in is bypassed:
+// reaching for the sigil is itself an explicit statement that the next thing
+// typed is an alias to jump to. In normal mode it still gates, so an alias
+// typed incidentally while filtering doesn't connect on its own.
+//
+// The input is matched raw, never separator-normalized, so an alias containing
+// `-` or `_` can't be matched by typing a space instead.
+func (m *Model) exactAlias(raw string) (Alias, bool) {
+	if query, ok := m.aliasFilterQuery(raw); ok {
+		alias, found := m.aliases[strings.ToLower(query)]
+		return alias, found
+	}
+	alias, found := m.aliases[strings.ToLower(raw)]
+	if !found || !alias.AutoConnect {
+		return Alias{}, false
+	}
+	return alias, true
+}
+
+// scheduleAliasAutoConnect invalidates any pending auto-connect and, when the
+// filter now reads as an alias that should auto-connect, arms a fresh one.
+// It returns nil when there is nothing to schedule. Auto-connect deliberately
+// works while sessions are still loading: the target comes from the config, not
+// from the list, so there is no reason to make the user wait.
+func (m *Model) scheduleAliasAutoConnect() tea.Cmd {
+	m.aliasSeq++
+
+	if m.disableAliasAutoConnect {
+		return nil
+	}
+	alias, ok := m.exactAlias(m.filterInput.Value())
+	if !ok {
+		return nil
+	}
+
+	msg := aliasAutoConnectMsg{seq: m.aliasSeq, alias: alias.Alias}
+	if m.aliasAutoConnectDelay <= 0 {
+		return func() tea.Msg { return msg }
+	}
+	return tea.Tick(m.aliasAutoConnectDelay, func(time.Time) tea.Msg { return msg })
+}
+
+// aliasMatch resolves an exactly-typed alias to the session it points at. It
+// takes the raw input, never the separator-normalized pattern, so an alias
+// containing `-` or `_` can't be matched by typing a space instead.
+//
+// The session is looked up in the loaded list so its source and window names
+// come along, and falls back to a config-sourced item when the target isn't
+// listed — an alias always names a [[session]], so connecting still works even
+// if that session is filtered out or hasn't loaded yet.
+func (m *Model) aliasMatch(raw string) (sessionItem, bool) {
+	alias, ok := m.aliases[strings.ToLower(raw)]
+	if !ok {
+		return sessionItem{}, false
+	}
+	for _, item := range m.allItems {
+		if item.name == alias.Target {
+			return item, true
+		}
+	}
+	return sessionItem{name: alias.Target, searchName: alias.Target, src: "config"}, true
+}
+
+// aliasFilterQuery reports whether the raw input opens alias-filter mode and,
+// if so, returns whatever was typed after the sigil. Only a leading sigil
+// counts, so slashes inside a path-like query are left alone.
+func (m *Model) aliasFilterQuery(raw string) (string, bool) {
+	if m.aliasFilterPrefix == "" || !strings.HasPrefix(raw, m.aliasFilterPrefix) {
+		return "", false
+	}
+	return strings.TrimPrefix(raw, m.aliasFilterPrefix), true
+}
+
+// aliasCandidates returns every aliased session as a row, in list order.
+// Aliases whose target isn't in the loaded list still appear — an alias always
+// names a [[session]], so it must remain reachable even when that session is
+// filtered out or hasn't started yet. Those trail the listed ones, sorted by
+// alias so the order doesn't shift between runs.
+func (m *Model) aliasCandidates() []sessionItem {
+	candidates := make([]sessionItem, 0, len(m.aliases))
+	listed := make(map[string]bool, len(m.aliases))
+
+	for _, item := range m.allItems {
+		alias, ok := m.aliasByName[item.name]
+		if !ok {
+			continue
+		}
+		listed[strings.ToLower(alias)] = true
+		candidates = append(candidates, item)
+	}
+
+	missing := make([]string, 0, len(m.aliases))
+	for key := range m.aliases {
+		if !listed[key] {
+			missing = append(missing, key)
+		}
+	}
+	sort.Strings(missing)
+	for _, key := range missing {
+		target := m.aliases[key].Target
+		candidates = append(candidates, sessionItem{name: target, searchName: target, src: "config"})
+	}
+
+	return candidates
+}
+
+// filterAliases narrows the aliased sessions by query, in two tiers: aliases
+// the query prefixes come first, then aliases whose session name contains it.
+// Session names are multi-word, so a prefix rule there would make "config"
+// miss "tmux config"; the alias tier stays a prefix match because aliases are
+// short and should narrow deterministically as they're typed.
+func (m *Model) filterAliases(query string) []filteredItem {
+	candidates := m.aliasCandidates()
+	q := strings.ToLower(query)
+	matchLen := len([]rune(query))
+
+	byAlias := make([]filteredItem, 0, len(candidates))
+	byName := make([]filteredItem, 0, len(candidates))
+	for _, item := range candidates {
+		alias := m.aliasByName[item.name]
+		switch {
+		case strings.HasPrefix(strings.ToLower(alias), q):
+			byAlias = append(byAlias, filteredItem{item: item, chipMatchLen: matchLen})
+		case q != "" && strings.Contains(strings.ToLower(item.name), q):
+			byName = append(byName, filteredItem{item: item})
+		}
+	}
+	return append(byAlias, byName...)
+}
+
 func (m *Model) applyFilter() {
 	pattern := m.filterInput.Value()
+	if query, ok := m.aliasFilterQuery(pattern); ok {
+		m.filtered = m.filterAliases(query)
+		return
+	}
 	if pattern == "" {
 		m.filtered = make([]filteredItem, len(m.allItems))
 		for i, item := range m.allItems {
 			m.filtered[i] = filteredItem{item: item}
 		}
+		return
+	}
+
+	if item, ok := m.aliasMatch(pattern); ok {
+		m.filtered = []filteredItem{{item: item}}
 		return
 	}
 
@@ -287,6 +560,14 @@ func (m Model) View() tea.View {
 		for i := 1; i < visible; i++ {
 			b.WriteString("\n")
 		}
+	} else if _, aliasMode := m.aliasFilterQuery(m.filterInput.Value()); aliasMode && len(m.aliases) == 0 {
+		// Without this the sigil looks broken rather than simply unconfigured.
+		emptyStyle := lipgloss.NewStyle().Faint(true)
+		b.WriteString(emptyStyle.Render("  No aliases configured"))
+		b.WriteString("\n")
+		for i := 1; i < visible; i++ {
+			b.WriteString("\n")
+		}
 	} else {
 		// Session list
 		end := m.offset + visible
@@ -312,19 +593,20 @@ func (m Model) View() tea.View {
 				iconStyle := lipgloss.NewStyle().Foreground(clr)
 				tag = iconStyle.Render(icn)
 			}
+			chip := m.aliasChip(item.item.name, item.chipMatchLen)
 			name := highlightMatches(item.item.name, item.matchedIndexes, matchStyle, normalStyle)
 
 			var windows string
 			if m.showWindows {
 				// Window names are display-only: they are never highlighted as
 				// matches and never become part of the selected value.
-				used := lipgloss.Width(prefix) + lipgloss.Width(tag) + lipgloss.Width(item.item.name)
+				used := lipgloss.Width(prefix) + lipgloss.Width(tag) + lipgloss.Width(chip) + lipgloss.Width(item.item.name)
 				if text := windowsText(item.item.session.WindowNames, m.contentWidth()-used); text != "" {
 					windows = windowStyle.Render(text)
 				}
 			}
 
-			b.WriteString(fmt.Sprintf("%s%s%s%s\n", prefix, tag, name, windows))
+			b.WriteString(fmt.Sprintf("%s%s%s%s%s\n", prefix, tag, chip, name, windows))
 		}
 
 		// Pad remaining visible lines

@@ -104,6 +104,17 @@
         "placeholder": {
           "type": "string",
           "description": "The placeholder text in the picker TUI"
+        },
+        "alias_auto_connect_delay": {
+          "type": "string",
+          "description": "Grace period between typing a session alias and auto-connecting to it, leaving room to finish typing a longer alias that shares a prefix. Any Go duration string (e.g. \"150ms\", \"1s\").",
+          "default": "150ms"
+        },
+        "alias_filter_prefix": {
+          "type": "string",
+          "description": "Single character that, typed first in the picker, narrows the list to aliased sessions (e.g. \"/tc\" finds the \"tc\" alias). Set to an empty string to disable.",
+          "default": "/",
+          "maxLength": 1
         }
       },
       "additionalProperties": false
@@ -155,6 +166,15 @@
           "disable_startup_command": {
             "type": "boolean",
             "description": "Disable the default startup command for this session",
+            "default": false
+          },
+          "alias": {
+            "type": "string",
+            "description": "Short exact-match shortcut for this session. Shown as a chip in the picker, and resolved by `sesh connect <alias>`. Must be unique across sessions."
+          },
+          "alias_auto_connect": {
+            "type": "boolean",
+            "description": "Connect to this session as soon as its alias is fully typed in the picker, without pressing enter. Requires `alias`.",
             "default": false
           },
           "startup_command": {
