@@ -640,7 +640,7 @@ func (m *Model) applyFilter() {
 		pattern = normalizeSeparators(pattern)
 	}
 
-	matches := fuzzy.FindFrom(pattern, m.allItems)
+	matches := rankMatches(fuzzy.FindFromNoSort(pattern, m.allItems))
 	m.filtered = make([]filteredItem, len(matches))
 	for i, match := range matches {
 		m.filtered[i] = filteredItem{
@@ -648,6 +648,43 @@ func (m *Model) applyFilter() {
 			matchedIndexes: match.MatchedIndexes,
 		}
 	}
+}
+
+// maxUnmatchedCharPenalty caps how much a name can be docked for the characters
+// the query didn't match. It is deliberately small — the same size as the fuzzy
+// library's adjacent-match bonus — so length can only ever break a tie between
+// matches the scorer already rates the same.
+const maxUnmatchedCharPenalty = 5
+
+// rankMatches scores unsorted fuzzy matches with the library's length penalty
+// capped, and orders them best first.
+//
+// sahilm/fuzzy docks a match one point for every character the query didn't
+// match, with no floor, so a long name loses to a short one even when it is
+// plainly the better match: typing "sesh" put a tmux session named
+// "sesh/w/423 — Add opt-in preview pane to the picker TUI" below a dozen zoxide
+// paths, despite matching at its very first character. Capping the penalty keeps
+// length as a tiebreaker without letting it outweigh where the match landed.
+//
+// Matches must come in unsorted (fuzzy.FindFromNoSort), so they arrive in
+// session-list order. The sort is stable, so equally scored matches keep that
+// order — which is the order the picker shows with an empty query, tmux
+// sessions first.
+func rankMatches(matches fuzzy.Matches) fuzzy.Matches {
+	ranked := make([]struct {
+		match fuzzy.Match
+		score int
+	}, len(matches))
+	for i, match := range matches {
+		penalty := len(match.MatchedIndexes) - len(match.Str)
+		ranked[i].match = match
+		ranked[i].score = match.Score - penalty + max(penalty, -maxUnmatchedCharPenalty)
+	}
+	sort.SliceStable(ranked, func(i, j int) bool { return ranked[i].score > ranked[j].score })
+	for i, r := range ranked {
+		matches[i] = r.match
+	}
+	return matches
 }
 
 func (m *Model) cursorUp(n int) {

@@ -470,6 +470,73 @@ func TestApplyFilter_SeparatorAware_Disabled(t *testing.T) {
 	}
 }
 
+// longNameSessions mirrors the shape of the bug the capped length penalty
+// fixes: a tmux session whose name is long but starts with the query, competing
+// with short zoxide paths that only contain it.
+func longNameSessions() model.SeshSessions {
+	dir := model.SeshSessionMap{
+		"s1": {Name: "~/c/sesh", Src: "zoxide"},
+		"s2": {Name: "~/c/re/sesh", Src: "zoxide"},
+		"s3": {Name: "~/c/sesh/w/411", Src: "zoxide"},
+		"s4": {Name: "sesh/w/423 — Add opt-in preview pane to the picker TUI", Src: "tmux"},
+	}
+	return model.SeshSessions{
+		OrderedIndex: []string{"s1", "s2", "s3", "s4"},
+		Directory:    dir,
+	}
+}
+
+func newLongNameModel() Model {
+	sessions := longNameSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.SeparatorAware = true
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	return result.(Model)
+}
+
+func TestApplyFilter_LongNameMatchingAtStartRanksFirst(t *testing.T) {
+	m := newLongNameModel()
+	m.filterInput.SetValue("sesh")
+	m.applyFilter()
+
+	assert.Len(t, m.filtered, 4)
+	assert.Equal(t, "sesh/w/423 — Add opt-in preview pane to the picker TUI",
+		m.filtered[0].item.name,
+		"a long name matching at its first character should outrank shorter partial matches")
+}
+
+func TestApplyFilter_LengthStillBreaksComparableMatches(t *testing.T) {
+	m := newLongNameModel()
+	m.filterInput.SetValue("c sesh")
+	m.applyFilter()
+
+	names := make([]string, 0, len(m.filtered))
+	for _, f := range m.filtered {
+		names = append(names, f.item.name)
+	}
+	assert.Equal(t, []string{"~/c/sesh", "~/c/sesh/w/411", "~/c/re/sesh"}, names,
+		"among comparable matches the shorter name should still come first")
+}
+
+func TestApplyFilter_ExactNameStillBeatsALongerPrefixMatch(t *testing.T) {
+	sessions := model.SeshSessions{
+		OrderedIndex: []string{"s1", "s2"},
+		Directory: model.SeshSessionMap{
+			"s1": {Name: "sesh plus a very long tail of unmatched characters", Src: "tmux"},
+			"s2": {Name: "sesh", Src: "tmux"},
+		},
+	}
+	m := New(testFetchFunc(sessions), testOptions())
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.filterInput.SetValue("sesh")
+	m.applyFilter()
+
+	assert.Equal(t, "sesh", m.filtered[0].item.name,
+		"capping the penalty should not let a long name overtake an exact match")
+}
+
 // sessionsWithWindows returns sessions carrying window names for display.
 func sessionsWithWindows() model.SeshSessions {
 	dir := model.SeshSessionMap{
