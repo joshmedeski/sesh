@@ -208,7 +208,7 @@ func TestGetConfig_ImportPathWithEnvVar(t *testing.T) {
 			"CONFIGS": "/custom/dir",
 		},
 		files: map[string][]byte{
-			"/main/sesh.toml":            mainTOML,
+			"/main/sesh.toml":           mainTOML,
 			"/custom/dir/imported.toml": importData,
 		},
 	}
@@ -236,7 +236,7 @@ func TestGetConfig_ImportPathWithTilde(t *testing.T) {
 	mockOs := &testOs{
 		homeDir: "/home/testuser",
 		files: map[string][]byte{
-			"/main/sesh.toml":                             mainTOML,
+			"/main/sesh.toml":                      mainTOML,
 			"/home/testuser/imports/imported.toml": importData,
 		},
 	}

@@ -168,8 +168,8 @@ type Model struct {
 	previewBorderName string
 	previewName       string
 	previewPending    string
-	previewContent string
-	previewErr     error
+	previewContent    string
+	previewErr        error
 	// previewSeq increments on every request so a result that arrives after the
 	// cursor moved on can be told apart from the current one.
 	previewSeq int
