@@ -353,9 +353,12 @@ func TestHighlightMatches_WithIndexes(t *testing.T) {
 
 func TestScrolling(t *testing.T) {
 	m := newTestModel()
-	m.height = 12
+	// Short enough that the five test sessions can't all fit at once, which is
+	// what makes the list scroll at all.
+	m.height = 6
 
 	visible := m.visibleCount()
+	require.Less(t, visible, len(m.filtered), "the list must overflow to scroll")
 	for i := 0; i < visible+2; i++ {
 		m.cursorDown(1)
 	}
@@ -1163,4 +1166,444 @@ func TestWindowsText(t *testing.T) {
 			assert.LessOrEqual(t, lipgloss.Width(got), max(tt.budget, 0))
 		})
 	}
+}
+
+// --- preview pane -----------------------------------------------------------
+
+// testPreviewFunc records every session it is asked about, so tests can assert
+// which fetches actually happened.
+func testPreviewFunc(asked *[]string) PreviewFunc {
+	return func(name string) (string, error) {
+		*asked = append(*asked, name)
+		return "preview of " + name, nil
+	}
+}
+
+// previewModel builds a loaded model with the preview pane on and a terminal
+// wide enough to split.
+func previewModel(tweak ...func(*Options)) (Model, *[]string) {
+	asked := &[]string{}
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.Preview = true
+		o.PreviewFunc = testPreviewFunc(asked)
+		for _, fn := range tweak {
+			fn(o)
+		}
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 120
+	m.height = 24
+	return m, asked
+}
+
+// previewFetch digs the preview fetch message out of a command, returning nil
+// when none was scheduled. Cursor keys return no other commands, but filter
+// keystrokes come back batched with a cursor blink.
+func previewFetch(cmd tea.Cmd) *previewFetchMsg {
+	if cmd == nil {
+		return nil
+	}
+	switch msg := cmd().(type) {
+	case previewFetchMsg:
+		return &msg
+	case tea.BatchMsg:
+		for _, batched := range msg {
+			if found := previewFetch(batched); found != nil {
+				return found
+			}
+		}
+	}
+	return nil
+}
+
+// loadPreview runs the fetch a command scheduled and feeds the result back in,
+// standing in for the debounce tick and the goroutine.
+func loadPreview(t *testing.T, m Model, cmd tea.Cmd) Model {
+	t.Helper()
+	fetch := previewFetch(cmd)
+	require.NotNil(t, fetch, "expected a preview fetch to be scheduled")
+	result, started := m.Update(*fetch)
+	m = result.(Model)
+	require.NotNil(t, started, "the fetch message should start the preview")
+	result, _ = m.Update(started())
+	return result.(Model)
+}
+
+func TestPreview_OffByDefault(t *testing.T) {
+	m := newTestModel()
+	m.width = 200
+	m.height = 24
+
+	assert.False(t, m.previewOn)
+	assert.False(t, m.splitActive())
+	assert.Equal(t, 0, m.previewCols())
+	assert.Equal(t, 60, m.contentWidth(), "list width must be untouched when off")
+}
+
+func TestPreview_NoFetchWhenDisabled(t *testing.T) {
+	asked := &[]string{}
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.PreviewFunc = testPreviewFunc(asked)
+	}))
+	result, cmd := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+
+	assert.Nil(t, previewFetch(cmd))
+	result, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	assert.Nil(t, previewFetch(cmd))
+	assert.Empty(t, *asked)
+	assert.False(t, result.(Model).splitActive())
+}
+
+func TestPreview_FetchedForFirstSessionOnLoad(t *testing.T) {
+	asked := &[]string{}
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.Preview = true
+		o.PreviewFunc = testPreviewFunc(asked)
+	}))
+	result, cmd := m.Update(sessionsLoadedMsg{sessions: sessions})
+
+	m = loadPreview(t, result.(Model), cmd)
+	assert.Equal(t, []string{"my-project"}, *asked)
+	assert.Equal(t, "my-project", m.previewName)
+	assert.Equal(t, "preview of my-project", m.previewContent)
+}
+
+func TestPreview_CursorMoveFetchesNewSession(t *testing.T) {
+	m, asked := previewModel()
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+
+	m = loadPreview(t, result.(Model), cmd)
+	assert.Equal(t, "dotfiles", m.previewName)
+	assert.Contains(t, *asked, "dotfiles")
+}
+
+func TestPreview_AlreadyPreviewedSessionIsNotRefetched(t *testing.T) {
+	m, asked := previewModel()
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = loadPreview(t, result.(Model), cmd)
+	before := len(*asked)
+
+	// Move away, then straight back before the new preview lands: the pane is
+	// still showing dotfiles, so there is nothing to fetch.
+	result, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyUp})
+	m = result.(Model)
+	require.NotNil(t, previewFetch(cmd), "moving away schedules a fetch")
+
+	result, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(Model)
+
+	assert.Nil(t, previewFetch(cmd), "the displayed preview should not be refetched")
+	assert.Len(t, *asked, before, "no preview command should have run")
+}
+
+func TestPreview_StaleResultIsDiscarded(t *testing.T) {
+	m, _ := previewModel()
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = loadPreview(t, result.(Model), cmd)
+	require.Equal(t, "dotfiles", m.previewName)
+
+	// A result from a cursor position the user has since left behind.
+	result, _ = m.Update(previewLoadedMsg{
+		seq:     m.previewSeq - 1,
+		name:    "my-project",
+		content: "stale content",
+	})
+	m = result.(Model)
+
+	assert.Equal(t, "dotfiles", m.previewName)
+	assert.Equal(t, "preview of dotfiles", m.previewContent,
+		"the pane should keep the preview that belongs to the highlighted row")
+}
+
+func TestPreview_StaleFetchTickIsDiscarded(t *testing.T) {
+	m, asked := previewModel()
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(Model)
+	fetch := previewFetch(cmd)
+	require.NotNil(t, fetch)
+
+	// The cursor moves again before the debounce elapses, so the earlier tick
+	// arrives stale and must not shell out.
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(Model)
+	before := len(*asked)
+	result, started := m.Update(*fetch)
+
+	assert.Nil(t, started, "a superseded tick should not start a fetch")
+	assert.Len(t, *asked, before)
+	assert.False(t, result.(Model).loading)
+}
+
+func TestPreview_KeepsPreviousContentWhileLoading(t *testing.T) {
+	m, _ := previewModel()
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = loadPreview(t, result.(Model), cmd)
+
+	// Move on, but don't deliver the new preview yet.
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = result.(Model)
+
+	assert.Equal(t, "preview of dotfiles", m.previewContent)
+	assert.Contains(t, m.View().Content, "preview of dotfiles")
+}
+
+func TestPreview_ErrorIsShownWithoutQuitting(t *testing.T) {
+	m, _ := previewModel()
+	result, _ := m.Update(previewLoadedMsg{
+		seq:  m.previewSeq,
+		name: "my-project",
+		err:  errors.New("preview_command exploded"),
+	})
+	m = result.(Model)
+
+	assert.False(t, m.Quit())
+	assert.NoError(t, m.LoadErr())
+	assert.Contains(t, m.View().Content, "Preview unavailable")
+}
+
+func TestPreview_EmptyFilterResultClearsPane(t *testing.T) {
+	m, _ := previewModel()
+	m.previewName = "my-project"
+	m.previewContent = "preview of my-project"
+
+	m, _ = typeFilter(m, "zzzznomatch")
+
+	require.Empty(t, m.filtered)
+	assert.Empty(t, m.previewContent, "no highlighted row means nothing to preview")
+	assert.Empty(t, m.previewName)
+}
+
+func TestPreview_CtrlOToggles(t *testing.T) {
+	m, asked := previewModel()
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: 'o', Mod: tea.ModCtrl})
+	m = result.(Model)
+	assert.False(t, m.previewOn)
+	assert.False(t, m.splitActive())
+	assert.Equal(t, 60, m.contentWidth(), "the list reclaims the width")
+
+	before := len(*asked)
+	result, cmd := m.Update(tea.KeyPressMsg{Code: 'o', Mod: tea.ModCtrl})
+	m = result.(Model)
+	assert.True(t, m.previewOn)
+	assert.True(t, m.splitActive())
+	m = loadPreview(t, m, cmd)
+	assert.Len(t, *asked, before+1, "turning the pane back on fetches a preview")
+}
+
+func TestPreview_CtrlOIsInertWithoutAPreviewer(t *testing.T) {
+	m := newTestModel()
+	m.width = 120
+	m.height = 24
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: 'o', Mod: tea.ModCtrl})
+	m = result.(Model)
+
+	assert.Nil(t, cmd)
+	assert.False(t, m.previewOn)
+}
+
+func TestPreview_NarrowTerminalFallsBackToListOnly(t *testing.T) {
+	m, _ := previewModel()
+	m.width = 99 // one column under the default minimum
+
+	assert.True(t, m.previewOn, "the setting stays on")
+	assert.False(t, m.splitActive(), "but the pane isn't rendered")
+	assert.Equal(t, 60, m.contentWidth())
+
+	out := fmt.Sprintf("%v", m.View())
+	assert.NotContains(t, out, "preview of", "no preview content on a narrow terminal")
+
+	// Growing the window is enough to bring it back.
+	m.width = 120
+	assert.True(t, m.splitActive())
+}
+
+func TestPreview_SplitWidths(t *testing.T) {
+	tests := []struct {
+		name    string
+		width   int
+		pct     int
+		preview int
+		list    int
+	}{
+		{"at the minimum the list keeps its floor", 100, 60, 60, 40},
+		{"percent governs a middling terminal", 120, 60, 72, 48},
+		{"preview absorbs width past the list cap", 200, 60, 140, 60},
+		{"a small percent still leaves the cap alone", 200, 20, 140, 60},
+		{"a large percent squeezes the list to its floor", 120, 90, 80, 40},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, _ := previewModel(func(o *Options) { o.PreviewWidth = tt.pct })
+			m.width = tt.width
+
+			assert.Equal(t, tt.preview, m.previewCols(), "preview columns")
+			assert.Equal(t, tt.list, m.contentWidth(), "list columns")
+			assert.Equal(t, tt.width, m.previewCols()+m.contentWidth(),
+				"the two panes should use the full terminal width")
+		})
+	}
+}
+
+func TestPreview_ViewFitsTerminalWidth(t *testing.T) {
+	m, _ := previewModel()
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = loadPreview(t, result.(Model), cmd)
+
+	out := m.View().Content
+	assert.Contains(t, out, "preview of dotfiles")
+	for i, line := range strings.Split(out, "\n") {
+		assert.LessOrEqual(t, lipgloss.Width(line), m.width,
+			"line %d may not exceed the terminal width", i)
+	}
+}
+
+func TestPreview_LongContentIsClipped(t *testing.T) {
+	m, _ := previewModel(func(o *Options) {
+		o.PreviewFunc = func(string) (string, error) {
+			return strings.Repeat(strings.Repeat("x", 400)+"\n", 200), nil
+		}
+	})
+	result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	m = loadPreview(t, result.(Model), cmd)
+
+	lines := strings.Split(m.View().Content, "\n")
+	assert.Len(t, lines, headerLines+m.visibleCount(),
+		"an oversized preview must not grow the picker")
+	for i, line := range lines {
+		assert.LessOrEqual(t, lipgloss.Width(line), m.width,
+			"line %d may not exceed the terminal width", i)
+	}
+}
+
+func TestClipLines(t *testing.T) {
+	tests := []struct {
+		name     string
+		text     string
+		width    int
+		rows     int
+		expected string
+	}{
+		{"fits", "a\nb", 10, 5, "a\nb"},
+		{"clips rows", "a\nb\nc", 10, 2, "a\nb"},
+		{"clips columns", "abcdef", 3, 1, "abc"},
+		{"zero width", "abc", 0, 1, ""},
+		{"zero rows", "abc", 10, 0, ""},
+		{"carriage returns normalized", "a\r\nb", 10, 2, "a\nb"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, clipLines(tt.text, tt.width, tt.rows))
+		})
+	}
+}
+
+func TestClipLines_PreservesColorAndResets(t *testing.T) {
+	// tmux previews come from `capture-pane -e`, so the content is full of
+	// escapes that must survive truncation and not leak into the next line.
+	line := "\x1b[31mred text here\x1b[0m"
+	got := clipLines(line, 6, 1)
+
+	assert.Contains(t, got, "\x1b[31m", "color must survive truncation")
+	assert.True(t, strings.HasSuffix(got, "\x1b[0m"), "the line must be reset")
+	assert.Equal(t, 6, lipgloss.Width(got))
+}
+
+func TestPreviewWidth_Resolution(t *testing.T) {
+	assert.Equal(t, model.DefaultPreviewWidth, previewWidth(0), "unset falls back")
+	assert.Equal(t, model.DefaultPreviewWidth, previewWidth(-10))
+	assert.Equal(t, model.MinPreviewWidth, previewWidth(1), "clamped, not rejected")
+	assert.Equal(t, model.MaxPreviewWidth, previewWidth(300))
+	assert.Equal(t, 45, previewWidth(45))
+}
+
+func TestPreviewMinWidth_Resolution(t *testing.T) {
+	assert.Equal(t, model.DefaultPreviewMinWidth, previewMinWidth(0))
+	assert.Equal(t, model.DefaultPreviewMinWidth, previewMinWidth(-1))
+	assert.Equal(t, 80, previewMinWidth(80))
+}
+
+func TestPreviewBorder_Resolution(t *testing.T) {
+	assert.Equal(t, model.DefaultPreviewBorder, previewBorder(""), "unset falls back")
+	assert.Equal(t, model.DefaultPreviewBorder, previewBorder("squiggly"),
+		"an unrecognized style falls back rather than failing the picker")
+	assert.Equal(t, model.PreviewBorderNone, previewBorder("none"))
+	assert.Equal(t, model.PreviewBorderThick, previewBorder("thick"))
+	assert.Equal(t, model.PreviewBorderDouble, previewBorder("double"))
+}
+
+func TestPreview_BorderStyles(t *testing.T) {
+	tests := []struct {
+		name       string
+		configured string
+		divider    string
+		chrome     int
+	}{
+		{"unset draws a line", "", "│", 2},
+		{"line", model.PreviewBorderLine, "│", 2},
+		{"thick", model.PreviewBorderThick, "┃", 2},
+		{"double", model.PreviewBorderDouble, "║", 2},
+		{"none draws nothing", model.PreviewBorderNone, "", 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, _ := previewModel(func(o *Options) { o.PreviewBorder = tt.configured })
+			result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = loadPreview(t, result.(Model), cmd)
+
+			assert.Equal(t, tt.chrome, m.previewChrome(),
+				"a hidden divider should give its column to the preview text")
+
+			out := m.View().Content
+			require.Contains(t, out, "preview of dotfiles")
+			for _, glyph := range []string{"│", "┃", "║"} {
+				if glyph == tt.divider {
+					assert.Contains(t, out, glyph)
+					continue
+				}
+				assert.NotContains(t, out, glyph, "only the configured divider may be drawn")
+			}
+			for i, line := range strings.Split(out, "\n") {
+				assert.LessOrEqual(t, lipgloss.Width(line), m.width,
+					"line %d may not exceed the terminal width", i)
+			}
+		})
+	}
+}
+
+func TestView_FillsTerminalHeight(t *testing.T) {
+	for _, height := range []int{10, 24, 50, 120} {
+		t.Run(fmt.Sprintf("height %d", height), func(t *testing.T) {
+			m, asked := previewModel()
+			_ = asked
+			m.height = height
+			result, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+			m = loadPreview(t, result.(Model), cmd)
+
+			lines := strings.Split(m.View().Content, "\n")
+			assert.Len(t, lines, height, "the frame should use every row")
+			assert.True(t, m.View().AltScreen, "full height needs the alt screen")
+		})
+	}
+}
+
+func TestView_FillsTerminalHeight_ListOnly(t *testing.T) {
+	m := newTestModel()
+	m.width = 80
+	m.height = 40
+
+	lines := strings.Split(m.View().Content, "\n")
+	assert.Len(t, lines, 40, "the list-only frame should use every row too")
+}
+
+func TestVisibleCount_FallsBackBeforeSizeIsKnown(t *testing.T) {
+	m := newTestModel()
+	assert.Equal(t, 0, m.height, "no WindowSizeMsg has arrived yet")
+	assert.Equal(t, fallbackVisibleCount, m.visibleCount())
 }

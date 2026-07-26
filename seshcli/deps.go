@@ -135,7 +135,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
-	pk := picker.NewPicker(config)
+	pk := picker.NewPicker(config, p)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{

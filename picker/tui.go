@@ -40,10 +40,33 @@ type filteredItem struct {
 // FetchFunc loads sessions asynchronously. It is called in a goroutine by Init().
 type FetchFunc func() (model.SeshSessions, error)
 
+// PreviewFunc renders the preview of a single session. It is called from a
+// tea.Cmd, never from Update or View: some strategies shell out, and blocking
+// the event loop on every cursor move would make the picker feel sluggish.
+type PreviewFunc func(name string) (string, error)
+
 // sessionsLoadedMsg carries the result of the async fetch back to Update().
 type sessionsLoadedMsg struct {
 	sessions model.SeshSessions
 	err      error
+}
+
+// previewFetchMsg fires after the debounce window and starts the fetch for the
+// session highlighted at the time it was scheduled. The seq identifies that
+// cursor position so later movement can invalidate it.
+type previewFetchMsg struct {
+	seq  int
+	name string
+}
+
+// previewLoadedMsg carries a rendered preview back to Update(). A result whose
+// seq is no longer current is discarded: the cursor has moved on, and the pane
+// keeps showing the last preview that did belong to its session.
+type previewLoadedMsg struct {
+	seq     int
+	name    string
+	content string
+	err     error
 }
 
 // aliasAutoConnectMsg fires once the auto-connect grace period has elapsed. The
@@ -83,6 +106,21 @@ type Options struct {
 	AliasAutoConnectDelay time.Duration
 	// DisableAliasAutoConnect suppresses auto-connect for this invocation.
 	DisableAliasAutoConnect bool
+	// Preview starts the picker with the preview pane showing. It can still be
+	// toggled at runtime, and is ignored on a terminal narrower than
+	// PreviewMinWidth.
+	Preview bool
+	// PreviewWidth is the share of the terminal, in percent, guaranteed to the
+	// preview pane.
+	PreviewWidth int
+	// PreviewMinWidth is the narrowest terminal that gets a preview pane.
+	PreviewMinWidth int
+	// PreviewBorder names the divider drawn between the list and the preview
+	// pane, one of the model.PreviewBorder* values. Empty or unrecognized
+	// means the default.
+	PreviewBorder string
+	// PreviewFunc renders previews. Nil disables the pane entirely.
+	PreviewFunc PreviewFunc
 }
 
 type Model struct {
@@ -113,6 +151,24 @@ type Model struct {
 	// aliasSeq increments on every filter change so a pending auto-connect
 	// tick can tell whether it is stale.
 	aliasSeq int
+
+	previewFunc     PreviewFunc
+	previewOn       bool
+	previewWidthPct int
+	previewMinWidth int
+	// previewName is the session the current content belongs to, and
+	// previewPending the one being fetched. Together they keep the cursor
+	// landing back on an already-previewed row from refetching it.
+	// previewBorderName is the resolved divider style, so an unset or bogus
+	// config value never reaches the renderer.
+	previewBorderName string
+	previewName       string
+	previewPending    string
+	previewContent string
+	previewErr     error
+	// previewSeq increments on every request so a result that arrives after the
+	// cursor moved on can be told apart from the current one.
+	previewSeq int
 }
 
 // srcIcon returns the nerd font icon and color for a session source.
@@ -227,6 +283,11 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		aliasFilterPrefix:       opts.AliasFilterPrefix,
 		aliasAutoConnectDelay:   opts.AliasAutoConnectDelay,
 		disableAliasAutoConnect: opts.DisableAliasAutoConnect,
+		previewFunc:             opts.PreviewFunc,
+		previewOn:               opts.Preview,
+		previewWidthPct:         previewWidth(opts.PreviewWidth),
+		previewMinWidth:         previewMinWidth(opts.PreviewMinWidth),
+		previewBorderName:       previewBorder(opts.PreviewBorder),
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -240,6 +301,59 @@ func (m Model) fetchSessions() tea.Cmd {
 	return func() tea.Msg {
 		sessions, err := m.fetchFunc()
 		return sessionsLoadedMsg{sessions: sessions, err: err}
+	}
+}
+
+// previewDebounce is how long a cursor position has to hold before its preview
+// is fetched. Holding a movement key would otherwise shell out once per row
+// passed over; the stale-result guard makes those harmless, but not free.
+const previewDebounce = 60 * time.Millisecond
+
+// syncInputWidth fits the filter input to the list column. Toggling the preview
+// pane resizes that column, so it is called from there too, not just on resize.
+func (m *Model) syncInputWidth() {
+	m.filterInput.SetWidth(m.contentWidth() - 4)
+}
+
+// highlightedName returns the name of the session under the cursor.
+func (m Model) highlightedName() (string, bool) {
+	if m.cursor < 0 || m.cursor >= len(m.filtered) {
+		return "", false
+	}
+	return m.filtered[m.cursor].item.name, true
+}
+
+// schedulePreview arms a debounced fetch for the highlighted session, and
+// returns nil when there is nothing to do — the pane is off, the session is
+// already previewed, or its fetch is already in flight.
+func (m *Model) schedulePreview() tea.Cmd {
+	if m.previewFunc == nil || !m.previewOn {
+		return nil
+	}
+
+	name, ok := m.highlightedName()
+	if !ok {
+		// Nothing is highlighted, so there is nothing the old content could
+		// still be describing.
+		m.previewSeq++
+		m.previewName, m.previewPending, m.previewContent, m.previewErr = "", "", "", nil
+		return nil
+	}
+	if name == m.previewName || name == m.previewPending {
+		return nil
+	}
+
+	m.previewSeq++
+	m.previewPending = name
+	msg := previewFetchMsg{seq: m.previewSeq, name: name}
+	return tea.Tick(previewDebounce, func(time.Time) tea.Msg { return msg })
+}
+
+func (m Model) fetchPreview(seq int, name string) tea.Cmd {
+	previewFunc := m.previewFunc
+	return func() tea.Msg {
+		content, err := previewFunc(name)
+		return previewLoadedMsg{seq: seq, name: name, content: content, err: err}
 	}
 }
 
@@ -258,6 +372,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.chosen = alias.Target
 		return m, tea.Quit
 
+	case previewFetchMsg:
+		// The tick can't be cancelled, so a stale one still arrives.
+		if msg.seq != m.previewSeq {
+			return m, nil
+		}
+		return m, m.fetchPreview(msg.seq, msg.name)
+
+	case previewLoadedMsg:
+		if msg.seq != m.previewSeq {
+			return m, nil
+		}
+		m.previewPending = ""
+		m.previewName = msg.name
+		m.previewContent = msg.content
+		m.previewErr = msg.err
+		return m, nil
+
 	case sessionsLoadedMsg:
 		if msg.err != nil {
 			m.loadErr = msg.err
@@ -266,12 +397,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		m.allItems = buildItems(msg.sessions, m.separatorAware)
 		m.applyFilter()
-		return m, nil
+		return m, m.schedulePreview()
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.filterInput.SetWidth(m.contentWidth() - 4)
+		m.syncInputWidth()
 		return m, nil
 
 	case tea.KeyPressMsg:
@@ -292,19 +423,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "up", "ctrl+k", "ctrl+p":
 			m.cursorUp(1)
-			return m, nil
+			return m, m.schedulePreview()
 
 		case "down", "ctrl+j", "ctrl+n":
 			m.cursorDown(1)
-			return m, nil
+			return m, m.schedulePreview()
 
 		case "ctrl+u":
 			m.cursorUp(m.visibleCount() / 2)
-			return m, nil
+			return m, m.schedulePreview()
 
 		case "ctrl+d":
 			m.cursorDown(m.visibleCount() / 2)
-			return m, nil
+			return m, m.schedulePreview()
+
+		case "ctrl+o":
+			// Toggling stays allowed on a narrow terminal: the pane is gated on
+			// width at render time, so it appears once the window has room.
+			if m.previewFunc == nil {
+				return m, nil
+			}
+			m.previewOn = !m.previewOn
+			m.syncInputWidth()
+			if !m.previewOn {
+				// Drop anything in flight so switching back on always refetches
+				// the highlighted row rather than waiting on a request made
+				// before the pane was hidden.
+				m.previewSeq++
+				m.previewPending = ""
+				return m, nil
+			}
+			return m, m.schedulePreview()
 		}
 	}
 
@@ -319,8 +468,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.cursor = 0
 		m.offset = 0
+		cmds := []tea.Cmd{cmd}
 		if tick := m.scheduleAliasAutoConnect(); tick != nil {
-			return m, tea.Batch(cmd, tick)
+			cmds = append(cmds, tick)
+		}
+		if preview := m.schedulePreview(); preview != nil {
+			cmds = append(cmds, preview)
+		}
+		if len(cmds) > 1 {
+			return m, tea.Batch(cmds...)
 		}
 	}
 
@@ -519,26 +675,92 @@ func (m *Model) cursorDown(n int) {
 	}
 }
 
+// fallbackVisibleCount is used for the frame that can render before the
+// terminal size is known.
+const fallbackVisibleCount = 5
+
+// visibleCount is how many session rows fit. The picker runs on the alt screen,
+// so it gets every row the terminal has apart from the filter row and the blank
+// line under it.
 func (m Model) visibleCount() int {
-	// border(2) + title(1) + blank(1) + filter(1) + blank(1) + counter(1) + help(1) + blank before counter(1)
-	chrome := 9
-	available := m.height - chrome
+	available := m.height - headerLines
 	if available < 1 {
-		available = 5
-	}
-	if available > 15 {
-		available = 15
+		return fallbackVisibleCount
 	}
 	return available
 }
 
-func (m Model) contentWidth() int {
-	w := m.width
-	if w < 30 {
-		w = 40
+const (
+	// maxListWidth is the widest the session list gets, split or not.
+	maxListWidth = 60
+	// minListWidth is the narrowest list worth splitting off; the preview gives
+	// columns back to stay above it.
+	minListWidth = 40
+	// previewPadding is the gap between the divider — or the list itself, with
+	// the divider off — and the preview text. It sits inside the pane's width.
+	previewPadding = 1
+)
+
+// previewBorderStyle returns the lipgloss border for a resolved divider name,
+// and whether a divider is drawn at all.
+func previewBorderStyle(name string) (lipgloss.Border, bool) {
+	switch name {
+	case model.PreviewBorderNone:
+		return lipgloss.Border{}, false
+	case model.PreviewBorderThick:
+		return lipgloss.ThickBorder(), true
+	case model.PreviewBorderDouble:
+		return lipgloss.DoubleBorder(), true
+	default:
+		return lipgloss.NormalBorder(), true
 	}
-	if w > 60 {
-		w = 60
+}
+
+// previewChrome is how much of the pane's width goes to the divider and the
+// padding after it, leaving the text that much less room. Without a divider
+// only the padding is charged, so disabling it gives that column to the text.
+func (m Model) previewChrome() int {
+	if _, drawn := previewBorderStyle(m.previewBorderName); drawn {
+		return previewPadding + 1
+	}
+	return previewPadding
+}
+
+// splitActive reports whether this frame renders a preview pane. Width is
+// checked here rather than at toggle time so growing the window is enough to
+// bring the pane back.
+func (m Model) splitActive() bool {
+	return m.previewOn && m.previewFunc != nil && m.width >= m.previewMinWidth
+}
+
+// previewCols is how many columns the preview pane occupies, divider included.
+// The configured percent is a floor: the list is capped at maxListWidth, and
+// everything past that goes to the preview rather than being left blank. The
+// list is never squeezed below minListWidth.
+func (m Model) previewCols() int {
+	if !m.splitActive() {
+		return 0
+	}
+	cols := m.width * m.previewWidthPct / 100
+	if rest := m.width - maxListWidth; rest > cols {
+		cols = rest
+	}
+	if max := m.width - minListWidth; cols > max {
+		cols = max
+	}
+	if cols <= m.previewChrome() {
+		return 0
+	}
+	return cols
+}
+
+func (m Model) contentWidth() int {
+	w := m.width - m.previewCols()
+	if w < 30 {
+		w = minListWidth
+	}
+	if w > maxListWidth {
+		w = maxListWidth
 	}
 	return w
 }
@@ -615,9 +837,85 @@ func (m Model) View() tea.View {
 		}
 	}
 
-	content := b.String()
+	// The last row leaves a trailing newline behind. Dropping it keeps the frame
+	// exactly the height of the terminal, and makes both halves of a split the
+	// same height so the divider spans the whole block.
+	content := strings.TrimSuffix(b.String(), "\n")
 
-	return tea.NewView(content)
+	if cols := m.previewCols(); cols > 0 {
+		list := lipgloss.NewStyle().
+			Width(m.contentWidth()).
+			MaxWidth(m.contentWidth()).
+			Render(content)
+		content = lipgloss.JoinHorizontal(lipgloss.Top, list, m.previewView(cols, visible))
+	}
+
+	v := tea.NewView(content)
+	// Full window mode: the picker fills the terminal and hands the user's
+	// scrollback back untouched when it quits.
+	v.AltScreen = true
+	return v
+}
+
+// headerLines is the filter row plus the blank line under it, which the
+// preview pane skips so its first line sits level with the first session row.
+const headerLines = 2
+
+// previewView renders the preview pane: a left divider, then the content of the
+// highlighted session clipped to the pane.
+func (m Model) previewView(cols, rows int) string {
+	faint := lipgloss.NewStyle().Faint(true)
+
+	var body string
+	switch {
+	case m.previewErr != nil:
+		// A broken preview_command shouldn't take the picker down with it.
+		body = faint.Render(fmt.Sprintf("Preview unavailable: %v", m.previewErr))
+	case m.previewName == "":
+		body = faint.Render("Loading preview...")
+	case strings.TrimSpace(m.previewContent) == "":
+		body = faint.Render("No preview")
+	default:
+		body = m.previewContent
+	}
+
+	// The divider and padding live inside Width, so the text gets less room.
+	body = clipLines(body, cols-m.previewChrome(), rows)
+
+	border, drawn := previewBorderStyle(m.previewBorderName)
+
+	return lipgloss.NewStyle().
+		Border(border, false, false, false, drawn).
+		BorderForeground(lipgloss.ANSIColor(8)).
+		PaddingLeft(previewPadding).
+		PaddingTop(headerLines).
+		Width(cols).
+		Height(headerLines + rows).
+		Render(body)
+}
+
+// clipLines cuts text to at most rows lines of width columns each. Truncation
+// is ANSI-aware because tmux previews come from `capture-pane -e`, and each
+// kept line is reset so a color left open can't bleed into the pane below it.
+func clipLines(text string, width, rows int) string {
+	if width < 1 || rows < 1 {
+		return ""
+	}
+
+	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
+	if len(lines) > rows {
+		lines = lines[:rows]
+	}
+
+	clip := lipgloss.NewStyle().MaxWidth(width)
+	for i, line := range lines {
+		line = clip.Render(line)
+		if strings.Contains(line, "\x1b") {
+			line += "\x1b[0m"
+		}
+		lines[i] = line
+	}
+	return strings.Join(lines, "\n")
 }
 
 // windowGap separates the session name from the window names, and each window

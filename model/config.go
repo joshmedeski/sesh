@@ -8,6 +8,31 @@ const DefaultAliasAutoConnectDelay = "150ms"
 // [tui] alias_filter_prefix is not set.
 const DefaultAliasFilterPrefix = "/"
 
+const (
+	// DefaultPreviewWidth is the share of the terminal, in percent, guaranteed
+	// to the picker's preview pane when [tui] preview_width is not set.
+	DefaultPreviewWidth = 60
+	// MinPreviewWidth and MaxPreviewWidth bound preview_width. A pane narrower
+	// or wider than these leaves too little room for the other half.
+	MinPreviewWidth = 10
+	MaxPreviewWidth = 90
+	// DefaultPreviewMinWidth is the narrowest terminal, in columns, that still
+	// gets a preview pane when [tui] preview_min_width is not set.
+	DefaultPreviewMinWidth = 100
+)
+
+// The dividers [tui] preview_border accepts between the picker's session list
+// and its preview pane. PreviewBorderNone draws no divider at all.
+const (
+	PreviewBorderNone   = "none"
+	PreviewBorderLine   = "line"
+	PreviewBorderThick  = "thick"
+	PreviewBorderDouble = "double"
+	// DefaultPreviewBorder is the divider used when [tui] preview_border is
+	// not set.
+	DefaultPreviewBorder = PreviewBorderLine
+)
+
 type (
 	Config struct {
 		Cache                   bool                 `toml:"cache"`
@@ -95,6 +120,21 @@ type (
 		// explicit empty string (disable the mode) is distinguishable from an
 		// absent key (use DefaultAliasFilterPrefix).
 		AliasFilterPrefix *string `toml:"alias_filter_prefix"`
+		// Preview shows a preview of the highlighted session beside the list,
+		// using the same output as `sesh preview`. Opt-in: the pane costs a
+		// command per cursor move, and not everyone wants a split.
+		Preview bool `toml:"preview"`
+		// PreviewWidth is the share of the terminal, in percent, guaranteed to
+		// the preview pane. The list keeps its column cap, so anything left
+		// over goes to the preview on top of this. Zero means unset.
+		PreviewWidth int `toml:"preview_width"`
+		// PreviewMinWidth is the narrowest terminal that still gets a preview
+		// pane; below it the picker renders list-only. Zero means unset.
+		PreviewMinWidth int `toml:"preview_min_width"`
+		// PreviewBorder is the divider drawn between the list and the preview
+		// pane: "line" (default), "thick", "double", or "none" for no divider.
+		// Empty means unset.
+		PreviewBorder string `toml:"preview_border"`
 	}
 
 	WildcardConfig struct {

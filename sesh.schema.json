@@ -115,6 +115,30 @@
           "description": "Single character that, typed first in the picker, narrows the list to aliased sessions (e.g. \"/tc\" finds the \"tc\" alias). Set to an empty string to disable.",
           "default": "/",
           "maxLength": 1
+        },
+        "preview": {
+          "type": "boolean",
+          "description": "Show a preview of the highlighted session beside the list in the picker TUI, using the same output as `sesh preview`",
+          "default": false
+        },
+        "preview_width": {
+          "type": "integer",
+          "description": "Share of the terminal width, in percent, guaranteed to the preview pane. The session list keeps its column cap, so any width left over goes to the preview on top of this.",
+          "default": 60,
+          "minimum": 10,
+          "maximum": 90
+        },
+        "preview_min_width": {
+          "type": "integer",
+          "description": "Narrowest terminal, in columns, that still gets a preview pane. Below this the picker renders the session list only.",
+          "default": 100,
+          "minimum": 1
+        },
+        "preview_border": {
+          "type": "string",
+          "description": "Divider drawn between the session list and the preview pane. Use \"none\" for no divider.",
+          "enum": ["line", "thick", "double", "none"],
+          "default": "line"
         }
       },
       "additionalProperties": false

@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/previewer"
 )
 
 const (
@@ -23,6 +24,7 @@ type PickerOptions struct {
 	Prompt                  *string
 	Placeholder             *string
 	DisableAliasAutoConnect *bool
+	Preview                 *bool
 }
 
 type Picker interface {
@@ -30,11 +32,12 @@ type Picker interface {
 }
 
 type RealPicker struct {
-	config model.Config
+	config    model.Config
+	previewer previewer.Previewer
 }
 
-func NewPicker(config model.Config) Picker {
-	return &RealPicker{config: config}
+func NewPicker(config model.Config, previewer previewer.Previewer) Picker {
+	return &RealPicker{config: config, previewer: previewer}
 }
 
 // buildAliases collects the aliases defined on [[session]] blocks, keyed by
@@ -64,6 +67,44 @@ func aliasAutoConnectDelay(configured string) time.Duration {
 	}
 	d, _ := time.ParseDuration(model.DefaultAliasAutoConnectDelay)
 	return d
+}
+
+// previewWidth resolves the percent of the terminal guaranteed to the preview
+// pane, clamping rather than failing the picker on an out-of-range value (the
+// JSON schema flags those in the editor, but nothing rejects them at load).
+func previewWidth(configured int) int {
+	if configured <= 0 {
+		return model.DefaultPreviewWidth
+	}
+	if configured < model.MinPreviewWidth {
+		return model.MinPreviewWidth
+	}
+	if configured > model.MaxPreviewWidth {
+		return model.MaxPreviewWidth
+	}
+	return configured
+}
+
+// previewMinWidth resolves the narrowest terminal that still gets a preview
+// pane. Zero means the key is absent.
+func previewMinWidth(configured int) int {
+	if configured <= 0 {
+		return model.DefaultPreviewMinWidth
+	}
+	return configured
+}
+
+// previewBorder resolves the divider drawn between the list and the preview
+// pane, falling back to the default on an empty or unrecognized value rather
+// than failing the picker (the JSON schema flags those in the editor, but
+// nothing rejects them at load).
+func previewBorder(configured string) string {
+	switch configured {
+	case model.PreviewBorderNone, model.PreviewBorderLine, model.PreviewBorderThick, model.PreviewBorderDouble:
+		return configured
+	default:
+		return model.DefaultPreviewBorder
+	}
 }
 
 // aliasFilterPrefix resolves the sigil that enters alias-filter mode. A nil
@@ -109,6 +150,18 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		disableAliasAutoConnect = *opts.DisableAliasAutoConnect
 	}
 
+	preview := p.config.TUI.Preview
+	if opts.Preview != nil {
+		preview = *opts.Preview
+	}
+
+	// The model reaches the previewer through a function so the TUI stays
+	// unaware of the package, mirroring how sessions arrive via FetchFunc.
+	var previewFunc PreviewFunc
+	if p.previewer != nil {
+		previewFunc = p.previewer.Preview
+	}
+
 	m := New(fetchFunc, Options{
 		ShowIcons:               showIcons,
 		ShowWindows:             showWindows,
@@ -119,6 +172,11 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		AliasFilterPrefix:       aliasFilterPrefix(p.config.TUI.AliasFilterPrefix),
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
 		DisableAliasAutoConnect: disableAliasAutoConnect,
+		Preview:                 preview,
+		PreviewWidth:            previewWidth(p.config.TUI.PreviewWidth),
+		PreviewMinWidth:         previewMinWidth(p.config.TUI.PreviewMinWidth),
+		PreviewBorder:           p.config.TUI.PreviewBorder,
+		PreviewFunc:             previewFunc,
 	})
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()
