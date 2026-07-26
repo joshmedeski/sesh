@@ -63,6 +63,16 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 				disableAliasAutoConnect, _ := cmd.Flags().GetBool("no-alias-auto")
 				pickerOpts.DisableAliasAutoConnect = &disableAliasAutoConnect
 			}
+			// --no-preview wins over --preview so it can override a --preview
+			// baked into an alias or wrapper script.
+			if cmd.Flags().Changed("preview") {
+				preview, _ := cmd.Flags().GetBool("preview")
+				pickerOpts.Preview = &preview
+			}
+			if cmd.Flags().Changed("no-preview") {
+				preview := false
+				pickerOpts.Preview = &preview
+			}
 			if cmd.Flags().Changed("placeholder") {
 				placeholder, _ := cmd.Flags().GetString("placeholder")
 				pickerOpts.Placeholder = &placeholder
@@ -98,6 +108,8 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().StringP("prompt", "p", "", "prompt shown in the picker TUI")
 	cmd.Flags().String("placeholder", "", "placeholder text in the picker TUI")
 	cmd.Flags().Bool("no-alias-auto", false, "don't auto-connect when an alias is fully typed")
+	cmd.Flags().Bool("preview", false, "show a preview of the highlighted session beside the list")
+	cmd.Flags().Bool("no-preview", false, "hide the preview pane")
 
 	return cmd
 }
