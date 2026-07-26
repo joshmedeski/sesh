@@ -650,6 +650,130 @@ func newTestModelWithWindows() Model {
 	return m
 }
 
+// newIconModel returns a loaded model with icons on and the given custom icons
+// keyed by session name, sized as if the widest of them set the column.
+func newIconModel(icons map[string]string) Model {
+	sessions := testSessions()
+	width := 1
+	for _, icn := range icons {
+		width = max(width, iconWidth(icn))
+	}
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.ShowIcons = true
+		o.IconWidth = width
+		o.Icon = func(s model.SeshSession) string { return icons[s.Name] }
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+	return m
+}
+
+// iconRow returns the rendered row for a session, ANSI stripped.
+func iconRow(t *testing.T, m Model, name string) string {
+	t.Helper()
+	for _, line := range strings.Split(ansi.Strip(fmt.Sprintf("%v", m.View())), "\n") {
+		if strings.Contains(line, name) {
+			return line
+		}
+	}
+	t.Fatalf("expected a row for the %s session", name)
+	return ""
+}
+
+func TestView_CustomIcon(t *testing.T) {
+	m := newIconModel(map[string]string{"notes": "📓"})
+
+	assert.Contains(t, iconRow(t, m, "notes"), "📓 notes",
+		"a configured icon replaces the source glyph")
+	assert.NotContains(t, iconRow(t, m, "dotfiles"), "📓",
+		"a session with no icon configured keeps its source glyph")
+}
+
+func TestView_CustomIcon_NamesStayAligned(t *testing.T) {
+	m := newIconModel(map[string]string{"notes": "📓"})
+
+	// Every name has to start in the same column, whether its row carries a
+	// double-width emoji or a single-width source glyph.
+	custom := iconRow(t, m, "notes")
+	glyph := iconRow(t, m, "dotfiles")
+	assert.Equal(t,
+		lipgloss.Width(custom)-lipgloss.Width("notes"),
+		lipgloss.Width(glyph)-lipgloss.Width("dotfiles"),
+		"a wide icon must not push its name past the other rows")
+}
+
+func TestView_CustomIcon_SingleWidthLeavesLayoutUnchanged(t *testing.T) {
+	plain := newIconModel(nil)
+	custom := newIconModel(map[string]string{"notes": nerdGlyph})
+
+	assert.Equal(t,
+		lipgloss.Width(iconRow(t, plain, "dotfiles")),
+		lipgloss.Width(iconRow(t, custom, "dotfiles")),
+		"a single-width icon must not widen the column for anyone")
+}
+
+func TestView_CustomIcon_TrailingSpaceWidensOneIconOnly(t *testing.T) {
+	// A terminal that draws an emoji narrower than it measures leaves that row
+	// short; a trailing space in the config makes it up without moving the rest.
+	m := newIconModel(map[string]string{"notes": "📓", "dotfiles": "⬆️ "})
+
+	assert.Equal(t, 2, m.iconWidth,
+		"the padded icon must not widen the column for every row")
+	assert.Equal(t,
+		lipgloss.Width(m.iconCell(sessionItem{src: "tmux", icon: "📓"}))+1,
+		lipgloss.Width(m.iconCell(sessionItem{src: "tmux", icon: "⬆️ "})),
+		"the trailing space is added to the cell but not counted towards it")
+	assert.Equal(t,
+		lipgloss.Width(m.iconCell(sessionItem{src: "tmux", icon: "📓"})),
+		lipgloss.Width(m.iconCell(sessionItem{src: "tmux"})),
+		"rows without a custom icon are unaffected")
+}
+
+func TestView_CustomIcon_SuppressedWithoutIcons(t *testing.T) {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.IconWidth = 2
+		o.Icon = func(s model.SeshSession) string { return "📓" }
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+
+	assert.NotContains(t, fmt.Sprintf("%v", m.View()), "📓",
+		"the icon column is an icons-on feature, custom icons included")
+}
+
+func TestView_CustomIcon_RowsFitContentWidth(t *testing.T) {
+	dir := model.SeshSessionMap{
+		"s1": {Name: "sesh", Src: "tmux", WindowNames: []string{
+			"editor", "server", "logs", "database", "tests", "docs", "shell",
+		}},
+	}
+	sessions := model.SeshSessions{OrderedIndex: []string{"s1"}, Directory: dir}
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.ShowIcons = true
+		o.ShowWindows = true
+		o.IconWidth = 2
+		o.Icon = func(s model.SeshSession) string { return "📓" }
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+
+	for _, line := range strings.Split(fmt.Sprintf("%v", m.View()), "\n") {
+		if strings.Contains(line, "sesh") {
+			assert.LessOrEqual(t, lipgloss.Width(line), m.contentWidth(),
+				"a wide icon must be counted against the row's width budget")
+			return
+		}
+	}
+	t.Fatal("expected a row for the sesh session")
+}
+
 func TestView_ShowWindows(t *testing.T) {
 	m := newTestModelWithWindows()
 	out := fmt.Sprintf("%v", m.View())
@@ -732,7 +856,7 @@ func TestApplyFilter_DoesNotMatchWindowNames(t *testing.T) {
 }
 
 func TestSessionItems_StringIgnoresWindowNames(t *testing.T) {
-	items := buildItems(sessionsWithWindows(), false)
+	items := buildItems(sessionsWithWindows(), false, nil)
 	for i := range items {
 		assert.Equal(t, items[i].name, items.String(i),
 			"fuzzy source must expose the session name only")

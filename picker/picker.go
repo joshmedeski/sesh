@@ -8,6 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/previewer"
 )
@@ -35,10 +36,16 @@ type Picker interface {
 type RealPicker struct {
 	config    model.Config
 	previewer previewer.Previewer
+	// home expands the paths on [[session]] blocks so a configured icon can be
+	// matched against the absolute path a session is listed with.
+	home home.Home
+	// wildcards matches a session path to a [[wildcard]] block, for icons
+	// declared on a pattern rather than a single session.
+	wildcards WildcardFinder
 }
 
-func NewPicker(config model.Config, previewer previewer.Previewer) Picker {
-	return &RealPicker{config: config, previewer: previewer}
+func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards WildcardFinder) Picker {
+	return &RealPicker{config: config, previewer: previewer, home: home, wildcards: wildcards}
 }
 
 // buildAliases collects the aliases defined on [[session]] blocks, keyed by
@@ -181,6 +188,8 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		AliasFilterPrefix:       aliasFilterPrefix(p.config.TUI.AliasFilterPrefix),
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
 		DisableAliasAutoConnect: disableAliasAutoConnect,
+		Icon:                    buildIconResolver(p.config, p.home, p.wildcards),
+		IconWidth:               iconColWidth(p.config),
 		Preview:                 preview,
 		PreviewWidth:            previewWidth(p.config.TUI.PreviewWidth),
 		PreviewMinWidth:         previewMinWidth(p.config.TUI.PreviewMinWidth),

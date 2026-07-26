@@ -201,6 +201,10 @@
             "description": "Connect to this session as soon as its alias is fully typed in the picker, without pressing enter. Requires `alias`.",
             "default": false
           },
+          "icon": {
+            "type": "string",
+            "description": "Icon shown for this session in the picker instead of its source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
+          },
           "startup_command": {
             "type": "string",
             "description": "Shell command to run when this session is created (overrides default)"
@@ -279,6 +283,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon shown for matching sessions in the picker instead of their source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
           }
         },
         "additionalProperties": false

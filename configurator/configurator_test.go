@@ -335,6 +335,24 @@ alias = "dot"
 		"alias_auto_connect is opt-in per session")
 }
 
+func TestGetConfig_SessionIcons(t *testing.T) {
+	config, err := configFromTOML(t, `
+[[session]]
+name = "notes"
+path = "~/second-brain"
+icon = "📓"
+
+[[session]]
+name = "dotfiles"
+path = "~/.config"
+`)
+	assert.NoError(t, err)
+	require.Len(t, config.SessionConfigs, 2)
+	assert.Equal(t, "📓", config.SessionConfigs[0].Icon)
+	assert.Equal(t, "", config.SessionConfigs[1].Icon,
+		"a session without an icon keeps its source glyph")
+}
+
 func TestGetConfig_DuplicateAliases(t *testing.T) {
 	_, err := configFromTOML(t, `
 [[session]]
