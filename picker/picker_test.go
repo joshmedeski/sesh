@@ -11,6 +11,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -719,7 +720,7 @@ func TestView_AliasChip_RowsFitContentWidth(t *testing.T) {
 	t.Fatal("expected a row for the sesh session")
 }
 
-func TestApplyFilter_AliasesDoNotAffectResults(t *testing.T) {
+func TestApplyFilter_NonAliasQueriesAreUnaffected(t *testing.T) {
 	plain := newTestModel()
 	plain.filterInput.SetValue("o")
 	plain.applyFilter()
@@ -731,8 +732,88 @@ func TestApplyFilter_AliasesDoNotAffectResults(t *testing.T) {
 	assert.Equal(t, len(plain.filtered), len(aliased.filtered))
 	for i := range plain.filtered {
 		assert.Equal(t, plain.filtered[i].item.name, aliased.filtered[i].item.name,
-			"aliases must not reorder or filter results")
+			"anything short of an exact alias must rank exactly as before")
 	}
+}
+
+func TestApplyFilter_ExactAliasIsTheOnlyResult(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("wp")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1, "an exact alias resolves to its session, whatever the ranking")
+	assert.Equal(t, "my-project", m.filtered[0].item.name)
+	assert.Empty(t, m.filtered[0].matchedIndexes,
+		"the alias matched the session, not characters within its name")
+	assert.Equal(t, "tmux", m.filtered[0].item.src,
+		"the listed session is reused so its source and windows come along")
+}
+
+func TestApplyFilter_ExactAliasIsCaseInsensitive(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("WP")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1)
+	assert.Equal(t, "my-project", m.filtered[0].item.name)
+}
+
+func TestApplyFilter_AliasTargetMissingFromList(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{"wp": {Alias: "wp", Target: "wallpaper"}}
+	})
+	m.filterInput.SetValue("wp")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1,
+		"an alias always names a [[session]], so it stays selectable when unlisted")
+	assert.Equal(t, "wallpaper", m.filtered[0].item.name)
+	assert.Equal(t, "config", m.filtered[0].item.src)
+}
+
+func TestApplyFilter_PartialAliasFallsBackToFuzzy(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("do")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1)
+	assert.NotEmpty(t, m.filtered[0].matchedIndexes,
+		"a partial alias is fuzzy-matched like any other query")
+}
+
+func TestApplyFilter_TypingPastAnAliasFallsBackToFuzzy(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("dotf")
+	m.applyFilter()
+
+	require.Len(t, m.filtered, 1)
+	assert.NotEmpty(t, m.filtered[0].matchedIndexes,
+		"past the alias the query is fuzzy-matched again")
+}
+
+func TestApplyFilter_ExactAliasIgnoresSeparatorNormalization(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.SeparatorAware = true
+		o.Aliases = map[string]Alias{"w-p": {Alias: "w-p", Target: "my-project"}}
+	})
+
+	m.filterInput.SetValue("w p")
+	m.applyFilter()
+	assert.NotEqual(t, 1, len(m.filtered),
+		"normalized input must not resolve an alias containing a separator")
+
+	m.filterInput.SetValue("w-p")
+	m.applyFilter()
+	require.Len(t, m.filtered, 1)
+	assert.Equal(t, "my-project", m.filtered[0].item.name)
+}
+
+func TestEnter_AfterTypingAliasSelectsTheTarget(t *testing.T) {
+	m, _ := typeFilter(newAliasModel(), "dot")
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	assert.Equal(t, "dotfiles", result.(Model).Chosen(),
+		"enter must land on the aliased session even without auto-connect")
 }
 
 func TestAliasAutoConnect_FiresOnExactAlias(t *testing.T) {

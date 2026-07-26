@@ -325,6 +325,27 @@ func (m *Model) scheduleAliasAutoConnect() tea.Cmd {
 	return tea.Tick(m.aliasAutoConnectDelay, func(time.Time) tea.Msg { return msg })
 }
 
+// aliasMatch resolves an exactly-typed alias to the session it points at. It
+// takes the raw input, never the separator-normalized pattern, so an alias
+// containing `-` or `_` can't be matched by typing a space instead.
+//
+// The session is looked up in the loaded list so its source and window names
+// come along, and falls back to a config-sourced item when the target isn't
+// listed — an alias always names a [[session]], so connecting still works even
+// if that session is filtered out or hasn't loaded yet.
+func (m *Model) aliasMatch(raw string) (sessionItem, bool) {
+	alias, ok := m.aliases[strings.ToLower(raw)]
+	if !ok {
+		return sessionItem{}, false
+	}
+	for _, item := range m.allItems {
+		if item.name == alias.Target {
+			return item, true
+		}
+	}
+	return sessionItem{name: alias.Target, searchName: alias.Target, src: "config"}, true
+}
+
 func (m *Model) applyFilter() {
 	pattern := m.filterInput.Value()
 	if pattern == "" {
@@ -332,6 +353,11 @@ func (m *Model) applyFilter() {
 		for i, item := range m.allItems {
 			m.filtered[i] = filteredItem{item: item}
 		}
+		return
+	}
+
+	if item, ok := m.aliasMatch(pattern); ok {
+		m.filtered = []filteredItem{{item: item}}
 		return
 	}
 
