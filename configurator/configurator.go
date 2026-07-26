@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -129,6 +130,10 @@ func (c *RealConfigurator) applyDefaults(config *model.Config) {
 	if config.TUI.AliasAutoConnectDelay == "" {
 		config.TUI.AliasAutoConnectDelay = model.DefaultAliasAutoConnectDelay
 	}
+	if config.TUI.AliasFilterPrefix == nil {
+		prefix := model.DefaultAliasFilterPrefix
+		config.TUI.AliasFilterPrefix = &prefix
+	}
 }
 
 // validateAliases rejects alias configurations that can't behave predictably.
@@ -137,6 +142,18 @@ func (c *RealConfigurator) applyDefaults(config *model.Config) {
 func validateAliases(config *model.Config) error {
 	if _, err := time.ParseDuration(config.TUI.AliasAutoConnectDelay); err != nil {
 		return fmt.Errorf("invalid alias_auto_connect_delay %q: %w", config.TUI.AliasAutoConnectDelay, err)
+	}
+
+	// An empty prefix disables alias-filter mode, so only non-empty values are
+	// checked. More than one character would mean the mode only engages partway
+	// through typing, and whitespace can't be told apart from a normal query.
+	if prefix := config.TUI.AliasFilterPrefix; prefix != nil && *prefix != "" {
+		if utf8.RuneCountInString(*prefix) > 1 {
+			return fmt.Errorf("invalid alias_filter_prefix %q: must be a single character", *prefix)
+		}
+		if strings.TrimSpace(*prefix) == "" {
+			return fmt.Errorf("invalid alias_filter_prefix %q: must not be whitespace", *prefix)
+		}
 	}
 
 	seen := make(map[string]string, len(config.SessionConfigs))

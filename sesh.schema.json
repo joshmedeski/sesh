@@ -109,6 +109,12 @@
           "type": "string",
           "description": "Grace period between typing a session alias and auto-connecting to it, leaving room to finish typing a longer alias that shares a prefix. Any Go duration string (e.g. \"150ms\", \"1s\").",
           "default": "150ms"
+        },
+        "alias_filter_prefix": {
+          "type": "string",
+          "description": "Single character that, typed first in the picker, narrows the list to aliased sessions (e.g. \"/tc\" finds the \"tc\" alias). Set to an empty string to disable.",
+          "default": "/",
+          "maxLength": 1
         }
       },
       "additionalProperties": false

@@ -66,6 +66,17 @@ func aliasAutoConnectDelay(configured string) time.Duration {
 	return d
 }
 
+// aliasFilterPrefix resolves the sigil that enters alias-filter mode. A nil
+// value means the key is absent (the configurator normally fills it in, but the
+// picker can be constructed with a bare config), while an explicit empty string
+// disables the mode.
+func aliasFilterPrefix(configured *string) string {
+	if configured == nil {
+		return model.DefaultAliasFilterPrefix
+	}
+	return *configured
+}
+
 func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, error) {
 	showIcons := false
 	if opts.ShowIcons != nil {
@@ -105,6 +116,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		Prompt:                  prompt,
 		Placeholder:             placeholder,
 		Aliases:                 buildAliases(p.config.SessionConfigs),
+		AliasFilterPrefix:       aliasFilterPrefix(p.config.TUI.AliasFilterPrefix),
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
 		DisableAliasAutoConnect: disableAliasAutoConnect,
 	})

@@ -281,6 +281,38 @@ func TestGetConfig_AliasAutoConnectDelayInvalid(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid alias_auto_connect_delay")
 }
 
+func TestGetConfig_AliasFilterPrefixDefault(t *testing.T) {
+	config, err := configFromTOML(t, "")
+	assert.NoError(t, err)
+	require.NotNil(t, config.TUI.AliasFilterPrefix, "an absent key is filled in with the default")
+	assert.Equal(t, "/", *config.TUI.AliasFilterPrefix)
+}
+
+func TestGetConfig_AliasFilterPrefixOverride(t *testing.T) {
+	config, err := configFromTOML(t, "[tui]\nalias_filter_prefix = \"@\"\n")
+	assert.NoError(t, err)
+	require.NotNil(t, config.TUI.AliasFilterPrefix)
+	assert.Equal(t, "@", *config.TUI.AliasFilterPrefix)
+}
+
+func TestGetConfig_AliasFilterPrefixDisabled(t *testing.T) {
+	config, err := configFromTOML(t, "[tui]\nalias_filter_prefix = \"\"\n")
+	assert.NoError(t, err)
+	require.NotNil(t, config.TUI.AliasFilterPrefix,
+		"an explicit empty string disables the mode and must survive the defaults")
+	assert.Equal(t, "", *config.TUI.AliasFilterPrefix)
+}
+
+func TestGetConfig_AliasFilterPrefixInvalid(t *testing.T) {
+	_, err := configFromTOML(t, "[tui]\nalias_filter_prefix = \"//\"\n")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "must be a single character")
+
+	_, err = configFromTOML(t, "[tui]\nalias_filter_prefix = \" \"\n")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "must not be whitespace")
+}
+
 func TestGetConfig_SessionAliases(t *testing.T) {
 	config, err := configFromTOML(t, `
 [[session]]

@@ -4,6 +4,10 @@ package model
 // [tui] alias_auto_connect_delay is not set.
 const DefaultAliasAutoConnectDelay = "150ms"
 
+// DefaultAliasFilterPrefix is the sigil that enters alias-filter mode when
+// [tui] alias_filter_prefix is not set.
+const DefaultAliasFilterPrefix = "/"
+
 type (
 	Config struct {
 		Cache                   bool                 `toml:"cache"`
@@ -86,6 +90,11 @@ type (
 		// auto-connecting to it, giving longer aliases that share a prefix time
 		// to be typed. Any duration string time.ParseDuration accepts.
 		AliasAutoConnectDelay string `toml:"alias_auto_connect_delay"`
+		// AliasFilterPrefix is the single character that, typed first in the
+		// picker, narrows the list to aliased sessions. It is a pointer so an
+		// explicit empty string (disable the mode) is distinguishable from an
+		// absent key (use DefaultAliasFilterPrefix).
+		AliasFilterPrefix *string `toml:"alias_filter_prefix"`
 	}
 
 	WildcardConfig struct {

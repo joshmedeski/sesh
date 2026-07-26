@@ -41,6 +41,7 @@ func testOptions() Options {
 		Prompt:                "> ",
 		Placeholder:           "Filter sessions...",
 		AliasAutoConnectDelay: 150 * time.Millisecond,
+		AliasFilterPrefix:     model.DefaultAliasFilterPrefix,
 	}
 }
 
@@ -665,18 +666,31 @@ const reverseVideo = "\x1b[7m"
 
 func TestAliasChip(t *testing.T) {
 	m := newAliasModel(func(o *Options) { o.ShowIcons = true })
-	chip := m.aliasChip("my-project")
+	chip := m.aliasChip("my-project", 0)
 	assert.Contains(t, chip, "wp")
 	assert.Contains(t, chip, chipLeftGlyph)
 	assert.Contains(t, chip, chipRightGlyph)
 	assert.Contains(t, chip, reverseVideo, "the chip label must be inverted to stay legible")
-	assert.Equal(t, "", m.aliasChip("notes"), "sessions without an alias get no chip")
+	assert.Equal(t, "", m.aliasChip("notes", 0), "sessions without an alias get no chip")
 
 	plain := newAliasModel()
-	assert.Contains(t, plain.aliasChip("my-project"), "[wp]")
-	assert.Contains(t, plain.aliasChip("my-project"), reverseVideo)
-	assert.NotContains(t, plain.aliasChip("my-project"), chipLeftGlyph,
+	assert.Contains(t, ansi.Strip(plain.aliasChip("my-project", 0)), "[wp]")
+	assert.Contains(t, plain.aliasChip("my-project", 0), reverseVideo)
+	assert.NotContains(t, plain.aliasChip("my-project", 0), chipLeftGlyph,
 		"nerd font glyphs are only used when icons are enabled")
+}
+
+func TestAliasChip_HighlightsMatchedPrefix(t *testing.T) {
+	m := newAliasModel()
+
+	// The matched runes carry a color on top of reverse video, so they read as a
+	// colored block; the rest of the label stays plain reverse video.
+	assert.NotEqual(t, m.aliasChip("my-project", 0), m.aliasChip("my-project", 1),
+		"a matched prefix must be styled differently from an unmatched label")
+	assert.Equal(t, "[wp] ", ansi.Strip(m.aliasChip("my-project", 1)),
+		"highlighting must not change the text of the chip")
+	assert.Equal(t, m.aliasChip("my-project", 2), m.aliasChip("my-project", 99),
+		"a match longer than the alias is clamped rather than panicking")
 }
 
 func TestView_AliasChip(t *testing.T) {
@@ -931,6 +945,199 @@ func TestAliasAutoConnect_SeparatorAwareDoesNotMangleAliases(t *testing.T) {
 
 	_, cmd = typeFilter(m, "w-p")
 	assert.NotNil(t, aliasTick(cmd), "the raw alias still matches with separator_aware on")
+}
+
+// filteredNames lists the session names currently shown, for asserting on both
+// membership and order.
+func filteredNames(m Model) []string {
+	names := make([]string, 0, len(m.filtered))
+	for _, item := range m.filtered {
+		names = append(names, item.item.name)
+	}
+	return names
+}
+
+// filterAliasMode types a query into alias-filter mode, sigil included.
+func filterAliasMode(m Model, query string) Model {
+	m.filterInput.SetValue(m.aliasFilterPrefix + query)
+	m.applyFilter()
+	return m
+}
+
+func TestApplyFilter_AliasModeShowsEveryAlias(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "")
+
+	assert.Equal(t, []string{"my-project", "dotfiles"}, filteredNames(m),
+		"the bare sigil narrows to aliased sessions, in list order")
+	for _, item := range m.filtered {
+		assert.Equal(t, 0, item.chipMatchLen, "nothing is typed yet, so nothing is highlighted")
+	}
+}
+
+func TestApplyFilter_AliasModeMatchesAliasPrefix(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "d")
+
+	require.Equal(t, []string{"dotfiles"}, filteredNames(m))
+	assert.Equal(t, 1, m.filtered[0].chipMatchLen, "the matched part of the chip is highlighted")
+
+	// `xy` on a session whose name shares no letters with the query isolates the
+	// alias tier from the session-name fallback.
+	mid := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{"xy": {Alias: "xy", Target: "notes"}}
+	})
+	assert.Empty(t, filteredNames(filterAliasMode(mid, "y")),
+		"aliases match by prefix, so a mid-alias substring finds nothing")
+}
+
+func TestApplyFilter_AliasModeIsCaseInsensitive(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "DO")
+	assert.Equal(t, []string{"dotfiles"}, filteredNames(m))
+}
+
+func TestApplyFilter_AliasModeFallsBackToSessionName(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "project")
+
+	require.Equal(t, []string{"my-project"}, filteredNames(m),
+		"a session name is matched by substring, since names are multi-word")
+	assert.Equal(t, 0, m.filtered[0].chipMatchLen,
+		"the query matched the name, not the chip, so the chip is left plain")
+}
+
+func TestApplyFilter_AliasModeRanksAliasMatchesFirst(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{
+			"do": {Alias: "do", Target: "my-project"},
+			"z":  {Alias: "z", Target: "dotfiles"},
+		}
+	})
+	m = filterAliasMode(m, "do")
+
+	assert.Equal(t, []string{"my-project", "dotfiles"}, filteredNames(m),
+		"an alias match outranks a session whose name merely contains the query")
+}
+
+func TestApplyFilter_AliasModeIncludesUnlistedAliases(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{
+			"dot": {Alias: "dot", Target: "dotfiles"},
+			"wp":  {Alias: "wp", Target: "wallpaper"},
+			"aa":  {Alias: "aa", Target: "archive"},
+		}
+	})
+	m = filterAliasMode(m, "")
+
+	assert.Equal(t, []string{"dotfiles", "archive", "wallpaper"}, filteredNames(m),
+		"unlisted aliases trail the listed ones, sorted so the order never shifts")
+	for _, item := range m.filtered[1:] {
+		assert.Equal(t, "config", item.item.src)
+	}
+}
+
+func TestApplyFilter_AliasModeWithNoMatches(t *testing.T) {
+	m := filterAliasMode(newAliasModel(), "zzz")
+	assert.Empty(t, m.filtered)
+}
+
+func TestApplyFilter_AliasModeWithNoAliasesConfigured(t *testing.T) {
+	m := newTestModel()
+	m.width, m.height = 60, 24
+	m = filterAliasMode(m, "")
+
+	assert.Empty(t, m.filtered)
+	assert.Contains(t, ansi.Strip(fmt.Sprintf("%v", m.View())), "No aliases configured",
+		"the sigil should read as unconfigured rather than broken")
+}
+
+func TestApplyFilter_SigilPastTheStartIsANormalQuery(t *testing.T) {
+	m := newAliasModel()
+	m.filterInput.SetValue("code/app")
+	m.applyFilter()
+
+	require.Equal(t, []string{"~/code/app"}, filteredNames(m),
+		"only a leading sigil enters alias mode, so path-like queries still work")
+	assert.NotEmpty(t, m.filtered[0].matchedIndexes)
+}
+
+func TestApplyFilter_CustomAliasFilterPrefix(t *testing.T) {
+	m := newAliasModel(func(o *Options) { o.AliasFilterPrefix = "@" })
+
+	m = filterAliasMode(m, "")
+	assert.Equal(t, []string{"my-project", "dotfiles"}, filteredNames(m))
+
+	m.filterInput.SetValue("/")
+	m.applyFilter()
+	assert.NotEmpty(t, m.filtered, "the default sigil is inert once one is configured")
+}
+
+func TestApplyFilter_AliasFilterPrefixDisabled(t *testing.T) {
+	m := newAliasModel(func(o *Options) { o.AliasFilterPrefix = "" })
+	m.filterInput.SetValue("/")
+	m.applyFilter()
+
+	assert.Equal(t, []string{"~/code/app"}, filteredNames(m),
+		"an empty prefix disables the mode, leaving the sigil a normal query")
+}
+
+func ptr[T any](v T) *T { return &v }
+
+func TestAliasFilterPrefix(t *testing.T) {
+	assert.Equal(t, "/", aliasFilterPrefix(nil), "an absent key falls back to the default")
+	assert.Equal(t, "", aliasFilterPrefix(ptr("")), "an explicit empty string disables the mode")
+	assert.Equal(t, "@", aliasFilterPrefix(ptr("@")))
+}
+
+func TestAliasAutoConnect_AliasModeFiresWithoutTheOptIn(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(), "/dot")
+	require.NotNil(t, aliasTick(cmd),
+		"reaching for the sigil is itself the intent, so alias_auto_connect isn't required")
+
+	result, quitCmd := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "dot"})
+	assert.Equal(t, "dotfiles", result.(Model).Chosen())
+	assert.NotNil(t, quitCmd)
+}
+
+func TestAliasAutoConnect_AliasModePartialAliasDoesNothing(t *testing.T) {
+	_, cmd := typeFilter(newAliasModel(), "/d")
+	assert.Nil(t, aliasTick(cmd), "only an exact alias auto-connects")
+}
+
+func TestAliasAutoConnect_AliasModeSessionNameMatchDoesNothing(t *testing.T) {
+	_, cmd := typeFilter(newAliasModel(), "/project")
+	assert.Nil(t, aliasTick(cmd), "matching a session name is not typing an alias")
+}
+
+func TestAliasAutoConnect_AliasModeLeavesRoomForALongerAlias(t *testing.T) {
+	m := newAliasModel(func(o *Options) {
+		o.Aliases = map[string]Alias{
+			"w":  {Alias: "w", Target: "my-project"},
+			"wp": {Alias: "wp", Target: "dotfiles"},
+		}
+	})
+
+	m, cmd := typeFilter(m, "/w")
+	tick := aliasTick(cmd)
+	require.NotNil(t, tick)
+
+	m, _ = typeFilter(m, "p")
+	result, _ := m.Update(*tick)
+	assert.Equal(t, "", result.(Model).Chosen(),
+		"the tick armed by the shorter alias must not fire once the longer one is typed")
+}
+
+func TestAliasAutoConnect_AliasModeSuppressed(t *testing.T) {
+	m, cmd := typeFilter(newAliasModel(func(o *Options) { o.DisableAliasAutoConnect = true }), "/wp")
+	assert.Nil(t, aliasTick(cmd), "--no-alias-auto covers alias mode too")
+
+	result, _ := m.Update(aliasAutoConnectMsg{seq: m.aliasSeq, alias: "wp"})
+	assert.Equal(t, "", result.(Model).Chosen())
+}
+
+func TestEnter_InAliasModeSelectsTheTarget(t *testing.T) {
+	m, _ := typeFilter(newAliasModel(), "/do")
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	assert.Equal(t, "dotfiles", result.(Model).Chosen(),
+		"the sigil must never leak into the chosen session name")
 }
 
 func TestWindowsText(t *testing.T) {

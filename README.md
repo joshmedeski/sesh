@@ -689,6 +689,7 @@ placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
 alias_auto_connect_delay = "150ms"
+alias_filter_prefix = "/"
 ```
 
 With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
@@ -702,7 +703,7 @@ With `show_windows = true`, each row also lists the names of the windows inside 
 
 Window names are display-only: selecting a row still returns just the session name, and typing a window name does not match its session. The names for live tmux sessions are fetched in a single tmux call, so the option costs the same regardless of how many sessions you have.
 
-`alias_auto_connect_delay` is the grace period before an alias auto-connects — see [Session Aliases](#session-aliases).
+`alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
 
 ### Default Session
 
@@ -785,6 +786,29 @@ With `alias_auto_connect = true`, typing the full alias connects immediately —
 Aliases that share a prefix (`w` and `wp`) are allowed. `[tui] alias_auto_connect_delay` (default `150ms`) is the grace period before auto-connect fires, which leaves room to finish typing the longer one. Raise it if you type slowly, or lower it to `"0s"` to fire the instant the alias is complete.
 
 To keep typing past an alias in a one-off invocation, run the picker with `--no-alias-auto`.
+
+#### Browsing aliases
+
+Typing `/` as the first character narrows the picker to aliased sessions only, which is how you go from "I know I set up a shortcut for this" to the session without remembering the shortcut:
+
+```
+filter: /
+
+>  wp  wallpaper
+   dot dotfiles
+   tc  tmux config
+```
+
+What you type next narrows further, matching aliases by prefix (`/t` finds `tc`) and then falling back to session names (`/config` also finds `tc`, since aliases come first and names are matched anywhere). Aliases whose sessions aren't running still show up.
+
+Completing an alias in this mode connects immediately, whether or not it set `alias_auto_connect` — reaching for `/` says the next thing you type is a shortcut to jump to. `alias_auto_connect_delay` still applies, so `/w` leaves room to become `/wp`, and `--no-alias-auto` still holds it back.
+
+Only a leading `/` counts, so `code/app` filters normally. But a query that *starts* with a path — `/Users/you/code` — would enter alias mode instead, so pick a different sigil if you filter that way:
+
+```toml
+[tui]
+alias_filter_prefix = "@"   # or "" to turn the mode off
+```
 
 ### Path substitution
 
