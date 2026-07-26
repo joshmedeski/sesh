@@ -25,6 +25,7 @@ type PickerOptions struct {
 	Placeholder             *string
 	DisableAliasAutoConnect *bool
 	Preview                 *bool
+	Query                   *string
 }
 
 type Picker interface {
@@ -155,6 +156,13 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		preview = *opts.Preview
 	}
 
+	// A pre-filled query is per-invocation only: a configured default would
+	// silently hide sessions on every launch.
+	query := ""
+	if opts.Query != nil {
+		query = *opts.Query
+	}
+
 	// The model reaches the previewer through a function so the TUI stays
 	// unaware of the package, mirroring how sessions arrive via FetchFunc.
 	var previewFunc PreviewFunc
@@ -168,6 +176,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		SeparatorAware:          p.config.SeparatorAware,
 		Prompt:                  prompt,
 		Placeholder:             placeholder,
+		Query:                   query,
 		Aliases:                 buildAliases(p.config.SessionConfigs),
 		AliasFilterPrefix:       aliasFilterPrefix(p.config.TUI.AliasFilterPrefix),
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),

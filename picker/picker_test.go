@@ -131,6 +131,95 @@ func TestApplyFilter_NoMatches(t *testing.T) {
 	assert.Len(t, m.filtered, 0)
 }
 
+// newQueryModel returns a loaded model whose filter was pre-filled with query,
+// as `--query` does.
+func newQueryModel(query string, tweak ...func(*Options)) (Model, tea.Cmd) {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.Query = query
+		for _, fn := range tweak {
+			fn(o)
+		}
+	}))
+	result, cmd := m.Update(sessionsLoadedMsg{sessions: sessions})
+	return result.(Model), cmd
+}
+
+func TestQuery_PreFillsFilter(t *testing.T) {
+	m, _ := newQueryModel("notes")
+
+	assert.Equal(t, "notes", m.filterInput.Value())
+	require.Len(t, m.filtered, 1, "the list is narrowed as soon as sessions load")
+	assert.Equal(t, "notes", m.filtered[0].item.name)
+}
+
+func TestQuery_Empty(t *testing.T) {
+	m, _ := newQueryModel("")
+
+	assert.Equal(t, "", m.filterInput.Value())
+	assert.Len(t, m.filtered, 5)
+}
+
+func TestQuery_IsEditable(t *testing.T) {
+	m, _ := newQueryModel("notes")
+
+	// The cursor sits at the end of the pre-filled value, so a backspace trims
+	// it rather than doing nothing.
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyBackspace})
+	m = result.(Model)
+
+	assert.Equal(t, "note", m.filterInput.Value())
+	assert.Len(t, m.filtered, 1)
+}
+
+func TestQuery_SingleMatchDoesNotAutoSelect(t *testing.T) {
+	m, _ := newQueryModel("notes")
+
+	assert.Equal(t, "", m.chosen, "the picker still waits for enter")
+	assert.False(t, m.quit)
+}
+
+func TestQuery_EntersAliasMode(t *testing.T) {
+	m, _ := newQueryModel(model.DefaultAliasFilterPrefix, func(o *Options) {
+		o.Aliases = testAliases()
+	})
+
+	require.Len(t, m.filtered, 2, "the sigil narrows the list to aliased sessions")
+	assert.Equal(t, "my-project", m.filtered[0].item.name)
+	assert.Equal(t, "dotfiles", m.filtered[1].item.name)
+}
+
+func TestQuery_EntersIndexMode(t *testing.T) {
+	m, _ := newQueryModel(indexFilterPrefix)
+
+	name, handled := m.indexJump("2")
+	assert.True(t, handled)
+	assert.Equal(t, "dotfiles", name)
+}
+
+func TestQuery_DoesNotAutoConnectExactAlias(t *testing.T) {
+	m, cmd := newQueryModel("wp", func(o *Options) {
+		o.Aliases = testAliases()
+		o.AliasAutoConnectDelay = time.Millisecond
+	})
+
+	assert.Nil(t, aliasTick(cmd), "auto-connect stays a reward for typing")
+	assert.Equal(t, "", m.chosen)
+}
+
+func TestQuery_AutoConnectsAfterAKeystroke(t *testing.T) {
+	m, _ := newQueryModel("w", func(o *Options) {
+		o.Aliases = testAliases()
+		o.AliasAutoConnectDelay = time.Millisecond
+	})
+
+	_, cmd := typeFilter(m, "p")
+
+	tick := aliasTick(cmd)
+	require.NotNil(t, tick, "completing the alias by hand still arms auto-connect")
+	assert.Equal(t, "wp", tick.alias)
+}
+
 func TestCursorDown(t *testing.T) {
 	m := newTestModel()
 	m.height = 30

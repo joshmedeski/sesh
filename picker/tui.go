@@ -96,6 +96,10 @@ type Options struct {
 	SeparatorAware bool
 	Prompt         string
 	Placeholder    string
+	// Query pre-fills the filter input. It goes in as if it had been typed —
+	// the sigils for alias and index mode included — but never triggers alias
+	// auto-connect on its own, which stays a reward for an actual keystroke.
+	Query string
 	// Aliases is keyed by lowercased alias.
 	Aliases map[string]Alias
 	// AliasFilterPrefix is the sigil that, typed first, narrows the list to
@@ -273,6 +277,9 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 	ti := textinput.New()
 	ti.Placeholder = opts.Placeholder
 	ti.Prompt = opts.Prompt
+	// SetValue leaves the cursor at the end, so the pre-filled query reads as
+	// something just typed and can be backspaced away.
+	ti.SetValue(opts.Query)
 
 	aliasByName := make(map[string]string, len(opts.Aliases))
 	for _, alias := range opts.Aliases {
