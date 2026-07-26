@@ -709,6 +709,24 @@ Window names are display-only: selecting a row still returns just the session na
 
 `alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
 
+#### Jumping by number
+
+Typing `#` as the first character numbers the rows and turns the next digit into a jump — the fastest way to reach one of your first few sessions without reading their names:
+
+```
+filter: #
+
+> 1 sesh
+  2 dotfiles
+  3 my-project
+```
+
+Pressing <kbd>3</kbd> connects to `my-project` immediately. Only `1`–`9` jump, and only the first nine rows are numbered.
+
+The numbers follow the visible list, so anything typed after the sigil narrows it first and renumbers what's left — `#a` then <kbd>2</kbd> jumps to the second match for `a`. A digit with no row at that position does nothing rather than filtering.
+
+Only a leading `#` counts, so `feat#123` filters normally. If you configure `alias_filter_prefix = "#"`, alias mode wins and this mode is unreachable.
+
 #### Preview pane
 
 With `preview = true`, the highlighted session is previewed beside the list, using exactly the same output as `sesh preview` — live tmux panes via `capture-pane`, your `preview_command` for configured sessions, and a directory listing otherwise:

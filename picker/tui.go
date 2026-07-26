@@ -237,6 +237,14 @@ func highlightChipPrefix(alias string, matchLen int, label lipgloss.Style) strin
 	return matched + label.Render(string(runes[matchLen:]))
 }
 
+// indexFilterPrefix is the sigil that, typed first, enters index mode: the rows
+// are numbered and the next digit jumps straight to one of them.
+const indexFilterPrefix = "#"
+
+// maxIndexJump is the highest position index mode can reach. Only single digits
+// are in scope, so rows past the ninth are unnumbered.
+const maxIndexJump = 9
+
 var separatorReplacer = strings.NewReplacer("-", " ", "_", " ", "/", " ", "\\", " ")
 
 func normalizeSeparators(s string) string {
@@ -454,6 +462,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			return m, m.schedulePreview()
+
+		default:
+			// Index mode owns the digits while it is active, so an out-of-range
+			// one is swallowed rather than filtering the list.
+			if name, handled := m.indexJump(msg.String()); handled {
+				if name == "" {
+					return m, nil
+				}
+				m.chosen = name
+				return m, tea.Quit
+			}
 		}
 	}
 
@@ -617,23 +636,69 @@ func (m *Model) filterAliases(query string) []filteredItem {
 	return append(byAlias, byName...)
 }
 
+// indexFilterQuery reports whether the raw input opens index mode and, if so,
+// returns whatever was typed after the sigil. Only a leading sigil counts, so a
+// `#` inside a branch-like query is left alone. The alias sigil is resolved
+// first, so configuring it as `#` keeps alias mode and leaves index mode
+// unreachable rather than making the two fight over the same keystroke.
+func (m *Model) indexFilterQuery(raw string) (string, bool) {
+	if _, ok := m.aliasFilterQuery(raw); ok {
+		return "", false
+	}
+	if !strings.HasPrefix(raw, indexFilterPrefix) {
+		return "", false
+	}
+	return strings.TrimPrefix(raw, indexFilterPrefix), true
+}
+
+// indexJump resolves a keypress in index mode to the session it selects. The
+// second return reports that the key belongs to the mode: it is true for every
+// digit 1-9 while the mode is active, even when no row sits at that position, so
+// a digit past the end of the list is a no-op rather than a literal in the
+// filter. Digits are counted against the visible list, so the numbering stays
+// meaningful when a query narrowed it.
+func (m Model) indexJump(key string) (string, bool) {
+	if _, ok := m.indexFilterQuery(m.filterInput.Value()); !ok {
+		return "", false
+	}
+	if len(key) != 1 || key[0] < '1' || key[0] > '9' {
+		return "", false
+	}
+	if n := int(key[0] - '0'); n <= len(m.filtered) {
+		return m.filtered[n-1].item.name, true
+	}
+	return "", true
+}
+
 func (m *Model) applyFilter() {
-	pattern := m.filterInput.Value()
-	if query, ok := m.aliasFilterQuery(pattern); ok {
+	raw := m.filterInput.Value()
+	if query, ok := m.aliasFilterQuery(raw); ok {
 		m.filtered = m.filterAliases(query)
 		return
 	}
-	if pattern == "" {
-		m.filtered = make([]filteredItem, len(m.allItems))
-		for i, item := range m.allItems {
-			m.filtered[i] = filteredItem{item: item}
-		}
+	// Index mode numbers whatever is displayed, so anything typed after the
+	// sigil filters exactly as it would on its own.
+	if query, ok := m.indexFilterQuery(raw); ok {
+		m.filtered = m.filterSessions(query)
 		return
+	}
+	m.filtered = m.filterSessions(raw)
+}
+
+// filterSessions narrows the loaded list by pattern: everything when it's
+// empty, the single target when it is an alias typed exactly, and a fuzzy match
+// otherwise.
+func (m *Model) filterSessions(pattern string) []filteredItem {
+	if pattern == "" {
+		filtered := make([]filteredItem, len(m.allItems))
+		for i, item := range m.allItems {
+			filtered[i] = filteredItem{item: item}
+		}
+		return filtered
 	}
 
 	if item, ok := m.aliasMatch(pattern); ok {
-		m.filtered = []filteredItem{{item: item}}
-		return
+		return []filteredItem{{item: item}}
 	}
 
 	if m.separatorAware {
@@ -641,13 +706,14 @@ func (m *Model) applyFilter() {
 	}
 
 	matches := fuzzy.FindFrom(pattern, m.allItems)
-	m.filtered = make([]filteredItem, len(matches))
+	filtered := make([]filteredItem, len(matches))
 	for i, match := range matches {
-		m.filtered[i] = filteredItem{
+		filtered[i] = filteredItem{
 			item:           m.allItems[match.Index],
 			matchedIndexes: match.MatchedIndexes,
 		}
 	}
+	return filtered
 }
 
 func (m *Model) cursorUp(n int) {
@@ -801,12 +867,20 @@ func (m Model) View() tea.View {
 		matchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(1)).Bold(true)
 		normalStyle := lipgloss.NewStyle()
 		windowStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
+		indexStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(4))
+
+		// Index mode numbers the rows so the jump target can be read off the
+		// list instead of counted.
+		_, indexMode := m.indexFilterQuery(m.filterInput.Value())
 
 		for i := m.offset; i < end; i++ {
 			item := m.filtered[i]
 			prefix := "  "
 			if i == m.cursor {
 				prefix = cursorStyle.Render("> ")
+			}
+			if indexMode {
+				prefix += indexGutter(i, indexStyle)
 			}
 
 			var tag string
@@ -855,6 +929,15 @@ func (m Model) View() tea.View {
 	// scrollback back untouched when it quits.
 	v.AltScreen = true
 	return v
+}
+
+// indexGutter renders the jump number for the row at position i, or blanks of
+// the same width once the numbers run out, so every name stays aligned.
+func indexGutter(i int, style lipgloss.Style) string {
+	if i >= maxIndexJump {
+		return "  "
+	}
+	return style.Render(fmt.Sprintf("%d ", i+1))
 }
 
 // headerLines is the filter row plus the blank line under it, which the

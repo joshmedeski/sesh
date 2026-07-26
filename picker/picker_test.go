@@ -1607,3 +1607,106 @@ func TestVisibleCount_FallsBackBeforeSizeIsKnown(t *testing.T) {
 	assert.Equal(t, 0, m.height, "no WindowSizeMsg has arrived yet")
 	assert.Equal(t, fallbackVisibleCount, m.visibleCount())
 }
+
+// filterIndexMode types a query into index mode, sigil included.
+func filterIndexMode(m Model, query string) Model {
+	m.filterInput.SetValue(indexFilterPrefix + query)
+	m.applyFilter()
+	return m
+}
+
+func TestIndexMode_JumpsToTheNthSession(t *testing.T) {
+	m, _ := typeFilter(newTestModel(), "#")
+	require.Equal(t, []string{"my-project", "dotfiles", "~/code/app", "rails-app", "notes"},
+		filteredNames(m), "the bare sigil leaves the list alone")
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: '2', Text: "2"})
+	assert.Equal(t, "dotfiles", result.(Model).Chosen())
+	assert.NotNil(t, cmd, "jumping connects immediately")
+	assert.Equal(t, "#", result.(Model).filterInput.Value(),
+		"the digit is consumed by the mode, not typed into the filter")
+}
+
+func TestIndexMode_CountsTheFilteredList(t *testing.T) {
+	m, _ := typeFilter(newTestModel(), "#a")
+	require.Equal(t, []string{"rails-app", "~/code/app"}, filteredNames(m),
+		"anything after the sigil filters as it normally would")
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: '2', Text: "2"})
+	assert.Equal(t, "~/code/app", result.(Model).Chosen(),
+		"the numbering follows the visible list, not the full one")
+}
+
+func TestIndexMode_DigitPastTheEndIsANoOp(t *testing.T) {
+	m, _ := typeFilter(newTestModel(), "#notes")
+	require.Len(t, m.filtered, 1)
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: '3', Text: "3"})
+	after := result.(Model)
+	assert.Equal(t, "", after.Chosen())
+	assert.False(t, after.Quit())
+	assert.Nil(t, cmd)
+	assert.Equal(t, "#notes", after.filterInput.Value(),
+		"index mode owns the digits, so an unreachable one stays out of the filter")
+}
+
+func TestIndexMode_ZeroFallsThroughToFiltering(t *testing.T) {
+	m, _ := typeFilter(newTestModel(), "#0")
+
+	assert.Equal(t, "", m.Chosen(), "only 1-9 jump")
+	assert.Equal(t, "#0", m.filterInput.Value(), "the zero is a normal keystroke")
+}
+
+func TestIndexMode_WhileLoading(t *testing.T) {
+	sessions := testSessions()
+	m, _ := typeFilter(New(testFetchFunc(sessions), testOptions()), "#1")
+
+	require.True(t, m.loading)
+	assert.Equal(t, "", m.Chosen(), "there is nothing to jump to yet")
+	assert.Equal(t, "#", m.filterInput.Value())
+}
+
+func TestIndexMode_SigilPastTheStartIsANormalQuery(t *testing.T) {
+	m, _ := typeFilter(newTestModel(), "a#1")
+
+	assert.Equal(t, "", m.Chosen(), "only a leading sigil enters index mode")
+	assert.Equal(t, "a#1", m.filterInput.Value())
+}
+
+func TestIndexMode_AliasSigilWins(t *testing.T) {
+	m := newAliasModel(func(o *Options) { o.AliasFilterPrefix = indexFilterPrefix })
+	m, _ = typeFilter(m, "#")
+	require.Equal(t, []string{"my-project", "dotfiles"}, filteredNames(m),
+		"the configured alias sigil still opens alias mode")
+
+	result, _ := m.Update(tea.KeyPressMsg{Code: '1', Text: "1"})
+	assert.Equal(t, "", result.(Model).Chosen(), "index mode is unreachable, so the digit filters")
+	assert.Equal(t, "#1", result.(Model).filterInput.Value())
+}
+
+func TestIndexMode_AliasesStillResolveAfterTheSigil(t *testing.T) {
+	m := filterIndexMode(newAliasModel(), "dot")
+
+	assert.Equal(t, []string{"dotfiles"}, filteredNames(m),
+		"an exact alias after the index sigil resolves like it does on its own")
+}
+
+func TestView_IndexModeNumbersRows(t *testing.T) {
+	m := newTestModel()
+	m.width, m.height = 60, 24
+
+	plain := ansi.Strip(m.View().Content)
+	assert.Contains(t, plain, "> my-project", "the gutter is only drawn in index mode")
+
+	m = filterIndexMode(m, "")
+	plain = ansi.Strip(m.View().Content)
+	assert.Contains(t, plain, "> 1 my-project")
+	assert.Contains(t, plain, "  2 dotfiles")
+}
+
+func TestIndexGutter_RunsOutAfterNine(t *testing.T) {
+	style := lipgloss.NewStyle()
+	assert.Equal(t, "9 ", indexGutter(maxIndexJump-1, style))
+	assert.Equal(t, "  ", indexGutter(maxIndexJump, style),
+		"rows past the ninth are unreachable, and blanks keep the names aligned")
+}
