@@ -79,6 +79,10 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			} else if deps.Config.TUI.Placeholder != "" {
 				pickerOpts.Placeholder = &deps.Config.TUI.Placeholder
 			}
+			if cmd.Flags().Changed("query") {
+				query, _ := cmd.Flags().GetString("query")
+				pickerOpts.Query = &query
+			}
 
 			chosen, err := deps.Picker.Pick(fetchFunc, pickerOpts)
 			if err != nil {
@@ -107,6 +111,7 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("separator-aware", "s", false, "match spaces to separators (-_/\\)")
 	cmd.Flags().StringP("prompt", "p", "", "prompt shown in the picker TUI")
 	cmd.Flags().String("placeholder", "", "placeholder text in the picker TUI")
+	cmd.Flags().StringP("query", "q", "", "prefill the picker's filter with this query")
 	cmd.Flags().Bool("no-alias-auto", false, "don't auto-connect when an alias is fully typed")
 	cmd.Flags().Bool("preview", false, "show a preview of the highlighted session beside the list")
 	cmd.Flags().Bool("no-preview", false, "hide the preview pane")

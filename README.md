@@ -709,6 +709,38 @@ Window names are display-only: selecting a row still returns just the session na
 
 `alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
 
+#### Starting with a filter
+
+`--query` (`-q`) opens the picker with its filter already typed out, which is handy for tmux keybinds that scope the list to one slice of your sessions:
+
+```sh
+bind-key "P" display-popup -h 90% -w 50% -E "sesh picker -q work/"
+```
+
+The query goes in exactly as if you'd typed it, so the list is narrowed the moment sessions load, and backspacing widens it again. Sigils work too — `-q '#'` opens straight into [number jumping](#jumping-by-number) and `-q /` into [alias mode](#session-aliases).
+
+A query that matches a single session doesn't connect on its own; the picker opens with that row highlighted and waits for <kbd>enter</kbd>. Neither does a query that spells out an alias with `alias_auto_connect` on — auto-connect stays a reward for actually typing it, so a scripted `--query` never connects somewhere you didn't look.
+
+This is per-invocation only, with no `[tui]` equivalent: a default query would silently hide sessions on every launch.
+
+#### Jumping by number
+
+Typing `#` as the first character numbers the rows and turns the next digit into a jump — the fastest way to reach one of your first few sessions without reading their names:
+
+```
+filter: #
+
+> 1 sesh
+  2 dotfiles
+  3 my-project
+```
+
+Pressing <kbd>3</kbd> connects to `my-project` immediately. Only `1`–`9` jump, and only the first nine rows are numbered.
+
+The numbers follow the visible list, so anything typed after the sigil narrows it first and renumbers what's left — `#a` then <kbd>2</kbd> jumps to the second match for `a`. A digit with no row at that position does nothing rather than filtering.
+
+Only a leading `#` counts, so `feat#123` filters normally. If you configure `alias_filter_prefix = "#"`, alias mode wins and this mode is unreachable.
+
 #### Preview pane
 
 With `preview = true`, the highlighted session is previewed beside the list, using exactly the same output as `sesh preview` — live tmux panes via `capture-pane`, your `preview_command` for configured sessions, and a directory listing otherwise:

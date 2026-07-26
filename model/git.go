@@ -1,8 +1,8 @@
 package model
 
 type GitCloneOptions struct {
-	Dir    string
-	CmdDir string
-	Repo   string
+	Dir      string
+	CmdDir   string
+	Repo     string
 	GitFlags []string
 }

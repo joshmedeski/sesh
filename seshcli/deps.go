@@ -38,19 +38,19 @@ import (
 
 // BaseDeps holds config-free dependencies that can be constructed eagerly.
 type BaseDeps struct {
-	Exec        execwrap.Exec
-	Os          oswrap.Os
-	Path        pathwrap.Path
-	Runtime     runtimewrap.Runtime
-	Home        home.Home
-	Shell       shell.Shell
-	Json        json.Json
-	Replacer    replacer.Replacer
-	Git         git.Git
-	Github      github.Github
-	Dir         dir.Dir
-	Zoxide      zoxide.Zoxide
-	Tmuxinator  tmuxinator.Tmuxinator
+	Exec       execwrap.Exec
+	Os         oswrap.Os
+	Path       pathwrap.Path
+	Runtime    runtimewrap.Runtime
+	Home       home.Home
+	Shell      shell.Shell
+	Json       json.Json
+	Replacer   replacer.Replacer
+	Git        git.Git
+	Github     github.Github
+	Dir        dir.Dir
+	Zoxide     zoxide.Zoxide
+	Tmuxinator tmuxinator.Tmuxinator
 }
 
 // Deps holds all dependencies including config-dependent ones.
