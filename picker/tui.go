@@ -21,6 +21,7 @@ type sessionItem struct {
 	name       string // raw session name (no icons/ANSI)
 	searchName string // normalized name used for fuzzy matching
 	src        string // source type (tmux, config, zoxide, tmuxinator)
+	icon       string // custom icon from config, "" to use the source glyph
 }
 
 // sessionItems implements fuzzy.Source for fuzzy matching.
@@ -39,6 +40,10 @@ type filteredItem struct {
 
 // FetchFunc loads sessions asynchronously. It is called in a goroutine by Init().
 type FetchFunc func() (model.SeshSessions, error)
+
+// IconFunc resolves the icon configured for a session, returning "" when none
+// is and the source glyph should be used instead.
+type IconFunc func(session model.SeshSession) string
 
 // PreviewFunc renders the preview of a single session. It is called from a
 // tea.Cmd, never from Update or View: some strategies shell out, and blocking
@@ -110,6 +115,12 @@ type Options struct {
 	AliasAutoConnectDelay time.Duration
 	// DisableAliasAutoConnect suppresses auto-connect for this invocation.
 	DisableAliasAutoConnect bool
+	// Icon resolves the icon configured for a session. Nil means no session
+	// declares one, so every row keeps its source glyph.
+	Icon IconFunc
+	// IconWidth is the display width the icon column is padded to. Anything
+	// below 1 means the single cell the source glyphs need.
+	IconWidth int
 	// Preview starts the picker with the preview pane showing. It can still be
 	// toggled at runtime, and is ignored on a terminal narrower than
 	// PreviewMinWidth.
@@ -145,6 +156,11 @@ type Model struct {
 	fetchFunc      FetchFunc
 	loadErr        error
 
+	// iconFunc resolves a session's configured icon, and iconWidth is the width
+	// the icon column is padded to so wide icons keep the names aligned.
+	iconFunc  IconFunc
+	iconWidth int
+
 	// aliases is keyed by lowercased alias; aliasByName is keyed by session
 	// name so rows can be tagged while rendering.
 	aliases                 map[string]Alias
@@ -175,7 +191,9 @@ type Model struct {
 	previewSeq int
 }
 
-// srcIcon returns the nerd font icon and color for a session source.
+// srcIcon returns the nerd font icon and color for a session source. The icon
+// carries a trailing space, so it is the whole icon cell for the single-width
+// glyphs it comes from; iconCell pads it when a wider icon is in play.
 func srcIcon(src string) (string, color.Color) {
 	if g, ok := icon.Glyphs[src]; ok {
 		var ansi int
@@ -190,6 +208,42 @@ func srcIcon(src string) (string, color.Color) {
 		return g.Icon + " ", lipgloss.ANSIColor(ansi)
 	}
 	return "? ", lipgloss.ANSIColor(8)
+}
+
+// iconCell renders the icon column for a row: the icon configured for the
+// session, or the colored source glyph when it has none, followed by the gap
+// before the name. Every cell is padded to the same width so a double-width
+// emoji on one row can't push that row's name past the others.
+//
+// A configured icon is left unstyled — emoji carry their own color, and a nerd
+// font glyph inherits the default foreground.
+//
+// Trailing spaces in a configured icon are the user's own width override: they
+// are added to the cell but not counted towards it. Terminals disagree about how
+// wide an emoji is — an emoji written with a variation selector (⬆️ is U+2B06
+// plus U+FE0F) measures two cells here but is drawn in one by WezTerm and
+// others — and nothing in a TUI can ask the terminal which it did. A trailing
+// space makes up the difference for that one icon without shifting any other
+// row.
+func (m Model) iconCell(item sessionItem) string {
+	if item.icon == "" {
+		glyph, clr := srcIcon(item.src)
+		return padIcon(lipgloss.NewStyle().Foreground(clr).Render(glyph), m.iconWidth+1)
+	}
+	override := strings.TrimRight(item.icon, " ")
+	return item.icon + " " + padding(m.iconWidth+1-lipgloss.Width(override+" "))
+}
+
+// padIcon right-pads an icon cell to width.
+func padIcon(cell string, width int) string {
+	return cell + padding(width-lipgloss.Width(cell))
+}
+
+func padding(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return strings.Repeat(" ", n)
 }
 
 // Powerline half circles used to round off the alias chip. They are nerd font
@@ -255,7 +309,7 @@ func normalizeSeparators(s string) string {
 	return separatorReplacer.Replace(s)
 }
 
-func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
+func buildItems(sessions model.SeshSessions, separatorAware bool, resolveIcon IconFunc) sessionItems {
 	items := make(sessionItems, 0, len(sessions.OrderedIndex))
 	for _, key := range sessions.OrderedIndex {
 		s := sessions.Directory[key]
@@ -263,11 +317,16 @@ func buildItems(sessions model.SeshSessions, separatorAware bool) sessionItems {
 		if separatorAware {
 			searchName = normalizeSeparators(s.Name)
 		}
+		var icn string
+		if resolveIcon != nil {
+			icn = resolveIcon(s)
+		}
 		items = append(items, sessionItem{
 			session:    s,
 			name:       s.Name,
 			searchName: searchName,
 			src:        s.Src,
+			icon:       icn,
 		})
 	}
 	return items
@@ -291,6 +350,8 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		showIcons:               opts.ShowIcons,
 		showWindows:             opts.ShowWindows,
 		separatorAware:          opts.SeparatorAware,
+		iconFunc:                opts.Icon,
+		iconWidth:               max(opts.IconWidth, 1),
 		loading:                 true,
 		fetchFunc:               fetchFunc,
 		aliases:                 opts.Aliases,
@@ -410,7 +471,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		m.loading = false
-		m.allItems = buildItems(msg.sessions, m.separatorAware)
+		m.allItems = buildItems(msg.sessions, m.separatorAware, m.iconFunc)
 		m.applyFilter()
 		return m, m.schedulePreview()
 
@@ -573,7 +634,17 @@ func (m *Model) aliasMatch(raw string) (sessionItem, bool) {
 			return item, true
 		}
 	}
-	return sessionItem{name: alias.Target, searchName: alias.Target, src: "config"}, true
+	return m.configItem(alias.Target), true
+}
+
+// configItem builds the row for a [[session]] that isn't in the loaded list.
+// Only its name is known, so the icon is resolved from the name alone.
+func (m *Model) configItem(name string) sessionItem {
+	item := sessionItem{name: name, searchName: name, src: "config"}
+	if m.iconFunc != nil {
+		item.icon = m.iconFunc(model.SeshSession{Src: "config", Name: name})
+	}
+	return item
 }
 
 // aliasFilterQuery reports whether the raw input opens alias-filter mode and,
@@ -612,8 +683,7 @@ func (m *Model) aliasCandidates() []sessionItem {
 	}
 	sort.Strings(missing)
 	for _, key := range missing {
-		target := m.aliases[key].Target
-		candidates = append(candidates, sessionItem{name: target, searchName: target, src: "config"})
+		candidates = append(candidates, m.configItem(m.aliases[key].Target))
 	}
 
 	return candidates
@@ -929,9 +999,7 @@ func (m Model) View() tea.View {
 
 			var tag string
 			if m.showIcons {
-				icn, clr := srcIcon(item.item.src)
-				iconStyle := lipgloss.NewStyle().Foreground(clr)
-				tag = iconStyle.Render(icn)
+				tag = m.iconCell(item.item)
 			}
 			chip := m.aliasChip(item.item.name, item.chipMatchLen)
 			name := highlightMatches(item.item.name, item.matchedIndexes, matchStyle, normalStyle)

@@ -709,6 +709,50 @@ Window names are display-only: selecting a row still returns just the session na
 
 `alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
 
+#### Custom icons
+
+With `show_icons = true`, each row gets a glyph for where the session came from — tmux, config, zoxide, tmuxinator. That says where it was found, not what it is, so `[[session]]` and `[[wildcard]]` blocks can name their own icon instead. It can be any string: a nerd font glyph or an emoji.
+
+```toml
+[[session]]
+name = "sesh"
+path = "~/c/sesh"
+icon = ""
+
+[[session]]
+name = "notes"
+path = "~/second-brain"
+icon = "📓"
+
+[[wildcard]]
+pattern = "~/c/work/*"
+icon = "🏠"
+```
+
+```
+>  sesh
+  📓 notes
+  🏠 work-api
+   dotfiles
+```
+
+The most specific match wins: an exact `[[session]]` name, then its `path` — so the same directory listed by zoxide under a derived name still gets the icon — then a `[[wildcard]]` pattern. If several patterns match, the first in config order wins, as it does for `startup_command`. Anything with no icon of its own keeps its source glyph, and `icon = ""` counts as unset.
+
+Custom icons render unstyled: emoji bring their own color, and nerd font glyphs take the default foreground. The icon column is padded to the widest icon you configured, so a double-width emoji on one row doesn't push its name out of line with the rest.
+
+If one icon still sits a column off, add a trailing space to it:
+
+```toml
+[[session]]
+name = "update"
+path = "~/c/update"
+icon = "⬆️ "   # note the trailing space
+```
+
+Terminals disagree about how wide an emoji is, and nothing in a TUI can ask which way yours went. Emoji written with a variation selector — `⬆️` is `U+2B06` plus `U+FE0F`, as are `🖼️` and `🖥️` — measure as two cells but are drawn in one by WezTerm and others, which leaves that row short. A trailing space is counted into the row but not into the column width, so it fixes the one icon without shifting anything else.
+
+This is picker-only. `sesh list --icons` keeps the source glyphs, because the scripts and external pickers that parse its output trim a known-width glyph — see [#246](https://github.com/joshmedeski/sesh/issues/246). Custom icons are also suppressed entirely with `show_icons = false`.
+
 #### Starting with a filter
 
 `--query` (`-q`) opens the picker with its filter already typed out, which is handy for tmux keybinds that scope the list to one slice of your sessions:
@@ -808,6 +852,8 @@ path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
 ```
+
+A session can also set `icon` to replace the source glyph it gets in the picker — see [Custom icons](#custom-icons).
 
 ### Session Aliases
 
@@ -942,6 +988,7 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
+| `icon` | Icon shown for matching sessions in the picker — see [Custom icons](#custom-icons) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 

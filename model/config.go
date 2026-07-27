@@ -96,6 +96,10 @@ type (
 		// fully typed in the picker, without pressing enter. Opt-in per session
 		// since it is only desirable for sessions you jump to constantly.
 		AliasAutoConnect bool `toml:"alias_auto_connect"`
+		// Icon replaces the source glyph this session gets in the picker with
+		// any string — a nerd font glyph or an emoji. Picker-only: `sesh list`
+		// consumers trim a known-width glyph, so a custom one would break them.
+		Icon string `toml:"icon"`
 		DefaultSessionConfig
 	}
 
@@ -143,5 +147,8 @@ type (
 		DisableStartCommand bool     `toml:"disable_startup_command"`
 		PreviewCommand      string   `toml:"preview_command"`
 		Windows             []string `toml:"windows"`
+		// Icon replaces the source glyph every session under this pattern gets
+		// in the picker. See SessionConfig.Icon.
+		Icon string `toml:"icon"`
 	}
 )
