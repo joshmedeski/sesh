@@ -1,14 +1,54 @@
 package seshcli
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
+const previewClearScreen = "\033[2J\033[H"
+
+type previewFunc func(string) (string, error)
+
+func writePreview(w io.Writer, preview previewFunc, name string, clear bool) error {
+	output, err := preview(name)
+	if err != nil {
+		return err
+	}
+
+	if clear {
+		output = previewClearScreen + output
+	}
+
+	_, err = fmt.Fprint(w, output)
+	return err
+}
+
+func watchPreview(ctx context.Context, w io.Writer, preview previewFunc, name string, ticks <-chan time.Time) error {
+	clear := false
+	for {
+		if err := writePreview(w, preview, name, clear); err != nil {
+			return err
+		}
+		clear = true
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case _, ok := <-ticks:
+			if !ok {
+				return nil
+			}
+		}
+	}
+}
+
 func NewPreviewCommand(base *BaseDeps) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "preview",
 		Aliases: []string{"p"},
 		Short:   "Preview a session or directory",
@@ -24,15 +64,30 @@ func NewPreviewCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			name := args[0]
+			watch, _ := cmd.Flags().GetBool("watch")
+			interval, _ := cmd.Flags().GetDuration("interval")
 
-			output, err := deps.Previewer.Preview(name)
-			if err != nil {
-				return err
+			if !watch {
+				return writePreview(cmd.OutOrStdout(), deps.Previewer.Preview, name, false)
+			}
+			if interval <= 0 {
+				return errors.New("preview interval must be greater than zero")
 			}
 
-			fmt.Print(output)
+			_, sessionExists := deps.Lister.FindTmuxSession(deps.Icon.RemoveIcon(name))
+			if !sessionExists {
+				return writePreview(cmd.OutOrStdout(), deps.Previewer.Preview, name, false)
+			}
 
-			return nil
+			ticker := time.NewTicker(interval)
+			defer ticker.Stop()
+
+			return watchPreview(cmd.Context(), cmd.OutOrStdout(), deps.Previewer.Preview, name, ticker.C)
 		},
 	}
+
+	cmd.Flags().BoolP("watch", "w", false, "continuously refresh the preview")
+	cmd.Flags().Duration("interval", 500*time.Millisecond, "refresh interval when watching")
+
+	return cmd
 }
