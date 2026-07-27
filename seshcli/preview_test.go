@@ -72,6 +72,26 @@ func TestWatchPreviewSkipsUnchangedFrames(t *testing.T) {
 	assert.Equal(t, "same frame"+previewClearScreen+"new frame", output.String())
 }
 
+func TestWatchPreviewKeepsLastFrameWhenSessionDisappears(t *testing.T) {
+	var output bytes.Buffer
+	frames := []string{"last frame", "", ""}
+	calls := 0
+	ticks := make(chan time.Time, 2)
+	ticks <- time.Time{}
+	ticks <- time.Time{}
+	close(ticks)
+
+	err := watchPreview(context.Background(), &output, func(string) (string, error) {
+		frame := frames[calls]
+		calls++
+		return frame, nil
+	}, "work", ticks)
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, calls)
+	assert.Equal(t, "last frame", output.String())
+}
+
 func TestWatchPreviewStopsWhenContextIsCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

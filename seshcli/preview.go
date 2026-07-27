@@ -32,10 +32,12 @@ func watchPreview(ctx context.Context, w io.Writer, preview previewFunc, name st
 			return err
 		}
 
-		// Redraw only when the capture changed: fzf clears and repaints
-		// the preview window on every write, so rewriting an identical
-		// frame makes an idle session churn twice a second for nothing.
-		if output != last {
+		// Redraw only when there is new content to show. Rewriting an
+		// identical frame makes fzf clear and repaint a preview that did
+		// not change, and an empty capture (the session went away
+		// mid-watch with nothing else matching the name) would blank the
+		// preview instead of keeping the last frame on screen.
+		if output != "" && output != last {
 			frame := output
 			if last != "" {
 				frame = previewClearScreen + frame
