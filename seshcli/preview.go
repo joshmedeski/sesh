@@ -14,14 +14,10 @@ const previewClearScreen = "\033[2J\033[H"
 
 type previewFunc func(string) (string, error)
 
-func writePreview(w io.Writer, preview previewFunc, name string, clear bool) error {
+func writePreview(w io.Writer, preview previewFunc, name string) error {
 	output, err := preview(name)
 	if err != nil {
 		return err
-	}
-
-	if clear {
-		output = previewClearScreen + output
 	}
 
 	_, err = fmt.Fprint(w, output)
@@ -29,12 +25,26 @@ func writePreview(w io.Writer, preview previewFunc, name string, clear bool) err
 }
 
 func watchPreview(ctx context.Context, w io.Writer, preview previewFunc, name string, ticks <-chan time.Time) error {
-	clear := false
+	last := ""
 	for {
-		if err := writePreview(w, preview, name, clear); err != nil {
+		output, err := preview(name)
+		if err != nil {
 			return err
 		}
-		clear = true
+
+		// Redraw only when the capture changed: fzf clears and repaints
+		// the preview window on every write, so rewriting an identical
+		// frame makes an idle session churn twice a second for nothing.
+		if output != last {
+			frame := output
+			if last != "" {
+				frame = previewClearScreen + frame
+			}
+			if _, err := fmt.Fprint(w, frame); err != nil {
+				return err
+			}
+			last = output
+		}
 
 		select {
 		case <-ctx.Done():
@@ -68,7 +78,7 @@ func NewPreviewCommand(base *BaseDeps) *cobra.Command {
 			interval, _ := cmd.Flags().GetDuration("interval")
 
 			if !watch {
-				return writePreview(cmd.OutOrStdout(), deps.Previewer.Preview, name, false)
+				return writePreview(cmd.OutOrStdout(), deps.Previewer.Preview, name)
 			}
 			if interval <= 0 {
 				return errors.New("preview interval must be greater than zero")
@@ -76,7 +86,7 @@ func NewPreviewCommand(base *BaseDeps) *cobra.Command {
 
 			_, sessionExists := deps.Lister.FindTmuxSession(deps.Icon.RemoveIcon(name))
 			if !sessionExists {
-				return writePreview(cmd.OutOrStdout(), deps.Previewer.Preview, name, false)
+				return writePreview(cmd.OutOrStdout(), deps.Previewer.Preview, name)
 			}
 
 			ticker := time.NewTicker(interval)

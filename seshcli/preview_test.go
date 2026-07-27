@@ -17,7 +17,7 @@ func TestWritePreview(t *testing.T) {
 	err := writePreview(&output, func(name string) (string, error) {
 		assert.Equal(t, "work", name)
 		return "first frame", nil
-	}, "work", false)
+	}, "work")
 
 	require.NoError(t, err)
 	assert.Equal(t, "first frame", output.String())
@@ -28,7 +28,7 @@ func TestWritePreviewReturnsPreviewError(t *testing.T) {
 
 	err := writePreview(&bytes.Buffer{}, func(string) (string, error) {
 		return "", expected
-	}, "work", false)
+	}, "work")
 
 	assert.ErrorIs(t, err, expected)
 }
@@ -50,6 +50,26 @@ func TestWatchPreviewRefreshesAndClearsPreviousFrame(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 2, calls)
 	assert.Equal(t, "first frame"+previewClearScreen+"second frame", output.String())
+}
+
+func TestWatchPreviewSkipsUnchangedFrames(t *testing.T) {
+	var output bytes.Buffer
+	frames := []string{"same frame", "same frame", "new frame"}
+	calls := 0
+	ticks := make(chan time.Time, 2)
+	ticks <- time.Time{}
+	ticks <- time.Time{}
+	close(ticks)
+
+	err := watchPreview(context.Background(), &output, func(string) (string, error) {
+		frame := frames[calls]
+		calls++
+		return frame, nil
+	}, "work", ticks)
+
+	require.NoError(t, err)
+	assert.Equal(t, 3, calls)
+	assert.Equal(t, "same frame"+previewClearScreen+"new frame", output.String())
 }
 
 func TestWatchPreviewStopsWhenContextIsCanceled(t *testing.T) {
