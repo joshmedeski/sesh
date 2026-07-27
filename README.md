@@ -1000,8 +1000,6 @@ Session configurations will load by default if no flags are provided (the return
 sesh list -c
 ```
 
-Set the file as an executable and it will be run when you connect to the specified session.
-
 ## Contributing
 
 Want to contribute? Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
