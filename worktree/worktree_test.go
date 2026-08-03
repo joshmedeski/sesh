@@ -21,7 +21,7 @@ func falsePtr() *bool { b := false; return &b }
 func nuConfig() model.Config {
 	return model.Config{
 		WorktreeConfigs: []model.WorktreeConfig{{
-			Name:           "nutiliti/nutiliti",
+			Repo:           "nutiliti/nutiliti",
 			Path:           "/repo",
 			WorktreeDir:    "w",
 			BranchTemplate: "jam/{number}-1",

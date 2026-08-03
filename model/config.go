@@ -159,7 +159,7 @@ type (
 	// `sesh worktree connect <number>` knows where to add worktrees, how to
 	// name their branches, and what to run on connect.
 	WorktreeConfig struct {
-		Name           string `toml:"name"`            // GitHub "org/repo"
+		Repo           string `toml:"repo"`            // GitHub "org/repo"
 		Path           string `toml:"path"`            // local repo root (supports ~)
 		WorktreeDir    string `toml:"worktree_dir"`    // default ".wk"; relative to Path or absolute
 		BranchTemplate string `toml:"branch_template"` // default "{number}"

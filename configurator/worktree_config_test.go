@@ -14,7 +14,7 @@ func TestWorktreeConfigParsing(t *testing.T) {
 terminal = "wezterm"
 
 [[worktree]]
-name = "nutiliti/nutiliti"
+repo = "nutiliti/nutiliti"
 path = "~/c/nu"
 worktree_dir = "w"
 branch_template = "jam/{number}-1"
@@ -23,7 +23,7 @@ fetch = false
 startup_command = "nu_setup"
 
 [[worktree]]
-name = "joshmedeski/sesh"
+repo = "joshmedeski/sesh"
 path = "~/c/sesh"
 worktree_dir = "w"
 `
@@ -34,7 +34,7 @@ worktree_dir = "w"
 	require.Len(t, c.WorktreeConfigs, 2)
 
 	nu := c.WorktreeConfigs[0]
-	assert.Equal(t, "nutiliti/nutiliti", nu.Name)
+	assert.Equal(t, "nutiliti/nutiliti", nu.Repo)
 	assert.Equal(t, "~/c/nu", nu.Path)
 	assert.Equal(t, "w", nu.WorktreeDir)
 	assert.Equal(t, "jam/{number}-1", nu.BranchTemplate)
@@ -44,6 +44,6 @@ worktree_dir = "w"
 	assert.Equal(t, "nu_setup", nu.StartupCommand)
 
 	sesh := c.WorktreeConfigs[1]
-	assert.Equal(t, "joshmedeski/sesh", sesh.Name)
+	assert.Equal(t, "joshmedeski/sesh", sesh.Repo)
 	assert.Nil(t, sesh.Fetch) // absent => nil => treated as true downstream
 }

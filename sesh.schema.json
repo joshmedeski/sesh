@@ -317,7 +317,7 @@
       "items": {
         "type": "object",
         "properties": {
-          "name": {
+          "repo": {
             "type": "string",
             "description": "GitHub repository as org/repo"
           },

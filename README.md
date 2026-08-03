@@ -1004,7 +1004,7 @@ with a `[[worktree]]` block:
 terminal = "wezterm"
 
 [[worktree]]
-name = "nutiliti/nutiliti"          # GitHub org/repo
+repo = "nutiliti/nutiliti"          # GitHub org/repo
 path = "~/c/nu"                      # local repo root
 worktree_dir = "w"                   # worktrees go here (relative to path, or absolute); default ".wk"
 branch_template = "jam/{number}-1"   # {number} is the issue/PR number; default "{number}"
@@ -1013,13 +1013,13 @@ fetch = true                         # git fetch before creating; default true
 startup_command = "nu_setup"         # runs when the worktree session is created
 
 [[worktree]]
-name = "joshmedeski/joshmedeski.com"
+repo = "joshmedeski/joshmedeski.com"
 path = "~/c/joshmedeski_com"
 worktree_dir = "w"
 startup_command = "pnpm i"
 
 [[worktree]]
-name = "joshmedeski/sesh"
+repo = "joshmedeski/sesh"
 path = "~/c/sesh"
 worktree_dir = "w"
 ```

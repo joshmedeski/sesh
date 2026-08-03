@@ -85,7 +85,7 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 	if _, statErr := w.os.Stat(target); statErr == nil {
 		// Existing worktree: refresh a PR checkout, then reconnect.
 		if plan.prCheckout {
-			if _, err := w.github.PrCheckout(target, cfg.Name, opts.Number); err != nil {
+			if _, err := w.github.PrCheckout(target, cfg.Repo, opts.Number); err != nil {
 				return "", err
 			}
 			w.git.Pull(target) // best-effort ff-only
@@ -98,7 +98,7 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 			if _, err := w.git.WorktreeAddDetached(repoPath, target, baseBranch(cfg)); err != nil {
 				return "", err
 			}
-			if _, err := w.github.PrCheckout(target, cfg.Name, opts.Number); err != nil {
+			if _, err := w.github.PrCheckout(target, cfg.Repo, opts.Number); err != nil {
 				return "", err
 			}
 		} else {
@@ -138,7 +138,7 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeConnectOpts) (model
 }
 
 func (w *RealWorktree) planConnect(cfg model.WorktreeConfig, opts model.WorktreeConnectOpts) (connectPlan, error) {
-	pr, found, err := w.github.PrView(cfg.Name, opts.Number)
+	pr, found, err := w.github.PrView(cfg.Repo, opts.Number)
 	if err != nil {
 		return connectPlan{}, err
 	}
@@ -172,7 +172,7 @@ func (w *RealWorktree) planConnect(cfg model.WorktreeConfig, opts model.Worktree
 func (w *RealWorktree) resolveConfig(repoOverride string) (model.WorktreeConfig, error) {
 	if repoOverride != "" {
 		for _, c := range w.config.WorktreeConfigs {
-			if c.Name == repoOverride {
+			if c.Repo == repoOverride {
 				return c, nil
 			}
 		}
