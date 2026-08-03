@@ -20,6 +20,10 @@ type WorktreeConnectOpts struct {
 type WorktreeListOpts struct {
 	Path string // worktree root, e.g. "~/c/nu/w"
 	Repo string // GitHub "org/repo"
+	// Refresh refetches every title and state, ignoring how fresh the cached
+	// ones are. It is how a title edited or an issue closed since the last
+	// listing is picked up before the TTL is up.
+	Refresh bool
 }
 
 // WorktreeEntry is one worktree directory paired with the issue it maps to.
@@ -29,4 +33,3 @@ type WorktreeEntry struct {
 	Title  string // issue title; empty when unknown or not yet fetched
 	State  string // "OPEN" | "CLOSED"; empty when unknown
 }
-

@@ -58,7 +58,7 @@ func (w *RealWorktree) List(opts model.WorktreeListOpts) ([]model.WorktreeEntry,
 		return nil, err
 	}
 
-	issues := w.resolveIssues(cfg.Repo, numbers)
+	issues := w.resolveIssues(cfg.Repo, numbers, opts.Refresh)
 
 	entries := make([]model.WorktreeEntry, 0, len(numbers))
 	for _, number := range numbers {
@@ -138,7 +138,10 @@ func (w *RealWorktree) worktreeNumbers(root string) ([]int, error) {
 // batching everything stale into one request. Fetch failures are logged and
 // swallowed: a missing title degrades the listing to a bare number, which is
 // far better than failing it outright.
-func (w *RealWorktree) resolveIssues(repo string, numbers []int) map[int]github.Issue {
+//
+// refresh counts every number as stale, so the whole listing is refetched and
+// the cache written back over.
+func (w *RealWorktree) resolveIssues(repo string, numbers []int, refresh bool) map[int]github.Issue {
 	if len(numbers) == 0 {
 		return nil
 	}
@@ -159,7 +162,10 @@ func (w *RealWorktree) resolveIssues(repo string, numbers []int) map[int]github.
 		}
 	}
 
-	staleKeys := w.issues.Stale(entries, keys)
+	staleKeys := keys
+	if !refresh {
+		staleKeys = w.issues.Stale(entries, keys)
+	}
 	if len(staleKeys) == 0 {
 		return issues
 	}

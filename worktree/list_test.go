@@ -135,6 +135,61 @@ func TestList_OnlyFetchesTheStaleNumbers(t *testing.T) {
 	assert.Equal(t, "fetched", got[1].Title)
 }
 
+func TestList_RefreshRefetchesEvenFreshEntries(t *testing.T) {
+	issues := testIssueCache(t)
+	cached := cache.Entries[github.Issue]{}
+	cached.Put(issueKey("nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "stale title", State: "OPEN"})
+	require.NoError(t, issues.Save(cached))
+
+	f := newListFixture(t, issues)
+	f.os.EXPECT().ReadDir("/repo/w").Return(dirs("409"), nil)
+	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+		409: {Number: 409, Title: "renamed since", State: "CLOSED"},
+	}, nil, nil).Once()
+
+	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti", Refresh: true})
+
+	require.NoError(t, err)
+	assert.Equal(t, "renamed since", got[0].Title)
+	assert.Equal(t, "CLOSED", got[0].State)
+
+	// The refetched values are written back, so the next listing without
+	// --refresh sees them too.
+	next := newListFixture(t, issues)
+	next.os.EXPECT().ReadDir("/repo/w").Return(dirs("409"), nil)
+	got, err = next.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
+	require.NoError(t, err)
+	assert.Equal(t, "renamed since", got[0].Title)
+}
+
+func TestList_RefreshRefetchesNegativelyCachedNumbers(t *testing.T) {
+	issues := testIssueCache(t)
+	cached := cache.Entries[github.Issue]{}
+	cached.PutMissing(issueKey("nutiliti/nutiliti", 409))
+	require.NoError(t, issues.Save(cached))
+
+	f := newListFixture(t, issues)
+	f.os.EXPECT().ReadDir("/repo/w").Return(dirs("409"), nil)
+	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+		409: {Number: 409, Title: "created since", State: "OPEN"},
+	}, nil, nil).Once()
+
+	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti", Refresh: true})
+
+	require.NoError(t, err)
+	assert.Equal(t, "created since", got[0].Title)
+}
+
+func TestList_RefreshOnAnEmptyRootMakesNoRequest(t *testing.T) {
+	f := newListFixture(t, testIssueCache(t))
+	f.os.EXPECT().ReadDir("/repo/w").Return(nil, nil)
+
+	entries, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti", Refresh: true})
+
+	require.NoError(t, err)
+	assert.Empty(t, entries)
+}
+
 func TestList_ExpiredEntriesAreRefetched(t *testing.T) {
 	dir := t.TempDir()
 	issues := cache.NewNamespaceInDir[github.Issue](dir, IssueCacheName, IssueCacheVersion, time.Hour)

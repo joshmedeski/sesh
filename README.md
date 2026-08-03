@@ -1071,6 +1071,7 @@ sesh worktree list --path ~/c/nu/w          # or: sesh wt ls --path ~/c/nu/w
 sesh worktree list --repo nutiliti/nutiliti # select the repo by name instead
 sesh worktree list                          # detect the repo from the current directory
 sesh worktree list --json                   # machine-readable output
+sesh worktree list --refresh                # refetch every title, ignoring the cache
 ```
 
 ```
@@ -1088,7 +1089,60 @@ to `~/.cache/sesh`), so listing is normally instant. Only numbers that are new o
 past their 24-hour TTL cost a request, and those are fetched in a single batched
 GraphQL query rather than one `gh` call per worktree. If a refresh fails — offline,
 rate-limited — the cached titles are still shown rather than failing the listing.
-The cache is disposable: delete the file to force a refetch.
+
+`--refresh` refetches every title and state regardless of how fresh the cached
+ones are, for a title edited or an issue closed since the last listing, and writes
+what it gets back to the cache. The cache is disposable either way: deleting the
+file has the same effect as one `--refresh`.
+
+#### Picking a worktree interactively
+
+`sesh worktree picker` puts the same list in a picker and connects to whatever you
+choose. Each row shows the issue number, a color-coded badge for its state, and
+its title:
+
+```bash
+sesh worktree picker                          # or: sesh wt p
+sesh worktree picker --repo nutiliti/nutiliti # select the repo by name
+sesh worktree picker --path ~/c/nu/w          # or by worktree root
+sesh worktree picker --query 409              # prefill the filter
+sesh worktree picker --icons                  # pill-shaped badges (needs a nerd font)
+sesh worktree picker --switch                 # switch, for invocation outside tmux
+sesh worktree picker --refresh                # refetch titles on the way in
+```
+
+```
+>  89   OPEN    Tmuxifier Support
+  409   MERGED  Add git worktree support: `sesh worktree connect <number>`
+  411   CLOSED  feat: configurable dashboard for sesh
+  412
+```
+
+Badges follow GitHub's own coding — green for open, purple for merged, red for
+closed. A worktree whose issue never resolved (deleted, or a number that was never
+an issue) shows its bare number.
+
+With `show_icons` enabled (or `--icons`), the badges are rounded off with nerd font
+half circles into pills — `OPEN` — rather than squared off with filled
+spaces. Both forms are the same width, so the titles line up either way.
+
+Typing filters on the number and the title together, so `409`, `worktree support`,
+and `409 worktree` all find the same row. `enter` connects, `esc` quits without
+connecting, and `ctrl+j`/`ctrl+k` move — the same keys as the session picker.
+
+The picker opens on the cached titles, then refetches them behind the rows already
+on screen: an issue renamed or closed since the last listing corrects itself a
+moment after the picker opens, without you having to ask. The rows stay usable
+throughout — your query and the row you were on are kept — and because nobody asked
+for that refresh, one that fails is passed over quietly, leaving the cached titles
+in place.
+
+`ctrl+r` asks for the same refetch at any time, and does report a failure since you
+asked for it. `--refresh` does it on the way in instead, before the first row is
+drawn, which is the slower way to get the same titles.
+
+Connecting goes through `sesh worktree connect`, so a picked worktree lands in
+exactly the session that command would have created, `startup_command` included.
 
 ### Listing Configurations
 
