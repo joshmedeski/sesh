@@ -74,6 +74,10 @@ func (o *testOs) Getwd() (string, error) {
 	return "", nil
 }
 
+func (o *testOs) ReadDir(name string) ([]os.DirEntry, error) {
+	return nil, nil
+}
+
 func testdataPath(name string) string {
 	abs, _ := filepath.Abs(filepath.Join("testdata", name))
 	return abs

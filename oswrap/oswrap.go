@@ -13,6 +13,7 @@ type Os interface {
 	Stat(name string) (os.FileInfo, error)
 	MkdirAll(path string, perm os.FileMode) error
 	Getwd() (string, error)
+	ReadDir(name string) ([]os.DirEntry, error)
 }
 
 type RealOs struct{}
@@ -51,4 +52,8 @@ func (o *RealOs) MkdirAll(path string, perm os.FileMode) error {
 
 func (o *RealOs) Getwd() (string, error) {
 	return os.Getwd()
+}
+
+func (o *RealOs) ReadDir(name string) ([]os.DirEntry, error) {
+	return os.ReadDir(name)
 }
