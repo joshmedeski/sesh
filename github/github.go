@@ -35,6 +35,13 @@ type Github interface {
 	// Issue returns the GitHub issue for the branch checked out at path.
 	// The bool is false (with a nil error) for every "nothing to show" case.
 	Issue(path string) (Issue, bool, error)
+	// Issues fetches many issues from one repo in as few requests as
+	// possible. found holds the issues that resolved; missing holds the
+	// numbers GitHub confirmed do not exist, so callers can cache those
+	// negatively instead of retrying them forever. Numbers that neither
+	// resolved nor were confirmed absent (a rate limit, say) appear in
+	// neither result and should simply be retried later.
+	Issues(repo string, numbers []int) (found map[int]Issue, missing []int, err error)
 }
 
 type RealGithub struct {
