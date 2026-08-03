@@ -5,11 +5,6 @@ import (
 )
 
 func configWildcardStrategy(c *RealConnector, name string) (model.Connection, error) {
-	wc, found := c.lister.FindConfigWildcard(name)
-	if !found {
-		return model.Connection{Found: false}, nil
-	}
-
 	path, err := c.home.ExpandPath(name)
 	if err != nil {
 		return model.Connection{}, err
@@ -17,6 +12,11 @@ func configWildcardStrategy(c *RealConnector, name string) (model.Connection, er
 
 	isDir, absPath := c.dir.Dir(path)
 	if !isDir {
+		return model.Connection{Found: false}, nil
+	}
+
+	wc, found := c.lister.FindConfigWildcard(absPath)
+	if !found {
 		return model.Connection{Found: false}, nil
 	}
 

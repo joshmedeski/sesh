@@ -687,7 +687,132 @@ The Picker TUI can be configured with some options that help you customize it's 
 prompt = "> "
 placeholder = "Filter sessions... "
 show_icons = false
+show_windows = false
+alias_auto_connect_delay = "150ms"
+alias_filter_prefix = "/"
+preview = false
+preview_width = 60
+preview_min_width = 100
+preview_border = "line"
 ```
+
+With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
+
+```
+>  sesh editor server logs
+   dotfiles nvim shell
+   my-project code server db +2
+   scratch
+```
+
+Window names are display-only: selecting a row still returns just the session name, and typing a window name does not match its session. The names for live tmux sessions are fetched in a single tmux call, so the option costs the same regardless of how many sessions you have.
+
+`alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
+
+#### Custom icons
+
+With `show_icons = true`, each row gets a glyph for where the session came from — tmux, config, zoxide, tmuxinator. That says where it was found, not what it is, so `[[session]]` and `[[wildcard]]` blocks can name their own icon instead. It can be any string: a nerd font glyph or an emoji.
+
+```toml
+[[session]]
+name = "sesh"
+path = "~/c/sesh"
+icon = ""
+
+[[session]]
+name = "notes"
+path = "~/second-brain"
+icon = "📓"
+
+[[wildcard]]
+pattern = "~/c/work/*"
+icon = "🏠"
+```
+
+```
+>  sesh
+  📓 notes
+  🏠 work-api
+   dotfiles
+```
+
+The most specific match wins: an exact `[[session]]` name, then its `path` — so the same directory listed by zoxide under a derived name still gets the icon — then a `[[wildcard]]` pattern. If several patterns match, the first in config order wins, as it does for `startup_command`. Anything with no icon of its own keeps its source glyph, and `icon = ""` counts as unset.
+
+Custom icons render unstyled: emoji bring their own color, and nerd font glyphs take the default foreground. The icon column is padded to the widest icon you configured, so a double-width emoji on one row doesn't push its name out of line with the rest.
+
+If one icon still sits a column off, add a trailing space to it:
+
+```toml
+[[session]]
+name = "update"
+path = "~/c/update"
+icon = "⬆️ "   # note the trailing space
+```
+
+Terminals disagree about how wide an emoji is, and nothing in a TUI can ask which way yours went. Emoji written with a variation selector — `⬆️` is `U+2B06` plus `U+FE0F`, as are `🖼️` and `🖥️` — measure as two cells but are drawn in one by WezTerm and others, which leaves that row short. A trailing space is counted into the row but not into the column width, so it fixes the one icon without shifting anything else.
+
+This is picker-only. `sesh list --icons` keeps the source glyphs, because the scripts and external pickers that parse its output trim a known-width glyph — see [#246](https://github.com/joshmedeski/sesh/issues/246). Custom icons are also suppressed entirely with `show_icons = false`.
+
+#### Starting with a filter
+
+`--query` (`-q`) opens the picker with its filter already typed out, which is handy for tmux keybinds that scope the list to one slice of your sessions:
+
+```sh
+bind-key "P" display-popup -h 90% -w 50% -E "sesh picker -q work/"
+```
+
+The query goes in exactly as if you'd typed it, so the list is narrowed the moment sessions load, and backspacing widens it again. Sigils work too — `-q '#'` opens straight into [number jumping](#jumping-by-number) and `-q /` into [alias mode](#session-aliases).
+
+A query that matches a single session doesn't connect on its own; the picker opens with that row highlighted and waits for <kbd>enter</kbd>. Neither does a query that spells out an alias with `alias_auto_connect` on — auto-connect stays a reward for actually typing it, so a scripted `--query` never connects somewhere you didn't look.
+
+This is per-invocation only, with no `[tui]` equivalent: a default query would silently hide sessions on every launch.
+
+#### Jumping by number
+
+Typing `#` as the first character numbers the rows and turns the next digit into a jump — the fastest way to reach one of your first few sessions without reading their names:
+
+```
+filter: #
+
+> 1 sesh
+  2 dotfiles
+  3 my-project
+```
+
+Pressing <kbd>3</kbd> connects to `my-project` immediately. Only `1`–`9` jump, and only the first nine rows are numbered.
+
+The numbers follow the visible list, so anything typed after the sigil narrows it first and renumbers what's left — `#a` then <kbd>2</kbd> jumps to the second match for `a`. A digit with no row at that position does nothing rather than filtering.
+
+Only a leading `#` counts, so `feat#123` filters normally. If you configure `alias_filter_prefix = "#"`, alias mode wins and this mode is unreachable.
+
+#### Preview pane
+
+With `preview = true`, the highlighted session is previewed beside the list, using exactly the same output as `sesh preview` — live tmux panes via `capture-pane`, your `preview_command` for configured sessions, and a directory listing otherwise:
+
+```
+> sesh                │ $ eza --icons
+  dotfiles            │  README.md    main.go
+  my-project          │  picker/      previewer/
+```
+
+The pane is off by default, and `ctrl+o` toggles it at any time.
+
+`preview_width` is the share of the terminal, in percent, guaranteed to the pane. The session list is capped at 60 columns, so on a wide terminal everything past that cap goes to the preview on top of this share; on a narrow one the list is never squeezed below 40 columns.
+
+`preview_border` picks the divider between the two panes: `line` (default), `thick`, `double`, or `none` for no divider at all. Turning it off gives the divider's column to the preview text:
+
+```toml
+[tui]
+preview_border = "none"
+```
+
+```
+> sesh                 $ eza --icons
+  dotfiles              README.md    main.go
+  my-project            picker/      previewer/
+```
+
+`preview_min_width` (default `100`) is the narrowest terminal that gets a split at all. Below it the picker renders the list only, and the pane comes back on its own once the window has room — handy in small tmux popups. Preview commands run in the background as the cursor moves, so a slow one never blocks the list, and a failing one is reported in the pane instead of taking the picker down.
 
 ### Default Session
 
@@ -726,6 +851,74 @@ name = "tmux config"
 path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
+```
+
+A session can also set `icon` to replace the source glyph it gets in the picker — see [Custom icons](#custom-icons).
+
+### Session Aliases
+
+Fuzzy matching is great for discovery, but the top result for `wp` shifts as sessions come and go, so muscle memory never quite forms. An alias gives a session a short, fixed name you can always count on:
+
+```toml
+[[session]]
+name = "wallpaper"
+path = "~/c/wallpaper"
+alias = "wp"
+alias_auto_connect = true
+
+[[session]]
+name = "dotfiles"
+path = "~/.config"
+alias = "dot"
+```
+
+Aliases must be unique (case-insensitively) — sesh reports an error at startup if two sessions share one.
+
+On the command line, `sesh connect wp` behaves exactly like `sesh connect wallpaper`. In the picker, aliased sessions are tagged with a chip so they stay discoverable:
+
+```
+>  wp wallpaper
+   dot dotfiles
+   my-project
+```
+
+Typing an alias exactly resolves to that session and nothing else, regardless of how fuzzy matching would have ranked it — the whole point being that the result never shifts:
+
+```
+filter: wp
+
+>  wp wallpaper
+```
+
+Anything short of an exact alias is fuzzy-matched as usual, so `w` and `wpx` behave like any other query. An alias resolves even when its session isn't in the current list — say you're running `sesh picker --tmux` and it isn't started yet.
+
+With `alias_auto_connect = true`, typing the full alias connects immediately — no <kbd>Enter</kbd>. It is opt-in per session because it is only worth it for the handful you jump to constantly.
+
+Aliases that share a prefix (`w` and `wp`) are allowed. `[tui] alias_auto_connect_delay` (default `150ms`) is the grace period before auto-connect fires, which leaves room to finish typing the longer one. Raise it if you type slowly, or lower it to `"0s"` to fire the instant the alias is complete.
+
+To keep typing past an alias in a one-off invocation, run the picker with `--no-alias-auto`.
+
+#### Browsing aliases
+
+Typing `/` as the first character narrows the picker to aliased sessions only, which is how you go from "I know I set up a shortcut for this" to the session without remembering the shortcut:
+
+```
+filter: /
+
+>  wp  wallpaper
+   dot dotfiles
+   tc  tmux config
+```
+
+What you type next narrows further, matching aliases by prefix (`/t` finds `tc`) and then falling back to session names (`/config` also finds `tc`, since aliases come first and names are matched anywhere). Aliases whose sessions aren't running still show up.
+
+Completing an alias in this mode connects immediately, whether or not it set `alias_auto_connect` — reaching for `/` says the next thing you type is a shortcut to jump to. `alias_auto_connect_delay` still applies, so `/w` leaves room to become `/wp`, and `--no-alias-auto` still holds it back.
+
+Only a leading `/` counts, so `code/app` filters normally. But a query that *starts* with a path — `/Users/you/code` — would enter alias mode instead, so pick a different sigil if you filter that way:
+
+```toml
+[tui]
+alias_filter_prefix = "@"   # or "" to turn the mode off
 ```
 
 ### Path substitution
@@ -795,6 +988,7 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
+| `icon` | Icon shown for matching sessions in the picker — see [Custom icons](#custom-icons) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 
@@ -874,8 +1068,6 @@ Session configurations will load by default if no flags are provided (the return
 sesh list -c
 ```
 
-Set the file as an executable and it will be run when you connect to the specified session.
-
 ## Contributing
 
 Want to contribute? Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
@@ -887,6 +1079,16 @@ Sesh is the successor to my popular [t-smart-tmux-session-manager](https://githu
 I've decided to start over and build a session manager from the ground up. This time, I'm using a language that's more suited for the task: Go. Go is a compiled language that's fast, statically typed, and has a great standard library. It's perfect for a project like this. I've also decided to make this session manager multiplexer agnostic. It will be able to work with any terminal multiplexer, including tmux, zellij, Wezterm, and more.
 
 The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
+
+## StarMapper
+
+<a href="https://starmapper.bruniaux.com/joshmedeski/sesh?utm_source=map-embed&utm_medium=readme&utm_campaign=stargazer-map">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh?theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh?theme=light" />
+    <img alt="StarMapper" src="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh" />
+  </picture>
+</a>
 
 ## Contributors
 

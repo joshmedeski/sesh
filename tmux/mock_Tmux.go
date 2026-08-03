@@ -253,6 +253,61 @@ func (_c *MockTmux_IsAttached_Call) RunAndReturn(run func() bool) *MockTmux_IsAt
 	return _c
 }
 
+// ListAllWindowNames provides a mock function for the type MockTmux
+func (_mock *MockTmux) ListAllWindowNames() (map[string][]string, error) {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllWindowNames")
+	}
+
+	var r0 map[string][]string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func() (map[string][]string, error)); ok {
+		return returnFunc()
+	}
+	if returnFunc, ok := ret.Get(0).(func() map[string][]string); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string][]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func() error); ok {
+		r1 = returnFunc()
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockTmux_ListAllWindowNames_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListAllWindowNames'
+type MockTmux_ListAllWindowNames_Call struct {
+	*mock.Call
+}
+
+// ListAllWindowNames is a helper method to define mock.On call
+func (_e *MockTmux_Expecter) ListAllWindowNames() *MockTmux_ListAllWindowNames_Call {
+	return &MockTmux_ListAllWindowNames_Call{Call: _e.mock.On("ListAllWindowNames")}
+}
+
+func (_c *MockTmux_ListAllWindowNames_Call) Run(run func()) *MockTmux_ListAllWindowNames_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockTmux_ListAllWindowNames_Call) Return(stringToStrings map[string][]string, err error) *MockTmux_ListAllWindowNames_Call {
+	_c.Call.Return(stringToStrings, err)
+	return _c
+}
+
+func (_c *MockTmux_ListAllWindowNames_Call) RunAndReturn(run func() (map[string][]string, error)) *MockTmux_ListAllWindowNames_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListClients provides a mock function for the type MockTmux
 func (_mock *MockTmux) ListClients() ([]string, error) {
 	ret := _mock.Called()

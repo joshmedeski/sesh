@@ -430,6 +430,30 @@ sort_order = [
   "config", # 结果顺序：config, tmux, tmuxinator, zoxide
 ]
 ```
+
+### 选择器 TUI
+
+选择器 TUI 可以通过一些选项进行配置，以自定义其行为，这个选择器是外部模糊选择器的一个有用替代品。
+
+```toml
+[tui]
+prompt = "> "
+placeholder = "Filter sessions... "
+show_icons = false
+show_windows = false
+```
+
+当 `show_windows = true` 时，每一行还会在会话名称之后以暗色列出该会话中的窗口名称。放不下的窗口名称会汇总为 `+N`：
+
+```
+>  sesh editor server logs
+   dotfiles nvim shell
+   my-project code server db +2
+   scratch
+```
+
+窗口名称仅用于显示：选中某一行仍然只返回会话名称，输入窗口名称也不会匹配到它所属的会话。活动 tmux 会话的窗口名称通过一次 tmux 调用获取，因此无论您有多少会话，该选项的开销都相同。
+
 ### 默认会话
 
 可以配置默认会话以在连接到会话时运行命令。这对于运行开发服务器或启动 tmux 插件很有用。

@@ -112,6 +112,10 @@
           "type": "boolean",
           "description": "Show icons in the picker TUI"
         },
+        "show_windows": {
+          "type": "boolean",
+          "description": "Show the window names of each session in the picker TUI (display only, never part of the selected value)"
+        },
         "prompt": {
           "type": "string",
           "description": "The prompt shown in the picker TUI"
@@ -119,6 +123,41 @@
         "placeholder": {
           "type": "string",
           "description": "The placeholder text in the picker TUI"
+        },
+        "alias_auto_connect_delay": {
+          "type": "string",
+          "description": "Grace period between typing a session alias and auto-connecting to it, leaving room to finish typing a longer alias that shares a prefix. Any Go duration string (e.g. \"150ms\", \"1s\").",
+          "default": "150ms"
+        },
+        "alias_filter_prefix": {
+          "type": "string",
+          "description": "Single character that, typed first in the picker, narrows the list to aliased sessions (e.g. \"/tc\" finds the \"tc\" alias). Set to an empty string to disable.",
+          "default": "/",
+          "maxLength": 1
+        },
+        "preview": {
+          "type": "boolean",
+          "description": "Show a preview of the highlighted session beside the list in the picker TUI, using the same output as `sesh preview`",
+          "default": false
+        },
+        "preview_width": {
+          "type": "integer",
+          "description": "Share of the terminal width, in percent, guaranteed to the preview pane. The session list keeps its column cap, so any width left over goes to the preview on top of this.",
+          "default": 60,
+          "minimum": 10,
+          "maximum": 90
+        },
+        "preview_min_width": {
+          "type": "integer",
+          "description": "Narrowest terminal, in columns, that still gets a preview pane. Below this the picker renders the session list only.",
+          "default": 100,
+          "minimum": 1
+        },
+        "preview_border": {
+          "type": "string",
+          "description": "Divider drawn between the session list and the preview pane. Use \"none\" for no divider.",
+          "enum": ["line", "thick", "double", "none"],
+          "default": "line"
         }
       },
       "additionalProperties": false
@@ -171,6 +210,19 @@
             "type": "boolean",
             "description": "Disable the default startup command for this session",
             "default": false
+          },
+          "alias": {
+            "type": "string",
+            "description": "Short exact-match shortcut for this session. Shown as a chip in the picker, and resolved by `sesh connect <alias>`. Must be unique across sessions."
+          },
+          "alias_auto_connect": {
+            "type": "boolean",
+            "description": "Connect to this session as soon as its alias is fully typed in the picker, without pressing enter. Requires `alias`.",
+            "default": false
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon shown for this session in the picker instead of its source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
           },
           "startup_command": {
             "type": "string",
@@ -250,6 +302,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon shown for matching sessions in the picker instead of their source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
           }
         },
         "additionalProperties": false

@@ -3,10 +3,14 @@ package picker
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/previewer"
 )
 
 const (
@@ -15,10 +19,14 @@ const (
 )
 
 type PickerOptions struct {
-	ShowIcons      *bool
-	SeparatorAware *bool
-	Prompt         *string
-	Placeholder    *string
+	ShowIcons               *bool
+	ShowWindows             *bool
+	SeparatorAware          *bool
+	Prompt                  *string
+	Placeholder             *string
+	DisableAliasAutoConnect *bool
+	Preview                 *bool
+	Query                   *string
 }
 
 type Picker interface {
@@ -26,11 +34,96 @@ type Picker interface {
 }
 
 type RealPicker struct {
-	config model.Config
+	config    model.Config
+	previewer previewer.Previewer
+	// home expands the paths on [[session]] blocks so a configured icon can be
+	// matched against the absolute path a session is listed with.
+	home home.Home
+	// wildcards matches a session path to a [[wildcard]] block, for icons
+	// declared on a pattern rather than a single session.
+	wildcards WildcardFinder
 }
 
-func NewPicker(config model.Config) Picker {
-	return &RealPicker{config: config}
+func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards WildcardFinder) Picker {
+	return &RealPicker{config: config, previewer: previewer, home: home, wildcards: wildcards}
+}
+
+// buildAliases collects the aliases defined on [[session]] blocks, keyed by
+// lowercased alias so lookups are case-insensitive. Duplicate aliases are
+// rejected at config load, so last-one-wins here is unreachable in practice.
+func buildAliases(sessions []model.SessionConfig) map[string]Alias {
+	aliases := make(map[string]Alias)
+	for _, session := range sessions {
+		if session.Alias == "" || session.Name == "" {
+			continue
+		}
+		aliases[strings.ToLower(session.Alias)] = Alias{
+			Alias:       session.Alias,
+			Target:      session.Name,
+			AutoConnect: session.AliasAutoConnect,
+		}
+	}
+	return aliases
+}
+
+// aliasAutoConnectDelay parses the configured delay, falling back to the
+// default rather than failing the picker on a malformed value (the configurator
+// already rejects those at load time).
+func aliasAutoConnectDelay(configured string) time.Duration {
+	if d, err := time.ParseDuration(configured); err == nil {
+		return d
+	}
+	d, _ := time.ParseDuration(model.DefaultAliasAutoConnectDelay)
+	return d
+}
+
+// previewWidth resolves the percent of the terminal guaranteed to the preview
+// pane, clamping rather than failing the picker on an out-of-range value (the
+// JSON schema flags those in the editor, but nothing rejects them at load).
+func previewWidth(configured int) int {
+	if configured <= 0 {
+		return model.DefaultPreviewWidth
+	}
+	if configured < model.MinPreviewWidth {
+		return model.MinPreviewWidth
+	}
+	if configured > model.MaxPreviewWidth {
+		return model.MaxPreviewWidth
+	}
+	return configured
+}
+
+// previewMinWidth resolves the narrowest terminal that still gets a preview
+// pane. Zero means the key is absent.
+func previewMinWidth(configured int) int {
+	if configured <= 0 {
+		return model.DefaultPreviewMinWidth
+	}
+	return configured
+}
+
+// previewBorder resolves the divider drawn between the list and the preview
+// pane, falling back to the default on an empty or unrecognized value rather
+// than failing the picker (the JSON schema flags those in the editor, but
+// nothing rejects them at load).
+func previewBorder(configured string) string {
+	switch configured {
+	case model.PreviewBorderNone, model.PreviewBorderLine, model.PreviewBorderThick, model.PreviewBorderDouble:
+		return configured
+	default:
+		return model.DefaultPreviewBorder
+	}
+}
+
+// aliasFilterPrefix resolves the sigil that enters alias-filter mode. A nil
+// value means the key is absent (the configurator normally fills it in, but the
+// picker can be constructed with a bare config), while an explicit empty string
+// disables the mode.
+func aliasFilterPrefix(configured *string) string {
+	if configured == nil {
+		return model.DefaultAliasFilterPrefix
+	}
+	return *configured
 }
 
 func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, error) {
@@ -39,6 +132,11 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		showIcons = *opts.ShowIcons
 	} else {
 		showIcons = p.config.TUI.ShowIcons
+	}
+
+	showWindows := p.config.TUI.ShowWindows
+	if opts.ShowWindows != nil {
+		showWindows = *opts.ShowWindows
 	}
 
 	prompt := defaultPrompt
@@ -55,7 +153,49 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		placeholder = p.config.TUI.Placeholder
 	}
 
-	m := New(fetchFunc, showIcons, p.config.SeparatorAware, prompt, placeholder)
+	disableAliasAutoConnect := false
+	if opts.DisableAliasAutoConnect != nil {
+		disableAliasAutoConnect = *opts.DisableAliasAutoConnect
+	}
+
+	preview := p.config.TUI.Preview
+	if opts.Preview != nil {
+		preview = *opts.Preview
+	}
+
+	// A pre-filled query is per-invocation only: a configured default would
+	// silently hide sessions on every launch.
+	query := ""
+	if opts.Query != nil {
+		query = *opts.Query
+	}
+
+	// The model reaches the previewer through a function so the TUI stays
+	// unaware of the package, mirroring how sessions arrive via FetchFunc.
+	var previewFunc PreviewFunc
+	if p.previewer != nil {
+		previewFunc = p.previewer.Preview
+	}
+
+	m := New(fetchFunc, Options{
+		ShowIcons:               showIcons,
+		ShowWindows:             showWindows,
+		SeparatorAware:          p.config.SeparatorAware,
+		Prompt:                  prompt,
+		Placeholder:             placeholder,
+		Query:                   query,
+		Aliases:                 buildAliases(p.config.SessionConfigs),
+		AliasFilterPrefix:       aliasFilterPrefix(p.config.TUI.AliasFilterPrefix),
+		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
+		DisableAliasAutoConnect: disableAliasAutoConnect,
+		Icon:                    buildIconResolver(p.config, p.home, p.wildcards),
+		IconWidth:               iconColWidth(p.config),
+		Preview:                 preview,
+		PreviewWidth:            previewWidth(p.config.TUI.PreviewWidth),
+		PreviewMinWidth:         previewMinWidth(p.config.TUI.PreviewMinWidth),
+		PreviewBorder:           p.config.TUI.PreviewBorder,
+		PreviewFunc:             previewFunc,
+	})
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()
 	if err != nil {

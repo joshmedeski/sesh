@@ -38,6 +38,35 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 	}, nil
 }
 
+// tmuxWindowNames fetches the window names of every live tmux session in a
+// single tmux call. Failures are non-fatal: the picker simply renders sessions
+// without their window names.
+func tmuxWindowNames(l *RealLister) map[string][]string {
+	windowNames, err := l.tmux.ListAllWindowNames()
+	if err != nil {
+		return nil
+	}
+	return windowNames
+}
+
+// attachWindowNames fills in WindowNames for tmux sessions from a session name
+// keyed map. Sessions from other sources keep whatever they already have.
+func attachWindowNames(sessions model.SeshSessions, windowNames map[string][]string) {
+	if len(windowNames) == 0 {
+		return
+	}
+	for _, key := range sessions.OrderedIndex {
+		session, ok := sessions.Directory[key]
+		if !ok || session.Src != "tmux" {
+			continue
+		}
+		if names, ok := windowNames[session.Name]; ok {
+			session.WindowNames = names
+			sessions.Directory[key] = session
+		}
+	}
+}
+
 func (l *RealLister) FindTmuxSession(name string) (model.SeshSession, bool) {
 	sessions, err := listTmux(l)
 	if err != nil {

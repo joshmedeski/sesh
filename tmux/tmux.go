@@ -9,6 +9,7 @@ import (
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
+	ListAllWindowNames() (map[string][]string, error)
 	NewSession(sessionName string, startDir string) (string, error)
 	NewWindowInSession(name string, startDir string, targetSession string) (string, error)
 	IsAttached() bool
@@ -61,7 +62,8 @@ func (t *RealTmux) CapturePane(targetSession string) (string, error) {
 }
 
 func (t *RealTmux) NextWindowInSession(targetSession string) (string, error) {
-	return t.shell.Cmd(t.bin, "next-window", "-t", targetSession)
+	// trailing colon forces session (not window) target resolution
+	return t.shell.Cmd(t.bin, "next-window", "-t", targetSession+":")
 }
 
 func (t *RealTmux) IsAttached() bool {

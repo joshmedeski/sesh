@@ -145,7 +145,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	cl := cloner.NewCloner(c, b.Git)
 	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
 	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path)
-	pk := picker.NewPicker(config)
+	pk := picker.NewPicker(config, p, b.Home, usedLister)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{

@@ -52,3 +52,40 @@ func TestListWindows(t *testing.T) {
 		assert.True(t, windows[1].Active)
 	})
 }
+
+func TestListAllWindowNames(t *testing.T) {
+	t.Run("groups window names by session", func(t *testing.T) {
+		mockShell := &shell.MockShell{}
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
+		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-a", "-F", mock.Anything).Return(
+			[]string{"sesh::editor", "sesh::server", "dotfiles::nvim"},
+			nil,
+		)
+		windowNames, err := tmux.ListAllWindowNames()
+		assert.Nil(t, err)
+		assert.Equal(t, map[string][]string{
+			"sesh":     {"editor", "server"},
+			"dotfiles": {"nvim"},
+		}, windowNames)
+	})
+
+	t.Run("returns error from shell", func(t *testing.T) {
+		mockShell := &shell.MockShell{}
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
+		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-a", "-F", mock.Anything).Return(
+			nil, assert.AnError,
+		)
+		windowNames, err := tmux.ListAllWindowNames()
+		assert.Error(t, err)
+		assert.Nil(t, windowNames)
+	})
+
+	t.Run("parseAllWindowNamesOutput skips malformed lines", func(t *testing.T) {
+		raw := []string{"sesh::editor", "no-separator", "::orphan", "sesh::", "work::make::build"}
+		windowNames := parseAllWindowNamesOutput(raw)
+		assert.Equal(t, map[string][]string{
+			"sesh": {"editor"},
+			"work": {"make::build"},
+		}, windowNames)
+	})
+}
