@@ -994,9 +994,10 @@ Available fields:
 
 ### Worktrees
 
-`sesh worktree create <number>` creates (or reconnects to) a git worktree for a
-GitHub issue or pull request and connects to it as a tmux session. Configure each
-repository with a `[[worktree]]` block:
+`sesh worktree connect <number>` connects to a git worktree for a GitHub issue or
+pull request as a tmux session, creating the worktree first if it doesn't exist yet
+— the same create-or-attach convention as `sesh connect`. Configure each repository
+with a `[[worktree]]` block:
 
 ```toml
 # macOS: activate this terminal app after connecting from outside tmux
@@ -1026,10 +1027,10 @@ worktree_dir = "w"
 Usage:
 
 ```bash
-sesh worktree create 2345                       # detect repo from cwd, create worktree for issue/PR 2345
-sesh worktree create 2345 --repo joshmedeski/sesh   # target a repo explicitly (no cwd needed)
-sesh worktree create 2345 --pr                  # force the pull-request path
-sesh worktree create 2345 --switch              # switch (not attach) — for invocation outside tmux
+sesh worktree connect 2345                       # detect repo from cwd, connect to worktree for issue/PR 2345
+sesh worktree connect 2345 --repo joshmedeski/sesh   # target a repo explicitly (no cwd needed)
+sesh worktree connect 2345 --pr                  # force the pull-request path
+sesh worktree connect 2345 --switch              # switch (not attach) — for invocation outside tmux
 ```
 
 Each flag also has a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`.
@@ -1040,11 +1041,11 @@ PR title or body); for others' PRs it creates a detached worktree and runs `gh p
 When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
 the new session and (on macOS) activates the `terminal` app.
 
-#### Creating a worktree from the browser (macOS)
+#### Connecting to a worktree from the browser (macOS)
 
-With a `[browser]` configured, `sesh worktree create --browser` reads the URL of
+With a `[browser]` configured, `sesh worktree connect --browser` reads the URL of
 your browser's active tab, extracts the GitHub `org/repo` and issue/PR number, and
-creates the matching worktree — no need to type the number or be inside the repo.
+connects to the matching worktree — no need to type the number or be inside the repo.
 
 ```toml
 [browser]
@@ -1054,7 +1055,7 @@ application = "Helium"
 
 ```bash
 # With github.com/joshmedeski/sesh/issues/409 open in the front tab:
-sesh worktree create --browser   # or: sesh wt c -b
+sesh worktree connect --browser   # or: sesh wt c -b
 ```
 
 The URL's `org/repo` is matched against your `[[worktree]]` entries by `name`. Both

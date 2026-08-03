@@ -15,15 +15,15 @@ func NewWorktreeCommand(base *BaseDeps) *cobra.Command {
 		Aliases: []string{"wt"},
 		Short:   "Manage git worktrees as sesh sessions",
 	}
-	cmd.AddCommand(newWorktreeCreateCommand(base))
+	cmd.AddCommand(newWorktreeConnectCommand(base))
 	return cmd
 }
 
-func newWorktreeCreateCommand(base *BaseDeps) *cobra.Command {
+func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "create [number]",
+		Use:     "connect [number]",
 		Aliases: []string{"c"},
-		Short:   "Create (or reconnect to) a worktree for an issue/PR and connect to it",
+		Short:   "Connect to a worktree for an issue/PR, creating it if it doesn't exist",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fromBrowser, _ := cmd.Flags().GetBool("browser")
@@ -53,7 +53,7 @@ func newWorktreeCreateCommand(base *BaseDeps) *cobra.Command {
 			pr, _ := cmd.Flags().GetBool("pr")
 			switchFlag, _ := cmd.Flags().GetBool("switch")
 
-			_, err = deps.Worktree.Create(model.WorktreeCreateOpts{
+			_, err = deps.Worktree.Connect(model.WorktreeConnectOpts{
 				Number:      number,
 				Repo:        repo,
 				Pr:          pr,

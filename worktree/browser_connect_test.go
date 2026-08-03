@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateFromBrowserIssue(t *testing.T) {
+func TestConnectFromBrowserIssue(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -43,11 +43,11 @@ func TestCreateFromBrowserIssue(t *testing.T) {
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{FromBrowser: true, Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateFromBrowserRepoOverrideWins(t *testing.T) {
+func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -75,11 +75,11 @@ func TestCreateFromBrowserRepoOverrideWins(t *testing.T) {
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{FromBrowser: true, Repo: "nutiliti/nutiliti", Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateFromBrowserPR(t *testing.T) {
+func TestConnectFromBrowserPR(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -108,11 +108,11 @@ func TestCreateFromBrowserPR(t *testing.T) {
 	mConn.EXPECT().Connect("/repo/w/678", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{FromBrowser: true, Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateFromBrowserUnparseableURL(t *testing.T) {
+func TestConnectFromBrowserUnparseableURL(t *testing.T) {
 	mBrowser := browser.NewMockBrowser(t)
 	mBrowser.EXPECT().ActiveTabURL().Return("https://example.com/", true, nil)
 
@@ -121,11 +121,11 @@ func TestCreateFromBrowserUnparseableURL(t *testing.T) {
 		git.NewMockGit(t), github.NewMockGithub(t), connector.NewMockConnector(t),
 		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(),
 	)
-	_, err := w.Create(model.WorktreeCreateOpts{FromBrowser: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})
 	require.Error(t, err)
 }
 
-func TestCreateFromBrowserUnavailable(t *testing.T) {
+func TestConnectFromBrowserUnavailable(t *testing.T) {
 	mBrowser := browser.NewMockBrowser(t)
 	// Non-macOS / no application configured => skipped.
 	mBrowser.EXPECT().ActiveTabURL().Return("", false, nil)
@@ -135,6 +135,6 @@ func TestCreateFromBrowserUnavailable(t *testing.T) {
 		git.NewMockGit(t), github.NewMockGithub(t), connector.NewMockConnector(t),
 		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(),
 	)
-	_, err := w.Create(model.WorktreeCreateOpts{FromBrowser: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})
 	require.Error(t, err)
 }

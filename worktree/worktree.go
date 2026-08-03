@@ -17,8 +17,8 @@ import (
 )
 
 type Worktree interface {
-	// Create adds (or reconnects to) a worktree for an issue/PR and connects.
-	Create(opts model.WorktreeCreateOpts) (string, error)
+	// Connect attaches to the worktree for an issue/PR, adding it if absent.
+	Connect(opts model.WorktreeConnectOpts) (string, error)
 }
 
 type RealWorktree struct {
@@ -45,13 +45,13 @@ func NewWorktree(
 	return &RealWorktree{config, g, gh, c, b, h, os, p}
 }
 
-// createPlan captures the decisions derived from gh before touching git.
-type createPlan struct {
+// connectPlan captures the decisions derived from gh before touching git.
+type connectPlan struct {
 	key        int  // issue or PR number used for the worktree dir/branch
 	prCheckout bool // create detached + `gh pr checkout` (vs. new branch)
 }
 
-func (w *RealWorktree) Create(opts model.WorktreeCreateOpts) (string, error) {
+func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 	if opts.FromBrowser {
 		resolved, err := w.resolveFromBrowser(opts)
 		if err != nil {
@@ -74,7 +74,7 @@ func (w *RealWorktree) Create(opts model.WorktreeCreateOpts) (string, error) {
 		w.git.Fetch(repoPath) // best-effort; a failed fetch shouldn't block
 	}
 
-	plan, err := w.planCreate(cfg, opts)
+	plan, err := w.planConnect(cfg, opts)
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +117,7 @@ func (w *RealWorktree) Create(opts model.WorktreeCreateOpts) (string, error) {
 
 // resolveFromBrowser reads the active browser tab URL and fills Number/Repo/Pr
 // from the GitHub issue/PR it points at.
-func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeCreateOpts) (model.WorktreeCreateOpts, error) {
+func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
 	url, ok, err := w.browser.ActiveTabURL()
 	if err != nil {
 		return opts, err
@@ -137,23 +137,23 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeCreateOpts) (model.
 	return opts, nil
 }
 
-func (w *RealWorktree) planCreate(cfg model.WorktreeConfig, opts model.WorktreeCreateOpts) (createPlan, error) {
+func (w *RealWorktree) planConnect(cfg model.WorktreeConfig, opts model.WorktreeConnectOpts) (connectPlan, error) {
 	pr, found, err := w.github.PrView(cfg.Name, opts.Number)
 	if err != nil {
-		return createPlan{}, err
+		return connectPlan{}, err
 	}
 	isPr := found || opts.Pr
 	if !isPr {
-		return createPlan{key: opts.Number, prCheckout: false}, nil
+		return connectPlan{key: opts.Number, prCheckout: false}, nil
 	}
 
 	me, err := w.github.CurrentUser()
 	if err != nil {
-		return createPlan{}, err
+		return connectPlan{}, err
 	}
 	if pr.Author != "" && pr.Author != me {
 		// Foreign PR: detached checkout keyed on the PR number.
-		return createPlan{key: opts.Number, prCheckout: true}, nil
+		return connectPlan{key: opts.Number, prCheckout: true}, nil
 	}
 
 	// Own PR: prefer the closing issue; else scan title/body for #N.
@@ -164,9 +164,9 @@ func (w *RealWorktree) planCreate(cfg model.WorktreeConfig, opts model.WorktreeC
 		issue = firstIssueRef(pr.Title + "\n" + pr.Body)
 	}
 	if issue > 0 {
-		return createPlan{key: issue, prCheckout: false}, nil
+		return connectPlan{key: issue, prCheckout: false}, nil
 	}
-	return createPlan{key: opts.Number, prCheckout: true}, nil
+	return connectPlan{key: opts.Number, prCheckout: true}, nil
 }
 
 func (w *RealWorktree) resolveConfig(repoOverride string) (model.WorktreeConfig, error) {

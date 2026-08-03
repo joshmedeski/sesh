@@ -32,7 +32,7 @@ func nuConfig() model.Config {
 	}
 }
 
-func TestCreateIssueWithRepoOverride(t *testing.T) {
+func TestConnectIssueWithRepoOverride(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -59,11 +59,11 @@ func TestCreateIssueWithRepoOverride(t *testing.T) {
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateOwnPrWithClosingIssue(t *testing.T) {
+func TestConnectOwnPrWithClosingIssue(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -86,11 +86,11 @@ func TestCreateOwnPrWithClosingIssue(t *testing.T) {
 	mConn.EXPECT().Connect("/repo/w/42", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateForeignPrDetachCheckout(t *testing.T) {
+func TestConnectForeignPrDetachCheckout(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -114,11 +114,11 @@ func TestCreateForeignPrDetachCheckout(t *testing.T) {
 	mConn.EXPECT().Connect("/repo/w/200", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateResolvesConfigFromCwd(t *testing.T) {
+func TestConnectResolvesConfigFromCwd(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -147,11 +147,11 @@ func TestCreateResolvesConfigFromCwd(t *testing.T) {
 	mConn.EXPECT().Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{Number: 2345, Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateOwnPrFirstIssueRefFallback(t *testing.T) {
+func TestConnectOwnPrFirstIssueRefFallback(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -174,11 +174,11 @@ func TestCreateOwnPrFirstIssueRefFallback(t *testing.T) {
 	mConn.EXPECT().Connect("/repo/w/7", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
 
-func TestCreateNoConfigMatch(t *testing.T) {
+func TestConnectNoConfigMatch(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
@@ -188,6 +188,6 @@ func TestCreateNoConfigMatch(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
-	_, err := w.Create(model.WorktreeCreateOpts{Number: 1, Repo: "unknown/repo"})
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 1, Repo: "unknown/repo"})
 	require.Error(t, err)
 }

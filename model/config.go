@@ -156,7 +156,7 @@ type (
 	}
 
 	// WorktreeConfig maps a GitHub "org/repo" to a local repository so
-	// `sesh worktree create <number>` knows where to add worktrees, how to
+	// `sesh worktree connect <number>` knows where to add worktrees, how to
 	// name their branches, and what to run on connect.
 	WorktreeConfig struct {
 		Name           string `toml:"name"`            // GitHub "org/repo"
@@ -169,7 +169,7 @@ type (
 	}
 
 	// BrowserConfig configures reading the active browser tab's URL so
-	// `sesh worktree create --browser` can derive the target issue/PR.
+	// `sesh worktree connect --browser` can derive the target issue/PR.
 	// macOS-only (osascript). An empty Application disables the feature.
 	BrowserConfig struct {
 		Application string `toml:"application"` // browser app name, e.g. "Helium"

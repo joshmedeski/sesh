@@ -6,7 +6,7 @@ type ConnectOpts struct {
 	Tmuxinator bool
 }
 
-type WorktreeCreateOpts struct {
+type WorktreeConnectOpts struct {
 	Number      int
 	Repo        string // GitHub "org/repo" override; empty => detect from cwd
 	Pr          bool   // force the pull-request path
