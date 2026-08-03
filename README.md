@@ -1058,8 +1058,37 @@ application = "Helium"
 sesh worktree connect --browser   # or: sesh wt c -b
 ```
 
-The URL's `org/repo` is matched against your `[[worktree]]` entries by `name`. Both
+The URL's `org/repo` is matched against your `[[worktree]]` entries by `repo`. Both
 `/issues/N` and `/pull/N` URLs are supported. macOS only.
+
+#### Listing worktrees with their issue titles
+
+`sesh worktree list` shows every worktree for a repo with the issue title beside
+its number, so you can tell `409` from `411` at a glance:
+
+```bash
+sesh worktree list --path ~/c/nu/w          # or: sesh wt ls --path ~/c/nu/w
+sesh worktree list --repo nutiliti/nutiliti # select the repo by name instead
+sesh worktree list                          # detect the repo from the current directory
+sesh worktree list --json                   # machine-readable output
+```
+
+```
+89   Tmuxifier Support
+409  Add git worktree support: `sesh worktree create <number>`
+411  feat: configurable dashboard for sesh
+```
+
+`--path` and `--repo` are two ways to select the same `[[worktree]]` block. Only
+numerically named directories count as worktrees, which is what `sesh worktree
+connect` creates.
+
+Titles are cached under `$XDG_CACHE_HOME/sesh/github-issues.v1.json` (falling back
+to `~/.cache/sesh`), so listing is normally instant. Only numbers that are new or
+past their 24-hour TTL cost a request, and those are fetched in a single batched
+GraphQL query rather than one `gh` call per worktree. If a refresh fails — offline,
+rate-limited — the cached titles are still shown rather than failing the listing.
+The cache is disposable: delete the file to force a refetch.
 
 ### Listing Configurations
 
