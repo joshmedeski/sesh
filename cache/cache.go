@@ -58,22 +58,10 @@ func (c *FileCache) Read() (CachedData, error) {
 }
 
 func (c *FileCache) Write(sessions model.SeshSessions) error {
-	if err := os.MkdirAll(filepath.Dir(c.path), 0o755); err != nil {
-		return fmt.Errorf("cache mkdir: %w", err)
-	}
-
 	var buf bytes.Buffer
 	cached := CachedData{Sessions: sessions, Timestamp: time.Now()}
 	if err := gob.NewEncoder(&buf).Encode(cached); err != nil {
 		return fmt.Errorf("cache encode: %w", err)
 	}
-
-	tmp := c.path + ".tmp"
-	if err := os.WriteFile(tmp, buf.Bytes(), 0o644); err != nil {
-		return fmt.Errorf("cache write tmp: %w", err)
-	}
-	if err := os.Rename(tmp, c.path); err != nil {
-		return fmt.Errorf("cache rename: %w", err)
-	}
-	return nil
+	return writeAtomic(c.path, buf.Bytes())
 }
