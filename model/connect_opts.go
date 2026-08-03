@@ -13,3 +13,20 @@ type WorktreeConnectOpts struct {
 	Switch      bool
 	FromBrowser bool // resolve Number/Repo/Pr from the active browser tab URL
 }
+
+// WorktreeListOpts selects which repo's worktrees to list. Path and Repo are
+// two ways to pick the same [[worktree]] block; when both are empty the repo is
+// detected from the current directory.
+type WorktreeListOpts struct {
+	Path string // worktree root, e.g. "~/c/nu/w"
+	Repo string // GitHub "org/repo"
+}
+
+// WorktreeEntry is one worktree directory paired with the issue it maps to.
+type WorktreeEntry struct {
+	Number int    // issue/PR number, taken from the directory name
+	Path   string // absolute path to the worktree
+	Title  string // issue title; empty when unknown or not yet fetched
+	State  string // "OPEN" | "CLOSED"; empty when unknown
+}
+

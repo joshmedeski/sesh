@@ -58,7 +58,7 @@ func TestConnectIssueWithRepoOverride(t *testing.T) {
 		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -85,7 +85,7 @@ func TestConnectOwnPrWithClosingIssue(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/42", "jam/42-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/42", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -113,7 +113,7 @@ func TestConnectForeignPrDetachCheckout(t *testing.T) {
 	mGh.EXPECT().PrCheckout("/repo/w/200", "nutiliti/nutiliti", 200).Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/200", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -146,7 +146,7 @@ func TestConnectResolvesConfigFromCwd(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Switch: true})
 	require.NoError(t, err)
 }
@@ -173,7 +173,7 @@ func TestConnectOwnPrFirstIssueRefFallback(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/7", "jam/7-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/7", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -187,7 +187,7 @@ func TestConnectNoConfigMatch(t *testing.T) {
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 1, Repo: "unknown/repo"})
 	require.Error(t, err)
 }

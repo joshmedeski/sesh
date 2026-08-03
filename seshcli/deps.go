@@ -144,7 +144,10 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
 	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
-	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path)
+	issueCache := cache.NewNamespace[github.Issue](
+		worktree.IssueCacheName, worktree.IssueCacheVersion, worktree.IssueCacheTTL,
+	).WithMissingTTL(worktree.IssueCacheMissingTTL)
+	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
 	pk := picker.NewPicker(config, p, b.Home, usedLister)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 

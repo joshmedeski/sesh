@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/browser"
+	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
@@ -19,6 +20,8 @@ import (
 type Worktree interface {
 	// Connect attaches to the worktree for an issue/PR, adding it if absent.
 	Connect(opts model.WorktreeConnectOpts) (string, error)
+	// List returns the worktrees for a repo, each paired with its issue title.
+	List(opts model.WorktreeListOpts) ([]model.WorktreeEntry, error)
 }
 
 type RealWorktree struct {
@@ -30,6 +33,9 @@ type RealWorktree struct {
 	home      home.Home
 	os        oswrap.Os
 	path      pathwrap.Path
+	// issues caches fetched issue titles so listing worktrees does not hit
+	// the network on every keystroke-adjacent invocation.
+	issues *cache.Namespace[github.Issue]
 }
 
 func NewWorktree(
@@ -41,8 +47,9 @@ func NewWorktree(
 	h home.Home,
 	os oswrap.Os,
 	p pathwrap.Path,
+	issues *cache.Namespace[github.Issue],
 ) Worktree {
-	return &RealWorktree{config, g, gh, c, b, h, os, p}
+	return &RealWorktree{config, g, gh, c, b, h, os, p, issues}
 }
 
 // connectPlan captures the decisions derived from gh before touching git.

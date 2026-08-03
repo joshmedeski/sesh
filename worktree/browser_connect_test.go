@@ -42,7 +42,7 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -74,7 +74,7 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -107,7 +107,7 @@ func TestConnectFromBrowserPR(t *testing.T) {
 	mGh.EXPECT().PrCheckout("/repo/w/678", "nutiliti/nutiliti", 678).Return("", nil)
 	mConn.EXPECT().Connect("/repo/w/678", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p)
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -119,7 +119,7 @@ func TestConnectFromBrowserUnparseableURL(t *testing.T) {
 	w := NewWorktree(
 		nuConfig(),
 		git.NewMockGit(t), github.NewMockGithub(t), connector.NewMockConnector(t),
-		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(),
+		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
 	)
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})
 	require.Error(t, err)
@@ -133,7 +133,7 @@ func TestConnectFromBrowserUnavailable(t *testing.T) {
 	w := NewWorktree(
 		nuConfig(),
 		git.NewMockGit(t), github.NewMockGithub(t), connector.NewMockConnector(t),
-		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(),
+		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
 	)
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})
 	require.Error(t, err)
