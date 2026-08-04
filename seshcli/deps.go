@@ -7,12 +7,14 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/configurator"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
+	"github.com/joshmedeski/sesh/v2/focuser"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
@@ -33,6 +35,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/worktree"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -48,6 +51,7 @@ type BaseDeps struct {
 	Replacer   replacer.Replacer
 	Git        git.Git
 	Github     github.Github
+	Focuser    focuser.Focuser
 	Dir        dir.Dir
 	Zoxide     zoxide.Zoxide
 	Tmuxinator tmuxinator.Tmuxinator
@@ -67,6 +71,8 @@ type Deps struct {
 	Icon          icon.Icon
 	Previewer     previewer.Previewer
 	Cloner        cloner.Cloner
+	Worktree      worktree.Worktree
+	Browser       browser.Browser
 	Mkdirer       mkdirer.Mkdirer
 }
 
@@ -84,6 +90,7 @@ func NewBaseDeps() *BaseDeps {
 
 	g := git.NewGit(sh)
 	gh := github.NewGithub(sh, g)
+	fo := focuser.NewFocuser(runtime, sh)
 	d := dir.NewDir(os, g, path)
 	ti := tmuxinator.NewTmuxinator(sh)
 
@@ -98,6 +105,7 @@ func NewBaseDeps() *BaseDeps {
 		Replacer:   r,
 		Git:        g,
 		Github:     gh,
+		Focuser:    fo,
 		Dir:        d,
 		Tmuxinator: ti,
 	}
@@ -131,10 +139,15 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
-	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator)
+	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Focuser)
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
+	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
+	issueCache := cache.NewNamespace[github.Issue](
+		worktree.IssueCacheName, worktree.IssueCacheVersion, worktree.IssueCacheTTL,
+	).WithMissingTTL(worktree.IssueCacheMissingTTL)
+	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
 	pk := picker.NewPicker(config, p, b.Home, usedLister)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
@@ -151,6 +164,8 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		Icon:          ic,
 		Previewer:     p,
 		Cloner:        cl,
+		Worktree:      wt,
+		Browser:       br,
 		Mkdirer:       mk,
 	}, nil
 }

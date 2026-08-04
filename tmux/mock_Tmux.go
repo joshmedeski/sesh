@@ -308,6 +308,61 @@ func (_c *MockTmux_ListAllWindowNames_Call) RunAndReturn(run func() (map[string]
 	return _c
 }
 
+// ListClients provides a mock function for the type MockTmux
+func (_mock *MockTmux) ListClients() ([]string, error) {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListClients")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func() ([]string, error)); ok {
+		return returnFunc()
+	}
+	if returnFunc, ok := ret.Get(0).(func() []string); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func() error); ok {
+		r1 = returnFunc()
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockTmux_ListClients_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListClients'
+type MockTmux_ListClients_Call struct {
+	*mock.Call
+}
+
+// ListClients is a helper method to define mock.On call
+func (_e *MockTmux_Expecter) ListClients() *MockTmux_ListClients_Call {
+	return &MockTmux_ListClients_Call{Call: _e.mock.On("ListClients")}
+}
+
+func (_c *MockTmux_ListClients_Call) Run(run func()) *MockTmux_ListClients_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockTmux_ListClients_Call) Return(strings []string, err error) *MockTmux_ListClients_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *MockTmux_ListClients_Call) RunAndReturn(run func() ([]string, error)) *MockTmux_ListClients_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListSessions provides a mock function for the type MockTmux
 func (_mock *MockTmux) ListSessions() ([]*model.TmuxSession, error) {
 	ret := _mock.Called()
@@ -992,6 +1047,72 @@ func (_c *MockTmux_SwitchClient_Call) Return(s string, err error) *MockTmux_Swit
 }
 
 func (_c *MockTmux_SwitchClient_Call) RunAndReturn(run func(targetSession string) (string, error)) *MockTmux_SwitchClient_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SwitchClientTarget provides a mock function for the type MockTmux
+func (_mock *MockTmux) SwitchClientTarget(client string, targetSession string) (string, error) {
+	ret := _mock.Called(client, targetSession)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SwitchClientTarget")
+	}
+
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(string, string) (string, error)); ok {
+		return returnFunc(client, targetSession)
+	}
+	if returnFunc, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = returnFunc(client, targetSession)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = returnFunc(client, targetSession)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockTmux_SwitchClientTarget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SwitchClientTarget'
+type MockTmux_SwitchClientTarget_Call struct {
+	*mock.Call
+}
+
+// SwitchClientTarget is a helper method to define mock.On call
+//   - client string
+//   - targetSession string
+func (_e *MockTmux_Expecter) SwitchClientTarget(client interface{}, targetSession interface{}) *MockTmux_SwitchClientTarget_Call {
+	return &MockTmux_SwitchClientTarget_Call{Call: _e.mock.On("SwitchClientTarget", client, targetSession)}
+}
+
+func (_c *MockTmux_SwitchClientTarget_Call) Run(run func(client string, targetSession string)) *MockTmux_SwitchClientTarget_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockTmux_SwitchClientTarget_Call) Return(s string, err error) *MockTmux_SwitchClientTarget_Call {
+	_c.Call.Return(s, err)
+	return _c
+}
+
+func (_c *MockTmux_SwitchClientTarget_Call) RunAndReturn(run func(client string, targetSession string) (string, error)) *MockTmux_SwitchClientTarget_Call {
 	_c.Call.Return(run)
 	return _c
 }

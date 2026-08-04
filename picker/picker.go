@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	defaultPrompt      = "> "
-	defaultPlaceholder = "Filter sessions..."
+	defaultPrompt              = "> "
+	defaultPlaceholder         = "Filter sessions..."
+	defaultWorktreePlaceholder = "Filter worktrees..."
 )
 
 type PickerOptions struct {
@@ -29,8 +30,21 @@ type PickerOptions struct {
 	Query                   *string
 }
 
+// WorktreePickerOptions overrides the configured defaults for a single
+// invocation of the worktree picker. A nil field means "not overridden".
+type WorktreePickerOptions struct {
+	ShowIcons   *bool
+	Prompt      *string
+	Placeholder *string
+	Query       *string
+	AutoRefresh *bool
+}
+
 type Picker interface {
 	Pick(fetchFunc FetchFunc, opts PickerOptions) (string, error)
+	// PickWorktree picks a worktree by issue number or title. The second return
+	// is false when nothing was chosen — the picker was quit, or had no rows.
+	PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePickerOptions) (model.WorktreeEntry, bool, error)
 }
 
 type RealPicker struct {
@@ -212,4 +226,68 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		return "", nil
 	}
 	return pickerModel.Chosen(), nil
+}
+
+func (p *RealPicker) PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePickerOptions) (model.WorktreeEntry, bool, error) {
+	// The configured prompt and placeholder apply to both pickers: they say how
+	// the user wants a filter input to look, which the kind of thing being
+	// filtered doesn't change. Only the fallback placeholder differs, since the
+	// session picker's would name the wrong thing.
+	prompt := defaultPrompt
+	if opts.Prompt != nil {
+		prompt = *opts.Prompt
+	} else if p.config.TUI.Prompt != "" {
+		prompt = p.config.TUI.Prompt
+	}
+
+	placeholder := defaultWorktreePlaceholder
+	if opts.Placeholder != nil {
+		placeholder = *opts.Placeholder
+	} else if p.config.TUI.Placeholder != "" {
+		placeholder = p.config.TUI.Placeholder
+	}
+
+	// A pre-filled query is per-invocation only: a configured default would
+	// silently hide worktrees on every launch.
+	query := ""
+	if opts.Query != nil {
+		query = *opts.Query
+	}
+
+	// show_icons is read as the statement that the font has nerd font glyphs,
+	// which is what decides whether the badges get their half circles.
+	showIcons := p.config.TUI.ShowIcons
+	if opts.ShowIcons != nil {
+		showIcons = *opts.ShowIcons
+	}
+
+	// Refreshing behind the cached rows is the default: the alternative is a
+	// picker that shows a title edited yesterday as it was yesterday, and only
+	// tells someone who already knew to press ctrl+r.
+	autoRefresh := true
+	if opts.AutoRefresh != nil {
+		autoRefresh = *opts.AutoRefresh
+	}
+
+	m := NewWorktreeModel(fetchFunc, WorktreeOptions{
+		Prompt:      prompt,
+		Placeholder: placeholder,
+		ShowIcons:   showIcons,
+		Query:       query,
+		AutoRefresh: autoRefresh,
+	})
+	prog := tea.NewProgram(m)
+	result, err := prog.Run()
+	if err != nil {
+		return model.WorktreeEntry{}, false, fmt.Errorf("picker error: %w", err)
+	}
+	pickerModel, ok := result.(WorktreeModel)
+	if !ok {
+		return model.WorktreeEntry{}, false, errors.New("unexpected model type")
+	}
+	if pickerModel.LoadErr() != nil {
+		return model.WorktreeEntry{}, false, fmt.Errorf("couldn't list worktrees: %w", pickerModel.LoadErr())
+	}
+	entry, picked := pickerModel.Chosen()
+	return entry, picked, nil
 }

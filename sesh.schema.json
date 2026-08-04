@@ -63,6 +63,25 @@
       "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",
       "default": "tmux"
     },
+    "terminal": {
+      "type": "string",
+      "description": "Terminal emulator app to activate (macOS only) after an out-of-tmux connect, e.g. \"wezterm\""
+    },
+    "browser": {
+      "type": "object",
+      "description": "Read the active browser tab URL (macOS only) for `sesh worktree connect --browser`.",
+      "additionalProperties": false,
+      "properties": {
+        "application": {
+          "type": "string",
+          "description": "Browser application name, e.g. \"Helium\"."
+        },
+        "url_command": {
+          "type": "string",
+          "description": "AppleScript fragment yielding the URL. Default: \"URL of active tab of front window\"."
+        }
+      }
+    },
     "frecency": {
       "type": "object",
       "description": "Override the frecency directory-jumping backend commands to use an alternative to zoxide (e.g. fasd, autojump, memy). Empty fields fall back to the zoxide defaults.",
@@ -287,6 +306,52 @@
           "icon": {
             "type": "string",
             "description": "Icon shown for matching sessions in the picker instead of their source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "worktree": {
+      "type": "array",
+      "description": "Per-repo git worktree configurations for `sesh worktree`",
+      "items": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "GitHub repository as org/repo"
+          },
+          "path": {
+            "type": "string",
+            "description": "Local repository root (supports ~ for home directory)"
+          },
+          "worktree_dir": {
+            "type": "string",
+            "description": "Where worktrees are created; relative to path or absolute",
+            "default": ".wk"
+          },
+          "branch_template": {
+            "type": "string",
+            "description": "Branch name template; {number} is replaced with the issue/PR number",
+            "default": "{number}"
+          },
+          "base_branch": {
+            "type": "string",
+            "description": "Ref new worktrees branch from",
+            "default": "origin/main"
+          },
+          "fetch": {
+            "type": "boolean",
+            "description": "Run git fetch before creating the worktree",
+            "default": true
+          },
+          "startup_command": {
+            "type": "string",
+            "description": "Shell command to run when connecting to a worktree that already existed"
+          },
+          "create_command": {
+            "type": "string",
+            "description": "Shell command to run instead of startup_command on the connect that creates the worktree"
           }
         },
         "additionalProperties": false

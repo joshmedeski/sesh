@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -12,7 +13,15 @@ import (
 
 type Shell interface {
 	Cmd(cmd string, arg ...string) (string, error)
+	CmdInDir(dir string, cmd string, arg ...string) (string, error)
 	CmdWithOutput(cmd string, arg ...string) (string, error)
+	// CmdCapture runs cmd and returns whatever it wrote to stdout even when
+	// it exits non-zero. Some tools report partial success that way: `gh api
+	// graphql` prints a complete response body containing both resolved data
+	// and an "errors" array, then exits 1. Cmd discards that body; callers
+	// that need to salvage it use this instead and decide for themselves
+	// whether the output is usable.
+	CmdCapture(cmd string, arg ...string) (string, error)
 	ListCmd(cmd string, arg ...string) ([]string, error)
 	PrepareCmd(cmd string, replacements map[string]string) ([]string, error)
 	// ShellCmd runs cmd through the user's shell (honoring $SHELL, falling
@@ -58,6 +67,45 @@ func (c *RealShell) Cmd(cmd string, args ...string) (string, error) {
 	}
 	trimmedOutput := strings.TrimSuffix(string(stdout.String()), "\n")
 	return trimmedOutput, nil
+}
+
+func (c *RealShell) CmdInDir(dir string, cmd string, args ...string) (string, error) {
+	foundCmd, err := c.exec.LookPath(cmd)
+	if err != nil {
+		return "", err
+	}
+	var stdout, stderr bytes.Buffer
+	command := exec.Command(foundCmd, args...)
+	command.Dir = dir
+	command.Stdin = os.Stdin
+	command.Stdout = &stdout
+	command.Stderr = &stderr
+	if err := command.Run(); err != nil {
+		return "", err
+	}
+	return strings.TrimSuffix(stdout.String(), "\n"), nil
+}
+
+func (c *RealShell) CmdCapture(cmd string, args ...string) (string, error) {
+	foundCmd, err := c.exec.LookPath(cmd)
+	if err != nil {
+		return "", err
+	}
+	var stdout, stderr bytes.Buffer
+	command := exec.Command(foundCmd, args...)
+	command.Stdin = os.Stdin
+	command.Stdout = &stdout
+	command.Stderr = &stderr
+
+	runErr := command.Run()
+	out := strings.TrimSuffix(stdout.String(), "\n")
+	if runErr != nil {
+		if msg := strings.TrimSpace(stderr.String()); msg != "" {
+			return out, fmt.Errorf("%s: %w: %s", cmd, runErr, msg)
+		}
+		return out, fmt.Errorf("%s: %w", cmd, runErr)
+	}
+	return out, nil
 }
 
 func (c *RealShell) CmdWithOutput(cmd string, args ...string) (string, error) {

@@ -1000,6 +1000,179 @@ Available fields:
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
 
+### Worktrees
+
+`sesh worktree connect <number>` connects to a git worktree for a GitHub issue or
+pull request as a tmux session, creating the worktree first if it doesn't exist yet
+— the same create-or-attach convention as `sesh connect`. Configure each repository
+with a `[[worktree]]` block:
+
+```toml
+# macOS: activate this terminal app after connecting from outside tmux
+terminal = "wezterm"
+
+[[worktree]]
+repo = "nutiliti/nutiliti"          # GitHub org/repo
+path = "~/c/nu"                      # local repo root
+worktree_dir = "w"                   # worktrees go here (relative to path, or absolute); default ".wk"
+branch_template = "jam/{number}-1"   # {number} is the issue/PR number; default "{number}"
+base_branch = "origin/main"          # branch new worktrees from this; default "origin/main"
+fetch = true                         # git fetch before creating; default true
+create_command = "pnpm i"            # runs once, on the connect that creates the worktree
+startup_command = "nu_setup"         # runs when connecting to a worktree that already existed
+
+[[worktree]]
+repo = "joshmedeski/joshmedeski.com"
+path = "~/c/joshmedeski_com"
+worktree_dir = "w"
+create_command = "pnpm i"
+
+[[worktree]]
+repo = "joshmedeski/sesh"
+path = "~/c/sesh"
+worktree_dir = "w"
+```
+
+Usage:
+
+```bash
+sesh worktree connect 2345                       # detect repo from cwd, connect to worktree for issue/PR 2345
+sesh worktree connect 2345 --repo joshmedeski/sesh   # target a repo explicitly (no cwd needed)
+sesh worktree connect 2345 --pr                  # force the pull-request path
+sesh worktree connect 2345 --switch              # switch (not attach) — for invocation outside tmux
+```
+
+Each flag also has a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`.
+
+`sesh` auto-detects whether `<number>` is an issue or a PR via `gh`. For your own
+PRs it resolves the closing issue (falling back to the first `#N` reference in the
+PR title or body); for others' PRs it creates a detached worktree and runs `gh pr checkout`.
+When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
+the new session and (on macOS) activates the `terminal` app.
+
+##### `create_command` vs `startup_command`
+
+The two are exclusive, and which one runs depends on whether the connect created the
+worktree:
+
+| | worktree created by this connect | worktree already existed |
+|---|---|---|
+| `create_command` | runs | — |
+| `startup_command` | — | runs |
+
+`create_command` is the one-time setup a fresh worktree needs — `pnpm i`, seeding a
+`.env`, generating a client — which would be wasted work on every reconnect.
+`startup_command` is what you want each time you come back to a worktree, like
+opening an editor. Creating deliberately does not run `startup_command`, so
+`create_command` is the whole of what happens on creation; if you want both, chain
+them: `create_command = "pnpm i && nvim"`.
+
+Either way the command is only sent when the **tmux session** is new, so
+reattaching to a session that is still alive runs nothing.
+
+#### Connecting to a worktree from the browser (macOS)
+
+With a `[browser]` configured, `sesh worktree connect --browser` reads the URL of
+your browser's active tab, extracts the GitHub `org/repo` and issue/PR number, and
+connects to the matching worktree — no need to type the number or be inside the repo.
+
+```toml
+[browser]
+application = "Helium"
+# url_command = "URL of active tab of front window"  # optional; Safari uses "URL of current tab of front window"
+```
+
+```bash
+# With github.com/joshmedeski/sesh/issues/409 open in the front tab:
+sesh worktree connect --browser   # or: sesh wt c -b
+```
+
+The URL's `org/repo` is matched against your `[[worktree]]` entries by `repo`. Both
+`/issues/N` and `/pull/N` URLs are supported. macOS only.
+
+#### Listing worktrees with their issue titles
+
+`sesh worktree list` shows every worktree for a repo with the issue title beside
+its number, so you can tell `409` from `411` at a glance:
+
+```bash
+sesh worktree list --path ~/c/nu/w          # or: sesh wt ls --path ~/c/nu/w
+sesh worktree list --repo nutiliti/nutiliti # select the repo by name instead
+sesh worktree list                          # detect the repo from the current directory
+sesh worktree list --json                   # machine-readable output
+sesh worktree list --refresh                # refetch every title, ignoring the cache
+```
+
+```
+89   Tmuxifier Support
+409  Add git worktree support: `sesh worktree create <number>`
+411  feat: configurable dashboard for sesh
+```
+
+`--path` and `--repo` are two ways to select the same `[[worktree]]` block. Only
+numerically named directories count as worktrees, which is what `sesh worktree
+connect` creates.
+
+Titles are cached under `$XDG_CACHE_HOME/sesh/github-issues.v1.json` (falling back
+to `~/.cache/sesh`), so listing is normally instant. Only numbers that are new or
+past their 24-hour TTL cost a request, and those are fetched in a single batched
+GraphQL query rather than one `gh` call per worktree. If a refresh fails — offline,
+rate-limited — the cached titles are still shown rather than failing the listing.
+
+`--refresh` refetches every title and state regardless of how fresh the cached
+ones are, for a title edited or an issue closed since the last listing, and writes
+what it gets back to the cache. The cache is disposable either way: deleting the
+file has the same effect as one `--refresh`.
+
+#### Picking a worktree interactively
+
+`sesh worktree picker` puts the same list in a picker and connects to whatever you
+choose. Each row shows the issue number, a color-coded badge for its state, and
+its title:
+
+```bash
+sesh worktree picker                          # or: sesh wt p
+sesh worktree picker --repo nutiliti/nutiliti # select the repo by name
+sesh worktree picker --path ~/c/nu/w          # or by worktree root
+sesh worktree picker --query 409              # prefill the filter
+sesh worktree picker --icons                  # pill-shaped badges (needs a nerd font)
+sesh worktree picker --switch                 # switch, for invocation outside tmux
+sesh worktree picker --refresh                # refetch titles on the way in
+```
+
+```
+>  89   OPEN    Tmuxifier Support
+  409   MERGED  Add git worktree support: `sesh worktree connect <number>`
+  411   CLOSED  feat: configurable dashboard for sesh
+  412
+```
+
+Badges follow GitHub's own coding — green for open, purple for merged, red for
+closed. A worktree whose issue never resolved (deleted, or a number that was never
+an issue) shows its bare number.
+
+With `show_icons` enabled (or `--icons`), the badges are rounded off with nerd font
+half circles into pills — `OPEN` — rather than squared off with filled
+spaces. Both forms are the same width, so the titles line up either way.
+
+Typing filters on the number and the title together, so `409`, `worktree support`,
+and `409 worktree` all find the same row. `enter` connects, `esc` quits without
+connecting, and `ctrl+j`/`ctrl+k` move — the same keys as the session picker.
+
+The picker opens on the cached titles, then refetches them behind the rows already
+on screen: an issue renamed or closed since the last listing corrects itself a
+moment after the picker opens, without you having to ask. The rows stay usable
+throughout — your query and the row you were on are kept — and because nobody asked
+for that refresh, one that fails is passed over quietly, leaving the cached titles
+in place.
+
+`ctrl+r` asks for the same refetch at any time, and does report a failure since you
+asked for it. `--refresh` does it on the way in instead, before the first row is
+drawn, which is the slower way to get the same titles.
+
+Connecting goes through `sesh worktree connect`, so a picked worktree lands in
+exactly the session that command would have created, `startup_command` included.
+
 ### Listing Configurations
 
 Session configurations will load by default if no flags are provided (the return after tmux sessions and before zoxide results). If you want to explicitly list them, you can use the `-c` flag.

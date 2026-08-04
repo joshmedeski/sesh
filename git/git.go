@@ -9,6 +9,10 @@ type Git interface {
 	GitCommonDir(name string) (bool, string, error)
 	Clone(url string, cmdDir string, dir string, gitFlags ...string) (string, error)
 	WorktreeList(name string) (bool, string, error)
+	Fetch(repoPath string) (string, error)
+	WorktreeAdd(repoPath, target, branch, base string) (string, error)
+	WorktreeAddDetached(repoPath, target, base string) (string, error)
+	Pull(repoPath string) (string, error)
 	CurrentBranch(path string) (bool, string, error)
 }
 
@@ -64,6 +68,22 @@ func (g *RealGit) WorktreeList(path string) (bool, string, error) {
 		return false, "", err
 	}
 	return true, out, nil
+}
+
+func (g *RealGit) Fetch(repoPath string) (string, error) {
+	return g.shell.CmdWithOutput("git", "-C", repoPath, "fetch")
+}
+
+func (g *RealGit) WorktreeAdd(repoPath, target, branch, base string) (string, error) {
+	return g.shell.CmdWithOutput("git", "-C", repoPath, "worktree", "add", target, "-b", branch, "--no-track", base)
+}
+
+func (g *RealGit) WorktreeAddDetached(repoPath, target, base string) (string, error) {
+	return g.shell.CmdWithOutput("git", "-C", repoPath, "worktree", "add", "--detach", target, base)
+}
+
+func (g *RealGit) Pull(repoPath string) (string, error) {
+	return g.shell.CmdWithOutput("git", "-C", repoPath, "pull", "--ff-only")
 }
 
 func (g *RealGit) CurrentBranch(path string) (bool, string, error) {

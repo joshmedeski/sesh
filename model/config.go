@@ -44,11 +44,14 @@ type (
 		SortOrder               []string             `toml:"sort_order"`
 		WindowConfigs           []WindowConfig       `toml:"window"`
 		WildcardConfigs         []WildcardConfig     `toml:"wildcard"`
+		WorktreeConfigs         []WorktreeConfig     `toml:"worktree"`
 		DirLength               int                  `toml:"dir_length"`
 		GitNamerUseWorktreeRoot bool                 `toml:"git_namer_use_worktree_root"`
 		GitDirLength            int                  `toml:"git_dir_length"`
 		SeparatorAware          bool                 `toml:"separator_aware"`
 		TmuxCommand             string               `toml:"tmux_command"`
+		Terminal                string               `toml:"terminal"`
+		Browser                 BrowserConfig        `toml:"browser"`
 		Frecency                FrecencyConfig       `toml:"frecency"`
 		TUI                     TUIConfig            `toml:"tui"`
 	}
@@ -150,5 +153,27 @@ type (
 		// Icon replaces the source glyph every session under this pattern gets
 		// in the picker. See SessionConfig.Icon.
 		Icon string `toml:"icon"`
+	}
+
+	// WorktreeConfig maps a GitHub "org/repo" to a local repository so
+	// `sesh worktree connect <number>` knows where to add worktrees, how to
+	// name their branches, and what to run on connect.
+	WorktreeConfig struct {
+		Repo           string `toml:"repo"`            // GitHub "org/repo"
+		Path           string `toml:"path"`            // local repo root (supports ~)
+		WorktreeDir    string `toml:"worktree_dir"`    // default ".wk"; relative to Path or absolute
+		BranchTemplate string `toml:"branch_template"` // default "{number}"
+		BaseBranch     string `toml:"base_branch"`     // default "origin/main"
+		Fetch          *bool  `toml:"fetch"`           // default true (nil => true)
+		StartupCommand string `toml:"startup_command"` // runs when connecting to a worktree that already existed
+		CreateCommand  string `toml:"create_command"`  // runs instead, on the connect that creates the worktree
+	}
+
+	// BrowserConfig configures reading the active browser tab's URL so
+	// `sesh worktree connect --browser` can derive the target issue/PR.
+	// macOS-only (osascript). An empty Application disables the feature.
+	BrowserConfig struct {
+		Application string `toml:"application"` // browser app name, e.g. "Helium"
+		URLCommand  string `toml:"url_command"` // AppleScript fragment; default "URL of active tab of front window"
 	}
 )
