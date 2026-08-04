@@ -39,7 +39,7 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().
-		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
+		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
@@ -71,7 +71,7 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().
-		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
+		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
@@ -105,7 +105,7 @@ func TestConnectFromBrowserPR(t *testing.T) {
 	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAddDetached("/repo", "/repo/w/678", "origin/main").Return("", nil)
 	mGh.EXPECT().PrCheckout("/repo/w/678", "nutiliti/nutiliti", 678).Return("", nil)
-	mConn.EXPECT().Connect("/repo/w/678", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/678", model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})

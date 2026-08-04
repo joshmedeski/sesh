@@ -21,6 +21,7 @@ branch_template = "jam/{number}-1"
 base_branch = "origin/main"
 fetch = false
 startup_command = "nu_setup"
+create_command = "pnpm i"
 
 [[worktree]]
 repo = "joshmedeski/sesh"
@@ -42,6 +43,7 @@ worktree_dir = "w"
 	require.NotNil(t, nu.Fetch)
 	assert.False(t, *nu.Fetch)
 	assert.Equal(t, "nu_setup", nu.StartupCommand)
+	assert.Equal(t, "pnpm i", nu.CreateCommand)
 
 	sesh := c.WorktreeConfigs[1]
 	assert.Equal(t, "joshmedeski/sesh", sesh.Repo)

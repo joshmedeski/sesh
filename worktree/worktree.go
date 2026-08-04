@@ -89,6 +89,7 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 	root := w.worktreeRoot(cfg, repoPath)
 	target := w.path.Join(root, strconv.Itoa(plan.key))
 
+	created := false
 	if _, statErr := w.os.Stat(target); statErr == nil {
 		// Existing worktree: refresh a PR checkout, then reconnect.
 		if plan.prCheckout {
@@ -98,6 +99,7 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 			w.git.Pull(target) // best-effort ff-only
 		}
 	} else {
+		created = true
 		if err := w.os.MkdirAll(root, 0o755); err != nil {
 			return "", err
 		}
@@ -118,8 +120,23 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 
 	return w.connector.Connect(target, model.ConnectOpts{
 		Switch:  opts.Switch,
-		Command: cfg.StartupCommand,
+		Command: connectCommand(cfg, created),
 	})
+}
+
+// connectCommand picks the command the new session runs. The two are exclusive:
+// a worktree being created is a one-time setup — installing dependencies,
+// seeding a .env — that has nothing to do with what should run every time you
+// come back to a worktree that already exists. Running both would mean
+// create_command could never be the whole of what happens on creation.
+//
+// Either way the connector only sends it when the tmux session is new, so
+// reattaching to a live session runs nothing.
+func connectCommand(cfg model.WorktreeConfig, created bool) string {
+	if created {
+		return cfg.CreateCommand
+	}
+	return cfg.StartupCommand
 }
 
 // resolveFromBrowser reads the active browser tab URL and fills Number/Repo/Pr

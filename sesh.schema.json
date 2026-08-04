@@ -347,7 +347,11 @@
           },
           "startup_command": {
             "type": "string",
-            "description": "Shell command to run when connecting to the worktree session"
+            "description": "Shell command to run when connecting to a worktree that already existed"
+          },
+          "create_command": {
+            "type": "string",
+            "description": "Shell command to run instead of startup_command on the connect that creates the worktree"
           }
         },
         "additionalProperties": false

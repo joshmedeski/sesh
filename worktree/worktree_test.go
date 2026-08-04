@@ -27,7 +27,10 @@ func nuConfig() model.Config {
 			BranchTemplate: "jam/{number}-1",
 			BaseBranch:     "origin/main",
 			Fetch:          falsePtr(),
+			// Deliberately different values: every Connect test asserts which of
+			// the two the connector was handed, which a shared value would hide.
 			StartupCommand: "nu_setup",
+			CreateCommand:  "nu_install",
 		}},
 	}
 }
@@ -55,7 +58,7 @@ func TestConnectIssueWithRepoOverride(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
 
 	mConn.EXPECT().
-		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
+		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
@@ -83,7 +86,7 @@ func TestConnectOwnPrWithClosingIssue(t *testing.T) {
 	mOs.EXPECT().Stat("/repo/w/42").Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/42", "jam/42-1", "origin/main").Return("", nil)
-	mConn.EXPECT().Connect("/repo/w/42", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/42", model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
@@ -111,7 +114,7 @@ func TestConnectForeignPrDetachCheckout(t *testing.T) {
 	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAddDetached("/repo", "/repo/w/200", "origin/main").Return("", nil)
 	mGh.EXPECT().PrCheckout("/repo/w/200", "nutiliti/nutiliti", 200).Return("", nil)
-	mConn.EXPECT().Connect("/repo/w/200", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/200", model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
@@ -144,7 +147,7 @@ func TestConnectResolvesConfigFromCwd(t *testing.T) {
 	mOs.EXPECT().Stat("/repo/w/2345").Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
-	mConn.EXPECT().Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Switch: true})
@@ -171,10 +174,94 @@ func TestConnectOwnPrFirstIssueRefFallback(t *testing.T) {
 	mOs.EXPECT().Stat("/repo/w/7").Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/7", "jam/7-1", "origin/main").Return("", nil)
-	mConn.EXPECT().Connect("/repo/w/7", model.ConnectOpts{Switch: true, Command: "nu_setup"}).Return("", nil)
+	mConn.EXPECT().Connect("/repo/w/7", model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
+	require.NoError(t, err)
+}
+
+func TestConnectExistingWorktreeRunsStartupCommand(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+
+	// The worktree is already there, so nothing is created — and the command is
+	// the startup one, not the setup that already ran when it was created.
+	mOs.EXPECT().Stat("/repo/w/2345").Return(nil, nil)
+	mConn.EXPECT().
+		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
+		Return("", nil)
+
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
+	require.NoError(t, err)
+}
+
+func TestConnectExistingPrWorktreeRunsStartupCommand(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+
+	// Foreign PR whose worktree already exists: the checkout is refreshed, which
+	// is not the same thing as creating it.
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 200).
+		Return(github.PullRequest{Author: "someone-else"}, true, nil)
+	mGh.EXPECT().CurrentUser().Return("me", nil)
+	mOs.EXPECT().Stat("/repo/w/200").Return(nil, nil)
+	mGh.EXPECT().PrCheckout("/repo/w/200", "nutiliti/nutiliti", 200).Return("", nil)
+	mGit.EXPECT().Pull("/repo/w/200").Return("", nil)
+	mConn.EXPECT().
+		Connect("/repo/w/200", model.ConnectOpts{Switch: true, Command: "nu_setup"}).
+		Return("", nil)
+
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
+	require.NoError(t, err)
+}
+
+func TestConnectCreateWithoutCreateCommandRunsNothing(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+
+	cfg := nuConfig()
+	cfg.WorktreeConfigs[0].CreateCommand = ""
+
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mOs.EXPECT().Stat("/repo/w/2345").Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
+
+	// startup_command does not stand in for an unset create_command: creating is
+	// the one time it is deliberately not run.
+	mConn.EXPECT().
+		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: ""}).
+		Return("", nil)
+
+	w := NewWorktree(cfg, mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
 

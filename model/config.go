@@ -165,7 +165,8 @@ type (
 		BranchTemplate string `toml:"branch_template"` // default "{number}"
 		BaseBranch     string `toml:"base_branch"`     // default "origin/main"
 		Fetch          *bool  `toml:"fetch"`           // default true (nil => true)
-		StartupCommand string `toml:"startup_command"` // runs on connect
+		StartupCommand string `toml:"startup_command"` // runs when connecting to a worktree that already existed
+		CreateCommand  string `toml:"create_command"`  // runs instead, on the connect that creates the worktree
 	}
 
 	// BrowserConfig configures reading the active browser tab's URL so

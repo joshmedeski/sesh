@@ -1010,13 +1010,14 @@ worktree_dir = "w"                   # worktrees go here (relative to path, or a
 branch_template = "jam/{number}-1"   # {number} is the issue/PR number; default "{number}"
 base_branch = "origin/main"          # branch new worktrees from this; default "origin/main"
 fetch = true                         # git fetch before creating; default true
-startup_command = "nu_setup"         # runs when the worktree session is created
+create_command = "pnpm i"            # runs once, on the connect that creates the worktree
+startup_command = "nu_setup"         # runs when connecting to a worktree that already existed
 
 [[worktree]]
 repo = "joshmedeski/joshmedeski.com"
 path = "~/c/joshmedeski_com"
 worktree_dir = "w"
-startup_command = "pnpm i"
+create_command = "pnpm i"
 
 [[worktree]]
 repo = "joshmedeski/sesh"
@@ -1040,6 +1041,26 @@ PRs it resolves the closing issue (falling back to the first `#N` reference in t
 PR title or body); for others' PRs it creates a detached worktree and runs `gh pr checkout`.
 When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
 the new session and (on macOS) activates the `terminal` app.
+
+##### `create_command` vs `startup_command`
+
+The two are exclusive, and which one runs depends on whether the connect created the
+worktree:
+
+| | worktree created by this connect | worktree already existed |
+|---|---|---|
+| `create_command` | runs | — |
+| `startup_command` | — | runs |
+
+`create_command` is the one-time setup a fresh worktree needs — `pnpm i`, seeding a
+`.env`, generating a client — which would be wasted work on every reconnect.
+`startup_command` is what you want each time you come back to a worktree, like
+opening an editor. Creating deliberately does not run `startup_command`, so
+`create_command` is the whole of what happens on creation; if you want both, chain
+them: `create_command = "pnpm i && nvim"`.
+
+Either way the command is only sent when the **tmux session** is new, so
+reattaching to a session that is still alive runs nothing.
 
 #### Connecting to a worktree from the browser (macOS)
 
