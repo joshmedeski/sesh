@@ -332,6 +332,14 @@ bind-key "T" run-shell "sesh connect \"$(
 
 You can customize this however you want, see `man fzf` for more info on the different options.
 
+To continuously refresh previews of active tmux sessions, add `--watch` to the preview command:
+
+```sh
+--preview 'sesh preview --watch {}'
+```
+
+Watch mode polls only active tmux sessions; directory and configured-session previews still render once. The default interval is 500 milliseconds and can be changed with `--interval 100ms`.
+
 #### tmux + [television](https://github.com/alexpasmantier/television)
 
 If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/community/channels-unix/#sesh) in a tmux popup.
