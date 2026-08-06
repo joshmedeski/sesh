@@ -35,7 +35,7 @@ func (t *RealTmux) ListWindows(targetSession string) ([]*model.TmuxWindow, error
 func listAllWindowNamesFormat() string {
 	variables := []string{
 		"#{session_name}",
-		"#{window_name}",
+		"#{pane_title}",
 	}
 	return strings.Join(variables, separator)
 }
