@@ -88,12 +88,17 @@ func (s *SystemSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *SystemSection) View(width, height int, focused bool) string {
+func (s *SystemSection) ViewBorderless(width, height int, focused bool) (string, string) {
+	title := s.config.Title
+	if title == "" {
+		title = "System"
+	}
+
 	var b strings.Builder
 	labelStyle := lipgloss.NewStyle().Bold(true).Width(6)
 
 	if s.hasError && s.lastUpdate.IsZero() {
-		return lipgloss.NewStyle().Faint(true).Render("Metrics unavailable")
+		return title, "Metrics unavailable"
 	}
 
 	totalGB := float64(s.memTotal) / (1024 * 1024 * 1024)
@@ -115,5 +120,5 @@ func (s *SystemSection) View(width, height int, focused bool) string {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Foreground(lipgloss.Color("9")).Render(" (stale metrics)"))
 	}
 
-	return b.String()
+	return title, b.String()
 }

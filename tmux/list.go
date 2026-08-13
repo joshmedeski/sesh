@@ -61,7 +61,7 @@ func parseTmuxSessionsOutput(rawList []string) ([]*model.TmuxSession, error) {
 
 		session := &model.TmuxSession{
 			Activity:          convert.StringToTime(fields[0]),
-			Alerts:            convert.StringToIntSlice(fields[1]),
+			Alerts:            splitNonEmpty(fields[1]),
 			Attached:          convert.StringToInt(fields[2]),
 			AttachedList:      strings.Split(fields[3], ","),
 			Created:           convert.StringToTime(fields[4]),
@@ -86,6 +86,22 @@ func parseTmuxSessionsOutput(rawList []string) ([]*model.TmuxSession, error) {
 	}
 
 	return sessions, nil
+}
+
+// splitNonEmpty splits a comma-separated alert string, dropping empty entries
+// (tmux emits empty alert fields as bare commas).
+func splitNonEmpty(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func sortByLastAttached(sessions []*model.TmuxSession) []*model.TmuxSession {

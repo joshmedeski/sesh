@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type (
 	SeshSessions struct {
 		// catalog of the sessions
@@ -27,6 +29,10 @@ type (
 		Score                 float64        // The score of the session (from Zoxide)
 		Branch                string         // Current git branch (populated by dashboard)
 		GitStatus             string         // Current git status (populated by dashboard)
+		Created               *time.Time     // Session creation time
+		LastAttached          *time.Time     // Last attach time
+		Activity              *time.Time     // Last activity time
+		Alerts                []string       // Active alerts (e.g. bell, activity)
 	}
 
 	SeshSrcs struct {

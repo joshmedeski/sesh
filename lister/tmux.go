@@ -2,12 +2,38 @@ package lister
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func tmuxKey(name string) string {
 	return fmt.Sprintf("tmux:%s", name)
+}
+
+// tmuxToSesh maps a tmux session onto a SeshSession, copying the time fields
+// nil-safely so the two models never alias mutable pointers.
+func tmuxToSesh(session *model.TmuxSession) model.SeshSession {
+	return model.SeshSession{
+		Src:          "tmux",
+		Name:         session.Name,
+		Path:         session.Path,
+		Attached:     session.Attached,
+		Windows:      session.Windows,
+		Created:      cloneTime(session.Created),
+		LastAttached: cloneTime(session.LastAttached),
+		Activity:     cloneTime(session.Activity),
+		Alerts:       session.Alerts,
+	}
+}
+
+// cloneTime returns a fresh copy of t, or nil when t is nil.
+func cloneTime(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	c := *t
+	return &c
 }
 
 func listTmux(l *RealLister) (model.SeshSessions, error) {
@@ -22,13 +48,7 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 	for _, session := range tmuxSessions {
 		key := tmuxKey(session.Name)
 		orderedIndex = append(orderedIndex, key)
-		directory[key] = model.SeshSession{
-			Src:      "tmux",
-			Name:     session.Name,
-			Path:     session.Path,
-			Attached: session.Attached,
-			Windows:  session.Windows,
-		}
+		directory[key] = tmuxToSesh(session)
 	}
 
 	return model.SeshSessions{
@@ -86,13 +106,7 @@ func GetAttachedTmuxSession(l *RealLister) (model.SeshSession, bool) {
 	}
 	for _, session := range tmuxSessions {
 		if session.Attached != 0 {
-			return model.SeshSession{
-				Src:      "tmux",
-				Name:     session.Name,
-				Path:     session.Path,
-				Attached: session.Attached,
-				Windows:  session.Windows,
-			}, true
+			return tmuxToSesh(session), true
 		}
 	}
 	return model.SeshSession{}, false

@@ -220,7 +220,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "description": "Section type: 'sessions', 'details', 'system', 'ssh', 'git', 'aiagent', 'custom', or 'docker'"
+                "description": "Section type: 'sessions', 'details', 'system', 'ssh', 'git', 'custom', 'docker', or 'workmux'"
               },
               "title": {
                 "type": "string",

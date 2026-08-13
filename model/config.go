@@ -57,15 +57,18 @@ type (
 	}
 
 	DashboardSectionConfig struct {
-		Type   string           `toml:"type"`
-		Title  string           `toml:"title"`
+		Type  string `toml:"type"`
+		Title string `toml:"title"`
+		// Width and Row are retained for backwards compatibility with older
+		// configs; they are parsed but ignored (the dashboard now uses a
+		// fixed two-tab layout with a vertical widget stack).
 		Width  float64          `toml:"width"`
 		Row    int              `toml:"row"`
 		Groups []DashboardGroup `toml:"groups,omitempty"`
 		SSH    []SSHHostConfig  `toml:"ssh,omitempty"`
 		Custom CustomConfig     `toml:"custom"`
 		Docker DockerConfig     `toml:"docker"`
-		Git    GitConfig         `toml:"git"`
+		Git    GitConfig        `toml:"git"`
 	}
 
 	DashboardGroup struct {
@@ -86,7 +89,7 @@ type (
 	}
 
 	DockerConfig struct {
-		All    bool     `toml:"all"`
+		All     bool     `toml:"all"`
 		Filters []string `toml:"filters"`
 	}
 

@@ -110,34 +110,27 @@ func (s *DockerSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *DockerSection) View(width, height int, focused bool) string {
-	const minWidth = 24
-	if width < minWidth {
-		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  Docker")
+func (s *DockerSection) ViewBorderless(width, height int, focused bool) (string, string) {
+	title := s.config.Title
+	if title == "" {
+		title = "Docker"
 	}
 
-	chrome := 4
-	available := height - chrome
-	if available < 1 {
-		available = 5
+	const minWidth = 24
+	if width < minWidth {
+		return title, "  Docker"
 	}
+
+	available := max(height, 1)
 
 	var b strings.Builder
 
-	titleStyle := NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
-	b.WriteString(titleStyle.Render(s.config.Title))
-	b.WriteString("\n\n")
-
 	if s.loading {
-		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  Loading..."))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-			Render(b.String())
+		return title, "  Loading..."
 	}
 
 	if len(s.containers) == 0 {
-		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  No containers found"))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-			Render(b.String())
+		return title, "  No containers found"
 	}
 
 	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
@@ -183,8 +176,7 @@ func (s *DockerSection) View(width, height int, focused bool) string {
 		))
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-		Render(b.String())
+	return title, b.String()
 }
 
 func truncateString(s string, maxLen int) string {
