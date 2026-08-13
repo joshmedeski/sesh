@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type (
 	SeshSessions struct {
 		// catalog of the sessions
@@ -32,8 +34,12 @@ type (
 		// `sesh list --json`: it describes the list, not the session.
 		Group int `json:"-"`
 
-		Branch    string // Current git branch (populated by dashboard)
-		GitStatus string // Current git status (populated by dashboard)
+		Branch       string     // Current git branch (populated by dashboard)
+		GitStatus    string     // Current git status (populated by dashboard)
+		Created      *time.Time // Session creation time
+		LastAttached *time.Time // Last attach time
+		Activity     *time.Time // Last activity time
+		Alerts       []string   // Active alerts (e.g. bell, activity)
 	}
 
 	SeshSrcs struct {

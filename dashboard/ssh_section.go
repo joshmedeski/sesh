@@ -130,28 +130,24 @@ func (s *SSHSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *SSHSection) View(width, height int, focused bool) string {
+func (s *SSHSection) ViewBorderless(width, height int, focused bool) (string, string) {
 	var b strings.Builder
+
+	title := s.config.Title
+	if title == "" {
+		title = "SSH"
+	}
 
 	const minWidth = 20
 	if width < minWidth {
-		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  SSH")
+		return title, "  SSH"
 	}
 
 	if len(s.hosts) == 0 {
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-			Render(s.config.Title + "\n\n  No hosts configured")
+		return title, "  No hosts configured"
 	}
 
-	chrome := 4
-	available := height - chrome
-	if available < 1 {
-		available = 5
-	}
-
-	titleStyle := NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
-	b.WriteString(titleStyle.Render(s.config.Title))
-	b.WriteString("\n\n")
+	available := max(height, 1)
 
 	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Bold(true)
 	onlineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
@@ -196,6 +192,5 @@ func (s *SSHSection) View(width, height int, focused bool) string {
 		b.WriteString("\n")
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-		Render(b.String())
+	return title, b.String()
 }

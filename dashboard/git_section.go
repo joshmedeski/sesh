@@ -162,34 +162,27 @@ func (s *GitSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *GitSection) View(width, height int, focused bool) string {
-	const minWidth = 24
-	if width < minWidth {
-		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  Git")
+func (s *GitSection) ViewBorderless(width, height int, focused bool) (string, string) {
+	title := s.config.Title
+	if title == "" {
+		title = "Git"
 	}
 
-	chrome := 4
-	available := height - chrome
-	if available < 1 {
-		available = 5
+	const minWidth = 24
+	if width < minWidth {
+		return title, "  Git"
 	}
+
+	available := max(height, 1)
 
 	var b strings.Builder
 
-	titleStyle := NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
-	b.WriteString(titleStyle.Render(s.config.Title))
-	b.WriteString("\n\n")
-
 	if s.loading {
-		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  Loading..."))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-			Render(b.String())
+		return title, "  Loading..."
 	}
 
 	if len(s.repos) == 0 {
-		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  No repos configured"))
-		return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-			Render(b.String())
+		return title, "  No repos configured"
 	}
 
 	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
@@ -233,6 +226,5 @@ func (s *GitSection) View(width, height int, focused bool) string {
 		b.WriteString(fmt.Sprintf("%s%s%s%s\n", prefix, nameStyle.Render(repo.Name), branch, status))
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-		Render(b.String())
+	return title, b.String()
 }

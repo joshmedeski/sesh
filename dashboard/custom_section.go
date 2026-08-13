@@ -68,17 +68,18 @@ func (s *CustomSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	return s, nil
 }
 
-func (s *CustomSection) View(width, height int, focused bool) string {
+func (s *CustomSection) ViewBorderless(width, height int, focused bool) (string, string) {
+	title := s.config.Title
+	if title == "" {
+		title = "Custom"
+	}
+
 	const minWidth = 16
 	if width < minWidth {
-		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render("  Custom")
+		return title, "  Custom"
 	}
 
 	var b strings.Builder
-
-	titleStyle := NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
-	b.WriteString(titleStyle.Render(s.config.Title))
-	b.WriteString("\n\n")
 
 	if s.loading {
 		b.WriteString(lipgloss.NewStyle().Faint(true).Render("  Loading..."))
@@ -89,6 +90,5 @@ func (s *CustomSection) View(width, height int, focused bool) string {
 		b.WriteString(outputStyle.Render(s.output))
 	}
 
-	return NewStyleBorder(width, width, height, height, 15, false, []int{0, 0, 0, 1}, focused).
-		Render(b.String())
+	return title, b.String()
 }

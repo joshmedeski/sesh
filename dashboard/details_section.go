@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -28,6 +28,18 @@ type venvLoadedMsg struct {
 	name   string
 }
 
+// previewLoadedMsg carries the result of a tmux capture-pane for a hovered
+// session. The name guards against stale results after the hover changes.
+type previewLoadedMsg struct {
+	name   string
+	output string
+}
+
+// previewTickMsg is the periodic re-capture trigger.
+type previewTickMsg struct {
+	name string
+}
+
 type DetailsSection struct {
 	config              model.DashboardSectionConfig
 	deps                SectionDeps
@@ -40,6 +52,7 @@ type DetailsSection struct {
 	hoveredWindowIdx    []string
 	hoveredVenvName     string
 	hoveredVenvActive   string
+	previewOutput       string
 }
 
 func NewDetailsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -114,9 +127,37 @@ func (s *DetailsSection) VenvCheck(path string) tea.Cmd {
 
 func (s *DetailsSection) Init() tea.Cmd { return nil }
 
+// capturePreview runs tmux capture-pane for a hovered session. Errors yield an
+// empty preview (never a crash).
+func (s *DetailsSection) capturePreview(name string) tea.Cmd {
+	return func() tea.Msg {
+		out, err := runCommand("tmux", "capture-pane", "-t", name, "-p", "-e")
+		if err != nil {
+			out = ""
+		}
+		return previewLoadedMsg{name: name, output: out}
+	}
+}
+
+// previewTick schedules the next periodic re-capture.
+func previewTick(name string) tea.Cmd {
+	return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+		return previewTickMsg{name: name}
+	})
+}
+
 func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case hoveredSessionMsg:
+		// Hover cleared: stop refreshing and clear the preview.
+		if msg.Name == "" {
+			s.hoveredName = ""
+			s.hoveredPath = ""
+			s.hoveredWindows = 0
+			s.previewOutput = ""
+			return s, nil
+		}
+
 		// If the hovered session is the same as the current one, don't update
 		if s.hoveredName == msg.Name && s.hoveredPath == msg.Path && s.hoveredWindows == msg.Windows {
 			return s, nil
@@ -125,8 +166,9 @@ func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		s.hoveredName = msg.Name
 		s.hoveredPath = msg.Path
 		s.hoveredWindows = msg.Windows
+		s.previewOutput = ""
 
-		return s, tea.Batch(s.WindowNames(msg.Name), s.VenvCheck(msg.Path))
+		return s, tea.Batch(s.WindowNames(msg.Name), s.VenvCheck(msg.Path), s.capturePreview(msg.Name), previewTick(msg.Name))
 	case windowNamesLoadedMsg:
 		s.hoveredWindowNames = msg.WindowNames
 		s.hoveredActiveWindow = msg.ActiveWindow
@@ -134,39 +176,43 @@ func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	case venvLoadedMsg:
 		s.hoveredVenvName = msg.name
 		s.hoveredVenvActive = msg.active
+	case previewLoadedMsg:
+		// Stale capture for a previous hover: ignore.
+		if msg.name != s.hoveredName {
+			return s, nil
+		}
+		s.previewOutput = msg.output
+	case previewTickMsg:
+		// Hover moved/cleared: stop the ticker.
+		if msg.name != s.hoveredName || s.hoveredName == "" {
+			return s, nil
+		}
+		return s, tea.Batch(s.capturePreview(s.hoveredName), previewTick(s.hoveredName))
 	}
 	return s, nil
 }
 
-func (s *DetailsSection) View(width, height int, focused bool) string {
+func (s *DetailsSection) ViewBorderless(width, height int, focused bool) (string, string) {
 	s.viewHeight = height
+
+	title := s.config.Title
+	if title == "" {
+		title = "Details"
+	}
 
 	// Guard: Minimum layout size checks
 	const minWidth = 30
 	if width < minWidth {
 		msg := fmt.Sprintf("  Enlarge pane to see sessions (need ≥%d cols, have %d)", minWidth, width)
-		return lipgloss.NewStyle().Faint(true).Width(width).Height(height).Render(msg)
-	}
-
-	// Calculate internal view height
-	internalWidth := max(width-2, 1)
-	internalHeight := max(height-2, 1)
-
-	// Calculate active available viewing rows
-	chrome := 2 // Accounts for title header line space
-	available := height - chrome
-	if available < 1 {
-		available = 5
+		return title, msg
 	}
 
 	if s.hoveredName == "" {
-		return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}, focused).Render(s.config.Title)
+		return title, ""
 	}
 
 	var lines []string
 
-	lines = append(lines, s.config.Title)
-	lines = append(lines, "")
 	lines = append(lines, fmt.Sprintf("  Name: %s", s.hoveredName))
 	lines = append(lines, fmt.Sprintf("  Path: %s", s.hoveredPath))
 
@@ -192,7 +238,15 @@ func (s *DetailsSection) View(width, height int, focused bool) string {
 
 	lines = append(lines, fmt.Sprintf("  Venv: %s", s.hoveredVenvName))
 
-	maxContentLines := internalHeight
+	maxContentLines := max(height, 1)
+
+	// Preview region fills the remaining pane height with the last lines of
+	// the captured output, each ANSI-truncated to the pane width.
+	remaining := max(maxContentLines-len(lines), 0)
+	if remaining > 0 {
+		lines = append(lines, previewLines(s.previewOutput, width, remaining)...)
+	}
+
 	if len(lines) > maxContentLines {
 		lines = lines[:maxContentLines]
 	}
@@ -201,6 +255,22 @@ func (s *DetailsSection) View(width, height int, focused bool) string {
 		lines = append(lines, "")
 	}
 
-	content := strings.Join(lines, "\n")
-	return NewStyleBorder(internalWidth, internalWidth, internalHeight+2, internalHeight+2, 15, false, []int{0, 0, 0, 1}, focused).Render(content)
+	return title, strings.Join(lines, "\n")
+}
+
+// previewLines returns n lines (bottom-aligned) of the captured output, each
+// ANSI-truncated to width. Blank lines are emitted for empty output or when
+// there are fewer captured lines than n.
+func previewLines(output string, width, n int) []string {
+	out := make([]string, n)
+	if output == "" || n <= 0 {
+		return out
+	}
+	raw := strings.Split(output, "\n")
+	start := max(len(raw)-n, 0)
+	taken := raw[start:]
+	for i, line := range taken {
+		out[i] = truncateRightANSI(line, width)
+	}
+	return out
 }
