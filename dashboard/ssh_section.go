@@ -96,6 +96,14 @@ func (s *SSHSection) checkHost(index int, host SSHHost) tea.Cmd {
 	}
 }
 
+// ClickAt moves the cursor to the clicked row.
+func (s *SSHSection) ClickAt(row int) {
+	if len(s.hosts) == 0 {
+		return
+	}
+	s.cursor = min(max(row, 0), len(s.hosts)-1)
+}
+
 func (s *SSHSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case sshStatusMsg:

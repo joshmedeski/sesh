@@ -83,6 +83,14 @@ func (s *DockerSection) fetchContainers() tea.Msg {
 	return dockerContainersLoadedMsg{containers: containers}
 }
 
+// ClickAt moves the cursor to the clicked row.
+func (s *DockerSection) ClickAt(row int) {
+	if len(s.containers) == 0 {
+		return
+	}
+	s.cursor = min(max(row, 0), len(s.containers)-1)
+}
+
 func (s *DockerSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case dockerContainersLoadedMsg:

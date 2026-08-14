@@ -24,7 +24,7 @@ type wmAgent struct {
 	ElapsedSecs *uint64 `json:"elapsed_secs"`
 	Title       *string `json:"title"`
 	Session     *string `json:"session"` // tmux session name (nil for window-mode agents)
-	AgentKind   *string `json:"agent_kind"`
+	AgentKind   string  `json:"agent_kind"`
 	Git         *wmGit  `json:"git"`
 }
 
@@ -160,6 +160,21 @@ func (s *WorkmuxSection) visibleCount() int {
 	return max(s.viewHeight, 1)
 }
 
+// ClickAt moves the cursor to the clicked view row, scrolling to reveal it.
+func (s *WorkmuxSection) ClickAt(row int) {
+	n := len(s.agents)
+	if n == 0 {
+		return
+	}
+	s.cursor = min(max(s.offset+row, 0), n-1)
+	if s.cursor < s.offset {
+		s.offset = s.cursor
+	}
+	if visible := s.visibleCount(); s.cursor >= s.offset+visible {
+		s.offset = s.cursor - visible + 1
+	}
+}
+
 // selectItem sets Chosen() to the agent's tmux session. Window-mode agents
 // (nil Session) are a no-op.
 func (s *WorkmuxSection) selectItem() {
@@ -209,46 +224,53 @@ func (s *WorkmuxSection) ViewBorderless(width, height int, focused bool) (string
 }
 
 // renderWorkmuxRow renders a single agent row with columns:
-// marker(2) | state(2) | worktree(24) | branch(16) | git(8) | elapsed(6) |
-// title(fill). Progressive drop: <90 cols drop title, <70 drop branch+git+elapsed.
+// marker(2) | state(2) | kind(10) | branch(10) | elapsed(6) | title(fill).
+// Progressive degradation keeps branch+elapsed visible as long as possible:
+// the title drops first (below 50 cols), then the kind column shrinks to
+// absorb the width. Only below 27 cols do branch+elapsed drop, leaving
+// state+kind.
 func renderWorkmuxRow(width int, selected bool, a wmAgent) string {
-	includeBranch := width >= 70
-	includeTitle := width >= 90
+	const (
+		stateW, kindW, branchW, elapsedW = 2, 10, 15, 5
+		minTitleW                        = 16
+	)
 
-	fixed := 2 + 24 // state + worktree
-	numCols := 2    // state + worktree
-	if includeBranch {
-		fixed += 16 + 8 + 6 // branch + git + elapsed
-		numCols += 3
-	}
-	if includeTitle {
-		numCols++
-	}
+	// state+branch+elapsed fit from 27 cols up:
+	// marker(2) + state(2) + kind(≥4) + branch(10) + elapsed(6) + seps(3) = 27.
+	if width >= 27 {
+		// With a title (5 cols, 4 seps) the fixed part is
+		// marker(2)+state(2)+kind(10)+branch(10)+elapsed(6) = 30, so the title
+		// gets width-34. Below that the title drops and kind absorbs the slack
+		// (4 cols, 3 seps → kind = width-23).
+		// titleW := width - 34
+		kind := kindW
+		// var title string
+		// if titleW >= minTitleW {
+		// 	if a.Title != nil {
+		// 		title = *a.Title
+		// 	}
+		// } else {
+		// 	kind = min(max(width-23, 4), 24)
+		// }
 
-	titleWidth := width - 2 - fixed - (numCols - 1)
-	if titleWidth < 1 {
-		titleWidth = 1
-	}
-
-	cols := []col{
-		{text: wmStateGlyph(a.Status), width: 2},
-		{text: truncateRight(a.Worktree, 24), width: 24, style: textStyle()},
-	}
-	if includeBranch {
-		cols = append(cols,
-			col{text: truncateRight(paren(a.Branch), 16), width: 16, style: branchStyle()},
-			col{text: wmGitCell(a.Git), width: 8},
-			col{text: wmElapsed(a.ElapsedSecs), width: 6, style: dimmedStyle(), align: lipgloss.Right},
-		)
-	}
-	if includeTitle {
-		title := ""
-		if a.Title != nil {
-			title = *a.Title
+		cols := []col{
+			{text: wmStateGlyph(a.Status), width: stateW},
+			{text: truncateRight(a.AgentKind, 24), width: kind, style: textStyle()},
+			{text: truncateRight(paren(a.Branch), 24), width: branchW, style: branchStyle()},
+			{text: wmElapsed(a.ElapsedSecs), width: elapsedW, style: dimmedStyle(), align: lipgloss.Left},
 		}
-		cols = append(cols, col{text: truncateRight(title, titleWidth), width: titleWidth, style: dimmedStyle()})
+		// if title != "" {
+		// 	cols = append(cols, col{text: truncateRight(title, titleW), width: titleW, style: dimmedStyle()})
+		// }
+		return renderRow(rowMarker(selected), cols, selected)
 	}
 
+	// Too narrow for branch+elapsed: state+kind only (2 cols, 1 sep).
+	kind := max(width-5, 1)
+	cols := []col{
+		{text: wmStateGlyph(a.Status), width: stateW},
+		{text: truncateRight(a.AgentKind, 24), width: kind, style: textStyle()},
+	}
 	return renderRow(rowMarker(selected), cols, selected)
 }
 
@@ -257,11 +279,11 @@ func renderWorkmuxRow(width int, selected bool, a wmAgent) string {
 func wmStateGlyph(status string) string {
 	switch status {
 	case "working":
-		return warningStyle().Render("●")
+		return lipgloss.NewStyle().Render("🟠")
 	case "waiting":
-		return lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(6)).Render("○")
+		return lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(6)).Render("⏸️")
 	case "done":
-		return successStyle().Render("✓")
+		return lipgloss.NewStyle().Render("✅")
 	default:
 		return dimmedStyle().Render("-")
 	}

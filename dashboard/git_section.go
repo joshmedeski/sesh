@@ -135,6 +135,14 @@ func (s *GitSection) fetchRepos() tea.Msg {
 	return gitReposLoadedMsg{repos: repos}
 }
 
+// ClickAt moves the cursor to the clicked row.
+func (s *GitSection) ClickAt(row int) {
+	if len(s.repos) == 0 {
+		return
+	}
+	s.cursor = min(max(row, 0), len(s.repos)-1)
+}
+
 func (s *GitSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case gitReposLoadedMsg:

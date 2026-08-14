@@ -19,8 +19,8 @@ const (
 
 // Model is the dashboard TUI. It has two permanent tabs (page 0 "Open" and
 // page 1 "Configured"). Tab 1 lays panes out in two rows of shared frames:
-// row 1 is the sessions list (plus the details widget if configured), row 2 is
-// the remaining widgets side by side. Tab 2 is the single-pane configured list.
+// row 1 is the sessions list, row 2 is the remaining widgets side by side.
+// Tab 2 is the single-pane configured list.
 type Model struct {
 	config     model.DashboardConfig
 	sessions   *SessionsSection
@@ -99,9 +99,85 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 
+	case tea.MouseClickMsg:
+		return m.handleMouseClick(msg)
+
 	default:
 		return m.broadcast(msg)
 	}
+}
+
+// handleMouseClick maps a left click to the pane under the cursor: the pane is
+// focused (page 0) and list sections move their selection to the clicked row.
+// Clicks outside any pane are ignored.
+func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
+	e := msg.Mouse()
+	if e.Button != tea.MouseLeft {
+		return m, nil
+	}
+	idx, sec, row, ok := m.hitTest(e.X, e.Y)
+	if !ok {
+		return m, nil
+	}
+	if m.page == pageOpen {
+		m.focus = idx
+	}
+	if c, ok := sec.(Clicker); ok {
+		c.ClickAt(row)
+	}
+	return m, nil
+}
+
+// hitTest maps terminal cell coordinates to the pane under the cursor,
+// returning the flat focus index, the pane's section, and the clicked list
+// row (0-based, view-relative). ok is false when the click lands in the
+// header, footer, or frame chrome.
+func (m Model) hitTest(x, y int) (idx int, sec Section, row int, ok bool) {
+	// Content begins below the two-row header.
+	cy := y - 2
+	if m.page == pageConfigured {
+		if cy < 0 || cy >= m.contentHeight || x < 1 || x >= m.width {
+			return 0, nil, 0, false
+		}
+		return 0, m.configured, cy - 1, true
+	}
+
+	panes, widths, base, top := m.rowAt(cy)
+	if panes == nil {
+		return 0, nil, 0, false
+	}
+	col := paneCol(x, widths)
+	if col < 0 {
+		return 0, nil, 0, false
+	}
+	return base + col, panes[col], cy - top - 1, true
+}
+
+// rowAt returns the panes, widths, flat base index, and top offset of the row
+// containing content y (row 1 or row 2 on page 0), or nil when y is outside
+// both rows.
+func (m Model) rowAt(cy int) (panes []Section, widths []int, base, top int) {
+	if cy >= 0 && cy < m.row1Height {
+		return m.row1Panes(), m.row1Widths, 0, 0
+	}
+	if m.row2Height > 0 && cy >= m.row1Height && cy < m.row1Height+m.row2Height {
+		return m.row2Panes(), m.row2Widths, len(m.row1Panes()), m.row1Height
+	}
+	return nil, nil, 0, 0
+}
+
+// paneCol returns the index of the pane containing column x, accounting for
+// the leading corner and one junction column per pane. -1 when x is chrome or
+// out of range.
+func paneCol(x int, widths []int) int {
+	cursor := 1
+	for i, w := range widths {
+		if x >= cursor && x < cursor+w {
+			return i
+		}
+		cursor += w + 1
+	}
+	return -1
 }
 
 // broadcast forwards a non-key message to every section (each section ignores
@@ -455,6 +531,7 @@ func (m Model) computePaneWidths(panes []Section) []int {
 	// The shared frame consumes (n-1) junction characters (┬/│/┴) between panes
 	// plus 2 corner characters (┌┐ on top, └┘ on bottom), i.e. n+1 columns of
 	// chrome. Subtract all of it so the frame is exactly m.width wide.
+	// availableWidth := max(m.width-(n-1)-2, n)
 	availableWidth := m.width - (n - 1) - 2
 	if availableWidth < n {
 		availableWidth = n
@@ -542,6 +619,7 @@ func (m Model) View() tea.View {
 
 	v := tea.NewView(finalString)
 	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
 	return v
 }
 

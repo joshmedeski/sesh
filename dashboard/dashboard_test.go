@@ -129,8 +129,9 @@ func TestBuildSections_SkipsSessionsAndUnknown(t *testing.T) {
 		},
 	}
 	built := BuildSections(cfg, SectionDeps{})
-	require.Len(t, built.Widgets, 1)
-	assert.Equal(t, "Details", built.Widgets[0].Name())
+	// "sessions" is implicit, "bogus" is unknown, and "details" is no longer
+	// in the registry, so no widgets are built.
+	assert.Empty(t, built.Widgets)
 }
 
 func TestBuildSections_WorkmuxWidget(t *testing.T) {
@@ -726,7 +727,6 @@ func TestRenderOpenRow_FullColumns(t *testing.T) {
 	assert.Contains(t, row, "mysession")
 	assert.Contains(t, row, "(main)")
 	assert.Contains(t, row, "+1 ~2")
-	assert.Contains(t, row, "3w")
 }
 
 func TestRenderOpenRow_DropsStatusUnder90(t *testing.T) {
@@ -738,7 +738,6 @@ func TestRenderOpenRow_DropsStatusUnder90(t *testing.T) {
 func TestRenderOpenRow_DropsBranchUnder70(t *testing.T) {
 	row := renderOpenRow(60, false, false, "foo", 0, 1, "~/d", "main", "+1", nil, nil)
 	assert.NotContains(t, row, "(main)")
-	assert.Contains(t, row, "1w")
 }
 
 func TestRenderOpenRow_DropsWindowsUnder50(t *testing.T) {
@@ -799,9 +798,10 @@ func TestRenderConfiguredRowNotRunning(t *testing.T) {
 }
 
 func TestRenderConfiguredRow_StartupCommandIndicator(t *testing.T) {
+	// The startup-command "*" indicator was removed; the column stays blank.
 	row := renderConfiguredRow(100, false, "proj", "make run", true, "~/code/proj", "", "")
-	assert.Contains(t, row, "*")
-	assert.Contains(t, row, "\x1b[38;5;11m") // yellow
+	assert.NotContains(t, row, "*")
+	assert.NotContains(t, row, "\x1b[38;5;11m") // no yellow
 
 	row = renderConfiguredRow(100, false, "proj", "", true, "~/code/proj", "", "")
 	assert.NotContains(t, row, "*")
@@ -839,8 +839,9 @@ func TestRenderOpenRow_StyledStatusKeepsWidth(t *testing.T) {
 	// The status cell has no outer foreground, so the embedded colours remain.
 	assert.Contains(t, row, "\x1b[38;5;10m")
 	assert.Contains(t, row, "\x1b[38;5;11m")
-	// Row visible width matches the requested width despite embedded escapes.
-	assert.Equal(t, 100, lipgloss.Width(row))
+	// Embedded escapes do not inflate the visible row width.
+	plain := renderOpenRow(100, false, false, "mysession", 0, 3, "~/code/proj", "main", "+1 ~2", nil, nil)
+	assert.Equal(t, lipgloss.Width(plain), lipgloss.Width(row))
 }
 
 func TestRenderConfiguredRow_StyledStatusKeepsWidth(t *testing.T) {
@@ -1095,4 +1096,90 @@ func TestDetailsSectionHoverClearStopsPreview(t *testing.T) {
 	assert.Nil(t, cmd)
 	assert.Equal(t, "", updated.(*DetailsSection).hoveredName)
 	assert.Equal(t, "", updated.(*DetailsSection).previewOutput)
+}
+
+func TestHitTestPageOpen(t *testing.T) {
+	m := testModel(
+		&WorkmuxSection{agents: []wmAgent{{}, {}}},
+		&SSHSection{hosts: []SSHHost{{Host: "a"}, {Host: "b"}}},
+	)
+	m.width = 100
+	m.height = 30
+	m = m.withLayout()
+
+	// Sessions pane: row 1, x 1..98, content y 2..2+row1Height-1.
+	idx, sec, row, ok := m.hitTest(10, 3)
+	require.True(t, ok)
+	assert.Equal(t, 0, idx)
+	assert.Equal(t, m.sessions, sec)
+	assert.Equal(t, 0, row)
+
+	// Row 2: workmux is pane 0, click its second row.
+	row2Top := 2 + m.row1Height
+	idx, sec, row, ok = m.hitTest(10, row2Top+2)
+	require.True(t, ok)
+	assert.Equal(t, 1, idx)
+	assert.IsType(t, &WorkmuxSection{}, sec)
+	assert.Equal(t, 1, row)
+
+	// Header click → miss.
+	_, _, _, ok = m.hitTest(10, 0)
+	assert.False(t, ok)
+
+	// Right corner chrome → miss.
+	_, _, _, ok = m.hitTest(99, 3)
+	assert.False(t, ok)
+
+	// Below content (footer) → miss.
+	_, _, _, ok = m.hitTest(10, 2+m.contentHeight)
+	assert.False(t, ok)
+}
+
+func TestHitTestPageConfigured(t *testing.T) {
+	m := testModel()
+	m.page = pageConfigured
+	m.width = 100
+	m.height = 30
+	m = m.withLayout()
+
+	idx, sec, row, ok := m.hitTest(50, 3)
+	require.True(t, ok)
+	assert.Equal(t, 0, idx)
+	assert.Equal(t, m.configured, sec)
+	assert.Equal(t, 0, row)
+
+	// Left corner chrome → miss.
+	_, _, _, ok = m.hitTest(0, 3)
+	assert.False(t, ok)
+}
+
+func TestMouseClickFocusesPaneAndSelectsRow(t *testing.T) {
+	wm := &WorkmuxSection{agents: []wmAgent{{}, {}, {}}, viewHeight: 10}
+	m := testModel(wm)
+	m.width = 100
+	m.height = 30
+	m = m.withLayout()
+
+	row2Top := 2 + m.row1Height
+	updated := updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 2, Button: tea.MouseLeft})
+	assert.Equal(t, 1, updated.focus)
+	assert.Equal(t, 1, wm.cursor) // clicked view row 1 → absolute row 1
+
+	// Non-left clicks are ignored.
+	updated = updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 2, Button: tea.MouseRight})
+	assert.Equal(t, 0, updated.focus)
+	assert.Equal(t, 1, wm.cursor)
+}
+
+func TestMouseClickScrollsSectionIntoView(t *testing.T) {
+	wm := &WorkmuxSection{agents: make([]wmAgent, 30), viewHeight: 10, offset: 20, cursor: 20}
+	m := testModel(wm)
+	m.width = 100
+	m.height = 30
+	m = m.withLayout()
+
+	row2Top := 2 + m.row1Height
+	updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 5, Button: tea.MouseLeft})
+	assert.Equal(t, 24, wm.cursor)
+	assert.Equal(t, 20, wm.offset)
 }
