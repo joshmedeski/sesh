@@ -153,19 +153,15 @@ func renderOpenRow(width int, selected, current bool, name string, attached, win
 		numCols++
 	}
 
-	dirWidth := width - 2 - fixed - (numCols - 1)
-	if dirWidth < 1 {
-		dirWidth = 1
-	}
+	dirWidth := max(width-2-fixed-(numCols-1), 1)
 
 	nameStyle := textStyle()
 	if current {
 		nameStyle = accentStyle()
 	}
 
-	cols := []col{
-		{text: truncateRight(name, 24), width: 24, style: nameStyle},
-	}
+	cols := []col{}
+
 	if includeAtt {
 		attText := ""
 		if attached > 0 {
@@ -173,18 +169,21 @@ func renderOpenRow(width int, selected, current bool, name string, attached, win
 		}
 		cols = append(cols, col{text: attText, width: 2})
 	}
-	if includeWindows {
-		cols = append(cols, col{text: fmt.Sprintf("%2dw", windows), width: 5, style: textStyle(), align: lipgloss.Right})
-	}
+
+	cols = append(cols, col{text: truncateRight(name, 24), width: 20, style: nameStyle})
+
+	// if includeWindows {
+	// 	cols = append(cols, col{text: fmt.Sprintf("%2dw", windows), width: 7, style: textStyle(), align: lipgloss.Left})
+	// }
 	cols = append(cols, col{text: truncateDirLeft(dir, dirWidth), width: dirWidth, style: textStyle()})
 	if includeBranch {
-		cols = append(cols, col{text: truncateRight(paren(branch), 16), width: 16, style: branchStyle()})
+		cols = append(cols, col{text: truncateRight(paren(branch), 16), width: 14, style: branchStyle(), align: lipgloss.Left})
 	}
 	if includeStatus {
-		cols = append(cols, col{text: truncateRightANSI(status, 12), width: 12})
+		cols = append(cols, col{text: truncateRightANSI(status, 12), width: 10})
 	}
 	if includeAge {
-		cols = append(cols, col{text: formatAge(created), width: 5, style: dimmedStyle(), align: lipgloss.Right})
+		cols = append(cols, col{text: formatAge(created), width: 5, style: dimmedStyle(), align: lipgloss.Left})
 	}
 	if includeAlerts {
 		alertText := ""
@@ -254,13 +253,13 @@ func renderConfiguredRow(width int, selected bool, name, startupCommand string, 
 	cols := make([]col, 0, numCols)
 	if includeBranch {
 		cmdText := ""
-		if startupCommand != "" {
-			cmdText = warningStyle().Render("*")
-		}
+		// if startupCommand != "" {
+		// 	cmdText = warningStyle().Render("*")
+		// }
 		cols = append(cols, col{text: cmdText, width: 2})
 	}
-	cols = append(cols, col{text: truncateRight(name, 24), width: 24, style: textStyle()})
 	cols = append(cols, col{text: stateText, width: 2, style: stateColStyle})
+	cols = append(cols, col{text: truncateRight(name, 24), width: 24, style: textStyle()})
 	cols = append(cols, col{text: truncateDirLeft(path, pathWidth), width: pathWidth, style: textStyle()})
 	if includeBranch {
 		cols = append(cols, col{text: truncateRight(paren(branch), 16), width: 16, style: branchStyle()})

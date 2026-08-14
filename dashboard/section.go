@@ -38,6 +38,13 @@ type Filterer interface {
 	FilterQuery() string
 }
 
+// Clicker is implemented by list sections that move their selection to a
+// specific row in response to a mouse click. row is 0-based and
+// view-relative (the line within the pane's content area).
+type Clicker interface {
+	ClickAt(row int)
+}
+
 type SectionDeps struct {
 	Tmux      tmux.Tmux
 	Lister    lister.Lister
@@ -55,7 +62,7 @@ type Registry map[string]SectionFactory
 // type is now implicit (always built) and is therefore not part of the
 // addable widget registry.
 var registry = Registry{
-	"details": NewDetailsSection,
+	// "details": NewDetailsSection,
 	"system":  NewSystemSection,
 	"ssh":     NewSSHSection,
 	"git":     NewGitSection,

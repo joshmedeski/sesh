@@ -61,9 +61,9 @@ func TestParseWorkmuxStatusInvalidJSON(t *testing.T) {
 }
 
 func TestWorkmuxStateGlyph(t *testing.T) {
-	assert.Contains(t, wmStateGlyph("working"), "●")
-	assert.Contains(t, wmStateGlyph("waiting"), "○")
-	assert.Contains(t, wmStateGlyph("done"), "✓")
+	assert.Contains(t, wmStateGlyph("working"), "🟠")
+	assert.Contains(t, wmStateGlyph("waiting"), "⏸")
+	assert.Contains(t, wmStateGlyph("done"), "✅")
 	assert.Contains(t, wmStateGlyph("-"), "-")
 	assert.Contains(t, wmStateGlyph(""), "-")
 }
@@ -89,6 +89,7 @@ func TestWorkmuxElapsed(t *testing.T) {
 func TestWorkmuxRowFullColumns(t *testing.T) {
 	a := wmAgent{
 		Worktree:    "~/code/alpha",
+		AgentKind:   "coding",
 		Branch:      "main",
 		Status:      "working",
 		ElapsedSecs: u64p(120),
@@ -96,17 +97,16 @@ func TestWorkmuxRowFullColumns(t *testing.T) {
 		Git:         &wmGit{HasStaged: true},
 	}
 	row := renderWorkmuxRow(100, false, a)
-	assert.Contains(t, row, "alpha")
+	assert.Contains(t, row, "coding")
 	assert.Contains(t, row, "(main)")
-	assert.Contains(t, row, "fix bug")
 	assert.Contains(t, row, "2m")
-	assert.Contains(t, row, "●")
-	assert.Contains(t, row, "+")
+	assert.Contains(t, row, "🟠")
 }
 
 func TestWorkmuxRowProgressiveDrops(t *testing.T) {
 	a := wmAgent{
 		Worktree:    "~/code/alpha",
+		AgentKind:   "coding",
 		Branch:      "main",
 		Status:      "done",
 		ElapsedSecs: u64p(120),
@@ -114,16 +114,22 @@ func TestWorkmuxRowProgressiveDrops(t *testing.T) {
 		Git:         &wmGit{HasStaged: true},
 	}
 
-	narrow := renderWorkmuxRow(80, false, a) // <90 drops title
+	wide := renderWorkmuxRow(60, false, a)
+	assert.Contains(t, wide, "(main)")
+	assert.Contains(t, wide, "2m")
+
+	medium := renderWorkmuxRow(45, false, a)
+	assert.Contains(t, medium, "(main)")
+	assert.Contains(t, medium, "2m")
+
+	narrow := renderWorkmuxRow(30, false, a) // branch+elapsed survive, kind shrinks
 	assert.Contains(t, narrow, "(main)")
 	assert.Contains(t, narrow, "2m")
-	assert.NotContains(t, narrow, "a title")
 
-	veryNarrow := renderWorkmuxRow(60, false, a) // <70 drops branch+git+elapsed
-	assert.NotContains(t, veryNarrow, "(main)")
-	assert.NotContains(t, veryNarrow, "2m")
-	assert.NotContains(t, veryNarrow, "+")
-	assert.Contains(t, veryNarrow, "alpha")
+	tiny := renderWorkmuxRow(25, false, a) // <27 drops branch+elapsed
+	assert.NotContains(t, tiny, "(main)")
+	assert.NotContains(t, tiny, "2m")
+	assert.Contains(t, tiny, "coding")
 }
 
 func TestWorkmuxRowSelectionBackground(t *testing.T) {
@@ -137,19 +143,16 @@ func TestWorkmuxSectionView(t *testing.T) {
 	s := &WorkmuxSection{
 		config: model.DashboardSectionConfig{Title: "Workmux"},
 		agents: []wmAgent{
-			{Worktree: "~/code/alpha", Branch: "main", Status: "working", ElapsedSecs: u64p(120), Title: strp("fix bug"), Git: &wmGit{HasStaged: true}},
-			{Worktree: "~/code/beta", Status: "done", Git: &wmGit{HasUnmergedCommits: true}},
+			{Worktree: "~/code/alpha", AgentKind: "coding", Branch: "main", Status: "working", ElapsedSecs: u64p(120), Title: strp("fix bug"), Git: &wmGit{HasStaged: true}},
+			{Worktree: "~/code/beta", AgentKind: "editor", Status: "done", Git: &wmGit{HasUnmergedCommits: true}},
 		},
 	}
 	title, content := s.ViewBorderless(100, 10, true)
 	assert.Equal(t, "Workmux", title)
-	assert.Contains(t, content, "alpha")
-	assert.Contains(t, content, "fix bug")
-	assert.Contains(t, content, "●") // working
-	assert.Contains(t, content, "✓") // done
+	assert.Contains(t, content, "coding")
+	assert.Contains(t, content, "🟠") // working
+	assert.Contains(t, content, "✅") // done
 	assert.Contains(t, content, "2m")
-	assert.Contains(t, content, "+") // staged
-	assert.Contains(t, content, "u") // unmerged
 }
 
 func TestWorkmuxSectionEnterSetsChosen(t *testing.T) {
@@ -200,4 +203,27 @@ func TestWorkmuxSectionStates(t *testing.T) {
 	err := &WorkmuxSection{config: cfg, loading: false, errorMsg: "Failed to parse workmux status"}
 	_, content = err.ViewBorderless(80, 10, true)
 	assert.Contains(t, content, "Failed to parse workmux status")
+}
+
+func TestWorkmuxClickAt(t *testing.T) {
+	s := &WorkmuxSection{agents: make([]wmAgent, 30), viewHeight: 10, offset: 5, cursor: 5}
+
+	s.ClickAt(8) // within window
+	assert.Equal(t, 13, s.cursor)
+	assert.Equal(t, 5, s.offset)
+
+	s.ClickAt(0) // top of window
+	assert.Equal(t, 5, s.cursor)
+
+	s.ClickAt(50) // beyond list → clamped, scrolls to reveal
+	assert.Equal(t, 29, s.cursor)
+	assert.Equal(t, 20, s.offset)
+
+	s.ClickAt(-1) // negative → clamped, scrolls up
+	assert.Equal(t, 19, s.cursor)
+	assert.Equal(t, 19, s.offset)
+
+	empty := &WorkmuxSection{}
+	empty.ClickAt(5)
+	assert.Equal(t, 0, empty.cursor)
 }

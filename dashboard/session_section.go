@@ -282,8 +282,7 @@ func (s *SessionsSection) fetchBranches() tea.Cmd {
 		}
 	}
 	cmds := make([]tea.Cmd, 0, len(paths))
-	for p := range paths {
-		path := p
+	for path := range paths {
 		cmds = append(cmds, func() tea.Msg {
 			found, branch, err := s.deps.Git.CurrentBranch(path)
 			if err != nil || !found {
@@ -356,10 +355,7 @@ func (s *SessionsSection) cursorUp(n int) {
 
 func (s *SessionsSection) cursorDown(n int) {
 	s.cursor += n
-	maxIdx := len(s.visible()) - 1
-	if maxIdx < 0 {
-		maxIdx = 0
-	}
+	maxIdx := max(len(s.visible())-1, 0)
 	if s.cursor > maxIdx {
 		s.cursor = maxIdx
 	}
@@ -374,6 +370,21 @@ func (s *SessionsSection) visibleCount() int {
 		return 20
 	}
 	return max(s.viewHeight, 1)
+}
+
+// ClickAt moves the cursor to the clicked view row, scrolling to reveal it.
+func (s *SessionsSection) ClickAt(row int) {
+	n := len(s.visible())
+	if n == 0 {
+		return
+	}
+	s.cursor = min(max(s.offset+row, 0), n-1)
+	if s.cursor < s.offset {
+		s.offset = s.cursor
+	}
+	if visible := s.visibleCount(); s.cursor >= s.offset+visible {
+		s.offset = s.cursor - visible + 1
+	}
 }
 
 func (s *SessionsSection) killSession() tea.Cmd {
