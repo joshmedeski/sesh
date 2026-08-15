@@ -1213,4 +1213,4 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date)](https://www.star-history.com/#joshmedeski/sesh&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=joshmedeski/sesh&type=Date)](https://star-history.dera.page/#joshmedeski/sesh&Date)
