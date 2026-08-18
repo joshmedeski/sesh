@@ -61,8 +61,8 @@ func TestParseWorkmuxStatusInvalidJSON(t *testing.T) {
 }
 
 func TestWorkmuxStateGlyph(t *testing.T) {
-	assert.Contains(t, wmStateGlyph("working"), "🟠")
-	assert.Contains(t, wmStateGlyph("waiting"), "⏸")
+	assert.Contains(t, wmStateGlyph("working"), "🤖")
+	assert.Contains(t, wmStateGlyph("waiting"), "💬")
 	assert.Contains(t, wmStateGlyph("done"), "✅")
 	assert.Contains(t, wmStateGlyph("-"), "-")
 	assert.Contains(t, wmStateGlyph(""), "-")
@@ -100,7 +100,7 @@ func TestWorkmuxRowFullColumns(t *testing.T) {
 	assert.Contains(t, row, "coding")
 	assert.Contains(t, row, "(main)")
 	assert.Contains(t, row, "2m")
-	assert.Contains(t, row, "🟠")
+	assert.Contains(t, row, "🤖")
 }
 
 func TestWorkmuxRowProgressiveDrops(t *testing.T) {
@@ -150,7 +150,7 @@ func TestWorkmuxSectionView(t *testing.T) {
 	title, content := s.ViewBorderless(100, 10, true)
 	assert.Equal(t, "Workmux", title)
 	assert.Contains(t, content, "coding")
-	assert.Contains(t, content, "🟠") // working
+	assert.Contains(t, content, "🤖") // working
 	assert.Contains(t, content, "✅") // done
 	assert.Contains(t, content, "2m")
 }

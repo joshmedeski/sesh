@@ -56,7 +56,7 @@ func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
 			{"s", "sort:" + sortLabel},
 			{"/", "filter"},
 			{"r", "refresh"},
-			{"ctrl+h/j/k/l", "panes"},
+			{"1-9", "panes"},
 			{"ctrl+d", "kill"},
 			{"q", "quit"},
 		}, right
@@ -65,6 +65,7 @@ func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
 		{"tab", "page"},
 		{"j/k", "move"},
 		{"enter", "open"},
+		{"/", "filter"},
 		{"r", "refresh"},
 		{"q", "quit"},
 	}, right

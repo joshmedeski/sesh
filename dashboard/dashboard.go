@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"fmt"
+
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
@@ -241,17 +243,21 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// so navigation keeps working regardless of how the terminal/decoder
 	// reports the key.
 	switch {
-	case isCtrlKey(msg, 'H'):
+	case isLeftKey(msg):
 		m = m.moveFocus(-1)
 		return m, nil
-	case isCtrlKey(msg, 'L'):
+	case isCtrlKey(msg, 'l'):
 		m = m.moveFocus(1)
 		return m, nil
-	case isCtrlKey(msg, 'J'):
+	case isCtrlKey(msg, 'j'):
 		m = m.moveFocusRow(1) // down a row
 		return m, nil
-	case isCtrlKey(msg, 'K'):
+	case isCtrlKey(msg, 'k'):
 		m = m.moveFocusRow(-1) // up a row
+		return m, nil
+
+	case isDigitKey(msg):
+		m = m.jumpFocus(int(msg.String()[0] - '0'))
 		return m, nil
 	}
 
@@ -307,12 +313,19 @@ func isCtrlKey(msg tea.KeyPressMsg, letter rune) bool {
 		(msg.Mod.Contains(tea.ModCtrl) && msg.Code == letter)
 }
 
+// isDigitKey reports whether msg is a number key "1".."9". Digits arrive with
+// the Text form set (no Code required), so we match on the string form only.
+func isDigitKey(msg tea.KeyPressMsg) bool {
+	s := msg.String()
+	return len(s) == 1 && s[0] >= '1' && s[0] <= '9'
+}
+
 // isLeftKey reports whether msg means "move focus left": ctrl+h or the
 // backspace alias (some terminals send the backspace key as ctrl+h / BS, and
 // some decoders report ctrl+h as ctrl+backspace).
-// func isLeftKey(msg tea.KeyPressMsg) bool {
-// 	return msg.Code == tea.KeyBackspace || isCtrlKey(msg, 'h')
-// }
+func isLeftKey(msg tea.KeyPressMsg) bool {
+	return msg.Code == tea.KeyBackspace || isCtrlKey(msg, 'h')
+}
 
 // routeKey forwards a key to the focused pane and handles enter→chosen.
 func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -389,6 +402,21 @@ func (m Model) moveFocusRow(dir int) Model {
 			return m // no row below
 		}
 		m.focus = min(m.focus-row1Len, row1Len-1)
+	}
+	return m
+}
+
+// jumpFocus sets focus to the pane at the given 1-based flat position (1 =
+// sessions) on page 0, lazygit-style. Out-of-range digits and the configured
+// page are a no-op.
+func (m Model) jumpFocus(digit int) Model {
+	if m.page != pageOpen {
+		return m
+	}
+	n := len(m.row1Panes()) + len(m.row2Panes())
+	idx := digit - 1
+	if idx >= 0 && idx < n {
+		m.focus = idx
 	}
 	return m
 }
@@ -641,6 +669,7 @@ func (m Model) renderRow(panes []Section, widths []int, height int, flatOffset i
 		}
 		focused := m.focus == flatOffset+i
 		title, content := s.ViewBorderless(width, innerHeight, focused)
+		title = fmt.Sprintf("%d %s", flatOffset+i+1, title)
 		fp = append(fp, framePane{title: title, content: content, width: width, focused: focused})
 	}
 	return renderFrame(fp, height)
