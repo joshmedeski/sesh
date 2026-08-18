@@ -1,7 +1,6 @@
 package dashboard
 
 import (
-	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -141,7 +140,6 @@ func (s *DockerSection) ViewBorderless(width, height int, focused bool) (string,
 		return title, "  No containers found"
 	}
 
-	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 	runningStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 	exitedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Bold(true)
@@ -156,32 +154,26 @@ func (s *DockerSection) ViewBorderless(width, height int, focused bool) (string,
 
 	for i := start; i < end; i++ {
 		c := s.containers[i]
+		selected := i == s.cursor
 
-		var prefix string
-		if i == s.cursor {
-			prefix = cursorStyle.Render("▸ ")
-		} else {
-			prefix = "  "
+		stateStyle := runningStyle
+		if c.State != "running" {
+			stateStyle = exitedStyle
 		}
 
-		var stateIndicator string
-		if c.State == "running" {
-			stateIndicator = runningStyle.Render("●")
-		} else {
-			stateIndicator = exitedStyle.Render("●")
+		nameWidth := max(max(width-30, 10), 20)
+
+		cells := []col{
+			{text: " "},
+			{text: "●", style: stateStyle},
+			{text: " "},
+			{text: truncateString(c.Name, nameWidth), style: nameStyle},
+			{text: " "},
+			{text: truncateString(c.Status, width-nameWidth-10), style: statusStyle},
 		}
 
-		nameWidth := max(width-30, 10)
-		if nameWidth > 20 {
-			nameWidth = 20
-		}
-
-		b.WriteString(fmt.Sprintf("%s %s %-20s %s\n",
-			prefix,
-			stateIndicator,
-			nameStyle.Render(truncateString(c.Name, nameWidth)),
-			statusStyle.Render(truncateString(c.Status, width-nameWidth-10)),
-		))
+		b.WriteString(renderSimpleRow(cells, selected, focused))
+		b.WriteString("\n")
 	}
 
 	return title, b.String()

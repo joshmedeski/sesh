@@ -75,7 +75,7 @@ func (s *GitSection) fetchRepos() tea.Msg {
 		statusOut, err := runCommand("git", "-C", expanded, "status", "--porcelain")
 		status := ""
 		if err == nil {
-			lines := strings.Split(strings.TrimSpace(statusOut), "\n")
+			lines := strings.Split(strings.TrimRight(statusOut, "\n"), "\n")
 			if len(lines) > 0 && lines[0] != "" {
 				// 1. Initialize counters to aggregate values
 				var added, modified, deleted, untracked int
@@ -193,10 +193,9 @@ func (s *GitSection) ViewBorderless(width, height int, focused bool) (string, st
 		return title, "  No repos configured"
 	}
 
-	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
-	branchStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("5"))
+	branchStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Width(25).MaxWidth(50)
 	statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
-	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Bold(true)
+	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Bold(true).Width(20).MaxWidth(50)
 	errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 
 	end := min(s.cursor+1, len(s.repos))
@@ -208,30 +207,26 @@ func (s *GitSection) ViewBorderless(width, height int, focused bool) (string, st
 
 	for i := start; i < end; i++ {
 		repo := s.repos[i]
-
-		var prefix string
-		if i == s.cursor {
-			prefix = cursorStyle.Render("▸ ")
-		} else {
-			prefix = "  "
-		}
+		selected := i == s.cursor
 
 		if !repo.IsRepo {
-			b.WriteString(fmt.Sprintf("%s%s\n", prefix, errorStyle.Render(repo.Name+" (not a git repo)")))
+			b.WriteString(renderSimpleRow([]col{{text: repo.Name + " (not a git repo)", style: errorStyle}}, selected, focused))
+			b.WriteString("\n")
 			continue
 		}
 
-		branch := ""
+		cells := []col{
+			{text: repo.Name, style: nameStyle},
+		}
 		if repo.Branch != "" {
-			branch = branchStyle.Render(" [" + repo.Branch + "]")
+			cells = append(cells, col{text: "(" + repo.Branch + ")", style: branchStyle})
 		}
-
-		status := ""
 		if repo.Status != "" {
-			status = statusStyle.Render(" " + repo.Status)
+			cells = append(cells, col{text: " " + repo.Status, style: statusStyle})
 		}
 
-		b.WriteString(fmt.Sprintf("%s%s%s%s\n", prefix, nameStyle.Render(repo.Name), branch, status))
+		b.WriteString(renderSimpleRow(cells, selected, focused))
+		b.WriteString("\n")
 	}
 
 	return title, b.String()

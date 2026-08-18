@@ -83,7 +83,7 @@ func (g *RealGit) StatusSummary(path string) (StatusSummary, error) {
 	if err != nil {
 		return StatusSummary{}, err
 	}
-	lines := strings.Split(strings.TrimSpace(out), "\n")
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
 	if len(lines) == 0 || (len(lines) == 1 && lines[0] == "") {
 		return StatusSummary{}, nil
 	}

@@ -452,7 +452,7 @@ func (s *SessionsSection) ViewBorderless(width, height int, focused bool) (strin
 
 	var b strings.Builder
 	for i := s.offset; i < end; i++ {
-		b.WriteString(s.renderItem(i, width))
+		b.WriteString(s.renderItemFocused(i, width, focused))
 		b.WriteString("\n")
 	}
 
@@ -461,8 +461,14 @@ func (s *SessionsSection) ViewBorderless(width, height int, focused bool) (strin
 
 // renderItem renders a single flat session row for Tab 1.
 func (s *SessionsSection) renderItem(i, width int) string {
+	return s.renderItemFocused(i, width, true)
+}
+
+// renderItemFocused is renderItem with an explicit focused flag, so unfocused
+// panes render a dimmed selection highlight.
+func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	sess := s.visible()[i]
 	dir := collapseHome(sess.Path, s.deps.HomeDir)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return renderOpenRow(width, i == s.cursor, current, sess.Name, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.Created, sess.Alerts)
+	return renderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.Created, sess.Alerts)
 }

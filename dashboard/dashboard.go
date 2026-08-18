@@ -241,16 +241,16 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// so navigation keeps working regardless of how the terminal/decoder
 	// reports the key.
 	switch {
-	case isLeftKey(msg):
+	case isCtrlKey(msg, 'H'):
 		m = m.moveFocus(-1)
 		return m, nil
-	case isCtrlKey(msg, 'l'):
+	case isCtrlKey(msg, 'L'):
 		m = m.moveFocus(1)
 		return m, nil
-	case isCtrlKey(msg, 'j'):
+	case isCtrlKey(msg, 'J'):
 		m = m.moveFocusRow(1) // down a row
 		return m, nil
-	case isCtrlKey(msg, 'k'):
+	case isCtrlKey(msg, 'K'):
 		m = m.moveFocusRow(-1) // up a row
 		return m, nil
 	}
@@ -310,9 +310,9 @@ func isCtrlKey(msg tea.KeyPressMsg, letter rune) bool {
 // isLeftKey reports whether msg means "move focus left": ctrl+h or the
 // backspace alias (some terminals send the backspace key as ctrl+h / BS, and
 // some decoders report ctrl+h as ctrl+backspace).
-func isLeftKey(msg tea.KeyPressMsg) bool {
-	return msg.Code == tea.KeyBackspace || isCtrlKey(msg, 'h')
-}
+// func isLeftKey(msg tea.KeyPressMsg) bool {
+// 	return msg.Code == tea.KeyBackspace || isCtrlKey(msg, 'h')
+// }
 
 // routeKey forwards a key to the focused pane and handles enter→chosen.
 func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -531,11 +531,7 @@ func (m Model) computePaneWidths(panes []Section) []int {
 	// The shared frame consumes (n-1) junction characters (┬/│/┴) between panes
 	// plus 2 corner characters (┌┐ on top, └┘ on bottom), i.e. n+1 columns of
 	// chrome. Subtract all of it so the frame is exactly m.width wide.
-	// availableWidth := max(m.width-(n-1)-2, n)
-	availableWidth := m.width - (n - 1) - 2
-	if availableWidth < n {
-		availableWidth = n
-	}
+	availableWidth := max(m.width-(n-1)-2, n)
 
 	flex := make([]bool, n)
 	flexCount := 0
@@ -557,10 +553,7 @@ func (m Model) computePaneWidths(panes []Section) []int {
 	allocated := 0
 	for i, p := range panes {
 		if w := p.Width(); w > 0 {
-			pw[i] = int(float64(availableWidth) * w * scale)
-			if pw[i] < 1 {
-				pw[i] = 1
-			}
+			pw[i] = max(int(float64(availableWidth)*w*scale), 1)
 			allocated += pw[i]
 		}
 	}
@@ -657,10 +650,7 @@ func (m Model) viewConfiguredPage() string {
 	innerHeight := m.contentHeight - 2
 	// The single pane sits between the frame's two corner columns, so reserve
 	// them to keep the frame exactly m.width wide.
-	paneWidth := m.width - 2
-	if paneWidth < 1 {
-		paneWidth = 1
-	}
+	paneWidth := max(m.width-2, 1)
 	title, content := m.configured.ViewBorderless(paneWidth, innerHeight, true)
 	return renderFrame([]framePane{
 		{title: title, content: content, width: paneWidth, focused: true},
