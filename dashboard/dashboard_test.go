@@ -79,6 +79,8 @@ func pressKey(key string) tea.KeyPressMsg {
 		return tea.KeyPressMsg{Code: tea.KeyEsc}
 	case "backspace":
 		return tea.KeyPressMsg{Code: tea.KeyBackspace}
+	case "ctrl+backspace":
+		return tea.KeyPressMsg{Mod: 4, Code: tea.KeyBackspace} // ModCtrl = 1 << 2 = 4
 	case "ctrl+c":
 		return tea.KeyPressMsg{Mod: 4, Code: 'c'} // ModCtrl = 1 << 2 = 4
 	case "ctrl+d":
@@ -313,6 +315,22 @@ func TestJumpFocus(t *testing.T) {
 	assert.Equal(t, 0, m.focus)
 }
 
+func TestJumpFocusWithDetailsPane(t *testing.T) {
+	// Row 1 = [sessions, details], row 2 = [a, b].
+	// Flat: [sessions(0), details(1), a(2), b(3)].
+	m := testModel(
+		NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{}),
+		&stubSection{name: "a"},
+		&stubSection{name: "b"},
+	)
+	m = updateModel(m, pressKey("2"))
+	assert.Equal(t, 1, m.focus) // details
+	m = updateModel(m, pressKey("3"))
+	assert.Equal(t, 2, m.focus) // a
+	m = updateModel(m, pressKey("1"))
+	assert.Equal(t, 0, m.focus) // sessions
+}
+
 func TestRenderRowNumbersPanes(t *testing.T) {
 	m := testModel(&stubSection{name: "a"}, &stubSection{name: "b"})
 	v := m.View()
@@ -512,6 +530,12 @@ func TestConfiguredFiltering(t *testing.T) {
 
 	// Backspace deletes the last rune.
 	m = updateModel(m, pressKey("backspace"))
+	assert.Equal(t, "a", m.configured.FilterQuery())
+
+	// ctrl+backspace (decoder's modified-backspace form) also deletes.
+	m = updateModel(m, pressKey("z"))
+	assert.Equal(t, "az", m.configured.FilterQuery())
+	m = updateModel(m, pressKey("ctrl+backspace"))
 	assert.Equal(t, "a", m.configured.FilterQuery())
 
 	// enter exits filtering and clears the query.
@@ -1074,6 +1098,22 @@ func TestFilterRoutingWhileTyping(t *testing.T) {
 	m = updateModel(m, pressKey("ctrl+h"))
 	assert.Equal(t, 0, m.focus)
 	assert.Equal(t, "", m.sessions.filterQuery)
+
+	// ctrl+backspace deletes the last rune (decoder reports the combo as a
+	// modified backspace; String() would be "ctrl+backspace").
+	m = updateModel(m, pressKey("x"))
+	m = updateModel(m, pressKey("y"))
+	m = updateModel(m, pressKey("ctrl+backspace"))
+	assert.Equal(t, "x", m.sessions.filterQuery)
+	m = updateModel(m, pressKey("backspace"))
+	assert.Equal(t, "", m.sessions.filterQuery)
+
+	// Digits type into the query while filtering, never jump panes.
+	m = updateModel(m, pressKey("2"))
+	assert.Equal(t, "2", m.sessions.filterQuery)
+	assert.Equal(t, 0, m.focus)
+	m = updateModel(m, pressKey("esc"))
+	assert.False(t, m.sessions.filtering)
 
 	// esc exits and clears.
 	m = updateModel(m, pressKey("esc"))

@@ -243,7 +243,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// so navigation keeps working regardless of how the terminal/decoder
 	// reports the key.
 	switch {
-	case isLeftKey(msg):
+	case isBackspaceKey(msg):
 		m = m.moveFocus(-1)
 		return m, nil
 	case isCtrlKey(msg, 'l'):
@@ -320,10 +320,13 @@ func isDigitKey(msg tea.KeyPressMsg) bool {
 	return len(s) == 1 && s[0] >= '1' && s[0] <= '9'
 }
 
-// isLeftKey reports whether msg means "move focus left": ctrl+h or the
-// backspace alias (some terminals send the backspace key as ctrl+h / BS, and
-// some decoders report ctrl+h as ctrl+backspace).
-func isLeftKey(msg tea.KeyPressMsg) bool {
+// isBackspaceKey reports whether msg is any backspace form: the plain
+// backspace key, ctrl+backspace (some decoders report the combo as a modified
+// backspace), or ctrl+h (terminals send ctrl+h as BS 0x08). In handleKey it
+// moves focus left; in the filter handlers it deletes the last query rune.
+// Matching is Code-based so it survives decoder variations in the String()
+// form.
+func isBackspaceKey(msg tea.KeyPressMsg) bool {
 	return msg.Code == tea.KeyBackspace || isCtrlKey(msg, 'h')
 }
 
