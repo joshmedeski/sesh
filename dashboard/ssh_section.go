@@ -161,7 +161,6 @@ func (s *SSHSection) ViewBorderless(width, height int, focused bool) (string, st
 	onlineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 	offlineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 	checkingStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
-	cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 
 	end := min(s.cursor+1, len(s.hosts))
 	start := max(end-available, 0)
@@ -172,22 +171,17 @@ func (s *SSHSection) ViewBorderless(width, height int, focused bool) (string, st
 
 	for i := start; i < end; i++ {
 		h := s.hosts[i]
+		selected := i == s.cursor
 
-		var prefix string
-		if i == s.cursor {
-			prefix = cursorStyle.Render("▸ ")
-		} else {
-			prefix = "  "
-		}
-
-		var statusRendered string
+		statusText := "○ checking"
+		statusStyle := checkingStyle
 		switch h.Status {
 		case "online":
-			statusRendered = onlineStyle.Render("● online")
+			statusText = "● online"
+			statusStyle = onlineStyle
 		case "offline":
-			statusRendered = offlineStyle.Render("● offline")
-		default:
-			statusRendered = checkingStyle.Render("○ checking")
+			statusText = "● offline"
+			statusStyle = offlineStyle
 		}
 
 		nameDisplay := h.Name
@@ -195,8 +189,13 @@ func (s *SSHSection) ViewBorderless(width, height int, focused bool) (string, st
 			nameDisplay = h.Host
 		}
 
-		line := fmt.Sprintf("%s%-20s %s", prefix, labelStyle.Render(nameDisplay), statusRendered)
-		b.WriteString(line)
+		cells := []col{
+			{text: nameDisplay, style: labelStyle},
+			{text: " "},
+			{text: statusText, style: statusStyle},
+		}
+
+		b.WriteString(renderSimpleRow(cells, selected, focused))
 		b.WriteString("\n")
 	}
 

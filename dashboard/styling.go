@@ -22,6 +22,11 @@ var (
 	colorStatus    = lipgloss.ANSIColor(10) // green
 	colorHighlight = lipgloss.ANSIColor(8)
 
+	// colorHighlightDim is the slightly dimmer selection background used when a
+	// pane is not focused, so the selection stays visible without competing
+	// with the focused pane's highlight.
+	colorHighlightDim = lipgloss.ANSIColor(236)
+
 	// git-status part colours (formatGitStatus).
 	colorStaged    = lipgloss.ANSIColor(10) // green  "+N"
 	colorUnstaged  = lipgloss.ANSIColor(11) // yellow "~N"
@@ -61,16 +66,30 @@ func GroupNameRender(name string, width int) lipgloss.Style {
 	return NewStyle(width, width, 1, 1, 15, false, []int{0, 0, 0, 0})
 }
 
-// rowMarker returns the 2-column marker for a row: "▌ " (accent bold) when
-// selected, otherwise two spaces.
-func rowMarker(selected bool) string {
-	if selected {
-		return accentStyle().Render("▌ ")
+// cursorStyle is the shared selection highlight used by every list section: a
+// subtle full-line background fill. Focused panes use the standard highlight;
+// unfocused panes use a slightly dimmer fill.
+func cursorStyle(focused bool) lipgloss.Style {
+	if focused {
+		return lipgloss.NewStyle().Background(colorHighlight)
 	}
-	return "  "
+	return lipgloss.NewStyle().Background(colorHighlightDim)
 }
 
-// col describes a single fixed-width column in a list row.
+// rowMarker returns the 2-column marker for a row: "▌ " (accent bold on the
+// selection background) when selected, otherwise two spaces. The marker is
+// dimmed when the pane is not focused.
+func rowMarker(selected, focused bool) string {
+	if !selected {
+		return "  "
+	}
+	if focused {
+		return accentStyle().Background(colorHighlight).Render("▌ ")
+	}
+	return dimmedStyle().Background(colorHighlightDim).Render("▌ ")
+}
+
+// col describes a single column in a list row.
 type col struct {
 	text  string
 	width int
@@ -78,14 +97,16 @@ type col struct {
 	align lipgloss.Position
 }
 
-// renderRow joins columns with a single space and applies the row-level
-// selection background to every cell (and separator) except the marker.
-func renderRow(marker string, cols []col, selected bool) string {
+// renderRow joins columns with a single space and applies the shared cursor
+// background to every cell (and separator) plus the marker when selected,
+// producing a vim-like full-line highlight.
+func renderRow(marker string, cols []col, selected, focused bool) string {
+	bg := cursorStyle(focused)
 	rendered := make([]string, len(cols))
 	for i, c := range cols {
 		st := c.style
 		if selected {
-			st = st.Background(colorHighlight)
+			st = st.Inherit(bg)
 		}
 		st = st.Width(c.width)
 		if c.align != 0 {
@@ -94,10 +115,27 @@ func renderRow(marker string, cols []col, selected bool) string {
 		rendered[i] = st.Render(c.text)
 	}
 	if selected {
-		sep := lipgloss.NewStyle().Background(colorHighlight).Render(" ")
-		return marker + strings.Join(rendered, sep)
+		return marker + strings.Join(rendered, bg.Render(" "))
 	}
 	return marker + strings.Join(rendered, " ")
+}
+
+// renderSimpleRow renders a widget-section row (git, ssh, docker) with the
+// shared cursor marker and a vim-like full-line highlight when selected. Cells
+// are raw text with a foreground style and are concatenated directly (no
+// separator is inserted), so any spacing or column padding must live in the
+// cell text or its style; cell content is otherwise preserved exactly.
+func renderSimpleRow(cells []col, selected, focused bool) string {
+	bg := cursorStyle(focused)
+	rendered := make([]string, len(cells))
+	for i, c := range cells {
+		st := c.style
+		if selected {
+			st = st.Inherit(bg)
+		}
+		rendered[i] = st.Render(c.text)
+	}
+	return rowMarker(selected, focused) + strings.Join(rendered, "")
 }
 
 // renderOpenRow renders a Tab 1 (Open) session row with columns:
@@ -106,6 +144,12 @@ func renderRow(marker string, cols []col, selected bool) string {
 // Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att,
 // <50 drop windows.
 func renderOpenRow(width int, selected, current bool, name string, attached, windows int, dir, branch, status string, created *time.Time, alerts []string) string {
+	return renderOpenRowFocused(width, selected, current, true, name, attached, windows, dir, branch, status, created, alerts)
+}
+
+// renderOpenRowFocused is renderOpenRow with an explicit focused flag, so
+// unfocused panes render a dimmed selection highlight.
+func renderOpenRowFocused(width int, selected, current, focused bool, name string, attached, windows int, dir, branch, status string, created *time.Time, alerts []string) string {
 	includeWindows := width >= 50
 	includeBranch := width >= 70
 	includeAtt := width >= 70
@@ -180,7 +224,7 @@ func renderOpenRow(width int, selected, current bool, name string, attached, win
 		cols = append(cols, col{text: truncateRight(paren(branch), 16), width: 14, style: branchStyle(), align: lipgloss.Left})
 	}
 	if includeStatus {
-		cols = append(cols, col{text: truncateRightANSI(status, 12), width: 10})
+		cols = append(cols, col{text: truncateRightANSI(status, 12), width: 12})
 	}
 	if includeAge {
 		cols = append(cols, col{text: formatAge(created), width: 5, style: dimmedStyle(), align: lipgloss.Left})
@@ -193,7 +237,7 @@ func renderOpenRow(width int, selected, current bool, name string, attached, win
 		cols = append(cols, col{text: alertText, width: 2})
 	}
 
-	return renderRow(rowMarker(selected), cols, selected)
+	return renderRow(rowMarker(selected, focused), cols, selected, focused)
 }
 
 // formatAge renders a compact relative age ("2h"/"3d"/"4mo") for a session
@@ -226,6 +270,12 @@ func formatAge(created *time.Time) string {
 // marker(2) | cmd(2) | name(24) | state(2) | path(fill) | branch(16) |
 // status(12). The cmd column ("*") and branch drop together below 70 cols.
 func renderConfiguredRow(width int, selected bool, name, startupCommand string, running bool, path, branch, status string) string {
+	return renderConfiguredRowFocused(width, selected, true, name, startupCommand, running, path, branch, status)
+}
+
+// renderConfiguredRowFocused is renderConfiguredRow with an explicit focused
+// flag, so unfocused panes render a dimmed selection highlight.
+func renderConfiguredRowFocused(width int, selected, focused bool, name, startupCommand string, running bool, path, branch, status string) string {
 	includeBranch := width >= 70
 
 	stateText := "○"
@@ -266,7 +316,7 @@ func renderConfiguredRow(width int, selected bool, name, startupCommand string, 
 	}
 	cols = append(cols, col{text: truncateRightANSI(status, 12), width: 12})
 
-	return renderRow(rowMarker(selected), cols, selected)
+	return renderRow(rowMarker(selected, focused), cols, selected, focused)
 }
 
 // collapseHome replaces the home directory prefix of path with "~".

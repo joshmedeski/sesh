@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -33,6 +34,9 @@ type wmGit struct {
 	HasUnstaged        bool `json:"has_unstaged"`
 	HasUnmergedCommits bool `json:"has_unmerged_commits"`
 }
+
+// Trigger msg
+type workmuxPollMsg struct{}
 
 // workmuxLoadedMsg carries the result of a `workmux status` call. errMsg is
 // non-empty when the command failed or the JSON could not be parsed.
@@ -101,6 +105,11 @@ func (s *WorkmuxSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		s.errorMsg = msg.errMsg
 		s.agents = msg.agents
 		s.clampCursor()
+		return s, tea.Tick(time.Second, func(t time.Time) tea.Msg {
+			return workmuxPollMsg{}
+		})
+	case workmuxPollMsg:
+		return s, s.fetch()
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "j", "down":
@@ -216,7 +225,7 @@ func (s *WorkmuxSection) ViewBorderless(width, height int, focused bool) (string
 
 	var b strings.Builder
 	for i := s.offset; i < end; i++ {
-		b.WriteString(renderWorkmuxRow(width, i == s.cursor, s.agents[i]))
+		b.WriteString(renderWorkmuxRowFocused(width, i == s.cursor, focused, s.agents[i]))
 		b.WriteString("\n")
 	}
 
@@ -230,6 +239,12 @@ func (s *WorkmuxSection) ViewBorderless(width, height int, focused bool) (string
 // absorb the width. Only below 27 cols do branch+elapsed drop, leaving
 // state+kind.
 func renderWorkmuxRow(width int, selected bool, a wmAgent) string {
+	return renderWorkmuxRowFocused(width, selected, true, a)
+}
+
+// renderWorkmuxRowFocused is renderWorkmuxRow with an explicit focused flag,
+// so unfocused panes render a dimmed selection highlight.
+func renderWorkmuxRowFocused(width int, selected, focused bool, a wmAgent) string {
 	const (
 		stateW, kindW, branchW, elapsedW = 2, 10, 15, 5
 		minTitleW                        = 16
@@ -262,7 +277,7 @@ func renderWorkmuxRow(width int, selected bool, a wmAgent) string {
 		// if title != "" {
 		// 	cols = append(cols, col{text: truncateRight(title, titleW), width: titleW, style: dimmedStyle()})
 		// }
-		return renderRow(rowMarker(selected), cols, selected)
+		return renderRow(rowMarker(selected, focused), cols, selected, focused)
 	}
 
 	// Too narrow for branch+elapsed: state+kind only (2 cols, 1 sep).
@@ -271,7 +286,7 @@ func renderWorkmuxRow(width int, selected bool, a wmAgent) string {
 		{text: wmStateGlyph(a.Status), width: stateW},
 		{text: truncateRight(a.AgentKind, 24), width: kind, style: textStyle()},
 	}
-	return renderRow(rowMarker(selected), cols, selected)
+	return renderRow(rowMarker(selected, focused), cols, selected, focused)
 }
 
 // wmStateGlyph returns the styled state glyph for an agent status:
