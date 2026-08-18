@@ -284,6 +284,44 @@ func TestPaneNavigationNoopOnConfiguredPage(t *testing.T) {
 	assert.Equal(t, 0, m.focus)
 }
 
+func TestJumpFocus(t *testing.T) {
+	// Row 1 = [sessions], row 2 = [a, b, c] (no details widget).
+	// Flat: [sessions(0), a(1), b(2), c(3)].
+	m := testModel(
+		&stubSection{name: "a"},
+		&stubSection{name: "b"},
+		&stubSection{name: "c"},
+	)
+
+	m = updateModel(m, pressKey("2"))
+	assert.Equal(t, 1, m.focus)
+
+	m = updateModel(m, pressKey("4"))
+	assert.Equal(t, 3, m.focus)
+
+	m = updateModel(m, pressKey("5")) // out of range → no-op
+	assert.Equal(t, 3, m.focus)
+
+	m = updateModel(m, pressKey("1"))
+	assert.Equal(t, 0, m.focus) // sessions
+
+	// Configured page: digits are a no-op.
+	m = updateModel(m, pressKey("tab"))
+	assert.Equal(t, pageConfigured, m.page)
+	m = updateModel(m, pressKey("2"))
+	assert.Equal(t, pageConfigured, m.page)
+	assert.Equal(t, 0, m.focus)
+}
+
+func TestRenderRowNumbersPanes(t *testing.T) {
+	m := testModel(&stubSection{name: "a"}, &stubSection{name: "b"})
+	v := m.View()
+	// Flat numbering: sessions(1), a(2), b(3).
+	assert.Contains(t, v.Content, "1 Sessions")
+	assert.Contains(t, v.Content, "2 a")
+	assert.Contains(t, v.Content, "3 b")
+}
+
 // decodeKey decodes a single raw C0 control byte the way bubbletea's terminal
 // reader does (via ultraviolet's EventDecoder) and returns the resulting
 // tea.KeyPressMsg. This exercises the real decode path rather than hand-built
@@ -450,6 +488,38 @@ func TestConfiguredNavigationAndSelect(t *testing.T) {
 	assert.Equal(t, "b", m.Chosen())
 }
 
+func TestConfiguredFiltering(t *testing.T) {
+	m := testModel()
+	m.configured = &ConfiguredSection{
+		sessions: []model.SeshSession{{Name: "alpha"}, {Name: "beta"}},
+		running:  map[string]bool{},
+	}
+	m.page = pageConfigured
+
+	// "/" activates type-to-filter on the configured page.
+	m = updateModel(m, pressKey("/"))
+	assert.True(t, m.configured.Filtering())
+	assert.True(t, m.focusedPaneFiltering()) // model routes keys to the pane
+
+	// Printable keys append to the query while filtering.
+	m = updateModel(m, pressKey("a"))
+	assert.Equal(t, "a", m.configured.FilterQuery())
+
+	// Digits are query text while filtering, not pane-jump keys.
+	m = updateModel(m, pressKey("2"))
+	assert.Equal(t, "a2", m.configured.FilterQuery())
+	assert.Equal(t, 0, m.focus)
+
+	// Backspace deletes the last rune.
+	m = updateModel(m, pressKey("backspace"))
+	assert.Equal(t, "a", m.configured.FilterQuery())
+
+	// enter exits filtering and clears the query.
+	m = updateModel(m, pressKey("enter"))
+	assert.False(t, m.configured.Filtering())
+	assert.Equal(t, "", m.configured.FilterQuery())
+}
+
 func TestSyncHoveredSessionSkippedOnConfiguredPage(t *testing.T) {
 	ds := NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{})
 	m := testModel(ds)
@@ -583,7 +653,7 @@ func TestRenderHeaderSmallDropsCount(t *testing.T) {
 func TestRenderFooterPage0(t *testing.T) {
 	f := renderFooter(0, 120, "name", false, "")
 	assert.Contains(t, f, "ctrl+d")
-	assert.Contains(t, f, "ctrl+h/j/k/l")
+	assert.Contains(t, f, "1-9")
 	assert.Contains(t, f, "panes")
 	assert.Contains(t, f, "sort:name")
 	assert.NotContains(t, f, "widgets")
@@ -593,13 +663,14 @@ func TestRenderFooterPage0DropsLabelsWhenOverflow(t *testing.T) {
 	// The labeled tab-1 footer (after dropping the `t group` bind) is 94 cols,
 	// so at 90 cols labels are dropped (keys only) rather than wrapping.
 	f := renderFooter(0, 90, "name", false, "")
-	assert.Contains(t, f, "ctrl+h/j/k/l")
+	assert.Contains(t, f, "1-9")
 	assert.NotContains(t, f, "panes")
 }
 
 func TestRenderFooterPage1(t *testing.T) {
 	f := renderFooter(1, 100, "name", false, "")
 	assert.NotContains(t, f, "ctrl+d")
+	assert.Contains(t, f, "filter")
 	assert.Contains(t, f, "refresh")
 }
 

@@ -294,9 +294,9 @@ func renderWorkmuxRowFocused(width int, selected, focused bool, a wmAgent) strin
 func wmStateGlyph(status string) string {
 	switch status {
 	case "working":
-		return lipgloss.NewStyle().Render("🟠")
+		return lipgloss.NewStyle().Render("🤖")
 	case "waiting":
-		return lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(6)).Render("⏸️")
+		return lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(6)).Render("💬")
 	case "done":
 		return lipgloss.NewStyle().Render("✅")
 	default:
