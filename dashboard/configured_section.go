@@ -177,16 +177,18 @@ func (s *ConfiguredSection) handleKey(msg tea.KeyPressMsg) (Section, tea.Cmd) {
 // handleFilterKey consumes keys while type-to-filter is active (mirrors
 // SessionsSection).
 func (s *ConfiguredSection) handleFilterKey(msg tea.KeyPressMsg) {
-	switch msg.String() {
-	case "esc", "enter":
-		s.filtering = false
-		s.filterQuery = ""
-		s.applyFilter()
-	case "backspace", "ctrl+h":
+	if isBackspaceKey(msg) {
 		if s.filterQuery != "" {
 			r := []rune(s.filterQuery)
 			s.filterQuery = string(r[:len(r)-1])
 		}
+		s.applyFilter()
+		return
+	}
+	switch msg.String() {
+	case "esc", "enter":
+		s.filtering = false
+		s.filterQuery = ""
 		s.applyFilter()
 	default:
 		if msg.Text != "" {

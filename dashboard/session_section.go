@@ -156,19 +156,21 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 }
 
 // handleFilterKey consumes keys while type-to-filter is active: printable
-// characters append to the query, backspace (and its ctrl+h alias) delete the
-// last rune, esc/enter exit and clear the filter.
+// characters append to the query, backspace (and its ctrl+h / ctrl+backspace
+// aliases) delete the last rune, esc/enter exit and clear the filter.
 func (s *SessionsSection) handleFilterKey(msg tea.KeyPressMsg) (*SessionsSection, tea.Cmd) {
-	switch msg.String() {
-	case "esc", "enter":
-		s.filtering = false
-		s.filterQuery = ""
-		s.applyFilter()
-	case "backspace", "ctrl+h":
+	if isBackspaceKey(msg) {
 		if s.filterQuery != "" {
 			r := []rune(s.filterQuery)
 			s.filterQuery = string(r[:len(r)-1])
 		}
+		s.applyFilter()
+		return s, nil
+	}
+	switch msg.String() {
+	case "esc", "enter":
+		s.filtering = false
+		s.filterQuery = ""
 		s.applyFilter()
 	default:
 		if msg.Text != "" {
