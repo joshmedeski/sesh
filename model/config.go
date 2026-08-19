@@ -46,6 +46,7 @@ type (
 		WildcardConfigs         []WildcardConfig     `toml:"wildcard"`
 		WorktreeConfigs         []WorktreeConfig     `toml:"worktree"`
 		DirLength               int                  `toml:"dir_length"`
+		NameSubstitutions       []NameSubstitution   `toml:"name_substitution"`
 		GitNamerUseWorktreeRoot bool                 `toml:"git_namer_use_worktree_root"`
 		GitDirLength            int                  `toml:"git_dir_length"`
 		SeparatorAware          bool                 `toml:"separator_aware"`
@@ -75,6 +76,27 @@ type (
 		// AddCommand records a path to bump its frecency after connecting.
 		// The `{}` placeholder is replaced with the path.
 		AddCommand string `toml:"add_command"`
+	}
+
+	// NameSubstitution rewrites the path a session name is derived from before
+	// it becomes a tmux session name, so a deeply nested directory can be shown
+	// under a short, meaningful name (e.g. "~/c/dotfiles/.config/nvim" as
+	// "nvim"). Rules run against the home-collapsed path (a leading "~") for
+	// every path-derived source — zoxide, directories, and wildcards — but not
+	// against existing tmux sessions, which already have a name. When no rule
+	// matches, naming falls back to the usual git/directory strategies, so an
+	// empty or absent [[name_substitution]] list leaves behavior unchanged.
+	NameSubstitution struct {
+		// Find is the text to look for. By default it is matched literally; set
+		// Regex to treat it as a regular expression instead.
+		Find string `toml:"find"`
+		// Replace is the text Find is replaced with. When Regex is set it may
+		// reference capture groups with $1, $2, and so on.
+		Replace string `toml:"replace"`
+		// Regex interprets Find as a Go regular expression (regexp/syntax)
+		// rather than a literal string. Off by default so a path containing
+		// regex metacharacters such as "." is matched as written.
+		Regex bool `toml:"regex"`
 	}
 
 	DefaultSessionConfig struct {

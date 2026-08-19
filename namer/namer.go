@@ -39,6 +39,7 @@ func (n *RealNamer) Name(path string) (string, error) {
 	}
 
 	strategies := []func(*RealNamer, string) (string, error){
+		nameSubstitution,
 		gitName,
 		dirName,
 	}
@@ -62,6 +63,7 @@ func (n *RealNamer) RootName(path string) (string, error) {
 	}
 
 	strategies := []func(*RealNamer, string) (string, error){
+		nameSubstitution,
 		gitRootName,
 		dirName,
 	}

@@ -416,3 +416,60 @@ func TestGetConfig_XDGConfigHomeNotSet(t *testing.T) {
 	assert.Len(t, config.SessionConfigs, 1)
 	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
 }
+
+func TestValidateNameSubstitutions(t *testing.T) {
+	tests := []struct {
+		name    string
+		rules   []model.NameSubstitution
+		wantErr string
+	}{
+		{
+			name:  "no rules is valid",
+			rules: nil,
+		},
+		{
+			name: "literal rule is valid",
+			rules: []model.NameSubstitution{
+				{Find: "~/c/dotfiles/.config/", Replace: ""},
+			},
+		},
+		{
+			name: "valid regex rule",
+			rules: []model.NameSubstitution{
+				{Find: `.*/workspace/(.*)`, Replace: "ws-$1", Regex: true},
+			},
+		},
+		{
+			name: "empty find is rejected",
+			rules: []model.NameSubstitution{
+				{Find: "", Replace: "x"},
+			},
+			wantErr: "name_substitution rule 1 has an empty find",
+		},
+		{
+			name: "invalid regex is rejected",
+			rules: []model.NameSubstitution{
+				{Find: `(unterminated`, Replace: "x", Regex: true},
+			},
+			wantErr: "invalid name_substitution regex",
+		},
+		{
+			name: "an invalid find that is not a regex is allowed as a literal",
+			rules: []model.NameSubstitution{
+				{Find: `(unterminated`, Replace: "x"},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateNameSubstitutions(&model.Config{NameSubstitutions: test.rules})
+			if test.wantErr == "" {
+				assert.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), test.wantErr)
+		})
+	}
+}
