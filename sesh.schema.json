@@ -42,6 +42,32 @@
       "minimum": 1,
       "default": 1
     },
+    "name_substitution": {
+      "type": "array",
+      "description": "Rewrite the path a session name is derived from before it becomes a tmux session name. Rules run against the home-collapsed path for every path-derived source (zoxide, directories, wildcards) but not existing tmux sessions. When no rule matches, naming falls back to the usual git/directory strategies.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "find": {
+            "type": "string",
+            "description": "Text to look for. Matched literally unless regex is true."
+          },
+          "replace": {
+            "type": "string",
+            "description": "Text that find is replaced with. With regex enabled it may reference capture groups as $1, $2, and so on."
+          },
+          "regex": {
+            "type": "boolean",
+            "description": "Treat find as a Go regular expression instead of a literal string.",
+            "default": false
+          }
+        },
+        "required": [
+          "find"
+        ],
+        "additionalProperties": false
+      }
+    },
     "git_namer_use_worktree_root": {
       "type": "boolean",
       "description": "Derive git session names from the current worktree's top-level directory instead of the main repo root. Useful when worktrees are added as siblings of the main clone (e.g. `git worktree add ../feat`).",
