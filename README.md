@@ -645,6 +645,41 @@ dir_length = 2  # Uses last 2 directories: "projects/sesh" instead of just "sesh
 > [!NOTE]
 > Works great with [tmux-floax](https://github.com/omerxx/tmux-floax)
 
+### Session Name Substitution
+
+Some directories produce long, repetitive session names -- everything under
+`~/c/dotfiles/.config` shows up with that whole prefix. `name_substitution`
+rules rewrite the path a name is derived from so you can shorten or relabel it.
+
+```toml
+[[name_substitution]]
+find = "~/c/dotfiles/.config/"
+replace = ""
+```
+
+With that rule, connecting to `~/c/dotfiles/.config/nvim` creates a session
+named `nvim` instead of the full path. Rules are matched against the
+home-collapsed path (a leading `~`) for every path-derived source -- zoxide,
+directories, and wildcards. Existing tmux sessions keep their names, and if no
+rule matches, naming falls back to the usual git and directory strategies, so
+adding rules never changes how anything else is named.
+
+Rules apply in order, each one seeing the result of the previous, so they can
+compose. `find` is matched literally by default; set `regex = true` to treat it
+as a [Go regular expression](https://pkg.go.dev/regexp/syntax), which lets
+`replace` reference capture groups with `$1`, `$2`, and so on:
+
+```toml
+[[name_substitution]]
+find = ".*/workspace/[0-9]+_(.*)"
+replace = "ws-$1"
+regex = true
+```
+
+> [!NOTE]
+> tmux session names can't contain `.` or `:`, and spaces are turned into `_`,
+> so those characters in `replace` are normalized in the final name.
+
 ### Sorting
 
 If you'd like to change the order of the sessions shown, you can configure `sort_order` in your `sesh.toml` file
