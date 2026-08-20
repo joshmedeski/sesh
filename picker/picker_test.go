@@ -440,6 +440,35 @@ func TestHighlightMatches_WithIndexes(t *testing.T) {
 	assert.NotEmpty(t, result)
 }
 
+func TestHighlightMatches_CoalescesRuns(t *testing.T) {
+	match := lipgloss.NewStyle().Bold(true)
+	normal := lipgloss.NewStyle()
+
+	// Consecutive matched (and unmatched) runes must be rendered as a single
+	// styled run, not one per rune.
+	result := highlightMatches("hello", []int{0, 1, 3}, match, normal)
+	expected := match.Render("he") + normal.Render("l") + match.Render("l") + normal.Render("o")
+	assert.Equal(t, expected, result)
+}
+
+func TestHighlightMatches_MultiByte(t *testing.T) {
+	match := lipgloss.NewStyle().Bold(true)
+	normal := lipgloss.NewStyle()
+
+	// Indexes are rune offsets, so multi-byte names must highlight by rune.
+	result := highlightMatches("héllo", []int{1, 2}, match, normal)
+	expected := normal.Render("h") + match.Render("él") + normal.Render("lo")
+	assert.Equal(t, expected, result)
+}
+
+func TestHighlightMatches_OutOfRangeIndexes(t *testing.T) {
+	match := lipgloss.NewStyle().Bold(true)
+	normal := lipgloss.NewStyle()
+
+	result := highlightMatches("hi", []int{-1, 0, 9}, match, normal)
+	assert.Equal(t, match.Render("h")+normal.Render("i"), result)
+}
+
 func TestScrolling(t *testing.T) {
 	m := newTestModel()
 	// Short enough that the five test sessions can't all fit at once, which is
