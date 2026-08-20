@@ -56,7 +56,7 @@ go test -cover -race ./namer/...             # Test specific package
 Mocks are configured in `.mockery.yaml` and placed alongside interfaces:
 ```bash
 just mock
-# Or: GOFLAGS="-buildvcs=false" mockery
+# Or: GOFLAGS="-buildvcs=false" go tool mockery
 ```
 
 ## Configuration
