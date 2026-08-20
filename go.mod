@@ -1,6 +1,6 @@
 module github.com/joshmedeski/sesh/v2
 
-go 1.25.5
+go 1.26.0
 
 require (
 	charm.land/bubbles/v2 v2.1.1
@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/brunoga/deep v1.3.1 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
@@ -61,17 +62,19 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
-	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/exp v0.0.0-20260812173653-3d80eb74bc5b // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/perf v0.0.0-20260819171926-ebcb4798430d // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.40.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
-	golang.org/x/tools v0.42.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 tool (
 	github.com/jstemmer/go-junit-report/v2
 	github.com/vektra/mockery/v3
+	golang.org/x/perf/cmd/benchstat
 )

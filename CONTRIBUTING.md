@@ -35,6 +35,7 @@ Sesh has a specific vision: **stay simple, do one thing well**. We aim to be a f
 ```sh
 just mock   # Generate mocks (required before testing if interfaces changed)
 just test   # Run tests with coverage
+just bench  # Run benchmarks (lister and picker)
 just build  # Build to $GOPATH/bin/sesh
 ```
 
@@ -53,6 +54,83 @@ just build  # Build to $GOPATH/bin/sesh
    ```sh
    just test
    ```
+
+## Benchmarks
+
+The `lister` and `picker` packages carry benchmarks over the paths whose cost
+scales with your data rather than with a constant: listing and deduping N
+sessions, and filtering them on every keystroke. Run them with:
+
+```sh
+just bench                                      # everything
+go test -run='^$' -bench=FilterSessions -benchmem ./picker/   # one of them
+```
+
+Benchmarks never run under `-race` — the race detector's overhead is most of
+what you would be measuring. `just test` and CI's test job leave `-bench` off
+for that reason; a separate CI job runs the benchmarks on a single Linux runner
+and posts a [benchstat](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat)
+comparison against the PR's merge base in the job summary.
+
+When adding a benchmark:
+
+- Run it at N = 10, 100, and 1000 sessions (`benchSizes`), reusing the
+  package's `benchSessions` fixture rather than a new one.
+- Call `b.ReportAllocs()`. On a shared CI runner, allocations per operation are
+  the stable signal; a feature that starts copying the whole list per keystroke
+  shows up there first and in the timings later.
+- Cover the worst case, not the convenient one. For the picker that is a
+  one-character query, which matches nearly everything.
+
+### Regression thresholds
+
+The benchmark job is **informational** — it does not fail a PR yet. We are
+watching the run-to-run variance on GitHub's runners before turning a gate on,
+because a benchmark gate that cries wolf gets disabled within a month.
+
+When the job does start blocking, these are the thresholds:
+
+| Metric | Threshold | Why |
+| --- | --- | --- |
+| time/op | more than 25% slower | Generous: shared runners are noisy |
+| allocs/op | more than 10% more | Tight: allocation counts are near-deterministic |
+
+Until then, if the benchstat table in your PR shows a regression past those
+numbers, treat it as a review comment on your own change: explain it in the PR
+or fix it.
+
+### History dashboard
+
+benchstat only ever compares two commits, so it can tell you *whether* a PR
+regressed something but never *when* something got slow. Every push to `main`
+therefore appends a point to a chart published by
+[github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark)
+at `https://joshmedeski.github.io/sesh/dev/bench`. If a benchmark comes in more
+than 25% slower than the previous point, the action leaves a comment on the
+offending commit — it never fails the build, since by then the code is already
+on `main`.
+
+The chart takes one sample per benchmark per commit: CI runs `-count=6` for
+benchstat's sake, and `.github/scripts/bench-median.py` collapses those to the
+median before the data is stored.
+
+The dashboard needs one-time setup from a maintainer, since the action pushes to
+`gh-pages` but will not create it. The branch already exists; this is the
+recipe, and the empty commit matters — `--orphan` alone leaves an unborn branch
+with nothing to push, and it stages the whole tree, so skipping the `git rm`
+would commit the entire repo onto `gh-pages`:
+
+```sh
+git checkout --orphan gh-pages
+git rm -r --cached .                 # unstage; leaves your files on disk
+git commit --allow-empty -m "Initialize gh-pages"
+git push origin gh-pages
+git checkout -f main                 # the files above are untracked now
+```
+
+GitHub Pages also has to be enabled for the repository, serving from the
+`gh-pages` branch. Until it is, the `Benchmark history` job fails on push to
+`main`; the benchstat job on pull requests is unaffected.
 
 ## Code Guidelines
 
