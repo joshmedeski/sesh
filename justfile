@@ -1,6 +1,6 @@
 # Generate mocks
 mock:
-    GOFLAGS="-buildvcs=false" mockery
+    GOFLAGS="-buildvcs=false" go tool mockery
 
 # Run tests with coverage
 test: mock
