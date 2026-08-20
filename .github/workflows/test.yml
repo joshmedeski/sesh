@@ -66,7 +66,9 @@ jobs:
   bench:
     name: Benchmarks 📊
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # A real -benchtime costs real time, and a pull request runs the suite
+    # twice: once for head and once for the merge base.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -76,9 +78,17 @@ jobs:
           go-version: "1.26"
       - name: Create mocks
         run: go tool mockery
+      # -benchtime is a duration, not an iteration count: `-benchtime=100x`
+      # pins every benchmark to 100 iterations, which for a nanosecond-scale
+      # one is microseconds of total work. That never reaches steady state, so
+      # it measures warmup and scheduler jitter instead of the code. Measured
+      # over 10 runs on an idle machine, 100x put RankMatches/n=10 at +-125%
+      # and BlacklistFilter/n=10 at +-70%, and read 2.9x high in absolute
+      # terms; 100ms holds both to +-1%. A threshold can only be as tight as
+      # the measurement under it.
       - name: Run benchmarks
         run: |
-          go test -run='^$' -bench=. -benchmem -benchtime=100x -count=6 \
+          go test -run='^$' -bench=. -benchmem -benchtime=100ms -count=6 \
             ./lister/... ./picker/... | tee head.txt
       - name: Run benchmarks on the merge base
         if: github.event_name == 'pull_request'
@@ -86,7 +96,7 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           git checkout --detach --quiet ${{ github.event.pull_request.base.sha }}
           go tool mockery
-          go test -run='^$' -bench=. -benchmem -benchtime=100x -count=6 \
+          go test -run='^$' -bench=. -benchmem -benchtime=100ms -count=6 \
             ./lister/... ./picker/... | tee base.txt
           git checkout --detach --quiet "$head_sha"
           go tool mockery
@@ -162,6 +172,18 @@ jobs:
           # a notification, not a gate.
           alert-threshold: "125%"
           fail-on-alert: false
-          comment-on-alert: true
+          # Alerts land in the job summary only. This action compares one point
+          # against the single previous point with a fixed ratio and no model
+          # of variance, which misfires two ways: it flags runner noise as a
+          # regression, and it ratchets, because one lucky-fast commit becomes
+          # the baseline that makes the next ordinary commit look slow. It
+          # alerted on all three commits it saw before this change, including
+          # one that touched only this YAML file.
+          #
+          # The comparison worth acting on is the benchstat table in the PR
+          # job, which has several samples and reports significance. This chart
+          # answers the question benchstat cannot -- "when did this get slow" --
+          # and wants a trend line for that, not a per-commit verdict.
+          comment-on-alert: false
           summary-always: true
           max-items-in-chart: 100

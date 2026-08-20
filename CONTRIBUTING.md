@@ -85,7 +85,7 @@ When adding a benchmark:
 ### Regression thresholds
 
 The benchmark job is **informational** — it does not fail a PR yet. We are
-watching the run-to-run variance on GitHub's runners before turning a gate on,
+measuring the run-to-run variance on GitHub's runners before turning a gate on,
 because a benchmark gate that cries wolf gets disabled within a month.
 
 When the job does start blocking, these are the thresholds:
@@ -99,6 +99,28 @@ Until then, if the benchstat table in your PR shows a regression past those
 numbers, treat it as a review comment on your own change: explain it in the PR
 or fix it.
 
+Trust `allocs/op` over `time/op` when the two disagree. A timing change with an
+unchanged allocation count, in a package the branch never touched, is noise
+until something explains it; that pattern accounted for every alert the history
+dashboard raised in its first three commits.
+
+Before tightening either threshold, measure what the runner can actually
+resolve. The **Benchmark calibration** workflow
+(`.github/workflows/bench-calibrate.yml`) runs the suite twice on the same
+commit and benchstats the two halves, so every delta it reports is noise by
+construction — a threshold tighter than its widest row cannot tell a regression
+from a re-run. Start it by pushing a `bench-calibrate/**` branch, or from the
+Actions tab.
+
+One lesson from setting these numbers, worth keeping in mind when adding a
+`-benchtime`: it takes a duration, and `-benchtime=100x` instead pins each
+benchmark to 100 iterations. On a nanosecond-scale benchmark that is
+microseconds of total work, too short to reach steady state, and it reports
+warmup rather than the code — spreads of ±70% to ±125% and absolute numbers
+almost 3x high, even on an idle machine. `-benchtime=100ms` holds the same
+benchmarks to ±1%. No threshold is meaningful under a measurement looser than
+the threshold itself.
+
 ### History dashboard
 
 benchstat only ever compares two commits, so it can tell you *whether* a PR
@@ -106,9 +128,17 @@ regressed something but never *when* something got slow. Every push to `main`
 therefore appends a point to a chart published by
 [github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark)
 at `https://joshmedeski.github.io/sesh/dev/bench`. If a benchmark comes in more
-than 25% slower than the previous point, the action leaves a comment on the
-offending commit — it never fails the build, since by then the code is already
-on `main`.
+than 25% slower than the previous point, the action says so in the job summary —
+it never fails the build, since by then the code is already on `main`.
+
+Read that alert as "look at the chart", not as a verdict. It compares a single
+point against the single point before it with a fixed ratio and no model of
+variance, so it flags runner noise, and it ratchets: one lucky-fast commit
+becomes the baseline that makes the next ordinary commit look like a
+regression. It used to comment on the commit it flagged, which put three
+permanent regression notices on `main` — one of them on a commit that changed
+nothing but a CI YAML file. Use the chart for the trend and the PR's benchstat
+table, which reports significance, for the verdict.
 
 The chart takes one sample per benchmark per commit: CI runs `-count=6` for
 benchstat's sake, and `.github/scripts/bench-median.py` collapses those to the
