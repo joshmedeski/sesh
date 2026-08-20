@@ -1162,20 +1162,31 @@ func highlightMatches(s string, indexes []int, matchStyle, normalStyle lipgloss.
 		return normalStyle.Render(s)
 	}
 
-	matchSet := make(map[int]bool, len(indexes))
+	runes := []rune(s)
+	matchSet := make([]bool, len(runes))
 	for _, idx := range indexes {
-		matchSet[idx] = true
+		if idx >= 0 && idx < len(runes) {
+			matchSet[idx] = true
+		}
 	}
 
+	// Render one lipgloss call per run of same-styled runes rather than per
+	// rune: styling is by far the most expensive part of a keystroke, and a
+	// query usually produces only a handful of runs per name.
 	var result strings.Builder
-	runes := []rune(s)
-	for i, r := range runes {
-		ch := string(r)
-		if matchSet[i] {
-			result.WriteString(matchStyle.Render(ch))
-		} else {
-			result.WriteString(normalStyle.Render(ch))
+	for start := 0; start < len(runes); {
+		matched := matchSet[start]
+		end := start + 1
+		for end < len(runes) && matchSet[end] == matched {
+			end++
 		}
+		run := string(runes[start:end])
+		if matched {
+			result.WriteString(matchStyle.Render(run))
+		} else {
+			result.WriteString(normalStyle.Render(run))
+		}
+		start = end
 	}
 	return result.String()
 }
