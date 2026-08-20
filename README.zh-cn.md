@@ -57,6 +57,18 @@ yay -S sesh-bin
 </details>
 
 <details>
+  <summary>Fedora（Copr）</summary>
+
+可以从 [buckaroogeek/Tmux_sesh](https://copr.fedorainfracloud.org/coprs/buckaroogeek/Tmux_sesh/) Copr 仓库安装 sesh（支持 Fedora 和 EPEL 10）：
+
+```sh
+sudo dnf copr enable buckaroogeek/Tmux_sesh
+sudo dnf install tmux-sesh
+```
+
+</details>
+
+<details>
   <summary>Go</summary>
 
 或者，您可以使用 Go 的 `go install` 命令安装 Sesh：
