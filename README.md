@@ -113,6 +113,18 @@ yay -S sesh-bin
 </details>
 
 <details>
+  <summary>Fedora (Copr)</summary>
+
+Sesh is available from the [buckaroogeek/Tmux_sesh](https://copr.fedorainfracloud.org/coprs/buckaroogeek/Tmux_sesh/) Copr repository (Fedora and EPEL 10):
+
+```sh
+sudo dnf copr enable buckaroogeek/Tmux_sesh
+sudo dnf install tmux-sesh
+```
+
+</details>
+
+<details>
   <summary>Go</summary>
 
 Alternatively, you can install Sesh using Go's go install command:
