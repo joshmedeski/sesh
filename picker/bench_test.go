@@ -263,15 +263,16 @@ func benchHome(b *testing.B) home.Home {
 }
 
 // benchWildcardCount is how many [[wildcard]] blocks the wildcard icon
-// benchmark declares. A config with this many patterns is unremarkable, and
-// FindConfigWildcard expands every one of them per session it is asked about.
+// benchmark declares. A config with this many patterns is unremarkable, and the
+// benchmark guards that the cost per session stays independent of it.
 const benchWildcardCount = 8
 
-// BenchmarkIconResolverWildcard sizes the O(N x W) path expansion behind the
-// resolver's wildcard fallback: one home.ExpandPath for the session plus one
-// per wildcard pattern, with no memoization, for every session on screen.
+// BenchmarkIconResolverWildcard sizes the path expansion behind the resolver's
+// wildcard fallback: one home.ExpandPath per session, plus a scan of the
+// patterns the lister expanded once when it was first asked. Allocations per
+// session should not scale with the number of patterns.
 //
-// "miss" is the worst case (no pattern matches, so all W are expanded);
+// "miss" is the worst case (no pattern matches, so all W are scanned);
 // "hit-last" is what a config whose catch-all sits at the bottom pays.
 func BenchmarkIconResolverWildcard(b *testing.B) {
 	cases := []struct {
