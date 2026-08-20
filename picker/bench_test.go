@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/sahilm/fuzzy"
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
@@ -170,6 +171,40 @@ func BenchmarkFilterSessions(b *testing.B) {
 					}
 				})
 			}
+		}
+	}
+}
+
+// BenchmarkRankMatches isolates the ranking half of a filter pass: a parallel
+// slice the size of the match set plus a stable sort. BenchmarkFilterSessions
+// already covers it in situ, but only in aggregate — this is what says whether a
+// regression there came from matching or from ranking.
+//
+// The match set is built once and copied into a scratch slice per iteration,
+// because rankMatches sorts in place. Handing it the same slice repeatedly would
+// mean every pass after the first sorted an already-sorted input, which is the
+// one case sort.SliceStable is fastest at and the one that never happens in
+// practice. The copy is a memmove over the same slice the function is about to
+// sort, so it is small next to the sort it protects.
+func BenchmarkRankMatches(b *testing.B) {
+	// Only queries that reach the ranking path: filterSessions short-circuits
+	// an empty query before it ever builds a match set.
+	queries := []string{"a", "app"}
+	for _, n := range benchSizes {
+		m := benchModel(n, nil)
+		for _, query := range queries {
+			base := fuzzy.FindFromNoSort(query, m.allItems)
+			if len(base) == 0 {
+				b.Fatalf("query %q matched nothing at n=%d: the benchmark would measure an empty sort", query, n)
+			}
+			scratch := make(fuzzy.Matches, len(base))
+			b.Run(fmt.Sprintf("n=%d/%s", n, query), func(b *testing.B) {
+				b.ReportAllocs()
+				for b.Loop() {
+					copy(scratch, base)
+					rankMatches(scratch)
+				}
+			})
 		}
 	}
 }
