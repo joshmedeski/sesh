@@ -1,0 +1,91 @@
+# Measures the noise floor of the benchmark runner, so the regression
+# thresholds in CONTRIBUTING.md can be set from data instead of from a guess.
+#
+# The trick is that there is no code change: the suite runs twice on the same
+# commit, in the same job, on the same machine, and benchstat compares the two
+# halves against each other. Every delta it reports is therefore runner noise
+# by construction. A threshold tighter than the widest interval here cannot
+# distinguish a regression from a re-run.
+#
+# Run it by pushing a branch named `bench-calibrate/<something>`, or from the
+# Actions tab once this file is on the default branch. It is not part of the
+# Test workflow: it costs twice the suite for an answer that only changes when
+# the runner image or the benchmark set does.
+name: Benchmark calibration
+
+on:
+  push:
+    branches: ["bench-calibrate/**"]
+  workflow_dispatch:
+    inputs:
+      benchtime:
+        description: "-benchtime for each run (e.g. 100ms, 300ms, 1s)"
+        default: "100ms"
+        type: string
+      count:
+        description: "-count for each of the two runs"
+        default: "6"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  calibrate:
+    name: Noise floor 📐
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BENCHTIME: ${{ inputs.benchtime || '100ms' }}
+      COUNT: ${{ inputs.count || '6' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
+      - name: Create mocks
+        run: go tool mockery
+
+      # Build before timing anything, so the first run is not paying for
+      # compilation that the second one gets for free.
+      - name: Warm the build cache
+        run: go test -run='^$' -bench=. -benchtime=1x ./lister/... ./picker/... > /dev/null
+
+      - name: Run A
+        run: |
+          go test -run='^$' -bench=. -benchmem \
+            -benchtime="$BENCHTIME" -count="$COUNT" \
+            ./lister/... ./picker/... | tee a.txt
+
+      - name: Run B
+        run: |
+          go test -run='^$' -bench=. -benchmem \
+            -benchtime="$BENCHTIME" -count="$COUNT" \
+            ./lister/... ./picker/... | tee b.txt
+
+      # Two identical revisions, so every non-zero delta below is noise. The
+      # geomean row is the headline number; the widest single row is what a
+      # per-benchmark threshold actually has to clear.
+      - name: Compare the two runs
+        run: |
+          go tool benchstat a.txt b.txt > calibration.txt
+          {
+            echo "## Benchmark noise floor"
+            echo
+            echo "Same commit, run twice on one runner at \`-benchtime=$BENCHTIME -count=$COUNT\`."
+            echo "Every difference below is measurement noise, not a code change."
+            echo
+            echo '```'
+            cat calibration.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bench-calibration
+          path: |
+            a.txt
+            b.txt
+            calibration.txt
+          if-no-files-found: warn
