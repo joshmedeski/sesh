@@ -4,7 +4,11 @@ mock:
 
 # Run tests with coverage
 test: mock
-    go test -cover -bench=. -benchmem -race ./... -coverprofile=coverage.out
+    go test -cover -race ./... -coverprofile=coverage.out
+
+# Run benchmarks (no -race: it measures the race detector, not the code)
+bench: mock
+    go test -run='^$' -bench=. -benchmem ./lister/... ./picker/...
 
 # Build sesh binary to GOPATH/bin
 build version="dev":

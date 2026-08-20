@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.25"
+          go-version: "1.26"
       - name: Build all release targets
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.25"
+          go-version: "1.26"
       - name: Create mocks
         run: go tool mockery
       - name: Run tests
@@ -55,3 +55,113 @@ jobs:
           paths: |
             report.xml
         if: always()
+
+  # Benchmarks run on their own, on a single runner and without the race
+  # detector: under -race the numbers measure the race detector, and mixing
+  # runners makes the comparison noise rather than signal.
+  #
+  # Informational for now — the job never fails on a regression. See
+  # CONTRIBUTING.md ("Benchmarks") for the thresholds we intend to enforce
+  # once we know what the runner's noise floor actually is.
+  bench:
+    name: Benchmarks 📊
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
+      - name: Create mocks
+        run: go tool mockery
+      - name: Run benchmarks
+        run: |
+          go test -run='^$' -bench=. -benchmem -benchtime=100x -count=6 \
+            ./lister/... ./picker/... | tee head.txt
+      - name: Run benchmarks on the merge base
+        if: github.event_name == 'pull_request'
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          git checkout --detach --quiet ${{ github.event.pull_request.base.sha }}
+          go tool mockery
+          go test -run='^$' -bench=. -benchmem -benchtime=100x -count=6 \
+            ./lister/... ./picker/... | tee base.txt
+          git checkout --detach --quiet "$head_sha"
+          go tool mockery
+      - name: Compare against the merge base
+        run: |
+          # A base that predates a benchmark has nothing to compare it to, so
+          # fall back to reporting head alone rather than failing the job.
+          if [ -s base.txt ] && grep -q '^Benchmark' base.txt; then
+            go tool benchstat base.txt head.txt > benchstat.txt
+          else
+            go tool benchstat head.txt > benchstat.txt
+          fi
+          {
+            echo '## Benchmarks'
+            echo
+            echo '```'
+            cat benchstat.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: benchmarks
+          path: |
+            head.txt
+            base.txt
+            benchstat.txt
+          if-no-files-found: warn
+
+  # The benchstat comparison above answers "did this PR regress anything"; it
+  # cannot answer "when did this get slow", because it only ever sees two
+  # commits. This job keeps the history: every push to main appends a point to
+  # a chart published at the repo's GitHub Pages site.
+  #
+  # It is a separate job so the `bench` job that runs on pull requests keeps
+  # read-only permissions — a job with `contents: write` should not run on code
+  # from a fork. It reuses `bench`'s artifact rather than re-running the suite.
+  bench-history:
+    name: Benchmark history 📈
+    needs: bench
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # Two pushes to main landing at once would both try to push gh-pages, and
+    # the loser would fail on a non-fast-forward. Serialize instead.
+    concurrency:
+      group: bench-history
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v5
+        with:
+          name: benchmarks
+      - name: Reduce to one sample per benchmark
+        run: |
+          python3 .github/scripts/bench-median.py < head.txt > history.txt
+          cat history.txt
+      - name: Publish to the benchmark dashboard
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: sesh
+          tool: go
+          output-file-path: history.txt
+          # lister and picker both define benchmarks; without the suffix, two
+          # that happen to share a name would land in the same series.
+          go-force-package-suffix: "true"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          # 125% matches the time/op threshold in CONTRIBUTING.md. Nothing
+          # fails: main is already merged by the time this runs, so an alert is
+          # a notification, not a gate.
+          alert-threshold: "125%"
+          fail-on-alert: false
+          comment-on-alert: true
+          summary-always: true
+          max-items-in-chart: 100
