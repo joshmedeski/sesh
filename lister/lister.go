@@ -1,6 +1,8 @@
 package lister
 
 import (
+	"sync"
+
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/tmux"
@@ -27,8 +29,20 @@ type RealLister struct {
 	tmux       tmux.Tmux
 	zoxide     zoxide.Zoxide
 	tmuxinator tmuxinator.Tmuxinator
+
+	// wildcards caches config.WildcardConfigs with their patterns expanded, so
+	// resolving a wildcard for every session in a list expands each pattern
+	// once. See expandedWildcards.
+	wildcardsOnce sync.Once
+	wildcards     []expandedWildcard
 }
 
 func NewLister(config model.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide, tmuxinator tmuxinator.Tmuxinator) Lister {
-	return &RealLister{config, home, tmux, zoxide, tmuxinator}
+	return &RealLister{
+		config:     config,
+		home:       home,
+		tmux:       tmux,
+		zoxide:     zoxide,
+		tmuxinator: tmuxinator,
+	}
 }
