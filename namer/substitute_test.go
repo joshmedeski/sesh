@@ -8,6 +8,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestApplySubstitutions(t *testing.T) {
@@ -95,7 +96,7 @@ func TestNameSubstitutionStrategy(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, "", name)
-		mockHome.AssertNotCalled(t, "ShortenHome")
+		mockHome.AssertNotCalled(t, "ShortenHome", mock.Anything)
 	})
 
 	t.Run("returns the rewritten name when a rule matches", func(t *testing.T) {
@@ -150,5 +151,33 @@ func TestNameUsesSubstitutionBeforeDirStrategy(t *testing.T) {
 	assert.NoError(t, err)
 	// convertToValidName collapses the space, so "cfg nvim" becomes "cfg_nvim".
 	assert.Equal(t, "cfg_nvim", name)
-	mockGit.AssertNotCalled(t, "ShowTopLevel")
+	mockGit.AssertNotCalled(t, "WorktreeList", mock.Anything)
+}
+
+func TestNameFallsThroughWhenSubstitutionCollapses(t *testing.T) {
+	mockPathwrap := new(pathwrap.MockPath)
+	mockGit := new(git.MockGit)
+	mockHome := new(home.MockHome)
+
+	path := "/home/john/c/api"
+	mockPathwrap.On("EvalSymlinks", path).Return(path, nil)
+	mockHome.On("ShortenHome", path).Return("~/c/api", nil)
+	// No git repo, so naming should fall through to the directory strategy.
+	mockGit.On("WorktreeList", path).Return(false, "", nil)
+
+	config := model.Config{
+		DirLength: 1,
+		NameSubstitutions: []model.NameSubstitution{
+			{Find: "~/c/api", Replace: " "},
+		},
+	}
+	n := &RealNamer{pathwrap: mockPathwrap, git: mockGit, home: mockHome, config: config}
+
+	name, err := n.Name(path)
+
+	assert.NoError(t, err)
+	// The whitespace-only replacement collapses to nothing under
+	// convertToValidName, so the substitution strategy must not win and the
+	// directory basename is used instead.
+	assert.Equal(t, "api", name)
 }

@@ -49,8 +49,11 @@ func (n *RealNamer) Name(path string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if name != "" {
-			return convertToValidName(name), nil
+		// A strategy only wins if its output survives normalization. A rule
+		// that rewrites the path to whitespace, for example, collapses to
+		// nothing here and must not be handed to tmux as a session name.
+		if valid := convertToValidName(name); valid != "" {
+			return valid, nil
 		}
 	}
 	return "", fmt.Errorf("could not determine name from path: %s", path)
@@ -73,8 +76,8 @@ func (n *RealNamer) RootName(path string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if name != "" {
-			return convertToValidName(name), nil
+		if valid := convertToValidName(name); valid != "" {
+			return valid, nil
 		}
 	}
 	return "", fmt.Errorf("could not determine root name from path: %s", path)
