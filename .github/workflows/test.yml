@@ -90,15 +90,23 @@ jobs:
         run: |
           go test -run='^$' -bench=. -benchmem -benchtime=100ms -count=6 \
             ./lister/... ./picker/... | tee head.txt
+      # Generated mocks are gitignored, so `git checkout` leaves the previous
+      # revision's copies behind. When a pull request changes a mocked
+      # interface, head's mocks don't compile against the merge base — and
+      # mockery loads every configured package before it writes anything, so
+      # it dies on the stale file instead of overwriting it. Delete them
+      # before each run, in both directions.
       - name: Run benchmarks on the merge base
         if: github.event_name == 'pull_request'
         run: |
           head_sha="$(git rev-parse HEAD)"
           git checkout --detach --quiet ${{ github.event.pull_request.base.sha }}
+          find . -name 'mock_*.go' -delete
           go tool mockery
           go test -run='^$' -bench=. -benchmem -benchtime=100ms -count=6 \
             ./lister/... ./picker/... | tee base.txt
           git checkout --detach --quiet "$head_sha"
+          find . -name 'mock_*.go' -delete
           go tool mockery
       - name: Compare against the merge base
         run: |
