@@ -9,7 +9,7 @@ import (
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
-	ListAllWindowNames() (map[string][]string, error)
+	ListAllWindowNames(format string) (map[string][]string, error)
 	NewSession(sessionName string, startDir string) (string, error)
 	NewWindowInSession(name string, startDir string, targetSession string) (string, error)
 	IsAttached() bool

@@ -116,6 +116,11 @@
           "type": "boolean",
           "description": "Show the window names of each session in the picker TUI (display only, never part of the selected value)"
         },
+        "window_name_format": {
+          "type": "string",
+          "description": "tmux format rendered for each window when show_windows is enabled. tmux interprets the value, including conditionals and #() commands.",
+          "default": "#{window_name}"
+        },
         "prompt": {
           "type": "string",
           "description": "The prompt shown in the picker TUI"

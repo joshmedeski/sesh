@@ -708,6 +708,7 @@ prompt = "> "
 placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
+window_name_format = "#{window_name}"
 alias_auto_connect_delay = "150ms"
 alias_filter_prefix = "/"
 preview = false
@@ -726,6 +727,12 @@ With `show_windows = true`, each row also lists the names of the windows inside 
 ```
 
 Window names are display-only: selecting a row still returns just the session name, and typing a window name does not match its session. The names for live tmux sessions are fetched in a single tmux call, so the option costs the same regardless of how many sessions you have.
+
+`window_name_format` accepts any tmux format. tmux interprets conditionals, fallback variables, and `#()` commands. For example, this format uses the pane title when it exists and uses the window name otherwise:
+
+```toml
+window_name_format = "#{?#{pane_title},#{pane_title},#{window_name}}"
+```
 
 `alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
 
