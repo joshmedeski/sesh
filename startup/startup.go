@@ -68,7 +68,11 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		}
 
 		// create the new window
-		if ret, err := s.tmux.NewWindowInSession(windowConfig.Name, windowConfig.Path, session.Name); err != nil {
+		if ret, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
+			Name:          windowConfig.Name,
+			StartDir:      windowConfig.Path,
+			TargetSession: session.Name,
+		}); err != nil {
 			return ret, err
 		}
 		if ret, err := s.tmux.SendKeys(session.Name, windowConfig.StartupScript); err != nil {

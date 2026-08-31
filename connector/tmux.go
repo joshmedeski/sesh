@@ -29,14 +29,7 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 		}
 	}
 
-	// When invoked from outside tmux (e.g. osascript/browser dispatcher),
-	// `switch-client -t` has no current client to act on. Find the active
-	// client, switch it explicitly, and bring the terminal to the front.
-	if opts.Switch && !c.tmux.IsAttached() {
-		return c.connectDetached(connection.Session.Name)
-	}
-
-	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
+	return c.focusSession(connection.Session.Name, opts.Switch)
 }
 
 func (c *RealConnector) connectDetached(sessionName string) (string, error) {
