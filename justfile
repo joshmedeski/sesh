@@ -1,5 +1,9 @@
 # Generate mocks
+# Stale mocks are cleared first: mockery cannot regenerate a mock for a package
+# that no longer compiles, so a mock left over from before a signature change
+# blocks its own replacement.
 mock:
+    find . -name 'mock_*.go' -delete
     GOFLAGS="-buildvcs=false" go tool mockery
 
 # Run tests with coverage
