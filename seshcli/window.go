@@ -31,45 +31,45 @@ func targetFlag(cmd *cobra.Command) string {
 	return target
 }
 
-// addConnectFlags wires the flags shared by window and pane connect.
-//
-// switchShorthand is false on the parent `sesh window` command, which used to
-// read -s as --session. Leaving the shorthand off there turns that old form
-// into a loud "unknown shorthand flag" instead of silently doing something
-// different; it can be added back once the old form has aged out.
-func addConnectFlags(cmd *cobra.Command, switchShorthand bool) {
-	cmd.Flags().StringP("command", "c", "", "command to run in the target")
-	cmd.Flags().StringP("path", "p", "", "start directory (default: the target session's root)")
-	cmd.Flags().BoolP("background", "b", false, "create without selecting it or moving the client")
-	usage := "Switch the session (rather than attach). This is useful for actions triggered outside the terminal."
-	if switchShorthand {
-		cmd.Flags().BoolP("switch", "s", false, usage)
-	} else {
-		cmd.Flags().Bool("switch", false, usage)
-	}
-}
-
 func NewWindowCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "window [name|directory]",
+		Use:     "window",
 		Aliases: []string{"w"},
-		Short:   "List windows, or connect to one in a tmux session",
-		Long: "List the windows of a tmux session, or with an argument connect to one of them.\n\n" +
-			"`sesh window <name>` is shorthand for `sesh window connect <name>`.",
-		Args: cobra.ArbitraryArgs,
+		Short:   "List or connect to the windows of a tmux session",
+		Args:    cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
-				return listWindows(cmd, base)
+				return cmd.Help()
 			}
-			return connectWindow(cmd, base, strings.Join(args, " "))
+			// `sesh window <name>` used to select-or-create that window.
+			// Naming its replacement beats cobra's bare "unknown command".
+			name := strings.Join(args, " ")
+			return fmt.Errorf(
+				"unknown command %q for %q, to connect to the %s window run: sesh window connect %s",
+				name, cmd.CommandPath(), name, name,
+			)
+		},
+	}
+
+	cmd.AddCommand(newWindowConnectCommand(base))
+	cmd.AddCommand(newWindowListCommand(base))
+
+	return cmd
+}
+
+func newWindowListCommand(base *BaseDeps) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"l", "ls"},
+		Short:   "List the windows of a tmux session",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return listWindows(cmd, base)
 		},
 	}
 
 	addTargetFlags(cmd)
-	cmd.Flags().BoolP("json", "j", false, "output as json (list mode only)")
-	addConnectFlags(cmd, false)
-	addWindowConnectFlags(cmd)
-	cmd.AddCommand(newWindowConnectCommand(base))
+	cmd.Flags().BoolP("json", "j", false, "output as json")
 
 	return cmd
 }
@@ -77,12 +77,13 @@ func NewWindowCommand(base *BaseDeps) *cobra.Command {
 func newWindowConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "connect [name|directory]",
-		Aliases: []string{"cn"},
+		Aliases: []string{"cn", "c"},
 		Short:   "Select a window, creating it if it doesn't exist",
 		Long: "Select the named window in the target session, creating it if it isn't there.\n\n" +
 			"With --command, a created window runs the command as its process and closes when it\n" +
-			"exits, while an existing window has the command typed into the shell already running\n" +
-			"in it. Without a name there is nothing to match, so a window is always created.",
+			"exits, while an existing window has the command typed into whatever is already running\n" +
+			"in it. Without a name there is nothing to match, so a window is always created; --new\n" +
+			"forces that for a name you want as a label rather than as something to reuse.",
 		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return connectWindow(cmd, base, strings.Join(args, " "))
@@ -90,16 +91,13 @@ func newWindowConnectCommand(base *BaseDeps) *cobra.Command {
 	}
 
 	addTargetFlags(cmd)
-	addConnectFlags(cmd, true)
-	addWindowConnectFlags(cmd)
+	cmd.Flags().StringP("command", "c", "", "command to run in the target")
+	cmd.Flags().StringP("path", "p", "", "start directory (default: the target session's root)")
+	cmd.Flags().BoolP("background", "b", false, "create without selecting it or moving the client")
+	cmd.Flags().BoolP("switch", "s", false, "Switch the session (rather than attach). This is useful for actions triggered outside the terminal.")
+	cmd.Flags().Bool("new", false, "always create, even when the name matches a window that exists")
 
 	return cmd
-}
-
-// addWindowConnectFlags adds the window-only flags. --new has no pane
-// equivalent because a pane is always created anyway.
-func addWindowConnectFlags(cmd *cobra.Command) {
-	cmd.Flags().Bool("new", false, "always create, even when the name matches a window that exists")
 }
 
 func listWindows(cmd *cobra.Command, base *BaseDeps) error {
@@ -160,7 +158,7 @@ func connectWindow(cmd *cobra.Command, base *BaseDeps, name string) error {
 	return nil
 }
 
-// requireSession keeps the listing commands honest about their target: an empty
+// requireSession keeps the listing command honest about its target: an empty
 // target only means "the attached session" when there is one, and a named
 // session has to already be running to have anything to list.
 func requireSession(deps *Deps, targetSession string) error {
