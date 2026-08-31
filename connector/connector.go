@@ -15,6 +15,7 @@ import (
 
 type Connector interface {
 	Connect(name string, opts model.ConnectOpts) (string, error)
+	ConnectWindow(opts model.WindowConnectOpts) (string, error)
 }
 
 type RealConnector struct {

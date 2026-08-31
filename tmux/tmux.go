@@ -11,7 +11,7 @@ type Tmux interface {
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
 	ListAllWindowNames() (map[string][]string, error)
 	NewSession(sessionName string, startDir string) (string, error)
-	NewWindowInSession(name string, startDir string, targetSession string) (string, error)
+	NewWindowInSession(opts model.TmuxWindowOpts) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)

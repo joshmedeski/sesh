@@ -33,3 +33,19 @@ type WorktreeEntry struct {
 	Title  string // issue title; empty when unknown or not yet fetched
 	State  string // "OPEN" | "CLOSED"; empty when unknown
 }
+
+// WindowConnectOpts identifies a window to connect to and what to run in it.
+// Name is the window's identity: when it matches an existing window that window
+// is reused, and when it is empty there is nothing to match on so a window is
+// always created.
+type WindowConnectOpts struct {
+	Name string
+	// New skips the match and always creates, for when the name is wanted as a
+	// label rather than as an identity to reuse.
+	New        bool
+	Session    string // target session; empty => the attached session
+	Path       string // start directory; empty => the target session's root
+	Command    string
+	Background bool // create without selecting it or moving the client
+	Switch     bool // switch rather than attach, for triggers outside tmux
+}
