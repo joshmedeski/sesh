@@ -57,11 +57,11 @@ func TestListAllWindowNames(t *testing.T) {
 	t.Run("groups window names by session", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
 		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
-		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-a", "-F", mock.Anything).Return(
+		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-a", "-F", "#{session_name}::#{window_name}").Return(
 			[]string{"sesh::editor", "sesh::server", "dotfiles::nvim"},
 			nil,
 		)
-		windowNames, err := tmux.ListAllWindowNames()
+		windowNames, err := tmux.ListAllWindowNames("")
 		assert.Nil(t, err)
 		assert.Equal(t, map[string][]string{
 			"sesh":     {"editor", "server"},
@@ -72,10 +72,11 @@ func TestListAllWindowNames(t *testing.T) {
 	t.Run("returns error from shell", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
 		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
-		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-a", "-F", mock.Anything).Return(
+		format := "#{?#{pane_title},#{pane_title},#{window_name}}"
+		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-a", "-F", "#{session_name}::"+format).Return(
 			nil, assert.AnError,
 		)
-		windowNames, err := tmux.ListAllWindowNames()
+		windowNames, err := tmux.ListAllWindowNames(format)
 		assert.Error(t, err)
 		assert.Nil(t, windowNames)
 	})

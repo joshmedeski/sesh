@@ -235,15 +235,19 @@ func TestAttachWindowNames(t *testing.T) {
 func TestTmuxWindowNames(t *testing.T) {
 	t.Run("returns nil when tmux fails", func(t *testing.T) {
 		mockTmux := new(tmux.MockTmux)
-		mockTmux.EXPECT().ListAllWindowNames().Return(nil, assert.AnError)
+		mockTmux.EXPECT().ListAllWindowNames("").Return(nil, assert.AnError)
 		l := &RealLister{tmux: mockTmux}
 		assert.Nil(t, tmuxWindowNames(l))
 	})
 
 	t.Run("returns the window names", func(t *testing.T) {
 		mockTmux := new(tmux.MockTmux)
-		mockTmux.EXPECT().ListAllWindowNames().Return(map[string][]string{"sesh": {"editor"}}, nil)
-		l := &RealLister{tmux: mockTmux}
+		format := "#{?#{pane_title},#{pane_title},#{window_name}}"
+		mockTmux.EXPECT().ListAllWindowNames(format).Return(map[string][]string{"sesh": {"editor"}}, nil)
+		l := &RealLister{
+			config: model.Config{TUI: model.TUIConfig{WindowNameFormat: format}},
+			tmux:   mockTmux,
+		}
 		assert.Equal(t, map[string][]string{"sesh": {"editor"}}, tmuxWindowNames(l))
 	})
 }

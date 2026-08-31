@@ -8,6 +8,10 @@ const DefaultAliasAutoConnectDelay = "150ms"
 // [tui] alias_filter_prefix is not set.
 const DefaultAliasFilterPrefix = "/"
 
+// DefaultWindowNameFormat is the tmux format used for window names when
+// [tui] window_name_format is not set.
+const DefaultWindowNameFormat = "#{window_name}"
+
 const (
 	// DefaultPreviewWidth is the share of the terminal, in percent, guaranteed
 	// to the picker's preview pane when [tui] preview_width is not set.
@@ -136,10 +140,13 @@ type (
 
 	TUIConfig struct {
 		// TODO: keybindings and more
-		ShowIcons   bool   `toml:"show_icons"`
-		ShowWindows bool   `toml:"show_windows"`
-		Prompt      string `toml:"prompt"`
-		Placeholder string `toml:"placeholder"`
+		ShowIcons   bool `toml:"show_icons"`
+		ShowWindows bool `toml:"show_windows"`
+		// WindowNameFormat is the tmux format rendered for each window when
+		// ShowWindows is enabled. Empty means DefaultWindowNameFormat.
+		WindowNameFormat string `toml:"window_name_format"`
+		Prompt           string `toml:"prompt"`
+		Placeholder      string `toml:"placeholder"`
 		// AliasAutoConnectDelay is the grace period between typing an alias and
 		// auto-connecting to it, giving longer aliases that share a prefix time
 		// to be typed. Any duration string time.ParseDuration accepts.

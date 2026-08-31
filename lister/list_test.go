@@ -304,7 +304,7 @@ func TestList_ShowWindows(t *testing.T) {
 		mockTmux.On("ListSessions").Return([]*model.TmuxSession{
 			{Name: "sesh", Path: "/p"},
 		}, nil)
-		mockTmux.EXPECT().ListAllWindowNames().Return(map[string][]string{
+		mockTmux.EXPECT().ListAllWindowNames("").Return(map[string][]string{
 			"sesh": {"editor", "server"},
 		}, nil).Once()
 

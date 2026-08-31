@@ -32,19 +32,21 @@ func (t *RealTmux) ListWindows(targetSession string) ([]*model.TmuxWindow, error
 	return parseTmuxWindowsOutput(output)
 }
 
-func listAllWindowNamesFormat() string {
+func listAllWindowNamesFormat(format string) string {
+	if format == "" {
+		format = model.DefaultWindowNameFormat
+	}
 	variables := []string{
 		"#{session_name}",
-		"#{pane_title}",
+		format,
 	}
 	return strings.Join(variables, separator)
 }
 
-// ListAllWindowNames returns the window names of every session, keyed by
-// session name, in a single tmux invocation. The picker uses this so showing
-// window names doesn't cost one shell call per session.
-func (t *RealTmux) ListAllWindowNames() (map[string][]string, error) {
-	output, err := t.shell.ListCmd(t.bin, "list-windows", "-a", "-F", listAllWindowNamesFormat())
+// ListAllWindowNames returns the formatted window names of every session,
+// keyed by session name, in a single tmux invocation.
+func (t *RealTmux) ListAllWindowNames(format string) (map[string][]string, error) {
+	output, err := t.shell.ListCmd(t.bin, "list-windows", "-a", "-F", listAllWindowNamesFormat(format))
 	if err != nil {
 		return nil, err
 	}

@@ -42,7 +42,7 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 // single tmux call. Failures are non-fatal: the picker simply renders sessions
 // without their window names.
 func tmuxWindowNames(l *RealLister) map[string][]string {
-	windowNames, err := l.tmux.ListAllWindowNames()
+	windowNames, err := l.tmux.ListAllWindowNames(l.config.TUI.WindowNameFormat)
 	if err != nil {
 		return nil
 	}
