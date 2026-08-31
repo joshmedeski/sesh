@@ -364,52 +364,73 @@ Use `Ctrl-s` to cycle through the sources, and `Ctrl-d` to kill the highlighted 
 
 ### Window management
 
-`sesh window` (alias `w`) lets you list, switch to, and create tmux windows within a session — similar to how `sesh list` and `sesh connect` work for sessions.
-
-#### List windows in the current session
+`sesh window` (alias `w`) lets you list, switch to, and create tmux windows within a session — similar to how `sesh list` and `sesh connect` work for sessions. It's a group of subcommands:
 
 ```sh
-sesh window
+sesh window list      # list the windows of a session
+sesh window connect   # select a window, creating it if it doesn't exist
+```
+
+#### List windows
+
+```sh
+sesh window list           # the session you're attached to
+sesh window list -t work   # another session
+sesh window list -j        # as json
 ```
 
 #### Switch to an existing window by name
 
 ```sh
-sesh window editor
+sesh window connect editor
 ```
 
-If a window named `editor` exists in the current session, sesh will switch to it.
+If a window named `editor` exists in the target session, sesh selects it. If it doesn't, sesh creates it.
 
 #### Create a new window at a directory
 
 ```sh
-sesh window ~/projects/my-app
+sesh window connect ~/projects/my-app
 ```
 
-If no window with that name exists, sesh will create a new window named after the directory (`my-app`) with its working directory set to the given path.
+A directory argument names the window after its basename (`my-app`) and roots it there. Running it again selects the window the first run created rather than opening a duplicate.
+
+#### Run a command in the window
+
+```sh
+sesh window connect claude -t 'second brain' -c 'claude "summarize my notes"'
+```
+
+On a **created** window the command becomes the window's process, so the window closes when it exits. On an **existing** window it's typed into whatever is already running there. Pass `--new` when every invocation should get its own fresh window instead of reusing the name.
 
 #### Target a specific session
 
-Use `--session` / `-s` to manage windows in a session other than the one you're currently attached to:
+Use `--target` / `-t` to manage windows in a session other than the one you're attached to:
 
 ```sh
-sesh window --session work
-sesh window ~/projects/my-app --session work
+sesh window list -t work
+sesh window connect ~/projects/my-app -t work
 ```
+
+The target is resolved the same way `sesh connect` resolves a session — across tmux, zoxide, config, and tmuxinator — and started if it isn't running yet, without moving you out of the session you're in. Use `-b` / `--background` to create the window without being taken to it, and `-s` / `--switch` when triggering sesh from outside the terminal.
+
+> [!NOTE]
+> `sesh window <name>` and `sesh window -s <session>` were replaced by `sesh window connect <name>` and `sesh window list -t <session>`. `--session` still works as a deprecated alias for `--target`, and `-s` now means `--switch` on `sesh window connect`, consistent with `sesh connect`.
 
 #### fzf integration
 
-You can combine `sesh window` with fzf to interactively switch windows:
+You can combine the two subcommands with fzf to interactively switch windows:
 
 ```sh
-sesh window $(sesh window | fzf)
+sesh window connect "$(sesh window list | fzf)"
 ```
 
 Or as a tmux keybind:
 
 ```sh
-bind-key "W" run-shell "sesh window \"$(sesh window | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
+bind-key "W" run-shell "sesh window connect \"$(sesh window list | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
 ```
+
 
 ### Create a directory and connect
 
