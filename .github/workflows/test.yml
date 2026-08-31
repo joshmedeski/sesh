@@ -93,12 +93,19 @@ jobs:
       - name: Run benchmarks on the merge base
         if: github.event_name == 'pull_request'
         run: |
+          # Mocks are gitignored, so they survive the checkout below. Mockery
+          # cannot regenerate a mock for a package that no longer compiles, so
+          # a mock generated at one revision referencing a type that does not
+          # exist at the other kills it before it can replace itself. Clear
+          # them out first; every mock_*.go here is generated.
           head_sha="$(git rev-parse HEAD)"
           git checkout --detach --quiet ${{ github.event.pull_request.base.sha }}
+          find . -name 'mock_*.go' -delete
           go tool mockery
           go test -run='^$' -bench=. -benchmem -benchtime=100ms -count=6 \
             ./lister/... ./picker/... | tee base.txt
           git checkout --detach --quiet "$head_sha"
+          find . -name 'mock_*.go' -delete
           go tool mockery
       - name: Compare against the merge base
         run: |
