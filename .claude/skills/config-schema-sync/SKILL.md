@@ -1,6 +1,8 @@
 ---
 name: config-schema-sync
 description: Use when reviewing, writing, or committing changes that touch model/config.go or any TOML config struct in this repo. Verifies that every added, renamed, or removed TOML field has a matching update in sesh.schema.json so the JSON schema used by TOML editors (via `#:schema` directive) stays in sync with the Go config model. Trigger whenever a diff touches files under model/, configurator/, or any struct tagged with `toml:"..."`.
+metadata:
+  internal: true
 ---
 
 # Config ↔ Schema Sync Check
