@@ -40,18 +40,12 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 }
 
 func (c *RealConnector) connectDetached(sessionName string) (string, error) {
-	switched := false
-	if clients, err := c.tmux.ListClients(); err == nil {
-		for _, client := range clients {
-			if client != "" {
-				c.tmux.SwitchClientTarget(client, sessionName)
-				switched = true
-				break
-			}
-		}
+	client := c.tmux.ResolveClient()
+	if client != "" {
+		c.tmux.SwitchClientTarget(client, sessionName)
 	}
 	c.focuser.Activate(c.config.Terminal)
-	if switched {
+	if client != "" {
 		return fmt.Sprintf("switching to tmux session: %s", sessionName), nil
 	}
 	return fmt.Sprintf("connected to tmux session: %s", sessionName), nil

@@ -23,7 +23,8 @@ type Tmux interface {
 	ListTmuxPanes() ([]*model.TmuxPane, error)
 	SelectPane(windowIndex int, paneIndex int) (string, error)
 	GetCurrentSession() (string, error)
-	ListClients() ([]string, error)
+	ListClients() ([]model.TmuxClient, error)
+	ResolveClient() string
 	SwitchClientTarget(client string, targetSession string) (string, error)
 	RenameSession(target string, newName string) (string, error)
 }
@@ -68,10 +69,6 @@ func (t *RealTmux) NextWindowInSession(targetSession string) (string, error) {
 
 func (t *RealTmux) IsAttached() bool {
 	return len(t.os.Getenv("TMUX")) > 0
-}
-
-func (t *RealTmux) ListClients() ([]string, error) {
-	return t.shell.ListCmd(t.bin, "list-clients", "-F", "#{client_name}")
 }
 
 func (t *RealTmux) SwitchClientTarget(client string, targetSession string) (string, error) {

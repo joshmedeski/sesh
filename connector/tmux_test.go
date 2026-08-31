@@ -78,7 +78,7 @@ func TestConnectToTmuxDetachedSwitchesClientAndFocuses(t *testing.T) {
 
 	// Detached: not attached, --switch set
 	mTmux.EXPECT().IsAttached().Return(false)
-	mTmux.EXPECT().ListClients().Return([]string{"", "/dev/ttys002"}, nil)
+	mTmux.EXPECT().ResolveClient().Return("/dev/ttys002")
 	mTmux.EXPECT().SwitchClientTarget("/dev/ttys002", "nutiliti/2345").Return("", nil)
 	mFocuser.EXPECT().Activate("wezterm").Return(true, nil)
 
@@ -93,4 +93,27 @@ func TestConnectToTmuxDetachedSwitchesClientAndFocuses(t *testing.T) {
 	}
 	_, err := connectToTmux(c, conn, model.ConnectOpts{Switch: true})
 	require.NoError(t, err)
+}
+
+func TestConnectToTmuxDetachedWithNoClientStillFocuses(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mFocuser := focuser.NewMockFocuser(t)
+
+	// Nothing is attached to the server, so there is no client to switch.
+	mTmux.EXPECT().IsAttached().Return(false)
+	mTmux.EXPECT().ResolveClient().Return("")
+	mFocuser.EXPECT().Activate("wezterm").Return(true, nil)
+
+	c := NewConnector(
+		model.Config{Terminal: "wezterm"},
+		nil, nil, nil, nil, nil, mTmux, nil, nil, mFocuser,
+	).(*RealConnector)
+
+	conn := model.Connection{
+		Found: true, New: false,
+		Session: model.SeshSession{Src: "tmux", Name: "nutiliti/2345", Path: "/repo/w/2345"},
+	}
+	msg, err := connectToTmux(c, conn, model.ConnectOpts{Switch: true})
+	require.NoError(t, err)
+	assert.Equal(t, "connected to tmux session: nutiliti/2345", msg)
 }

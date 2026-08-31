@@ -11,6 +11,13 @@ import (
 	mock "github.com/stretchr/testify/mock"
 )
 
+// stubNoClients makes ResolveClient come up empty, so SwitchOrAttach falls back
+// to a bare `switch-client -t` and lets tmux pick the client itself.
+func stubNoClients(mockOs *oswrap.MockOs, mockShell *shell.MockShell, bin string) {
+	mockOs.On("Getenv", "SESH_CLIENT").Return("")
+	mockShell.On("ListCmd", bin, "list-clients", "-F", clientFormat).Return([]string{""}, nil)
+}
+
 func TestSwitchOrAttach(t *testing.T) {
 	mockOs := new(oswrap.MockOs)
 	mockShell := new(shell.MockShell)
@@ -19,6 +26,7 @@ func TestSwitchOrAttach(t *testing.T) {
 	t.Run("switches because of option", func(t *testing.T) {
 		mockOs.ExpectedCalls = nil
 		mockShell.ExpectedCalls = nil
+		stubNoClients(mockOs, mockShell, "tmux")
 		mockShell.On("Cmd", "tmux", "switch-client", "-t", mock.Anything).Return("", nil)
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: true})
 		assert.Equal(t, "switching to tmux session: dotfiles", response)
@@ -29,6 +37,7 @@ func TestSwitchOrAttach(t *testing.T) {
 		mockOs.ExpectedCalls = nil
 		mockShell.ExpectedCalls = nil
 		mockOs.On("Getenv", "TMUX").Return("/private/tmp/tmux-501/default,72439,4")
+		stubNoClients(mockOs, mockShell, "tmux")
 		mockShell.On("Cmd", "tmux", "switch-client", "-t", mock.Anything).Return("", nil)
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
 		assert.Equal(t, "switching to tmux session: dotfiles", response)
@@ -39,6 +48,7 @@ func TestSwitchOrAttach(t *testing.T) {
 		mockOs.ExpectedCalls = nil
 		mockShell.ExpectedCalls = nil
 		mockOs.On("Getenv", "TMUX").Return("/private/tmp/tmux-501/default,72439,4")
+		stubNoClients(mockOs, mockShell, "tmux")
 		mockShell.On("Cmd", "tmux", "switch-client", "-t", mock.Anything).Return("", errors.New("can't find session: dotfiles"))
 		response, err := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
 		assert.Equal(t, "", response)
@@ -70,6 +80,7 @@ func TestCustomBin(t *testing.T) {
 
 	t.Run("uses psmux binary for switch client", func(t *testing.T) {
 		mockOs.On("Getenv", "TMUX").Return("/private/tmp/tmux-501/default,72439,4")
+		stubNoClients(mockOs, mockShell, "psmux")
 		mockShell.On("Cmd", "psmux", "switch-client", "-t", "dotfiles").Return("", nil)
 		response, err := psmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: true})
 		assert.Nil(t, err)
