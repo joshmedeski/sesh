@@ -47,6 +47,7 @@ func TestConfigWildcardStrategy(t *testing.T) {
 			Windows:        []string{"code", "server"},
 		}, true)
 		mockNamer.On("Name", "/Users/test/projects/myapp").Return("myapp", nil)
+		mockLister.On("FindTmuxSessionByBase", "myapp").Return(model.SeshSession{}, false)
 
 		connection, err := configWildcardStrategy(c, "~/projects/myapp")
 		assert.Nil(t, err)
@@ -68,6 +69,7 @@ func TestConfigWildcardStrategy(t *testing.T) {
 			Windows: []string{"agent"},
 		}, true)
 		mockNamer.On("Name", "/Users/test/dev/my-app-dir").Return("my-app-dir", nil)
+		mockLister.On("FindTmuxSessionByBase", "my-app-dir").Return(model.SeshSession{}, false)
 
 		connection, err := configWildcardStrategy(c, "dev/my-app-dir")
 		assert.Nil(t, err)
@@ -84,6 +86,7 @@ func TestConfigWildcardStrategy(t *testing.T) {
 			DisableStartCommand: true,
 		}, true)
 		mockNamer.On("Name", "/Users/test/projects/quiet").Return("quiet", nil)
+		mockLister.On("FindTmuxSessionByBase", "quiet").Return(model.SeshSession{}, false)
 
 		connection, err := configWildcardStrategy(c, "~/projects/quiet")
 		assert.Nil(t, err)
@@ -111,5 +114,29 @@ func TestConfigWildcardStrategy(t *testing.T) {
 		connection, err := configWildcardStrategy(c, "~/projects/notadir")
 		assert.Nil(t, err)
 		assert.False(t, connection.Found)
+	})
+
+	t.Run("should reuse the existing session instead of recreating it", func(t *testing.T) {
+		// Regression: a wildcard match used to force New: true, so reconnecting
+		// reran the create path and sent the startup command into a live session.
+		mockHome.On("ExpandPath", "~/projects/running").Return("/Users/test/projects/running", nil)
+		mockDir.On("Dir", "/Users/test/projects/running").Return(true, "/Users/test/projects/running")
+		mockLister.On("FindConfigWildcard", "/Users/test/projects/running").Return(model.WildcardConfig{
+			Pattern:        "~/projects/*",
+			StartupCommand: "nvim",
+		}, true)
+		mockNamer.On("Name", "/Users/test/projects/running").Return("running", nil)
+		existing := model.SeshSession{
+			Src:  "tmux",
+			Name: "running",
+			Path: "/Users/test/projects/running",
+		}
+		mockLister.On("FindTmuxSessionByBase", "running").Return(existing, true)
+
+		connection, err := configWildcardStrategy(c, "~/projects/running")
+		assert.Nil(t, err)
+		assert.True(t, connection.Found)
+		assert.False(t, connection.New)
+		assert.Equal(t, existing, connection.Session)
 	})
 }

@@ -25,6 +25,18 @@ func configWildcardStrategy(c *RealConnector, name string) (model.Connection, er
 		return model.Connection{}, err
 	}
 
+	// A wildcard match describes how to create the session, not that it is
+	// missing. Without this check the create path runs again on every reconnect,
+	// sending the startup command into a session that is already up.
+	if existing, ok := c.lister.FindTmuxSessionByBase(nameFromPath); ok {
+		return model.Connection{
+			Found:       true,
+			New:         false,
+			AddToZoxide: true,
+			Session:     existing,
+		}, nil
+	}
+
 	return model.Connection{
 		Found:       true,
 		New:         true,
