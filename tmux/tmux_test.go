@@ -3,6 +3,7 @@ package tmux
 import (
 	"testing"
 
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/stretchr/testify/assert"
@@ -11,13 +12,22 @@ import (
 
 func TestListClients(t *testing.T) {
 	s := shell.NewMockShell(t)
-	s.EXPECT().ListCmd("tmux", "list-clients", "-F", "#{client_name}").
-		Return([]string{"/dev/ttys001", ""}, nil)
+	// ListCmd splits on newlines, so the trailing blank line comes through as
+	// an empty entry and has to be dropped.
+	s.EXPECT().ListCmd("tmux", "list-clients", "-F", clientFormat).
+		Return([]string{
+			"/dev/ttys001\t/dev/ttys001\t$1\t1788188899",
+			"/dev/ttys002\t/dev/ttys002\t$2\t1788188999",
+			"",
+		}, nil)
 	os := oswrap.NewMockOs(t)
 	tm := NewTmux(os, s, "")
 	clients, err := tm.ListClients()
 	require.NoError(t, err)
-	assert.Equal(t, []string{"/dev/ttys001", ""}, clients)
+	assert.Equal(t, []model.TmuxClient{
+		{Name: "/dev/ttys001", TTY: "/dev/ttys001", SessionID: "$1", Activity: 1788188899},
+		{Name: "/dev/ttys002", TTY: "/dev/ttys002", SessionID: "$2", Activity: 1788188999},
+	}, clients)
 }
 
 func TestSwitchClientTarget(t *testing.T) {
