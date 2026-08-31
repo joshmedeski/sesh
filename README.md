@@ -52,6 +52,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - [How to install](#how-to-install)
 - [Shell Completion](#shell-completion)
 - [Extensions](#extensions)
+- [Agent skill](#agent-skill)
 - [How to use](#how-to-use)
 - [Recommended tmux Settings](#recommended-tmux-settings)
 
@@ -298,6 +299,25 @@ set ssession $(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn
 ssession=$(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --switch $ssession
 
 ##### For dmenu launchers replace walker -dfk with dmenu or rofi)
+
+## Agent skill
+
+Sesh ships an [agent skill](https://agentskills.io) that teaches coding agents to start work through sesh instead of shelling out to `tmux new-session`, `tmux new-window`, and `tmux send-keys`. An agent that has it will pick a session or a window depending on whether the work belongs to something already open, resolve names and directories across tmux, zoxide, config, and tmuxinator, reuse what's already running instead of duplicating it, and leave you where you are when the work is a background step.
+
+Install it with the [`skills`](https://github.com/vercel-labs/skills) CLI:
+
+```sh
+# globally, for every project
+npx skills add joshmedeski/sesh -g
+
+# or into the current project only
+npx skills add joshmedeski/sesh
+```
+
+It works with Claude Code, Codex, Cursor, OpenCode, and [dozens of other agents](https://github.com/vercel-labs/skills#supported-agents) — `skills add` will ask which ones to install to, or take `-a claude-code` to pick.
+
+The skill lives at [`skills/sesh/SKILL.md`](skills/sesh/SKILL.md) and is versioned with the CLI, so `npx skills update sesh` picks up changes. To install it by hand instead, copy or symlink that file to `~/.claude/skills/sesh/SKILL.md` (or your agent's equivalent skills directory).
+
 
 ### How to use
 
