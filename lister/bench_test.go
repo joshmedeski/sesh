@@ -45,7 +45,7 @@ func (t *benchTmux) ListSessions() ([]*model.TmuxSession, error) {
 	return t.sessions, nil
 }
 
-func (t *benchTmux) ListAllWindowNames() (map[string][]string, error) {
+func (t *benchTmux) ListAllWindowNames(string) (map[string][]string, error) {
 	return t.windowNames, nil
 }
 
