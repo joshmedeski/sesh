@@ -47,8 +47,18 @@ jobs:
           go-version: "1.27"
       - name: Create mocks
         run: go tool mockery
+      # Piping go test straight into go-junit-report hides its output: a
+      # compile error in a test package used to surface only as "exit code 1"
+      # with an empty summary. Tee the raw stream into the job log and build
+      # the report from the saved copy. The step exits with go test's own
+      # status, not the report generator's, so a build failure is a failure
+      # regardless of how the XML came out.
       - name: Run tests
-        run: go test -cover -race -v 2>&1 ./... | go tool go-junit-report -set-exit-code > report.xml
+        run: |
+          go test -cover -race -v ./... 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          go tool go-junit-report < test.log > report.xml
+          exit "$status"
       - name: Test Summary
         uses: test-summary/action@v2
         with:
