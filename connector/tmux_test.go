@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/dir"
@@ -78,6 +79,9 @@ func TestConnectToTmuxDetachedSwitchesClientAndFocuses(t *testing.T) {
 
 	// Detached: not attached, --switch set
 	mTmux.EXPECT().IsAttached().Return(false)
+	mTmux.EXPECT().ListClients().Return([]model.TmuxClient{
+		{Name: "/dev/ttys002", TTY: "/dev/ttys002", SessionID: "$2"},
+	}, nil)
 	mTmux.EXPECT().ResolveClient().Return("/dev/ttys002")
 	mTmux.EXPECT().SwitchClientTarget("/dev/ttys002", "nutiliti/2345").Return("", nil)
 	mFocuser.EXPECT().Activate("wezterm").Return(true, nil)
@@ -101,7 +105,7 @@ func TestConnectToTmuxDetachedWithNoClientStillFocuses(t *testing.T) {
 
 	// Nothing is attached to the server, so there is no client to switch.
 	mTmux.EXPECT().IsAttached().Return(false)
-	mTmux.EXPECT().ResolveClient().Return("")
+	mTmux.EXPECT().ListClients().Return(nil, nil)
 	mFocuser.EXPECT().Activate("wezterm").Return(true, nil)
 
 	c := NewConnector(
@@ -116,4 +120,28 @@ func TestConnectToTmuxDetachedWithNoClientStillFocuses(t *testing.T) {
 	msg, err := connectToTmux(c, conn, model.ConnectOpts{Switch: true})
 	require.NoError(t, err)
 	assert.Equal(t, "connected to tmux session: nutiliti/2345", msg)
+}
+
+// A GUI launcher runs sesh with a bare PATH, so tmux isn't reachable while
+// Activate's osascript still is. That used to focus the terminal, change
+// nothing, and report success.
+func TestConnectToTmuxDetachedReportsUnreachableTmux(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mFocuser := focuser.NewMockFocuser(t)
+
+	mTmux.EXPECT().IsAttached().Return(false)
+	mTmux.EXPECT().ListClients().
+		Return(nil, errors.New(`exec: "tmux": executable file not found in $PATH`))
+
+	c := NewConnector(
+		model.Config{Terminal: "wezterm"},
+		nil, nil, nil, nil, nil, mTmux, nil, nil, mFocuser,
+	).(*RealConnector)
+
+	conn := model.Connection{
+		Found: true, New: false,
+		Session: model.SeshSession{Src: "tmux", Name: "nutiliti/2345", Path: "/repo/w/2345"},
+	}
+	_, err := connectToTmux(c, conn, model.ConnectOpts{Switch: true})
+	require.ErrorContains(t, err, "couldn't reach tmux to switch to 'nutiliti/2345'")
 }

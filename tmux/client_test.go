@@ -44,6 +44,7 @@ func TestResolveClient(t *testing.T) {
 	tests := []struct {
 		name       string
 		seshClient string
+		tmuxPane   string
 		tmuxEnv    string
 		clients    []string
 		clientsErr error
@@ -52,9 +53,20 @@ func TestResolveClient(t *testing.T) {
 		{
 			name:       "SESH_CLIENT wins outright",
 			seshClient: "/dev/ttys009",
+			tmuxPane:   "%3",
 			tmuxEnv:    "/tmp/default,3746,1",
 			clients:    clientLines(onSession1),
 			expected:   "/dev/ttys009",
+		},
+		{
+			// From a pane tmux resolves the client from $TMUX_PANE exactly.
+			// Guessing over the top of that is how sesh ended up moving a
+			// terminal the user wasn't looking at.
+			name:     "defers to tmux when the caller has a pane",
+			tmuxPane: "%3",
+			tmuxEnv:  "/tmp/default,3746,1",
+			clients:  clientLines(onSession1, onSession2),
+			expected: "",
 		},
 		{
 			// The popup case: tmux would guess ttys002 as most recently
@@ -83,6 +95,16 @@ func TestResolveClient(t *testing.T) {
 			expected: "/dev/ttys002",
 		},
 		{
+			// A GUI launcher can inherit a stale $TMUX_PANE from whatever
+			// started it. Outside tmux there is no caller for tmux to resolve
+			// from, so the pane must not short-circuit resolution.
+			name:     "ignores a stale pane when outside tmux",
+			tmuxPane: "%3",
+			tmuxEnv:  "",
+			clients:  clientLines(onSession1, onSession2),
+			expected: "/dev/ttys002",
+		},
+		{
 			name:     "no clients attached",
 			tmuxEnv:  "/tmp/default,3746,1",
 			clients:  clientLines(),
@@ -102,9 +124,13 @@ func TestResolveClient(t *testing.T) {
 			mockShell := shell.NewMockShell(t)
 			mockOs.EXPECT().Getenv("SESH_CLIENT").Return(tt.seshClient)
 			if tt.seshClient == "" {
+				mockOs.EXPECT().Getenv("TMUX").Return(tt.tmuxEnv)
+				mockOs.EXPECT().Getenv("TMUX_PANE").Return(tt.tmuxPane)
+			}
+			// A pane only short-circuits resolution from inside tmux.
+			if tt.seshClient == "" && !(tt.tmuxPane != "" && tt.tmuxEnv != "") {
 				mockShell.EXPECT().ListCmd("tmux", "list-clients", "-F", clientFormat).
 					Return(tt.clients, tt.clientsErr)
-				mockOs.EXPECT().Getenv("TMUX").Return(tt.tmuxEnv).Maybe()
 			}
 			tm := NewTmux(mockOs, mockShell, "")
 			assert.Equal(t, tt.expected, tm.ResolveClient())
@@ -116,6 +142,7 @@ func TestSwitchOrAttachNamesTheResolvedClient(t *testing.T) {
 	mockOs := oswrap.NewMockOs(t)
 	mockShell := shell.NewMockShell(t)
 	mockOs.EXPECT().Getenv("SESH_CLIENT").Return("")
+	mockOs.EXPECT().Getenv("TMUX_PANE").Return("")
 	mockOs.EXPECT().Getenv("TMUX").Return("/tmp/default,3746,1")
 	mockShell.EXPECT().ListCmd("tmux", "list-clients", "-F", clientFormat).
 		Return([]string{
