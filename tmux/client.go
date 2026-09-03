@@ -1,6 +1,7 @@
 package tmux
 
 import (
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,10 @@ import (
 //
 //	bind-key s run-shell 'SESH_CLIENT=#{client_name} sesh connect foo'
 const seshClientEnv = "SESH_CLIENT"
+
+// tmuxPaneEnv is tmux's own answer to "who is asking". Any command run from a
+// normal pane inherits it, and tmux resolves the client from it exactly.
+const tmuxPaneEnv = "TMUX_PANE"
 
 const clientFormat = "#{client_name}\t#{client_tty}\t#{session_id}\t#{client_activity}"
 
@@ -51,18 +56,46 @@ func (t *RealTmux) ListClients() ([]model.TmuxClient, error) {
 // which is no worse than not resolving at all.
 func (t *RealTmux) ResolveClient() string {
 	if client := t.os.Getenv(seshClientEnv); client != "" {
+		slog.Debug("tmux: client named by env", "client", client, "env", seshClientEnv)
 		return client
 	}
-	clients, err := t.ListClients()
-	if err != nil || len(clients) == 0 {
+	tmuxEnv := t.os.Getenv("TMUX")
+	// A pane inside tmux carries $TMUX_PANE, so tmux can resolve the calling
+	// client from the pane itself — exactly, not by guessing. Naming a client
+	// here would replace that certainty with the heuristic below, which is only
+	// ever a fallback for callers that have no pane identity. Popups are the
+	// case this whole resolver exists for, and they get no $TMUX_PANE.
+	//
+	// $TMUX has to be set for the pane to mean anything: a GUI launcher can
+	// inherit a stale $TMUX_PANE from whatever started it, and tmux has no
+	// caller to resolve from outside a session anyway.
+	if pane := t.os.Getenv(tmuxPaneEnv); pane != "" && tmuxEnv != "" {
+		slog.Debug("tmux: leaving client resolution to tmux", "pane", pane)
 		return ""
 	}
-	if sessionID := currentSessionID(t.os.Getenv("TMUX")); sessionID != "" {
+	clients, err := t.ListClients()
+	if err != nil {
+		// Almost always the tmux binary being unreachable — a GUI launcher
+		// hands sesh a bare PATH that Homebrew isn't on. Nothing downstream can
+		// work, and every caller degrades to doing nothing visible, so this
+		// cannot be a debug line.
+		slog.Error("tmux: could not list clients", "error", err, "tmuxCommand", t.bin)
+		return ""
+	}
+	if len(clients) == 0 {
+		slog.Debug("tmux: no clients attached")
+		return ""
+	}
+	sessionID := currentSessionID(tmuxEnv)
+	if sessionID != "" {
 		if client := mostRecent(clients, sessionID); client != "" {
+			slog.Debug("tmux: resolved client from calling session", "client", client, "session", sessionID)
 			return client
 		}
 	}
-	return mostRecent(clients, "")
+	client := mostRecent(clients, "")
+	slog.Debug("tmux: resolved most recently active client", "client", client, "callingSession", sessionID, "clients", clients)
+	return client
 }
 
 // switchClient moves the resolved client, falling back to letting tmux pick

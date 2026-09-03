@@ -194,6 +194,9 @@ func TestConnectWindow(t *testing.T) {
 			TargetSession: "second-brain",
 			Command:       "claude",
 		}).Return("second-brain:2", nil)
+		mTmux.EXPECT().ListClients().Return([]model.TmuxClient{
+			{Name: "/dev/ttys002", TTY: "/dev/ttys002", SessionID: "$2"},
+		}, nil)
 		mTmux.EXPECT().ResolveClient().Return("/dev/ttys002")
 		mTmux.EXPECT().SwitchClientTarget("/dev/ttys002", "second-brain").Return("", nil)
 

@@ -15,6 +15,8 @@ import (
 // to a bare `switch-client -t` and lets tmux pick the client itself.
 func stubNoClients(mockOs *oswrap.MockOs, mockShell *shell.MockShell, bin string) {
 	mockOs.On("Getenv", "SESH_CLIENT").Return("")
+	mockOs.On("Getenv", "TMUX_PANE").Return("")
+	mockOs.On("Getenv", "TMUX").Return("").Maybe()
 	mockShell.On("ListCmd", bin, "list-clients", "-F", clientFormat).Return([]string{""}, nil)
 }
 
