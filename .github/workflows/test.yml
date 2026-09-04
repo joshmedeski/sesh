@@ -76,6 +76,13 @@ jobs:
   bench:
     name: Benchmarks 📊
     runs-on: ubuntu-latest
+    # Enough to leave the chart on the pull request, and no more. On a fork's
+    # pull request GITHUB_TOKEN stays read-only whatever this block says, so
+    # the comment step skips forks; the job summary carries the same chart
+    # either way. Note this is not `contents: write` — nothing here can push.
+    permissions:
+      contents: read
+      pull-requests: write
     # A real -benchtime costs real time, and a pull request runs the suite
     # twice: once for head and once for the merge base.
     timeout-minutes: 30
@@ -132,13 +139,61 @@ jobs:
           else
             go tool benchstat head.txt > benchstat.txt
           fi
+      # benchstat answers the question precisely; the chart answers it at a
+      # glance, which is what gets read on a pull request. It plots only the
+      # benchmarks that moved, against a shared axis, so a real regression is
+      # a longer bar rather than a row to find in a table of ninety-six.
+      #
+      # The committed baseline under testdata/bench is for the local loop and
+      # is deliberately not used here: it belongs to whichever machine
+      # recorded it, and both of the runs this job wants are already on disk.
+      - name: Chart the comparison
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ -s base.txt ] && grep -q '^Benchmark' base.txt; then
+            # The chart names each run by its file, which here is "base.txt".
+            # These "#" lines are not benchmark-format configuration, so
+            # benchfmt ignores them and the chart reads them back as notes.
+            sed -i "1i # merge base ${BASE_SHA:0:7}" base.txt
+            sed -i "1i # head ${HEAD_SHA:0:7}" head.txt
+            # 88 columns is about what a comment shows before it scrolls.
+            go run ./internal/benchchart -baseline base.txt -current head.txt -width 88 > chart.txt
+          fi
+      - name: Build the report
+        run: |
+          # One body, posted to the pull request and written to the job
+          # summary, so the two never disagree. The marker is for a human
+          # reading the source of the comment; --edit-last is what actually
+          # finds it again.
           {
-            echo '## Benchmarks'
+            echo '<!-- benchchart -->'
+            echo '## Benchmarks 📊'
             echo
-            echo '```'
-            cat benchstat.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+            if [ -s chart.txt ]; then
+              printf '```text\n%s\n```\n\n' "$(cat chart.txt)"
+              printf '<details><summary>benchstat table</summary>\n\n'
+              printf '```text\n%s\n```\n\n</details>\n' "$(cat benchstat.txt)"
+            else
+              printf '```text\n%s\n```\n' "$(cat benchstat.txt)"
+            fi
+            echo
+            echo '_Informational: this job never fails on a regression. See CONTRIBUTING.md ("Benchmarks")._'
+          } > comment.md
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
+      # --edit-last rewrites this job's previous comment instead of adding
+      # another, so pushing ten times to a pull request leaves one comment
+      # showing the current numbers rather than ten showing its history.
+      # --create-if-none covers the first push, when there is nothing to edit.
+      - name: Comment on the pull request
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --edit-last --create-if-none --body-file comment.md
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -147,6 +202,8 @@ jobs:
             head.txt
             base.txt
             benchstat.txt
+            chart.txt
+            comment.md
           if-no-files-found: warn
 
   # The benchstat comparison above answers "did this PR regress anything"; it
@@ -155,8 +212,10 @@ jobs:
   # a chart published at the repo's GitHub Pages site.
   #
   # It is a separate job so the `bench` job that runs on pull requests keeps
-  # read-only permissions — a job with `contents: write` should not run on code
-  # from a fork. It reuses `bench`'s artifact rather than re-running the suite.
+  # read-only access to the repository — a job with `contents: write` should not
+  # run on code from a fork. (`bench` does take `pull-requests: write`, to leave
+  # its chart on the pull request; that cannot push anything.) It reuses
+  # `bench`'s artifact rather than re-running the suite.
   bench-history:
     name: Benchmark history 📈
     needs: bench

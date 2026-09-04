@@ -29,3 +29,6 @@ go.work
 dist/
 share/
 .DS_Store
+
+# Local benchmark runs charted by `just bench-compare`
+.bench/
