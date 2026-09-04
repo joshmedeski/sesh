@@ -7,19 +7,21 @@ require (
 	charm.land/bubbletea/v2 v2.0.8
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.5
+	github.com/charmbracelet/colorprofile v0.4.3
 	github.com/charmbracelet/x/ansi v0.11.8
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20250424160509-463d218d4745
 	github.com/sahilm/fuzzy v0.1.3
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
+	golang.org/x/perf v0.0.0-20260819171926-ebcb4798430d
+	golang.org/x/term v0.40.0
 )
 
 require (
 	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/brunoga/deep v1.3.1 // indirect
-	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260703014108-f5a850f9c2b7 // indirect
 	github.com/charmbracelet/x/exp/charmtone v0.0.0-20260202112129-266036769e93 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
@@ -64,10 +66,8 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20260812173653-3d80eb74bc5b // indirect
 	golang.org/x/mod v0.39.0 // indirect
-	golang.org/x/perf v0.0.0-20260819171926-ebcb4798430d // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.40.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

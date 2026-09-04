@@ -37,6 +37,9 @@ just mock   # Generate mocks (required before testing if interfaces changed)
 just test   # Run tests with coverage
 just bench  # Run benchmarks (lister and picker)
 just build  # Build to $GOPATH/bin/sesh
+
+just bench-baseline  # Record this machine's benchmark baseline (run on main)
+just bench-compare   # Chart this worktree against that baseline
 ```
 
 ## Making Changes
@@ -69,8 +72,17 @@ go test -run='^$' -bench=FilterSessions -benchmem ./picker/   # one of them
 Benchmarks never run under `-race` — the race detector's overhead is most of
 what you would be measuring. `just test` and CI's test job leave `-bench` off
 for that reason; a separate CI job runs the benchmarks on a single Linux runner
-and posts a [benchstat](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat)
-comparison against the PR's merge base in the job summary.
+and compares them against the PR's merge base with
+[benchstat](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat).
+
+That job leaves its result as a comment on the pull request: the same chart
+described under "Local before/after chart" below, drawn from the two runs it
+just did rather than from the committed baseline, with the benchstat table
+folded underneath it. The comment is rewritten in place on every push, so a
+pull request carries one comment showing the current numbers instead of one per
+push. The job summary gets the same body, which is where to look on a pull
+request from a fork — `GITHUB_TOKEN` is read-only there, so the comment step
+skips it.
 
 When adding a benchmark:
 
@@ -81,6 +93,77 @@ When adding a benchmark:
   shows up there first and in the timings later.
 - Cover the worst case, not the convenient one. For the picker that is a
   one-character query, which matches nearly everything.
+
+### Local before/after chart
+
+CI's benchstat table only exists once a pull request does. For the loop before
+that — change something, see whether it cost anything — there is a committed
+baseline and a bar chart:
+
+```sh
+just bench-baseline   # on main: record this machine's baseline, then commit it
+just bench-compare    # in a worktree: run the suite and chart it against that
+```
+
+`bench-baseline` writes `testdata/bench/baseline-$GOOS-$GOARCH.txt` — the raw
+`go test -bench` output, which `benchstat` can still read directly, prefixed
+with `#` comments recording the commit, the Go version, and the flags. Commit
+it. `bench-compare` runs the same suite into the gitignored `.bench/` and
+charts the difference:
+
+```
+time/op  6 of 96 moved · 90 within noise (-all to show) · axis ±25%
+
+  picker FilterSessions/n=10/separator-aware/no-match  1.224µs → 1.127µs        █████████│      -7.9%
+  picker FilterSessions/n=1000/plain/empty             46.05µs → 37.13µs   ███████████████│      -19.4%
+  picker FilterAliases/n=1000/a                        22.88µs → 23.62µs                  │████  +3.2%
+```
+
+Two things about that shape are deliberate:
+
+- **Only what moved.** The suite covers ninety-odd benchmark-and-size
+  combinations, and printing all of them buries the handful that changed. A
+  benchmark whose delta is inside the two runs' own sample spread is counted
+  and dropped. `-all` puts them back, still ordered so the ones that moved come
+  first.
+- **The bars are deltas, not magnitudes.** Each bar grows out of a centre line
+  — left for faster, right for slower — and every bar in a section is measured
+  against the same span, named in the header. That is what makes a 19%
+  regression look four times worse than a 5% one, which is the whole point of
+  drawing this instead of reading the numbers. It also means bar length says
+  nothing about whether the benchmark is a nanosecond or a millisecond; the
+  columns to the left carry that.
+
+Both recipes use `-benchtime=100ms -count=6`, the same as CI, for the reason the
+next section gives: a looser measurement makes the deltas meaningless.
+
+Some caveats the chart itself will remind you of:
+
+- **A baseline belongs to the machine that recorded it.** The file is keyed by
+  `GOOS`/`GOARCH` and records the CPU, and the chart warns when the two runs
+  disagree on any of them. Someone else's laptop is not a target — record your
+  own.
+- **A baseline taken on a branch measures the branch**, so the chart then
+  reports "nothing moved" no matter what the branch cost. `bench-baseline`
+  asks for confirmation when you are not on a clean `main` for that reason.
+  Re-record when `main` moves somewhere the chart should be measuring against.
+- **It is not benchstat.** The noise check is a sample-range comparison, not
+  the significance test benchstat runs. Broad strokes: use it to notice
+  something, and let the pull request's benchstat table settle it.
+
+By default the chart plots `time/op` and `allocs/op` — allocations are the more
+trustworthy of the two when they disagree, per the section below, and a chart
+showing only time invites exactly that misreading. `-metric` picks:
+
+```sh
+go run ./internal/benchchart -metric allocs         # allocations alone
+go run ./internal/benchchart -metric time,allocs,bytes
+go run ./internal/benchchart -all -width 140        # everything, wider
+
+# Re-chart the last run without re-running it. Colour is dropped when stdout
+# is not a terminal, so a pager needs CLICOLOR_FORCE.
+CLICOLOR_FORCE=1 go run ./internal/benchchart | less -R
+```
 
 ### Regression thresholds
 
