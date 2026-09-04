@@ -56,6 +56,7 @@ type benchZoxide struct {
 func (z *benchZoxide) ListResults() ([]*model.ZoxideResult, error) { return z.results, nil }
 func (z *benchZoxide) Add(string) error                            { return nil }
 func (z *benchZoxide) Query(string) (*model.ZoxideResult, error)   { return nil, nil }
+func (z *benchZoxide) Remove(string) error                         { return nil }
 
 type benchTmuxinator struct {
 	configs []*model.TmuxinatorConfig

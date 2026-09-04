@@ -11,6 +11,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/previewer"
+	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
 const (
@@ -56,10 +57,43 @@ type RealPicker struct {
 	// wildcards matches a session path to a [[wildcard]] block, for icons
 	// declared on a pattern rather than a single session.
 	wildcards WildcardFinder
+	// zoxide is the frecency backend, reached only to remove an entry the user
+	// confirmed removing from the picker.
+	zoxide zoxide.Zoxide
+	// refreshCache refetches the session list into the cache after a removal.
+	// Nil when caching is off, which is also when there is nothing to refresh.
+	refreshCache CacheRefreshFunc
 }
 
-func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards WildcardFinder) Picker {
-	return &RealPicker{config: config, previewer: previewer, home: home, wildcards: wildcards}
+// CacheRefreshFunc rewrites the session cache from live data. The picker calls
+// it after removing an entry: the cache is what the next launch reads, and
+// without this it would list a directory the frecency backend has already
+// forgotten until the entry aged out on its own.
+type CacheRefreshFunc func()
+
+func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards WildcardFinder, zoxide zoxide.Zoxide, refreshCache CacheRefreshFunc) Picker {
+	return &RealPicker{
+		config:       config,
+		previewer:    previewer,
+		home:         home,
+		wildcards:    wildcards,
+		zoxide:       zoxide,
+		refreshCache: refreshCache,
+	}
+}
+
+// removeEntry drops a path from the frecency backend and refreshes the cache
+// behind it. The refresh is deliberately not part of the error: the entry is
+// gone either way, and a cache that is briefly out of date is not a failed
+// removal.
+func (p *RealPicker) removeEntry(path string) error {
+	if err := p.zoxide.Remove(path); err != nil {
+		return err
+	}
+	if p.refreshCache != nil {
+		p.refreshCache()
+	}
+	return nil
 }
 
 // buildAliases collects the aliases defined on [[session]] blocks, keyed by
@@ -191,6 +225,14 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		previewFunc = p.previewer.Preview
 	}
 
+	// Removal reaches the backend the same way, so the TUI never learns what
+	// the frecency backend is. A picker built without one leaves ctrl+x inert
+	// rather than opening a dialog it can't act on.
+	var removeFunc RemoveFunc
+	if p.zoxide != nil {
+		removeFunc = p.removeEntry
+	}
+
 	m := New(fetchFunc, Options{
 		ShowIcons:               showIcons,
 		ShowWindows:             showWindows,
@@ -210,6 +252,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		PreviewBorder:           p.config.TUI.PreviewBorder,
 		PreviewFunc:             previewFunc,
 		GroupSeparator:          p.config.TUI.GroupSeparator,
+		Remove:                  removeFunc,
 	})
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()

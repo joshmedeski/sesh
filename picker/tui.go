@@ -150,6 +150,9 @@ type Options struct {
 	// suppressed while the list is filtered, where the groups no longer occupy
 	// contiguous ranges.
 	GroupSeparator bool
+	// Remove drops an entry from the frecency backend. Nil leaves ctrl+x
+	// inert.
+	Remove RemoveFunc
 }
 
 type Model struct {
@@ -193,6 +196,14 @@ type Model struct {
 	// aliasSeq increments on every filter change so a pending auto-connect
 	// tick can tell whether it is stale.
 	aliasSeq int
+
+	// removeFunc drops an entry from the frecency backend, and confirm is the
+	// dialog guarding it — non-nil only while it is open, so its presence is
+	// the mode. status is a one-line message under the filter input,
+	// cleared by the next keypress.
+	removeFunc RemoveFunc
+	confirm    *confirmState
+	status     string
 
 	previewFunc     PreviewFunc
 	previewOn       bool
@@ -400,6 +411,7 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		aliasFilterPrefix:       opts.AliasFilterPrefix,
 		aliasAutoConnectDelay:   opts.AliasAutoConnectDelay,
 		disableAliasAutoConnect: opts.DisableAliasAutoConnect,
+		removeFunc:              opts.Remove,
 		previewFunc:             opts.PreviewFunc,
 		previewOn:               opts.Preview,
 		previewWidthPct:         previewWidth(opts.PreviewWidth),
@@ -517,6 +529,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.applyFilter()
 		return m, m.schedulePreview()
 
+	case entryRemovedMsg:
+		if msg.err != nil {
+			// The row is still in the list, and saying nothing would read as a
+			// removal that worked.
+			m.status = removalFailed(msg.err)
+			return m, nil
+		}
+		m.dropItem(msg.name, msg.path)
+		return m, m.schedulePreview()
+
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -524,6 +546,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyPressMsg:
+		// The dialog owns every key while it is open, so nothing reaches the
+		// filter input behind it.
+		if m.confirm != nil {
+			return m.updateConfirm(msg)
+		}
+		// A status message answers the previous keypress, so the next one
+		// retires it.
+		m.status = ""
+
 		switch msg.String() {
 		case "enter":
 			if m.loading {
@@ -554,6 +585,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+d":
 			m.cursorDown(m.visibleCount() / 2)
 			return m, m.schedulePreview()
+
+		case "ctrl+x":
+			return m.startRemove()
 
 		case "ctrl+o":
 			// Toggling stays allowed on a narrow terminal: the pane is gated on
@@ -1048,7 +1082,13 @@ func (m Model) View() tea.View {
 
 	// Filter input
 	b.WriteString("  " + m.filterInput.View())
-	b.WriteString("\n\n")
+	b.WriteString("\n")
+	// The status shares the blank line under the filter, so showing one never
+	// moves the list.
+	if m.status != "" {
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(3)).Render("  " + m.status))
+	}
+	b.WriteString("\n")
 
 	visible := m.visibleCount()
 
@@ -1138,6 +1178,10 @@ func (m Model) View() tea.View {
 			MaxWidth(m.contentWidth()).
 			Render(content)
 		content = lipgloss.JoinHorizontal(lipgloss.Top, list, m.previewView(cols, visible))
+	}
+
+	if m.confirm != nil {
+		content = overlayCentered(content, m.confirmView(), m.width, m.height)
 	}
 
 	v := tea.NewView(content)

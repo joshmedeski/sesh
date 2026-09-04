@@ -619,12 +619,13 @@ Sesh uses [zoxide](https://github.com/ajeetdsouza/zoxide) as its default frecenc
 list_command  = "fasd -d -l -R"  # list all tracked entries
 query_command = "fasd -d {}"     # resolve one input to a path
 add_command   = "fasd -A {}"     # record a path after connecting
+remove_command = "fasd -D {}"    # remove a path (picker ctrl+x)
 ```
 
-- The `{}` placeholder is replaced with the query string (`query_command`) or the path (`add_command`), the same substitution used by `preview_command`.
+- The `{}` placeholder is replaced with the query string (`query_command`) or the path (`add_command`, `remove_command`), the same substitution used by `preview_command`.
 - `list_command` output is parsed one path per line, most-frecent first. A leading numeric score is detected automatically when present (as with zoxide's `--score`); otherwise the score is `0`.
 - Any command runs as a single binary (no shell), so pipes/redirects aren't supported.
-- Any field you omit falls back to its zoxide default (`zoxide query --list --score`, `zoxide query {}`, `zoxide add {}`), so an absent `[frecency]` table leaves behavior unchanged.
+- Any field you omit falls back to its zoxide default (`zoxide query --list --score`, `zoxide query {}`, `zoxide add {}`, `zoxide remove {}`), so an absent `[frecency]` table leaves behavior unchanged.
 - The source label in `sesh list` output stays `zoxide`, so existing integrations that read the `--json` output keep working.
 
 ### Schema (Editor Autocomplete)
@@ -925,6 +926,28 @@ Pressing <kbd>3</kbd> connects to `my-project` immediately. Only `1`–`9` jump,
 The numbers follow the visible list, so anything typed after the sigil narrows it first and renumbers what's left — `#a` then <kbd>2</kbd> jumps to the second match for `a`. A digit with no row at that position does nothing rather than filtering.
 
 Only a leading `#` counts, so `feat#123` filters normally. If you configure `alias_filter_prefix = "#"`, alias mode wins and this mode is unreachable.
+
+#### Removing a zoxide entry
+
+A directory you deleted or renamed keeps showing up in the picker until zoxide is told about it. <kbd>ctrl+x</kbd> on a zoxide row prunes it where you noticed it, behind a confirmation:
+
+```
+╭────────────────────────────────────────────────────────╮
+│                                                        │
+│    Do you want to remove this directory from zoxide?   │
+│                                                        │
+│                    ~/c/some-old-project                │
+│                                                        │
+│                      Yes      No                       │
+│                                                        │
+╰────────────────────────────────────────────────────────╯
+```
+
+<kbd>y</kbd> or <kbd>enter</kbd> removes it, <kbd>n</kbd>, <kbd>q</kbd>, or <kbd>esc</kbd> cancels, and <kbd>←</kbd>/<kbd>→</kbd> or <kbd>tab</kbd> move between the buttons. Nothing typed while the dialog is open reaches the filter, so the list is exactly as you left it either way.
+
+Only zoxide rows can be removed — a tmux session, a `[[session]]` block, or a tmuxinator config is not zoxide's to forget, so <kbd>ctrl+x</kbd> says so and does nothing. The row disappears only once the removal actually succeeded; a backend that refuses it reports the error and leaves the row in place.
+
+The removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, the cache is rewritten behind the removal so the next launch doesn't list the directory again.
 
 #### Preview pane
 
