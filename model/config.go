@@ -93,6 +93,9 @@ type (
 		// AddCommand records a path to bump its frecency after connecting.
 		// The `{}` placeholder is replaced with the path.
 		AddCommand string `toml:"add_command"`
+		// RemoveCommand drops a path from the backend, used by the picker's
+		// ctrl+x binding. The `{}` placeholder is replaced with the path.
+		RemoveCommand string `toml:"remove_command"`
 	}
 
 	// NameSubstitution rewrites the path a session name is derived from before

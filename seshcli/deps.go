@@ -148,7 +148,14 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		worktree.IssueCacheName, worktree.IssueCacheVersion, worktree.IssueCacheTTL,
 	).WithMissingTTL(worktree.IssueCacheMissingTTL)
 	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
-	pk := picker.NewPicker(config, p, b.Home, usedLister)
+	// Removing an entry from the picker has to be written through to the cache,
+	// or the next launch reads back the directory that was just removed. Nil
+	// when caching is off: the picker refetches every time anyway.
+	var refreshCache picker.CacheRefreshFunc
+	if cachedLi != nil {
+		refreshCache = func() { cachedLi.RefreshCache(lister.ListOptions{}) }
+	}
+	pk := picker.NewPicker(config, p, b.Home, usedLister, b.Zoxide, refreshCache)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{

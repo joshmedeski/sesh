@@ -138,6 +138,11 @@
           "type": "string",
           "description": "Command that records a path to bump its frecency after connecting. The {} placeholder is replaced with the path.",
           "default": "zoxide add {}"
+        },
+        "remove_command": {
+          "type": "string",
+          "description": "Command that removes a path from the backend, used by the picker's ctrl+x binding. The {} placeholder is replaced with the path.",
+          "default": "zoxide remove {}"
         }
       },
       "additionalProperties": false
