@@ -284,38 +284,57 @@ const (
 // is always the terminal's background color on its foreground color, which
 // stays legible under any color scheme. The half circles are left unstyled for
 // the same reason: their default foreground is exactly the color the reversed
-// label fills with, so the chip reads as one shape.
+// label fills with, so the chip reads as one shape — and so coloring one paints
+// the same block the reversed label does.
 func (m Model) aliasChip(name string, matchLen int) string {
 	alias, ok := m.aliasByName[name]
 	if !ok {
 		return ""
 	}
 
+	runes := []rune(alias)
+	matchLen = max(min(matchLen, len(runes)), 0)
+
 	label := lipgloss.NewStyle().Reverse(true)
-	text := highlightChipPrefix(alias, matchLen, label)
+	var text string
+	if matchLen > 0 {
+		text = label.Foreground(aliasMatchColor).Render(string(runes[:matchLen]))
+	}
+	if matchLen < len(runes) {
+		text += label.Render(string(runes[matchLen:]))
+	}
+
+	leftCap, rightCap := chipLeftGlyph, chipRightGlyph
+	capStyle := lipgloss.NewStyle()
 	if !m.showIcons {
 		// Without nerd fonts the half circles render as tofu, so fall back to
-		// brackets that still read as a chip.
-		return label.Render("[") + text + label.Render("]") + " "
+		// brackets that still read as a chip. They are part of the label rather
+		// than a glyph beside it, so they are reversed along with it.
+		leftCap, rightCap = "[", "]"
+		capStyle = label
 	}
-	return chipLeftGlyph + text + chipRightGlyph + " "
+	// The caps belong to the match block whenever the letters beside them do:
+	// the left one as soon as anything matches, the right one only once the
+	// whole alias has, so a full match reads as one unbroken chip.
+	return chipCap(capStyle, leftCap, matchLen > 0) +
+		text +
+		chipCap(capStyle, rightCap, matchLen > 0 && matchLen == len(runes)) + " "
 }
 
-// highlightChipPrefix styles the first matchLen runes of a chip label as
-// matched. Reverse video is kept throughout so the chip stays one shape;
-// setting a foreground under it paints the matched runes as a colored block,
-// which is the same green used to highlight matches in session names.
-func highlightChipPrefix(alias string, matchLen int, label lipgloss.Style) string {
-	runes := []rune(alias)
-	if matchLen <= 0 {
-		return label.Render(alias)
+// chipCap renders one end of the chip, painted into the match block when
+// matched so the highlight carries into the rounded end instead of stopping
+// short at the first or last letter.
+func chipCap(capStyle lipgloss.Style, glyph string, matched bool) string {
+	if matched {
+		return capStyle.Foreground(aliasMatchColor).Render(glyph)
 	}
-	if matchLen > len(runes) {
-		matchLen = len(runes)
-	}
-	matched := label.Foreground(lipgloss.ANSIColor(2)).Render(string(runes[:matchLen]))
-	return matched + label.Render(string(runes[matchLen:]))
+	return capStyle.Render(glyph)
 }
+
+// aliasMatchColor is the color matched alias runes are painted in. It is the
+// same green the matches in session names are drawn in, and under the chip's
+// reverse video it fills as a block of background rather than colored text.
+var aliasMatchColor = lipgloss.ANSIColor(2)
 
 // indexFilterPrefix is the sigil that, typed first, enters index mode: the rows
 // are numbered and the next digit jumps straight to one of them.
@@ -821,9 +840,12 @@ func (m *Model) filterSessions(pattern string) []filteredItem {
 	}
 
 	if item, ok := m.aliasMatch(pattern); ok {
-		return []filteredItem{{item: item}}
+		return []filteredItem{{item: item, chipMatchLen: m.chipMatchLen(item.name, pattern)}}
 	}
 
+	// The chip is matched against what was typed, not the normalized form, for
+	// the same reason aliasMatch is: an alias is matched literally.
+	typed := pattern
 	if m.separatorAware {
 		pattern = normalizeSeparators(pattern)
 	}
@@ -831,12 +853,30 @@ func (m *Model) filterSessions(pattern string) []filteredItem {
 	matches := rankMatches(fuzzy.FindFromNoSort(pattern, m.allItems))
 	filtered := make([]filteredItem, len(matches))
 	for i, match := range matches {
+		item := m.allItems[match.Index]
 		filtered[i] = filteredItem{
-			item:           m.allItems[match.Index],
+			item:           item,
 			matchedIndexes: match.MatchedIndexes,
+			chipMatchLen:   m.chipMatchLen(item.name, typed),
 		}
 	}
 	return filtered
+}
+
+// chipMatchLen reports how many leading runes of a session's alias the query
+// prefixes, which is how much of its chip is highlighted. Aliases are matched
+// as a prefix rather than fuzzily so the chip fills in deterministically as the
+// alias is typed — the same rule alias-filter mode narrows by, applied here so
+// the chip lights up while filtering normally too.
+func (m *Model) chipMatchLen(name, query string) int {
+	alias, ok := m.aliasByName[name]
+	if !ok || query == "" {
+		return 0
+	}
+	if !strings.HasPrefix(strings.ToLower(alias), strings.ToLower(query)) {
+		return 0
+	}
+	return len([]rune(query))
 }
 
 // maxUnmatchedCharPenalty caps how much a name can be docked for the characters
