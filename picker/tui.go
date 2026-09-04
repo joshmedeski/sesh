@@ -304,7 +304,7 @@ func (m Model) aliasChip(name string, matchLen int) string {
 // highlightChipPrefix styles the first matchLen runes of a chip label as
 // matched. Reverse video is kept throughout so the chip stays one shape;
 // setting a foreground under it paints the matched runes as a colored block,
-// which is the same red used to highlight matches in session names.
+// which is the same green used to highlight matches in session names.
 func highlightChipPrefix(alias string, matchLen int, label lipgloss.Style) string {
 	runes := []rune(alias)
 	if matchLen <= 0 {
@@ -313,7 +313,7 @@ func highlightChipPrefix(alias string, matchLen int, label lipgloss.Style) strin
 	if matchLen > len(runes) {
 		matchLen = len(runes)
 	}
-	matched := label.Foreground(lipgloss.ANSIColor(1)).Render(string(runes[:matchLen]))
+	matched := label.Foreground(lipgloss.ANSIColor(2)).Render(string(runes[:matchLen]))
 	return matched + label.Render(string(runes[matchLen:]))
 }
 
@@ -1036,7 +1036,7 @@ func (m Model) View() tea.View {
 		}
 
 		cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
-		matchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(1)).Bold(true)
+		matchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 		normalStyle := lipgloss.NewStyle()
 		windowStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
 		indexStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(4))
