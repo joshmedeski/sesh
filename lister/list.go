@@ -1,6 +1,7 @@
 package lister
 
 import (
+	"cmp"
 	"slices"
 	"sync"
 
@@ -42,8 +43,8 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	fullDirectory := make(model.SeshSessionMap)
 	fullOrderedIndex := make([]string, 0)
 
-	srcsOrderedIndex := srcs(opts)
-	srcsOrderedIndex = sortSources(srcsOrderedIndex, l.config.SortOrder)
+	srcGroups := groupSources(srcs(opts), l.config.SortOrder)
+	srcsOrderedIndex := slices.Concat(srcGroups...)
 
 	resultsChan := make(chan strategyResult, len(srcsOrderedIndex))
 	var wg sync.WaitGroup
@@ -81,11 +82,22 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 		resultsMap[res.source] = res.sessions
 	}
 
+	// The directory is filled first so a merged group can look a session up by
+	// key while it orders the group.
 	for _, src := range srcsOrderedIndex {
 		sessions := resultsMap[src]
-		fullOrderedIndex = append(fullOrderedIndex, sessions.OrderedIndex...)
 		for _, i := range sessions.OrderedIndex {
 			fullDirectory[i] = sessions.Directory[i]
+		}
+	}
+
+	scores := zoxideScores(resultsMap["zoxide"])
+	for group, sources := range srcGroups {
+		for _, key := range groupOrder(sources, resultsMap, fullDirectory, scores) {
+			session := fullDirectory[key]
+			session.Group = group
+			fullDirectory[key] = session
+			fullOrderedIndex = append(fullOrderedIndex, key)
 		}
 	}
 
@@ -134,4 +146,47 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	attachWindowNames(sessions, windowNames)
 
 	return sessions, nil
+}
+
+// groupOrder lays out one sort_order group's sessions. A group of one keeps the
+// order its source returned. A merged group is reordered by zoxide score,
+// highest first, so the block reads as "what am I working on right now" rather
+// than "which source did this come from".
+func groupOrder(sources []string, results map[string]model.SeshSessions, directory model.SeshSessionMap, scores map[string]float64) []string {
+	index := make([]string, 0)
+	for _, src := range sources {
+		index = append(index, results[src].OrderedIndex...)
+	}
+	if len(sources) < 2 {
+		return index
+	}
+	// Stable, so the sessions zoxide has never seen keep their source order
+	// behind the scored ones instead of being shuffled among themselves.
+	slices.SortStableFunc(index, func(a, b string) int {
+		return cmp.Compare(sessionScore(directory[b], scores), sessionScore(directory[a], scores))
+	})
+	return index
+}
+
+// zoxideScores indexes the scores already fetched for the zoxide source by
+// path, so scoring the other sources in a merged group costs no extra lookups.
+func zoxideScores(sessions model.SeshSessions) map[string]float64 {
+	scores := make(map[string]float64, len(sessions.OrderedIndex))
+	for _, key := range sessions.OrderedIndex {
+		session := sessions.Directory[key]
+		scores[session.Path] = session.Score
+	}
+	return scores
+}
+
+// sessionScore is the score a session sorts by inside a merged group: its own
+// when it came from zoxide, otherwise whatever zoxide has for its path. A path
+// zoxide has never seen scores 0 and trails the group, which is the point —
+// somewhere never actually visited doesn't belong at the top of a frecency
+// ordered list.
+func sessionScore(session model.SeshSession, scores map[string]float64) float64 {
+	if session.Score != 0 {
+		return session.Score
+	}
+	return scores[session.Path]
 }

@@ -2019,3 +2019,89 @@ func TestIndexGutter_RunsOutAfterNine(t *testing.T) {
 	assert.Equal(t, "  ", indexGutter(maxIndexJump, style),
 		"rows past the ninth are unreachable, and blanks keep the names aligned")
 }
+
+// groupedSessions is testSessions with the sources split across two sort_order
+// groups: tmux pinned on top, everything else merged below it.
+func groupedSessions() model.SeshSessions {
+	sessions := testSessions()
+	sessions.OrderedIndex = []string{"s1", "s5", "s2", "s3", "s4"}
+	for key, group := range map[string]int{"s1": 0, "s5": 0, "s2": 1, "s3": 1, "s4": 1} {
+		session := sessions.Directory[key]
+		session.Group = group
+		sessions.Directory[key] = session
+	}
+	return sessions
+}
+
+func newGroupedTestModel(separator bool) Model {
+	sessions := groupedSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.GroupSeparator = separator
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+	return m
+}
+
+func TestGroupSeparator_DrawnBetweenGroups(t *testing.T) {
+	m := newGroupedTestModel(true)
+
+	require.Len(t, m.rows, 6, "one rule laid in between the two groups")
+	assert.True(t, m.rows[2].separator)
+	assert.Equal(t, []int{0, 1, 3, 4, 5}, m.rowOf)
+
+	lines := strings.Split(ansi.Strip(m.View().Content), "\n")
+	assert.Contains(t, lines[3], "notes")
+	assert.Contains(t, lines[4], "─")
+	assert.Contains(t, lines[5], "dotfiles")
+}
+
+func TestGroupSeparator_OffByDefault(t *testing.T) {
+	m := newGroupedTestModel(false)
+
+	assert.Len(t, m.rows, 5)
+	assert.NotContains(t, ansi.Strip(m.View().Content), "─")
+}
+
+func TestGroupSeparator_SuppressedWhileFiltering(t *testing.T) {
+	m := newGroupedTestModel(true)
+
+	m.filterInput.SetValue("o")
+	m.applyFilter()
+
+	for _, row := range m.rows {
+		assert.False(t, row.separator, "no rule while the list is reordered by match quality")
+	}
+	assert.NotContains(t, ansi.Strip(m.View().Content), "─")
+}
+
+func TestGroupSeparator_CursorSkipsIt(t *testing.T) {
+	m := newGroupedTestModel(true)
+
+	// The cursor indexes sessions, so stepping over the boundary lands on the
+	// first session of the next group rather than on the rule.
+	m.cursor = 1
+	m.cursorDown(1)
+	assert.Equal(t, 2, m.cursor)
+	assert.Equal(t, "dotfiles", m.filtered[m.cursor].item.name)
+
+	m.cursorUp(1)
+	assert.Equal(t, 1, m.cursor)
+	assert.Equal(t, "notes", m.filtered[m.cursor].item.name)
+}
+
+func TestGroupSeparator_ScrollCountsTheRule(t *testing.T) {
+	m := newGroupedTestModel(true)
+	// Three visible lines: filter row, blank, and one session row short of the
+	// list, so the rule has to be paid for out of the same budget.
+	m.height = headerLines + 3
+
+	m.cursorDown(4)
+	assert.Equal(t, 4, m.cursor)
+	assert.Equal(t, 3, m.offset, "the rule occupies a line the viewport must scroll past")
+
+	lines := strings.Split(ansi.Strip(m.View().Content), "\n")
+	assert.Contains(t, lines[len(lines)-1], "rails-app")
+}

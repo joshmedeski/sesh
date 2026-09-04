@@ -38,6 +38,16 @@ type filteredItem struct {
 	chipMatchLen int
 }
 
+// displayRow is one line of the rendered list: either a session, or the rule
+// drawn where one sort_order group ends and the next begins. A separator exists
+// only here — the cursor indexes filtered, never rows, so it can neither land
+// on one nor select one.
+type displayRow struct {
+	// index is the position in filtered, or -1 for a separator.
+	index     int
+	separator bool
+}
+
 // FetchFunc loads sessions asynchronously. It is called in a goroutine by Init().
 type FetchFunc func() (model.SeshSessions, error)
 
@@ -136,14 +146,26 @@ type Options struct {
 	PreviewBorder string
 	// PreviewFunc renders previews. Nil disables the pane entirely.
 	PreviewFunc PreviewFunc
+	// GroupSeparator draws a faint rule between sort_order groups. It is
+	// suppressed while the list is filtered, where the groups no longer occupy
+	// contiguous ranges.
+	GroupSeparator bool
 }
 
 type Model struct {
-	allItems       sessionItems
-	filtered       []filteredItem
-	filterInput    textinput.Model
-	cursor         int
-	offset         int
+	allItems    sessionItems
+	filtered    []filteredItem
+	filterInput textinput.Model
+	// cursor indexes filtered; offset indexes rows, which is the same list with
+	// the group separators laid in, so scrolling counts the lines actually
+	// drawn.
+	cursor int
+	offset int
+	// rows is the rendered layout of filtered — see displayRow — and rowOf maps
+	// a filtered index back to the row that draws it.
+	rows           []displayRow
+	rowOf          []int
+	groupSeparator bool
 	width          int
 	height         int
 	chosen         string
@@ -364,6 +386,7 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		previewWidthPct:         previewWidth(opts.PreviewWidth),
 		previewMinWidth:         previewMinWidth(opts.PreviewMinWidth),
 		previewBorderName:       previewBorder(opts.PreviewBorder),
+		groupSeparator:          opts.GroupSeparator,
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -748,18 +771,41 @@ func (m Model) indexJump(key string) (string, bool) {
 }
 
 func (m *Model) applyFilter() {
-	raw := m.filterInput.Value()
+	m.filtered = m.filterFor(m.filterInput.Value())
+	m.buildRows()
+}
+
+// filterFor narrows the loaded list for the raw input, dispatching on the sigil
+// it was typed with.
+func (m *Model) filterFor(raw string) []filteredItem {
 	if query, ok := m.aliasFilterQuery(raw); ok {
-		m.filtered = m.filterAliases(query)
-		return
+		return m.filterAliases(query)
 	}
 	// Index mode numbers whatever is displayed, so anything typed after the
 	// sigil filters exactly as it would on its own.
 	if query, ok := m.indexFilterQuery(raw); ok {
-		m.filtered = m.filterSessions(query)
-		return
+		return m.filterSessions(query)
 	}
-	m.filtered = m.filterSessions(raw)
+	return m.filterSessions(raw)
+}
+
+// buildRows lays the filtered sessions out as the lines the list renders,
+// inserting a rule wherever the sort_order group changes.
+//
+// Separators are suppressed as soon as anything is typed: a query reorders the
+// results by match quality, so the groups stop being contiguous ranges and a
+// rule would be drawing a boundary that isn't there.
+func (m *Model) buildRows() {
+	m.rows = make([]displayRow, 0, len(m.filtered))
+	m.rowOf = make([]int, len(m.filtered))
+	separate := m.groupSeparator && m.filterInput.Value() == ""
+	for i, item := range m.filtered {
+		if separate && i > 0 && item.item.session.Group != m.filtered[i-1].item.session.Group {
+			m.rows = append(m.rows, displayRow{index: -1, separator: true})
+		}
+		m.rowOf[i] = len(m.rows)
+		m.rows = append(m.rows, displayRow{index: i})
+	}
 }
 
 // filterSessions narrows the loaded list by pattern: everything when it's
@@ -835,9 +881,7 @@ func (m *Model) cursorUp(n int) {
 	if m.cursor < 0 {
 		m.cursor = 0
 	}
-	if m.cursor < m.offset {
-		m.offset = m.cursor
-	}
+	m.scrollToCursor()
 }
 
 func (m *Model) cursorDown(n int) {
@@ -849,9 +893,23 @@ func (m *Model) cursorDown(n int) {
 	if m.cursor > max {
 		m.cursor = max
 	}
-	visible := m.visibleCount()
-	if m.cursor >= m.offset+visible {
-		m.offset = m.cursor - visible + 1
+	m.scrollToCursor()
+}
+
+// scrollToCursor moves the viewport the least it can to keep the highlighted
+// session on screen. It works in row space so the separators between it and the
+// cursor are counted as the lines they are.
+func (m *Model) scrollToCursor() {
+	if m.cursor < 0 || m.cursor >= len(m.rowOf) {
+		m.offset = 0
+		return
+	}
+	row := m.rowOf[m.cursor]
+	if row < m.offset {
+		m.offset = row
+	}
+	if visible := m.visibleCount(); row >= m.offset+visible {
+		m.offset = row - visible + 1
 	}
 }
 
@@ -973,8 +1031,8 @@ func (m Model) View() tea.View {
 	} else {
 		// Session list
 		end := m.offset + visible
-		if end > len(m.filtered) {
-			end = len(m.filtered)
+		if end > len(m.rows) {
+			end = len(m.rows)
 		}
 
 		cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
@@ -987,7 +1045,13 @@ func (m Model) View() tea.View {
 		// list instead of counted.
 		_, indexMode := m.indexFilterQuery(m.filterInput.Value())
 
-		for i := m.offset; i < end; i++ {
+		for r := m.offset; r < end; r++ {
+			if m.rows[r].separator {
+				b.WriteString(m.separatorRule())
+				b.WriteString("\n")
+				continue
+			}
+			i := m.rows[r].index
 			item := m.filtered[i]
 			prefix := "  "
 			if i == m.cursor {
@@ -1041,6 +1105,17 @@ func (m Model) View() tea.View {
 	// scrollback back untouched when it quits.
 	v.AltScreen = true
 	return v
+}
+
+// separatorRule draws the boundary between two sort_order groups: a faint rule
+// across the list column, so a glance says whether the row under the cursor is
+// a live tmux session or somewhere to go.
+func (m Model) separatorRule() string {
+	width := m.contentWidth() - 2
+	if width < 1 {
+		width = 1
+	}
+	return lipgloss.NewStyle().Faint(true).Render("  " + strings.Repeat("─", width))
 }
 
 // indexGutter renders the jump number for the row at position i, or blanks of
