@@ -141,47 +141,40 @@ jobs:
           fi
       # benchstat answers the question precisely; the chart answers it at a
       # glance, which is what gets read on a pull request. It plots only the
-      # benchmarks that moved, against a shared axis, so a real regression is
-      # a longer bar rather than a row to find in a table of ninety-six.
+      # benchmarks that moved, ranked by how much work the change costs, names
+      # each one in English rather than as a Go benchmark name, and opens with
+      # a one-sentence verdict — so the comment says what happened before
+      # anyone reads a number.
       #
       # The committed baseline under testdata/bench is for the local loop and
       # is deliberately not used here: it belongs to whichever machine
       # recorded it, and both of the runs this job wants are already on disk.
-      - name: Chart the comparison
-        if: github.event_name == 'pull_request'
+      - name: Build the report
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          # No merge base means nothing to chart — on a push to main, or on a
+          # base that predates the benchmarks. The benchstat table below still
+          # reports head on its own.
           if [ -s base.txt ] && grep -q '^Benchmark' base.txt; then
             # The chart names each run by its file, which here is "base.txt".
             # These "#" lines are not benchmark-format configuration, so
             # benchfmt ignores them and the chart reads them back as notes.
             sed -i "1i # merge base ${BASE_SHA:0:7}" base.txt
             sed -i "1i # head ${HEAD_SHA:0:7}" head.txt
-            # 88 columns is about what a comment shows before it scrolls.
-            go run ./internal/benchchart -baseline base.txt -current head.txt -width 88 > chart.txt
+            go run ./internal/benchchart -format markdown \
+              -baseline base.txt -current head.txt > comment.md
+          else
+            printf '<!-- benchchart -->\n## Benchmarks 📊\n\n' > comment.md
           fi
-      - name: Build the report
-        run: |
           # One body, posted to the pull request and written to the job
-          # summary, so the two never disagree. The marker is for a human
-          # reading the source of the comment; --edit-last is what actually
-          # finds it again.
+          # summary, so the two never disagree.
           {
-            echo '<!-- benchchart -->'
-            echo '## Benchmarks 📊'
-            echo
-            if [ -s chart.txt ]; then
-              printf '```text\n%s\n```\n\n' "$(cat chart.txt)"
-              printf '<details><summary>benchstat table</summary>\n\n'
-              printf '```text\n%s\n```\n\n</details>\n' "$(cat benchstat.txt)"
-            else
-              printf '```text\n%s\n```\n' "$(cat benchstat.txt)"
-            fi
-            echo
+            printf '<details><summary>benchstat table</summary>\n\n'
+            printf '```text\n%s\n```\n\n</details>\n\n' "$(cat benchstat.txt)"
             echo '_Informational: this job never fails on a regression. See CONTRIBUTING.md ("Benchmarks")._'
-          } > comment.md
+          } >> comment.md
           cat comment.md >> "$GITHUB_STEP_SUMMARY"
       # --edit-last rewrites this job's previous comment instead of adding
       # another, so pushing ten times to a pull request leaves one comment
@@ -202,7 +195,6 @@ jobs:
             head.txt
             base.txt
             benchstat.txt
-            chart.txt
             comment.md
           if-no-files-found: warn
 

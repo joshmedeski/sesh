@@ -75,14 +75,25 @@ for that reason; a separate CI job runs the benchmarks on a single Linux runner
 and compares them against the PR's merge base with
 [benchstat](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat).
 
-That job leaves its result as a comment on the pull request: the same chart
-described under "Local before/after chart" below, drawn from the two runs it
-just did rather than from the committed baseline, with the benchstat table
-folded underneath it. The comment is rewritten in place on every push, so a
-pull request carries one comment showing the current numbers instead of one per
-push. The job summary gets the same body, which is where to look on a pull
-request from a fork — `GITHUB_TOKEN` is read-only there, so the comment step
-skips it.
+That job leaves its result as a comment on the pull request. It opens with a
+one-sentence verdict in a GitHub alert block — the level escalates only past
+the thresholds in "Regression thresholds" below — then a chart of what moved,
+in a ` ```diff ` fence, which is how a comment gets colour: GitHub renders a
+line starting with `-` red and one starting with `+` green, and slower is `+`
+and faster is `-`. The benchstat table and the full measurement table are
+folded underneath.
+
+Rows are named in English rather than by benchmark name (`FilterSessions/n=1000/plain/empty`
+reads as "Filtering 1,000 sessions on a keystroke (nothing typed)"), and ranked
+by how much work the change actually costs rather than by percentage — a 50%
+swing on a four-nanosecond call is noise wearing a big number, and 8% off half
+a millisecond is not. The phrases live in `internal/benchchart/names.go`;
+`TestEveryBenchmarkIsNamed` fails when a benchmark is added without one.
+
+The comment is rewritten in place on every push, so a pull request carries one
+comment showing the current numbers instead of one per push. The job summary
+gets the same body, which is where to look on a pull request from a fork —
+`GITHUB_TOKEN` is read-only there, so the comment step skips it.
 
 When adding a benchmark:
 
@@ -159,11 +170,19 @@ showing only time invites exactly that misreading. `-metric` picks:
 go run ./internal/benchchart -metric allocs         # allocations alone
 go run ./internal/benchchart -metric time,allocs,bytes
 go run ./internal/benchchart -all -width 140        # everything, wider
+go run ./internal/benchchart -raw-names             # benchmark names, for -bench=
+go run ./internal/benchchart -format markdown       # what CI comments
 
 # Re-chart the last run without re-running it. Colour is dropped when stdout
 # is not a terminal, so a pager needs CLICOLOR_FORCE.
 CLICOLOR_FORCE=1 go run ./internal/benchchart | less -R
 ```
+
+There are two renderers, and they are deliberately not the same. A terminal has
+ANSI colour, two hundred columns and eighth-width block glyphs; a comment has a
+`diff` fence, emoji and about a hundred. Making one output satisfy both would
+mean settling for what they share. `-raw-names` is the escape hatch when you
+want the name to paste into `-bench=`.
 
 ### Regression thresholds
 
