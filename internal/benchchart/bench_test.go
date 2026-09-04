@@ -31,6 +31,32 @@ PASS
 ok  	github.com/joshmedeski/sesh/v2/picker	2.628s
 `
 
+// wandering and steadyRun are the same benchmark measured twice: once on a
+// machine that was drifting under it, once on one that was not.
+const wandering = `goos: darwin
+goarch: arm64
+pkg: github.com/joshmedeski/sesh/v2/picker
+cpu: Apple M4 Max
+BenchmarkView/n=1000-16 	1000	 110800 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 119900 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 134600 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 135500 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 133200 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 138000 ns/op	 1 B/op	 1 allocs/op
+`
+
+const steadyRun = `goos: darwin
+goarch: arm64
+pkg: github.com/joshmedeski/sesh/v2/picker
+cpu: Apple M4 Max
+BenchmarkView/n=1000-16 	1000	 101300 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 103300 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 103500 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 100600 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 102700 ns/op	 1 B/op	 1 allocs/op
+BenchmarkView/n=1000-16 	1000	 103100 ns/op	 1 B/op	 1 allocs/op
+`
+
 func writeRun(t *testing.T, body string) string {
 	t.Helper()
 	p := filepath.Join(t.TempDir(), "bench.txt")

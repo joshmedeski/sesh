@@ -35,15 +35,25 @@ var metrics = map[string]metric{
 var metricOrder = []string{"time", "allocs", "bytes"}
 
 var (
-	faint  = lipgloss.NewStyle().Faint(true)
-	bold   = lipgloss.NewStyle().Bold(true)
-	better = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2))
-	worse  = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(1))
+	faint   = lipgloss.NewStyle().Faint(true)
+	bold    = lipgloss.NewStyle().Bold(true)
+	better  = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2))
+	worse   = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(1))
+	dubious = lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(3))
 )
 
 const (
 	minAxis  = 13 // narrower than this and the bars stop telling deltas apart
 	minLabel = 12
+
+	// unstableSpread is the point at which a run stops describing the code and
+	// starts describing the machine. CONTRIBUTING records that -benchtime=100ms
+	// holds these benchmarks to +-1%; five times that means something else was
+	// happening on the box. Such a run can still separate cleanly from the
+	// other one — a rank test only sees the order of the samples, not how far
+	// they wandered — so a delta drawn from it has to be labelled, not
+	// reported.
+	unstableSpread = 0.05
 )
 
 // options is everything the two renderers take that is not the data itself.
@@ -133,25 +143,26 @@ type line struct {
 	label  string
 	from   string  // the baseline value, SI-scaled
 	to     string  // the current value, SI-scaled
-	note   string  // the delta, or "new"/"gone"
+	note   string  // the delta, or "new"/"gone", or how unstable it was
 	delta  float64 // the change as a fraction of the baseline
 	impact float64 // the change in the metric's own units
 	style  lipgloss.Style
 	both   bool // false for a benchmark only one of the two runs has
+	shaky  bool // the delta is real but the measurement it came from is not
 }
 
 // section renders one metric. It prints the benchmarks that moved and
 // collapses the rest to a count: a run covers forty-odd benchmarks, and a
 // wall of unchanged rows buries the two that matter. -all opts back in.
 func section(m metric, base, head *run, opts options) string {
-	moved, still, missing := classify(m, base, head, opts)
-	if len(moved)+len(still)+len(missing) == 0 {
+	moved, shaky, still, missing := classify(m, base, head, opts)
+	if len(moved)+len(shaky)+len(still)+len(missing) == 0 {
 		return ""
 	}
 
-	shown := moved
+	shown := append(slices.Clone(moved), shaky...)
 	if opts.all {
-		shown = append(slices.Clone(moved), still...)
+		shown = append(shown, still...)
 	}
 	// The axis spans the largest delta on show, so the bars stay comparable
 	// to each other within a section and never all run to the edge.
@@ -162,7 +173,7 @@ func section(m metric, base, head *run, opts options) string {
 	scale := niceScale(peak)
 
 	var b strings.Builder
-	b.WriteString(bold.Render(m.title) + "  " + faint.Render(summary(len(moved), len(still), len(missing), len(shown) > 0, scale, opts.all)) + "\n\n")
+	b.WriteString(bold.Render(m.title) + "  " + faint.Render(summary(counted{len(moved), len(shaky), len(still), len(missing)}, len(shown) > 0, scale, opts.all)) + "\n\n")
 	b.WriteString(plot(shown, scale, opts))
 	for _, l := range missing {
 		b.WriteString(fmt.Sprintf("  %s  %s  %s\n", l.style.Render(l.note), l.label, faint.Render(l.from+l.to)))
@@ -172,14 +183,22 @@ func section(m metric, base, head *run, opts options) string {
 
 // summary is the one line that answers "is there anything here" without
 // reading a single bar.
-func summary(moved, still, missing int, plotted bool, scale float64, all bool) string {
-	total := moved + still + missing
-	parts := []string{fmt.Sprintf("%d of %d moved", moved, total)}
-	if still > 0 && !all {
-		parts = append(parts, fmt.Sprintf("%d within noise (-all to show)", still))
+// counted is how a metric's benchmarks fell out, which both renderers report
+// before either draws anything.
+type counted struct{ moved, shaky, still, missing int }
+
+func (c counted) total() int { return c.moved + c.shaky + c.still + c.missing }
+
+func summary(c counted, plotted bool, scale float64, all bool) string {
+	parts := []string{fmt.Sprintf("%d of %d moved", c.moved, c.total())}
+	if c.shaky > 0 {
+		parts = append(parts, fmt.Sprintf("%d too unstable to read", c.shaky))
 	}
-	if missing > 0 {
-		parts = append(parts, fmt.Sprintf("%d added or removed", missing))
+	if c.still > 0 && !all {
+		parts = append(parts, fmt.Sprintf("%d within noise (-all to show)", c.still))
+	}
+	if c.missing > 0 {
+		parts = append(parts, fmt.Sprintf("%d added or removed", c.missing))
 	}
 	if plotted {
 		parts = append(parts, "axis ±"+percent(scale))
@@ -192,24 +211,26 @@ func summary(moved, still, missing int, plotted bool, scale float64, all bool) s
 // ordered by how much work the change actually costs, so the row at the top
 // is the one worth reading: a 50% swing on a four-nanosecond call is noise
 // wearing a big number, and 8% off half a millisecond is not.
-func classify(m metric, base, head *run, opts options) (moved, still, missing []line) {
+func classify(m metric, base, head *run, opts options) (moved, shaky, still, missing []line) {
 	for _, r := range rowsFor(m.unit, base, head) {
 		l := lineFor(m, r, opts)
 		switch {
 		case !l.both:
 			missing = append(missing, l)
-		case significant(r):
-			moved = append(moved, l)
-		default:
+		case !significant(r):
 			still = append(still, l)
+		case l.shaky:
+			shaky = append(shaky, l)
+		default:
+			moved = append(moved, l)
 		}
 	}
-	for _, group := range [][]line{moved, still, missing} {
+	for _, group := range [][]line{moved, shaky, still, missing} {
 		slices.SortStableFunc(group, func(a, b line) int {
 			return cmp.Compare(b.impact, a.impact)
 		})
 	}
-	return moved, still, missing
+	return moved, shaky, still, missing
 }
 
 func lineFor(m metric, r row, opts options) line {
@@ -226,7 +247,18 @@ func lineFor(m metric, r row, opts options) line {
 		impact: math.Abs(median(r.head) - median(r.base)),
 		style:  style(r),
 		both:   len(r.base) > 0 && len(r.head) > 0,
+		shaky:  unstable(r),
 	}
+}
+
+// unstable reports whether either run wandered far enough within its own
+// samples that the gap between the two runs cannot be attributed to the code.
+func unstable(r row) bool {
+	return worstSpread(r) > unstableSpread
+}
+
+func worstSpread(r row) float64 {
+	return max(spread(r.base), spread(r.head))
 }
 
 func value(m metric, xs []float64) string {
@@ -341,6 +373,10 @@ func delta(r row) string {
 		return "gone"
 	case !significant(r):
 		return "~"
+	case unstable(r):
+		// Naming the spread rather than the delta: the delta is the number
+		// that cannot be trusted, and the spread is why.
+		return fmt.Sprintf("unstable ±%s", percent(worstSpread(r)))
 	}
 	return fmt.Sprintf("%+.1f%%", relative(r)*100)
 }
@@ -362,6 +398,8 @@ func style(r row) lipgloss.Style {
 		return bold
 	case !significant(r):
 		return faint
+	case unstable(r):
+		return dubious
 	case median(r.head) < median(r.base):
 		return better
 	}

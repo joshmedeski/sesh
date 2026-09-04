@@ -103,33 +103,62 @@ jobs:
       # and BlacklistFilter/n=10 at +-70%, and read 2.9x high in absolute
       # terms; 100ms holds both to +-1%. A threshold can only be as tight as
       # the measurement under it.
-      - name: Run benchmarks
+      #
+      # Both sides are compiled up front so the runs can be interleaved. The
+      # previous shape — the whole suite at head, then the whole suite at the
+      # merge base — put ten minutes between the two arms, and a shared runner
+      # does not hold still for ten minutes. Any drift over that gap landed
+      # entirely on whichever arm ran second, and `-count=6` collects a
+      # benchmark's six samples back to back, so each arm is one contiguous
+      # block in time: drift separates the blocks cleanly and a rank test
+      # calls that significant however far either block wandered. A pull
+      # request touching no benchmarked code reported 25 of 96 benchmarks
+      # "moved", 24 of them in the same direction.
+      #
+      # Alternating the arms round by round spreads any drift across both of
+      # them instead of confounding it with the comparison.
+      - name: Build both sides of the comparison
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          go test -run='^$' -bench=. -benchmem -benchtime=100ms -count=6 \
-            ./lister/... ./picker/... | tee head.txt
-      # Generated mocks are gitignored, so `git checkout` leaves the previous
-      # revision's copies behind. When a pull request changes a mocked
-      # interface, head's mocks don't compile against the merge base — and
-      # mockery loads every configured package before it writes anything, so
-      # it dies on the stale file instead of overwriting it. Delete them
-      # before each run, in both directions.
-      - name: Run benchmarks on the merge base
-        if: github.event_name == 'pull_request'
-        run: |
-          # Mocks are gitignored, so they survive the checkout below. Mockery
-          # cannot regenerate a mock for a package that no longer compiles, so
-          # a mock generated at one revision referencing a type that does not
-          # exist at the other kills it before it can replace itself. Clear
-          # them out first; every mock_*.go here is generated.
+          mkdir -p bin
+          build() {
+            for pkg in lister picker; do
+              go test -c -o "$PWD/bin/$1-$pkg.test" "./$pkg"
+            done
+          }
+          build head
+          [ "${{ github.event_name }}" = pull_request ] || exit 0
+          # Mocks are gitignored, so they survive the checkout. Mockery cannot
+          # regenerate a mock for a package that no longer compiles, so a mock
+          # generated at one revision referencing a type that does not exist at
+          # the other kills it before it can replace itself. Clear them out
+          # first; every mock_*.go here is generated.
           head_sha="$(git rev-parse HEAD)"
-          git checkout --detach --quiet ${{ github.event.pull_request.base.sha }}
+          git checkout --detach --quiet "$BASE_SHA"
           find . -name 'mock_*.go' -delete
           go tool mockery
-          go test -run='^$' -bench=. -benchmem -benchtime=100ms -count=6 \
-            ./lister/... ./picker/... | tee base.txt
+          build base
           git checkout --detach --quiet "$head_sha"
           find . -name 'mock_*.go' -delete
           go tool mockery
+      - name: Run the benchmarks, interleaved
+        run: |
+          : > head.txt
+          : > base.txt
+          root="$PWD"
+          for round in 1 2 3 4 5 6; do
+            for arm in head base; do
+              [ -f "bin/$arm-lister.test" ] || continue
+              for pkg in lister picker; do
+                # Run from the package directory, which is where `go test`
+                # would have run it from.
+                ( cd "$pkg" && "$root/bin/$arm-$pkg.test" \
+                    -test.run='^$' -test.bench=. -test.benchmem \
+                    -test.benchtime=100ms -test.count=1 ) | tee -a "$arm.txt"
+              done
+            done
+          done
       - name: Compare against the merge base
         run: |
           # A base that predates a benchmark has nothing to compare it to, so
