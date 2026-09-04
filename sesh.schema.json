@@ -31,9 +31,21 @@
     },
     "sort_order": {
       "type": "array",
-      "description": "Order in which session sources appear in the list",
+      "description": "Order in which session sources appear in the list. An entry may be a source name, listed as its own block, or a nested array of source names, merged into a single block ordered by zoxide score.",
       "items": {
-        "type": "string"
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "description": "Sources merged into one block, ordered by zoxide score. Sessions whose path zoxide has never seen score 0 and trail the block.",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        ]
       }
     },
     "dir_length": {
@@ -184,7 +196,12 @@
           "default": 100,
           "minimum": 1
         },
-        "preview_border": {
+        "group_separator": {
+      "type": "boolean",
+      "description": "Draw a faint rule between the sort_order groups in the picker, so the boundary between live tmux sessions and everywhere else stays visible. Suppressed while the list is filtered.",
+      "default": false
+    },
+    "preview_border": {
           "type": "string",
           "description": "Divider drawn between the session list and the preview pane. Use \"none\" for no divider.",
           "enum": ["line", "thick", "double", "none"],

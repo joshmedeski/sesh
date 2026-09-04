@@ -744,6 +744,43 @@ sort_order = [
 ]
 ```
 
+#### Merging sources into one score-ordered group
+
+By default every source is its own block, so a config session you open daily
+still sits below zoxide paths you haven't touched in weeks. Nest sources in
+`sort_order` to merge them into a single block ordered by zoxide score, highest
+first:
+
+```toml
+sort_order = [
+  "tmux",                # live sessions stay pinned on top
+  ["config", "zoxide"],  # merged, ordered by zoxide score
+]
+```
+
+Sessions from a source that carries no score of its own — a `[[session]]` block,
+for instance — borrow the score zoxide has for their path, so they sort by how
+often that directory is actually visited. A path zoxide has never seen scores 0
+and trails the group.
+
+Groups still appear in the order they're listed, and a flat `sort_order` behaves
+exactly as it always has: merging is opt-in.
+
+#### Group separator
+
+Once sources are interleaved, the boundary between live tmux sessions and
+everywhere else stops being obvious from position alone. `group_separator` draws
+a faint rule between the `sort_order` groups in the picker:
+
+```toml
+[tui]
+group_separator = true
+```
+
+The rule is never selectable and the cursor steps straight over it. It is
+suppressed while you're filtering, where results are reordered by match quality
+and the groups no longer line up with contiguous ranges.
+
 ### Cache
 
 > [!WARNING]
@@ -784,6 +821,7 @@ prompt = "> "
 placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
+group_separator = false
 window_name_format = "#{window_name}"
 alias_auto_connect_delay = "150ms"
 alias_filter_prefix = "/"

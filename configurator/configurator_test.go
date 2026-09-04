@@ -473,3 +473,38 @@ func TestValidateNameSubstitutions(t *testing.T) {
 		})
 	}
 }
+
+func TestGetConfig_SortOrderFlat(t *testing.T) {
+	config, err := configFromTOML(t, "sort_order = [\"tmux\", \"config\", \"zoxide\"]\n")
+	assert.NoError(t, err)
+	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config"}, {"zoxide"}}, config.SortOrder.SortGroups())
+}
+
+func TestGetConfig_SortOrderNestedGroup(t *testing.T) {
+	config, err := configFromTOML(t, "sort_order = [\"tmux\", [\"config\", \"zoxide\"]]\n")
+	assert.NoError(t, err)
+	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, config.SortOrder.SortGroups())
+}
+
+func TestGetConfig_SortOrderNestedGroupStrictMode(t *testing.T) {
+	config, err := configFromTOML(t, "strict_mode = true\nsort_order = [\"tmux\", [\"config\", \"zoxide\"]]\n")
+	assert.NoError(t, err)
+	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, config.SortOrder.SortGroups())
+}
+
+func TestGetConfig_SortOrderIgnoresUnusableEntries(t *testing.T) {
+	config, err := configFromTOML(t, "sort_order = [\"tmux\", 7, [], [\"config\", 3]]\n")
+	assert.NoError(t, err)
+	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config"}}, config.SortOrder.SortGroups(),
+		"a malformed sort_order costs the ordering it asked for, never the sessions")
+}
+
+func TestGetConfig_GroupSeparator(t *testing.T) {
+	config, err := configFromTOML(t, "")
+	assert.NoError(t, err)
+	assert.False(t, config.TUI.GroupSeparator, "opt-in")
+
+	config, err = configFromTOML(t, "[tui]\ngroup_separator = true\n")
+	assert.NoError(t, err)
+	assert.True(t, config.TUI.GroupSeparator)
+}

@@ -25,6 +25,12 @@ type (
 		WindowConfigs         []WindowConfig // The windows used in session config
 		WindowNames           []string       // The names of the windows in session config
 		Score                 float64        // The score of the session (from Zoxide)
+
+		// Group is the index of the sort_order block this session was listed
+		// under. Sessions sharing one are contiguous in OrderedIndex, which is
+		// what the picker draws its group separator from. It is not part of
+		// `sesh list --json`: it describes the list, not the session.
+		Group int `json:"-"`
 	}
 
 	SeshSrcs struct {

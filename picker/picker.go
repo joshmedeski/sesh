@@ -209,6 +209,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		PreviewMinWidth:         previewMinWidth(p.config.TUI.PreviewMinWidth),
 		PreviewBorder:           p.config.TUI.PreviewBorder,
 		PreviewFunc:             previewFunc,
+		GroupSeparator:          p.config.TUI.GroupSeparator,
 	})
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()
