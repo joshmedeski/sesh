@@ -36,9 +36,9 @@ func clientLines(lines ...string) []string {
 
 func TestResolveClient(t *testing.T) {
 	const (
-		onSession1   = "/dev/ttys001\t/dev/ttys001\t$1\t100"
-		onSession2   = "/dev/ttys002\t/dev/ttys002\t$2\t200"
-		alsoSession1 = "/dev/ttys003\t/dev/ttys003\t$1\t300"
+		onSession1   = "/dev/ttys001::/dev/ttys001::$1::100"
+		onSession2   = "/dev/ttys002::/dev/ttys002::$2::200"
+		alsoSession1 = "/dev/ttys003::/dev/ttys003::$1::300"
 	)
 
 	tests := []struct {
@@ -146,8 +146,8 @@ func TestSwitchOrAttachNamesTheResolvedClient(t *testing.T) {
 	mockOs.EXPECT().Getenv("TMUX").Return("/tmp/default,3746,1")
 	mockShell.EXPECT().ListCmd("tmux", "list-clients", "-F", clientFormat).
 		Return([]string{
-			"/dev/ttys001\t/dev/ttys001\t$1\t100",
-			"/dev/ttys002\t/dev/ttys002\t$2\t200",
+			"/dev/ttys001::/dev/ttys001::$1::100",
+			"/dev/ttys002::/dev/ttys002::$2::200",
 		}, nil)
 	mockShell.EXPECT().Cmd("tmux", "switch-client", "-c", "/dev/ttys001", "-t", "dotfiles").
 		Return("", nil)

@@ -1,6 +1,7 @@
 package tmux
 
 import (
+	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -19,7 +20,20 @@ const seshClientEnv = "SESH_CLIENT"
 // normal pane inherits it, and tmux resolves the client from it exactly.
 const tmuxPaneEnv = "TMUX_PANE"
 
-const clientFormat = "#{client_name}\t#{client_tty}\t#{session_id}\t#{client_activity}"
+// clientFormat uses the same "::" separator as every other listing rather than
+// a tab, because tmux does not deliver a tab intact to a command client that
+// isn't attached: it sanitizes the control character to "_", so the whole line
+// arrives as a single field. That is exactly the GUI-launcher case — Leader
+// Key, Raycast, an osascript binding — where every client silently dropped out
+// of the list and sesh concluded nothing was attached to switch.
+var clientFormat = strings.Join([]string{
+	"#{client_name}",
+	"#{client_tty}",
+	"#{session_id}",
+	"#{client_activity}",
+}, separator)
+
+const clientFieldCount = 4
 
 func (t *RealTmux) ListClients() ([]model.TmuxClient, error) {
 	lines, err := t.shell.ListCmd(t.bin, "list-clients", "-F", clientFormat)
@@ -27,9 +41,14 @@ func (t *RealTmux) ListClients() ([]model.TmuxClient, error) {
 		return nil, err
 	}
 	clients := make([]model.TmuxClient, 0, len(lines))
+	unparsed := make([]string, 0, len(lines))
 	for _, line := range lines {
-		fields := strings.Split(line, "\t")
-		if len(fields) != 4 || fields[0] == "" {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		fields := strings.Split(line, separator)
+		if len(fields) != clientFieldCount || fields[0] == "" {
+			unparsed = append(unparsed, line)
 			continue
 		}
 		activity, _ := strconv.ParseInt(fields[3], 10, 64)
@@ -39,6 +58,12 @@ func (t *RealTmux) ListClients() ([]model.TmuxClient, error) {
 			SessionID: fields[2],
 			Activity:  activity,
 		})
+	}
+	// Clients tmux listed but sesh couldn't read must not look like a server
+	// with nothing attached: callers treat that as "nothing to switch" and
+	// report success without moving anything.
+	if len(clients) == 0 && len(unparsed) > 0 {
+		return nil, fmt.Errorf("tmux listed %d client(s) in an unreadable format: %q", len(unparsed), unparsed)
 	}
 	return clients, nil
 }
