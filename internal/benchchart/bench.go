@@ -60,6 +60,12 @@ func (b *bench) label() string {
 	return path.Base(b.pkg) + " " + b.name
 }
 
+// phrase is the benchmark said in English, for a reader who has not opened
+// bench_test.go.
+func (b *bench) phrase() string {
+	return phrase(b.name)
+}
+
 // readRun parses a benchmark-format file. Lines go test emits that are not
 // benchmark results — "PASS", "ok  \t...", and the "#" provenance comments
 // `just bench-baseline` writes — are not part of the format, and benchfmt

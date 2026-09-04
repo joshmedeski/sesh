@@ -30,12 +30,15 @@ func main() {
 	list := flag.String("metric", "time,allocs", "metrics to chart: time, allocs, bytes")
 	width := flag.Int("width", 0, "chart width in columns (default: the terminal's)")
 	all := flag.Bool("all", false, "chart every benchmark, not only the ones that moved")
+	raw := flag.Bool("raw-names", false, "label rows by benchmark name rather than in English")
+	format := flag.String("format", "text", "text for a terminal, markdown for a pull-request comment")
 	flag.Parse()
 
 	if *baseline == "" {
 		*baseline = baselinePath(runtime.GOOS, runtime.GOARCH)
 	}
-	if err := compare(*baseline, *current, splitMetrics(*list), *width, *all); err != nil {
+	opts := options{metrics: splitMetrics(*list), width: chartWidth(*width), all: *all, raw: *raw}
+	if err := compare(*baseline, *current, *format, opts); err != nil {
 		fmt.Fprintln(os.Stderr, "benchchart:", err)
 		os.Exit(1)
 	}
@@ -48,11 +51,15 @@ func baselinePath(goos, goarch string) string {
 	return filepath.Join("testdata", "bench", fmt.Sprintf("baseline-%s-%s.txt", goos, goarch))
 }
 
-func compare(baseline, current string, keys []string, width int, all bool) error {
-	if len(keys) == 0 {
+func compare(baseline, current, format string, opts options) error {
+	render, ok := renderers[format]
+	if !ok {
+		return fmt.Errorf("unknown format %q; -format takes text or markdown", format)
+	}
+	if len(opts.metrics) == 0 {
 		return fmt.Errorf("no metrics selected; -metric takes some of time, allocs, bytes")
 	}
-	for _, k := range keys {
+	for _, k := range opts.metrics {
 		if _, ok := metrics[k]; !ok {
 			return fmt.Errorf("unknown metric %q; -metric takes some of time, allocs, bytes", k)
 		}
@@ -76,10 +83,17 @@ func compare(baseline, current string, keys []string, width int, all bool) error
 	// Downsamples the chart's colour to whatever stdout can actually take,
 	// which for a redirect to a file or a pipe into a pager means stripping it
 	// rather than writing escape codes into the output. It honours NO_COLOR
-	// and CLICOLOR_FORCE on the way.
+	// and CLICOLOR_FORCE on the way. The markdown renderer emits no ANSI at
+	// all, so this is a no-op for it.
 	out := colorprofile.NewWriter(os.Stdout, os.Environ())
-	fmt.Fprint(out, chart(base, head, keys, chartWidth(width), all))
+	fmt.Fprint(out, render(base, head, opts))
 	return nil
+}
+
+// renderers are the two audiences: a terminal, and a pull request.
+var renderers = map[string]func(base, head *run, opts options) string{
+	"text":     chart,
+	"markdown": markdown,
 }
 
 // chartWidth prefers an explicit -width, then the terminal's, then 80. The

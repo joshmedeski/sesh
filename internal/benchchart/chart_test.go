@@ -9,7 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func pair(base, head []float64) row { return row{label: "x", base: base, head: head} }
+func pair(base, head []float64) row { return row{label: "x", phrase: "x", base: base, head: head} }
+
+// textOpts is the terminal renderer's settings for a test: raw benchmark
+// names, since a test asserting on a phrase would be testing names.go.
+func textOpts(all bool) options {
+	return options{metrics: []string{"time"}, width: 100, all: all, raw: true}
+}
 
 // steady is a run whose samples agree, so a comparison against another steady
 // run turns entirely on the difference between the two.
@@ -159,7 +165,7 @@ func twoRuns(t *testing.T) (*run, *run) {
 func TestSectionChartsOnlyWhatMoved(t *testing.T) {
 	base, head := twoRuns(t)
 
-	out := ansi.Strip(section(metrics["time"], base, head, 100, false))
+	out := ansi.Strip(section(metrics["time"], base, head, textOpts(false)))
 
 	// The point of the default: a run covers forty-odd benchmarks, and the
 	// one that moved should not have to be found among them.
@@ -173,7 +179,7 @@ func TestSectionChartsOnlyWhatMoved(t *testing.T) {
 func TestSectionAllRestoresTheRest(t *testing.T) {
 	base, head := twoRuns(t)
 
-	out := ansi.Strip(section(metrics["time"], base, head, 100, true))
+	out := ansi.Strip(section(metrics["time"], base, head, textOpts(true)))
 
 	assert.Contains(t, out, "picker View/n=10")
 	assert.Contains(t, out, "lister ApplyDedup/n=10")
@@ -188,14 +194,14 @@ func TestSectionScalesTheAxisToWhatIsShown(t *testing.T) {
 
 	// One benchmark doubled, so the axis spans 100% and that row's bar runs
 	// the full half-width.
-	out := ansi.Strip(section(metrics["time"], base, head, 100, false))
+	out := ansi.Strip(section(metrics["time"], base, head, textOpts(false)))
 	assert.Contains(t, out, "axis ±100%")
 
 	// Halve the move and the axis follows it down, so the bar stays long
 	// enough to read rather than shrinking into the spine.
 	smaller, err := readRun(writeRun(t, strings.ReplaceAll(fixture, "34880 ns/op", "38368 ns/op")))
 	require.NoError(t, err)
-	out = ansi.Strip(section(metrics["time"], base, smaller, 100, false))
+	out = ansi.Strip(section(metrics["time"], base, smaller, textOpts(false)))
 	assert.Contains(t, out, "axis ±10%")
 	assert.Contains(t, out, "+10.0%")
 }
@@ -206,7 +212,7 @@ func TestSectionListsBenchmarksOnlyOneRunHas(t *testing.T) {
 	head, err := readRun(writeRun(t, strings.ReplaceAll(fixture, "BenchmarkView", "BenchmarkRenamedView")))
 	require.NoError(t, err)
 
-	out := ansi.Strip(section(metrics["time"], base, head, 100, false))
+	out := ansi.Strip(section(metrics["time"], base, head, textOpts(false)))
 	assert.Contains(t, out, "gone  picker View/n=10")
 	assert.Contains(t, out, "new  picker RenamedView/n=10")
 	assert.Contains(t, out, "2 added or removed")
@@ -216,7 +222,7 @@ func TestSectionSaysSoWhenNothingMoved(t *testing.T) {
 	base, err := readRun(writeRun(t, fixture))
 	require.NoError(t, err)
 
-	out := ansi.Strip(section(metrics["time"], base, base, 100, false))
+	out := ansi.Strip(section(metrics["time"], base, base, textOpts(false)))
 	assert.Contains(t, out, "0 of 2 moved")
 	assert.NotContains(t, out, "│", "no rows means no axis")
 }
@@ -224,7 +230,7 @@ func TestSectionSaysSoWhenNothingMoved(t *testing.T) {
 func TestChart(t *testing.T) {
 	base, head := twoRuns(t)
 
-	out := ansi.Strip(chart(base, head, []string{"time", "allocs"}, 80, false))
+	out := ansi.Strip(chart(base, head, options{metrics: []string{"time", "allocs"}, width: 80, raw: true}))
 
 	assert.Contains(t, out, "main abc1234", "the baseline says what produced it")
 	assert.Contains(t, out, "darwin/arm64 · Apple M4 Max")
@@ -250,7 +256,7 @@ func TestChartWarnsOnADifferentMachine(t *testing.T) {
 
 	// A committed baseline is only a target on a comparable machine; the chart
 	// says so rather than presenting someone else's laptop as a goal.
-	out := ansi.Strip(chart(base, head, []string{"time"}, 80, false))
+	out := ansi.Strip(chart(base, head, options{metrics: []string{"time"}, width: 80, raw: true}))
 	assert.Contains(t, out, "CPU (Apple M4 Max vs. Apple M1)")
 	assert.Contains(t, out, "just bench-baseline")
 }
@@ -259,7 +265,7 @@ func TestChartOnlyRendersRequestedMetrics(t *testing.T) {
 	base, err := readRun(writeRun(t, fixture))
 	require.NoError(t, err)
 
-	out := ansi.Strip(chart(base, base, []string{"allocs"}, 80, false))
+	out := ansi.Strip(chart(base, base, options{metrics: []string{"allocs"}, width: 80, raw: true}))
 	assert.Contains(t, out, "allocs/op")
 	assert.NotContains(t, out, "time/op")
 	assert.NotContains(t, out, "B/op")
@@ -284,6 +290,19 @@ func TestTruncate(t *testing.T) {
 	assert.Equal(t, "abcdef", truncate("abcdef", 0), "a nonsense width is not worth a crash")
 }
 
+func TestShorten(t *testing.T) {
+	name := "picker FilterSessions/n=10/1-char"
+	phrase := "Filtering 10 sessions on a keystroke (1 char typed)"
+
+	// A benchmark name is distinguished at both ends — the package at the
+	// front, the sub-benchmark at the back — so it loses its middle. A phrase
+	// leads with what it measures, so it loses its tail.
+	assert.Equal(t, truncate(name, 20), shorten(name, 20, true))
+	assert.Equal(t, clip(phrase, 20), shorten(phrase, 20, false))
+	assert.Contains(t, shorten(name, 20, true), "1-char")
+	assert.True(t, strings.HasPrefix(shorten(phrase, 20, false), "Filtering 10 "))
+}
+
 func TestPad(t *testing.T) {
 	// Padded by display width, not by bytes: "69.76µs" is seven columns and
 	// eight bytes, and fmt's width verb counts the bytes.
@@ -299,11 +318,11 @@ func TestSplitMetrics(t *testing.T) {
 }
 
 func TestCompareRejectsUnknownMetrics(t *testing.T) {
-	err := compare("", "", []string{"latency"}, 80, false)
+	err := compare("", "", "text", options{metrics: []string{"latency"}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `unknown metric "latency"`)
 
-	err = compare("", "", nil, 80, false)
+	err = compare("", "", "text", options{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no metrics selected")
 }
