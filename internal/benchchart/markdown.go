@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 )
 
@@ -39,8 +40,8 @@ func markdown(base, head *run, opts options) string {
 
 	sections := map[string]sectionData{}
 	for _, m := range chosen(opts) {
-		moved, still, missing := classify(m, base, head, opts)
-		sections[m.title] = sectionData{m, moved, still, missing}
+		moved, shaky, still, missing := classify(m, base, head, opts)
+		sections[m.title] = sectionData{m, moved, shaky, still, missing}
 	}
 
 	b.WriteString(verdict(chosen(opts), sections))
@@ -58,11 +59,21 @@ func markdown(base, head *run, opts options) string {
 
 // sectionData is one metric's benchmarks, already split and ranked.
 type sectionData struct {
-	metric                metric
-	moved, still, missing []line
+	metric                       metric
+	moved, shaky, still, missing []line
 }
 
-func (s sectionData) total() int { return len(s.moved) + len(s.still) + len(s.missing) }
+func (s sectionData) counted() counted {
+	return counted{len(s.moved), len(s.shaky), len(s.still), len(s.missing)}
+}
+
+func (s sectionData) total() int { return s.counted().total() }
+
+// charted is every row worth a line in the fence: what moved, what could not
+// be measured well enough to say, and what only one of the two runs has.
+func (s sectionData) charted() []line {
+	return append(append(slices.Clone(s.moved), s.shaky...), s.missing...)
+}
 
 // verdict is the sentence someone reads instead of the chart. GitHub renders
 // an alert block with a coloured border and an icon, which is the loudest
@@ -115,10 +126,11 @@ func regressedPastThreshold(ms []metric, sections map[string]sectionData) bool {
 // what keeps a metric name off the front of a sentence.
 func counts(ms []metric, sections map[string]sectionData) string {
 	var parts []string
-	moved, total := 0, 0
+	moved, shaky, total := 0, 0, 0
 	for _, m := range ms {
 		s := sections[m.title]
 		moved += len(s.moved)
+		shaky += len(s.shaky)
 		total = max(total, s.total())
 		if len(s.moved) == 0 {
 			parts = append(parts, m.title+" unchanged")
@@ -126,16 +138,25 @@ func counts(ms []metric, sections map[string]sectionData) string {
 		}
 		parts = append(parts, fmt.Sprintf("%d of %d moved on %s", len(s.moved), s.total(), m.title))
 	}
+	sentence := strings.Join(parts, "; ") + "."
 	if moved == 0 {
-		return fmt.Sprintf("Nothing moved across %d measurements.", total)
+		// The lede already said nothing moved; this says over how much.
+		sentence = fmt.Sprintf("Compared %s.", plural(total, "measurement"))
 	}
-	return strings.Join(parts, "; ") + "."
+	if shaky > 0 {
+		// Said out loud rather than dropped: a run this unstable is a fact
+		// about the runner that someone re-reading a flat comment should know.
+		sentence += fmt.Sprintf(" %d more could not be measured well enough to say.", shaky)
+	}
+	return sentence
 }
 
 // describe says the delta the way a person would.
 func describe(l line) string {
-	switch l.note {
-	case "new", "gone":
+	switch {
+	case l.note == "new", l.note == "gone":
+		return l.note
+	case l.shaky:
 		return l.note
 	}
 	pct := l.delta * 100
@@ -149,12 +170,13 @@ func describe(l line) string {
 // mdSection is one metric's chart: a diff fence, so GitHub colours the rows,
 // holding only what moved. The rest is in the table below it.
 func mdSection(s sectionData) string {
-	if len(s.moved) == 0 && len(s.missing) == 0 {
+	rows := s.charted()
+	if len(rows) == 0 {
 		return ""
 	}
 	var b strings.Builder
 	b.WriteString("```diff\n")
-	b.WriteString(fmt.Sprintf("@@ %s — %d of %d moved @@\n", s.metric.title, len(s.moved), s.total()))
+	b.WriteString(fmt.Sprintf("@@ %s — %s @@\n", s.metric.title, summary(s.counted(), false, 0, true)))
 
 	peak := 0.0
 	for _, l := range s.moved {
@@ -163,17 +185,17 @@ func mdSection(s sectionData) string {
 	scale := niceScale(peak)
 
 	labelCol, valueCol := 0, 0
-	for _, l := range append(append([]line{}, s.moved...), s.missing...) {
+	for _, l := range rows {
 		labelCol = max(labelCol, len([]rune(l.label)))
 		valueCol = max(valueCol, len([]rune(l.from)), len([]rune(l.to)))
 	}
 	// "- ", the label, the two values and their arrow, and the verdict; the
 	// bar takes what is left.
-	fixed := 2 + 2 + valueCol + 3 + valueCol + 2 + 2 + 12
+	fixed := 2 + 2 + valueCol + 3 + valueCol + 2 + 2 + 16
 	labelCol = min(labelCol, max(mdWidth-fixed-mdBarWidth, 20))
 	barCol := max(mdWidth-fixed-labelCol, mdBarWidth)
 
-	for _, l := range append(append([]line{}, s.moved...), s.missing...) {
+	for _, l := range rows {
 		b.WriteString(fmt.Sprintf("%s %s  %s → %s  %s  %s\n",
 			mark(l),
 			pad(clip(l.label, labelCol), labelCol, false),
@@ -201,7 +223,7 @@ func clip(s string, n int) string {
 // mark is the character GitHub's diff highlighter colours the line by.
 func mark(l line) string {
 	switch {
-	case !l.both:
+	case !l.both, l.shaky:
 		return "!"
 	case l.delta > 0:
 		return "+"
@@ -214,7 +236,7 @@ func mark(l line) string {
 // mdBar is one-sided: the "+"/"-" already says which way, so the bar is free
 // to spend its whole width on how far.
 func mdBar(l line, scale float64, width int) string {
-	if scale <= 0 || !l.both {
+	if scale <= 0 || !l.both || l.shaky {
 		return ""
 	}
 	return strings.Repeat("█", min(int(math.Abs(l.delta)/scale*float64(width)+0.5), width))
@@ -227,7 +249,7 @@ func mdTable(s sectionData) string {
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("<details><summary>All %d %s measurements</summary>\n\n", s.total(), s.metric.title))
 	b.WriteString("| | What it measures | Before | After | Change |\n|---|---|---|---|---|\n")
-	for _, group := range [][]line{s.moved, s.missing, s.still} {
+	for _, group := range [][]line{s.moved, s.shaky, s.missing, s.still} {
 		for _, l := range group {
 			b.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s |\n",
 				badge(l), l.label, orDash(l.from), orDash(l.to), tableChange(l)))
@@ -243,6 +265,8 @@ func badge(l line) string {
 	switch {
 	case !l.both:
 		return "🆕"
+	case l.shaky:
+		return "⚠️"
 	case l.note == "~":
 		return "⬜"
 	case l.delta > 0:
@@ -253,7 +277,7 @@ func badge(l line) string {
 
 func tableChange(l line) string {
 	switch {
-	case !l.both:
+	case !l.both, l.shaky:
 		return l.note
 	case l.note == "~":
 		return "no real change"
@@ -279,6 +303,13 @@ func mdFooter(base, head *run) string {
 	}
 	b.WriteString(head.env.String() + "\n\n</details>\n")
 	return b.String()
+}
+
+func plural(n int, noun string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, noun)
+	}
+	return fmt.Sprintf("%d %ss", n, noun)
 }
 
 func orDash(s string) string {

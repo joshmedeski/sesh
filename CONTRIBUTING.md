@@ -75,6 +75,18 @@ for that reason; a separate CI job runs the benchmarks on a single Linux runner
 and compares them against the PR's merge base with
 [benchstat](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat).
 
+That job compiles both sides up front (`go test -c` at head and at the merge
+base) and then **alternates** them, one round each, six rounds. It used to run
+the whole suite at head and then the whole suite at the base, which put ten
+minutes between the two arms — and a shared runner does not hold still for ten
+minutes. Because `-count=6` collects a benchmark's six samples back to back,
+each arm was one contiguous block in time, so any drift across the gap
+separated the blocks cleanly and every significance test called it real. A pull
+request that touched no benchmarked code reported 25 of 96 benchmarks as
+"moved", 24 of them in the same direction, with allocations identical
+throughout. Alternating spreads drift across both arms instead of confounding
+it with the comparison; the same null comparison then reported 1 of 96.
+
 That job leaves its result as a comment on the pull request. It opens with a
 one-sentence verdict in a GitHub alert block — the level escalates only past
 the thresholds in "Regression thresholds" below — then a chart of what moved,
@@ -158,9 +170,17 @@ Some caveats the chart itself will remind you of:
   reports "nothing moved" no matter what the branch cost. `bench-baseline`
   asks for confirmation when you are not on a clean `main` for that reason.
   Re-record when `main` moves somewhere the chart should be measuring against.
+- **A row can be significant and still meaningless.** When a run's own samples
+  spread more than 5% — five times the ±1% `-benchtime=100ms` is documented to
+  hold these benchmarks to — the chart reports `unstable ±N%` instead of a
+  delta, and leaves that row out of the verdict. A rank test only sees the
+  order of the samples, so a run drifting from 110µs to 138µs under its own
+  measurement separates perfectly from a steady one and scores `p=0.002`
+  against it. That is a fact about the machine, not the code.
 - **It is not benchstat.** The noise check is a sample-range comparison, not
-  the significance test benchstat runs. Broad strokes: use it to notice
-  something, and let the pull request's benchstat table settle it.
+  the significance test benchstat runs, and ninety-six simultaneous comparisons
+  will turn up the odd false positive whatever the test. Broad strokes: use it
+  to notice something, and let the benchstat table and `allocs/op` settle it.
 
 By default the chart plots `time/op` and `allocs/op` — allocations are the more
 trustworthy of the two when they disagree, per the section below, and a chart

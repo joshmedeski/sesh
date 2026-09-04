@@ -101,6 +101,56 @@ func TestDelta(t *testing.T) {
 	}
 }
 
+func TestUnstable(t *testing.T) {
+	tests := []struct {
+		name string
+		row  row
+		want bool
+	}{
+		{"steady runs are readable", pair(steady(100), steady(80)), false},
+		{"a little wander is expected", pair([]float64{99, 100, 101}, steady(80)), false},
+		{
+			// The row that produced the false positive this rule exists for:
+			// the baseline climbed from 110 to 138 across its own six samples
+			// while head sat flat, and every rank test in the world calls that
+			// a clean separation.
+			"a run that wandered says nothing about the code",
+			row{base: []float64{110.8, 119.9, 134.6, 135.5, 133.2, 138.0}, head: []float64{101.3, 103.3, 103.5, 100.6, 102.7, 103.1}},
+			true,
+		},
+		{"it does not matter which side wandered", pair(steady(100), []float64{60, 80, 100}), true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, unstable(tt.row))
+		})
+	}
+}
+
+func TestDeltaNamesTheSpreadOnAnUnstableRow(t *testing.T) {
+	r := row{base: []float64{110.8, 119.9, 134.6, 135.5, 133.2, 138.0}, head: []float64{101.3, 103.3, 103.5, 100.6, 102.7, 103.1}}
+
+	// The delta is the number that cannot be trusted, so the row reports the
+	// spread that discredits it instead.
+	assert.Equal(t, "unstable ±10.2%", delta(r))
+	assert.Equal(t, dubious, style(r))
+	assert.True(t, significant(r), "the samples really do separate; that is the trap")
+}
+
+func TestClassifyHoldsUnstableRowsBack(t *testing.T) {
+	base, err := readRun(writeRun(t, wandering))
+	require.NoError(t, err)
+	head, err := readRun(writeRun(t, steadyRun))
+	require.NoError(t, err)
+
+	moved, shaky, still, missing := classify(metrics["time"], base, head, textOpts(false))
+	assert.Empty(t, moved, "a delta drawn from a run that wandered is not a finding")
+	assert.Len(t, shaky, 1)
+	assert.Empty(t, still)
+	assert.Empty(t, missing)
+	assert.True(t, shaky[0].shaky)
+}
+
 func TestStyle(t *testing.T) {
 	// Every metric the chart plots is lower-is-better, which is what lets it
 	// colour a delta without knowing which one it is looking at.

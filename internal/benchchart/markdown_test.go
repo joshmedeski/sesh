@@ -141,7 +141,7 @@ func TestMarkdownSkipsAMetricThatDidNotMove(t *testing.T) {
 	got := markdown(base, base, mdOpts())
 	assert.Contains(t, got, "> [!NOTE]")
 	assert.NotContains(t, got, "```diff", "a section with nothing in it is not worth a fence")
-	assert.Contains(t, got, "Nothing moved across 2 measurements.")
+	assert.Contains(t, got, "No benchmark moved. Compared 2 measurements.")
 }
 
 func TestMarkdownWarnsOnADifferentMachine(t *testing.T) {
@@ -153,6 +153,28 @@ func TestMarkdownWarnsOnADifferentMachine(t *testing.T) {
 	got := markdown(base, head, mdOpts())
 	assert.Contains(t, got, "> [!CAUTION]\n> These runs are not comparable")
 	assert.Contains(t, got, "CPU (Apple M4 Max vs. Apple M1)")
+}
+
+func TestMarkdownKeepsUnstableRowsOutOfTheVerdict(t *testing.T) {
+	base, err := readRun(writeRun(t, wandering))
+	require.NoError(t, err)
+	head, err := readRun(writeRun(t, steadyRun))
+	require.NoError(t, err)
+
+	got := markdown(base, head, mdOpts())
+
+	// The comment that prompted this rule opened with a confident green
+	// "23% faster" drawn from a run that was drifting under the measurement.
+	assert.Contains(t, got, "> [!NOTE]")
+	assert.Contains(t, got, "No benchmark moved. Compared 1 measurement.")
+	assert.Contains(t, got, "1 more could not be measured well enough to say.")
+	assert.NotContains(t, got, "faster")
+
+	// The row is still shown — a runner this unstable is worth knowing about —
+	// but with the character GitHub leaves uncoloured, and no bar.
+	assert.Contains(t, got, "! Redrawing the picker, 1,000 sessions")
+	assert.Contains(t, got, "unstable ±10.2%")
+	assert.Contains(t, got, "| ⚠️ | Redrawing the picker, 1,000 sessions |")
 }
 
 func TestCompareRejectsAnUnknownFormat(t *testing.T) {
