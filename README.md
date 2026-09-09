@@ -30,6 +30,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
 - **Clone and connect** - clone a git repo and start a session in one step
+- **Mkdir and connect** - create a new directory (relative or absolute path) and start a session in one step
 - **Last session switching** - seamlessly bounce between your two most recent sessions
 - **Root session navigation** - jump to the root of a git worktree or repository
 - **Nerd Font icons** - display session type icons in your picker
@@ -51,6 +52,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - [How to install](#how-to-install)
 - [Shell Completion](#shell-completion)
 - [Extensions](#extensions)
+- [Agent skill](#agent-skill)
 - [How to use](#how-to-use)
 - [Recommended tmux Settings](#recommended-tmux-settings)
 
@@ -107,6 +109,18 @@ To install sesh, run the following [yay](https://aur.archlinux.org/packages/yay)
 
 ```sh
 yay -S sesh-bin
+```
+
+</details>
+
+<details>
+  <summary>Fedora (Copr)</summary>
+
+Sesh is available from the [buckaroogeek/Tmux_sesh](https://copr.fedorainfracloud.org/coprs/buckaroogeek/Tmux_sesh/) Copr repository (Fedora and EPEL 10):
+
+```sh
+sudo dnf copr enable buckaroogeek/Tmux_sesh
+sudo dnf install tmux-sesh
 ```
 
 </details>
@@ -286,6 +300,25 @@ ssession=$(sesh l -t -T -d -H | walker -d -f -k -p "Sesh sessions"); sesh cn --s
 
 ##### For dmenu launchers replace walker -dfk with dmenu or rofi)
 
+## Agent skill
+
+Sesh ships an [agent skill](https://agentskills.io) that teaches coding agents to start work through sesh instead of shelling out to `tmux new-session`, `tmux new-window`, and `tmux send-keys`. An agent that has it will pick a session or a window depending on whether the work belongs to something already open, resolve names and directories across tmux, zoxide, config, and tmuxinator, reuse what's already running instead of duplicating it, and leave you where you are when the work is a background step.
+
+Install it with the [`skills`](https://github.com/vercel-labs/skills) CLI:
+
+```sh
+# globally, for every project
+npx skills add joshmedeski/sesh -g
+
+# or into the current project only
+npx skills add joshmedeski/sesh
+```
+
+It works with Claude Code, Codex, Cursor, OpenCode, and [dozens of other agents](https://github.com/vercel-labs/skills#supported-agents) — `skills add` will ask which ones to install to, or take `-a claude-code` to pick.
+
+The skill lives at [`skills/sesh/SKILL.md`](skills/sesh/SKILL.md) and is versioned with the CLI, so `npx skills update sesh` picks up changes. To install it by hand instead, copy or symlink that file to `~/.claude/skills/sesh/SKILL.md` (or your agent's equivalent skills directory).
+
+
 ### How to use
 
 ### tmux for sessions
@@ -331,6 +364,14 @@ bind-key "T" run-shell "sesh connect \"$(
 
 You can customize this however you want, see `man fzf` for more info on the different options.
 
+To continuously refresh previews of active tmux sessions, add `--watch` to the preview command:
+
+```sh
+--preview 'sesh preview --watch {}'
+```
+
+Watch mode polls only active tmux sessions; directory and configured-session previews still render once. The default interval is 500 milliseconds and can be changed with `--interval 100ms`.
+
 #### tmux + [television](https://github.com/alexpasmantier/television)
 
 If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/community/channels-unix/#sesh) in a tmux popup.
@@ -343,51 +384,88 @@ Use `Ctrl-s` to cycle through the sources, and `Ctrl-d` to kill the highlighted 
 
 ### Window management
 
-`sesh window` (alias `w`) lets you list, switch to, and create tmux windows within a session — similar to how `sesh list` and `sesh connect` work for sessions.
-
-#### List windows in the current session
+`sesh window` (alias `w`) lets you list, switch to, and create tmux windows within a session — similar to how `sesh list` and `sesh connect` work for sessions. It's a group of subcommands:
 
 ```sh
-sesh window
+sesh window list      # list the windows of a session
+sesh window connect   # select a window, creating it if it doesn't exist
+```
+
+#### List windows
+
+```sh
+sesh window list           # the session you're attached to
+sesh window list -t work   # another session
+sesh window list -j        # as json
 ```
 
 #### Switch to an existing window by name
 
 ```sh
-sesh window editor
+sesh window connect editor
 ```
 
-If a window named `editor` exists in the current session, sesh will switch to it.
+If a window named `editor` exists in the target session, sesh selects it. If it doesn't, sesh creates it.
 
 #### Create a new window at a directory
 
 ```sh
-sesh window ~/projects/my-app
+sesh window connect ~/projects/my-app
 ```
 
-If no window with that name exists, sesh will create a new window named after the directory (`my-app`) with its working directory set to the given path.
+A directory argument names the window after its basename (`my-app`) and roots it there. Running it again selects the window the first run created rather than opening a duplicate.
+
+#### Run a command in the window
+
+```sh
+sesh window connect claude -t 'second brain' -c 'claude "summarize my notes"'
+```
+
+On a **created** window the command becomes the window's process, so the window closes when it exits. On an **existing** window it's typed into whatever is already running there. Pass `--new` when every invocation should get its own fresh window instead of reusing the name.
 
 #### Target a specific session
 
-Use `--session` / `-s` to manage windows in a session other than the one you're currently attached to:
+Use `--target` / `-t` to manage windows in a session other than the one you're attached to:
 
 ```sh
-sesh window --session work
-sesh window ~/projects/my-app --session work
+sesh window list -t work
+sesh window connect ~/projects/my-app -t work
 ```
+
+The target is resolved the same way `sesh connect` resolves a session — across tmux, zoxide, config, and tmuxinator — and started if it isn't running yet, without moving you out of the session you're in. Use `-b` / `--background` to create the window without being taken to it, and `-s` / `--switch` when triggering sesh from outside the terminal.
+
+> [!NOTE]
+> `sesh window <name>` and `sesh window -s <session>` were replaced by `sesh window connect <name>` and `sesh window list -t <session>`. `--session` still works as a deprecated alias for `--target`, and `-s` now means `--switch` on `sesh window connect`, consistent with `sesh connect`.
 
 #### fzf integration
 
-You can combine `sesh window` with fzf to interactively switch windows:
+You can combine the two subcommands with fzf to interactively switch windows:
 
 ```sh
-sesh window $(sesh window | fzf)
+sesh window connect "$(sesh window list | fzf)"
 ```
 
 Or as a tmux keybind:
 
 ```sh
-bind-key "W" run-shell "sesh window \"$(sesh window | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
+bind-key "W" run-shell "sesh window connect \"$(sesh window list | fzf-tmux -p 60%,50% --prompt '🪟  ')\""
+```
+
+
+### Create a directory and connect
+
+`sesh mkdir` (alias `md`) combines `mkdir` and `sesh connect` into a single step: it creates the directory if it doesn't already exist, then connects to it as a session — no need to `cd` into it first or wait for zoxide to pick it up.
+
+```sh
+sesh mkdir my-new-project
+```
+
+`<path>` accepts both **relative** paths (resolved against your current working directory) and **absolute** paths, as well as `~` for your home directory:
+
+```sh
+sesh mkdir my-new-project        # relative to the current directory
+sesh mkdir ~/projects/my-app     # relative to your home directory
+sesh mkdir /Users/josh/dev/api   # absolute path
 ```
 
 ## gum + tmux
@@ -461,6 +539,24 @@ Add the following to your `tmux.conf` to overwrite the default `last-session` co
 bind -N "last-session (via sesh) " L run-shell "sesh last"
 ```
 
+### Enrich session names with the GitHub issue title
+
+`sesh` can rename a session to include its branch's GitHub issue title, e.g.
+`400-status` → `400-status — warm the status cache`. It parses the issue number
+from the branch name and looks it up with the `gh` CLI (which must be installed
+and authenticated).
+
+Add an opt-in tmux hook so every new session is enriched in the background:
+
+```tmux
+set-hook -g session-created 'run-shell -b "sesh rename --enrich"'
+```
+
+The command is a no-op when the branch has no resolvable issue (the session
+keeps its plain name), and it self-heals: switching to a branch without an issue
+renames the session back to its base name. Reconnecting to the directory
+reattaches to the enriched session rather than creating a duplicate.
+
 ### Connect to root
 
 While working in a nested session, you may way to connect to the root session of a git worktree or git repository. To do this, you can use the `--root` flag with the `sesh connect` command.
@@ -513,6 +609,24 @@ tmux_command = "psmux"
 ```
 
 This replaces the `tmux` binary in all commands sesh runs (session creation, switching, attaching, etc.). The configured multiplexer must support tmux's CLI interface.
+
+### Custom Frecency Backend (fasd, autojump, etc.)
+
+Sesh uses [zoxide](https://github.com/ajeetdsouza/zoxide) as its default frecency directory-jumping backend, but you can point it at an alternative such as [fasd](https://github.com/clvv/fasd), [fasder](https://github.com/khwang0/fasder), [autojump](https://github.com/wting/autojump), or [memy](https://github.com/xvello/memy) by overriding the commands in a `[frecency]` table. This is useful for tools that track files _and_ directories, unlike zoxide which tracks directories only.
+
+```toml
+[frecency]
+list_command  = "fasd -d -l -R"  # list all tracked entries
+query_command = "fasd -d {}"     # resolve one input to a path
+add_command   = "fasd -A {}"     # record a path after connecting
+remove_command = "fasd -D {}"    # remove a path (picker ctrl+x)
+```
+
+- The `{}` placeholder is replaced with the query string (`query_command`) or the path (`add_command`, `remove_command`), the same substitution used by `preview_command`.
+- `list_command` output is parsed one path per line, most-frecent first. A leading numeric score is detected automatically when present (as with zoxide's `--score`); otherwise the score is `0`.
+- Any command runs as a single binary (no shell), so pipes/redirects aren't supported.
+- Any field you omit falls back to its zoxide default (`zoxide query --list --score`, `zoxide query {}`, `zoxide add {}`, `zoxide remove {}`), so an absent `[frecency]` table leaves behavior unchanged.
+- The source label in `sesh list` output stays `zoxide`, so existing integrations that read the `--json` output keep working.
 
 ### Schema (Editor Autocomplete)
 
@@ -573,6 +687,41 @@ dir_length = 2  # Uses last 2 directories: "projects/sesh" instead of just "sesh
 > [!NOTE]
 > Works great with [tmux-floax](https://github.com/omerxx/tmux-floax)
 
+### Session Name Substitution
+
+Some directories produce long, repetitive session names -- everything under
+`~/c/dotfiles/.config` shows up with that whole prefix. `name_substitution`
+rules rewrite the path a name is derived from so you can shorten or relabel it.
+
+```toml
+[[name_substitution]]
+find = "~/c/dotfiles/.config/"
+replace = ""
+```
+
+With that rule, connecting to `~/c/dotfiles/.config/nvim` creates a session
+named `nvim` instead of the full path. Rules are matched against the
+home-collapsed path (a leading `~`) for every path-derived source -- zoxide,
+directories, and wildcards. Existing tmux sessions keep their names, and if no
+rule matches, naming falls back to the usual git and directory strategies, so
+adding rules never changes how anything else is named.
+
+Rules apply in order, each one seeing the result of the previous, so they can
+compose. `find` is matched literally by default; set `regex = true` to treat it
+as a [Go regular expression](https://pkg.go.dev/regexp/syntax), which lets
+`replace` reference capture groups with `$1`, `$2`, and so on:
+
+```toml
+[[name_substitution]]
+find = ".*/workspace/[0-9]+_(.*)"
+replace = "ws-$1"
+regex = true
+```
+
+> [!NOTE]
+> tmux session names can't contain `.` or `:`, and spaces are turned into `_`,
+> so those characters in `replace` are normalized in the final name.
+
 ### Sorting
 
 If you'd like to change the order of the sessions shown, you can configure `sort_order` in your `sesh.toml` file
@@ -596,6 +745,43 @@ sort_order = [
 ]
 ```
 
+#### Merging sources into one score-ordered group
+
+By default every source is its own block, so a config session you open daily
+still sits below zoxide paths you haven't touched in weeks. Nest sources in
+`sort_order` to merge them into a single block ordered by zoxide score, highest
+first:
+
+```toml
+sort_order = [
+  "tmux",                # live sessions stay pinned on top
+  ["config", "zoxide"],  # merged, ordered by zoxide score
+]
+```
+
+Sessions from a source that carries no score of its own — a `[[session]]` block,
+for instance — borrow the score zoxide has for their path, so they sort by how
+often that directory is actually visited. A path zoxide has never seen scores 0
+and trails the group.
+
+Groups still appear in the order they're listed, and a flat `sort_order` behaves
+exactly as it always has: merging is opt-in.
+
+#### Group separator
+
+Once sources are interleaved, the boundary between live tmux sessions and
+everywhere else stops being obvious from position alone. `group_separator` draws
+a faint rule between the `sort_order` groups in the picker:
+
+```toml
+[tui]
+group_separator = true
+```
+
+The rule is never selectable and the cursor steps straight over it. It is
+suppressed while you're filtering, where results are reordered by match quality
+and the groups no longer line up with contiguous ranges.
+
 ### Cache
 
 > [!WARNING]
@@ -613,6 +799,19 @@ The cache is also refreshed automatically after `sesh connect`.
 cache = true
 ```
 
+Sessions created or killed outside `sesh connect` (e.g. plain `tmux new-session`, closing a session's last window) are missing from the cache until the next stale-hit refresh. To keep the cache current, run `sesh cache refresh` when those events happen — it fetches live data and rewrites the cache, and does nothing when the cache is disabled. With tmux hooks this covers both events:
+
+```sh
+set-hook -g session-created 'run-shell -b "sesh cache refresh"'
+set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
+```
+
+If you use a kill binding in an fzf picker (like `ctrl-d` in the example above), refresh the cache before reloading the list so the killed session disappears immediately:
+
+```sh
+--bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
+```
+
 ### Picker TUI
 
 The Picker TUI can be configured with some options that help you customize it's behaviour, this picker is a useful replacement to external fuzzy pickers.
@@ -622,7 +821,162 @@ The Picker TUI can be configured with some options that help you customize it's 
 prompt = "> "
 placeholder = "Filter sessions... "
 show_icons = false
+show_windows = false
+group_separator = false
+window_name_format = "#{window_name}"
+alias_auto_connect_delay = "150ms"
+alias_filter_prefix = "/"
+preview = false
+preview_width = 60
+preview_min_width = 100
+preview_border = "line"
 ```
+
+With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
+
+```
+>  sesh editor server logs
+   dotfiles nvim shell
+   my-project code server db +2
+   scratch
+```
+
+Window names are display-only: selecting a row still returns just the session name, and typing a window name does not match its session. The names for live tmux sessions are fetched in a single tmux call, so the option costs the same regardless of how many sessions you have.
+
+`window_name_format` accepts any tmux format. tmux interprets conditionals, fallback variables, and `#()` commands. For example, this format uses the pane title when it exists and uses the window name otherwise:
+
+```toml
+window_name_format = "#{?#{pane_title},#{pane_title},#{window_name}}"
+```
+
+`alias_auto_connect_delay` and `alias_filter_prefix` tune aliases — see [Session Aliases](#session-aliases).
+
+#### Custom icons
+
+With `show_icons = true`, each row gets a glyph for where the session came from — tmux, config, zoxide, tmuxinator. That says where it was found, not what it is, so `[[session]]` and `[[wildcard]]` blocks can name their own icon instead. It can be any string: a nerd font glyph or an emoji.
+
+```toml
+[[session]]
+name = "sesh"
+path = "~/c/sesh"
+icon = ""
+
+[[session]]
+name = "notes"
+path = "~/second-brain"
+icon = "📓"
+
+[[wildcard]]
+pattern = "~/c/work/*"
+icon = "🏠"
+```
+
+```
+>  sesh
+  📓 notes
+  🏠 work-api
+   dotfiles
+```
+
+The most specific match wins: an exact `[[session]]` name, then its `path` — so the same directory listed by zoxide under a derived name still gets the icon — then a `[[wildcard]]` pattern. If several patterns match, the first in config order wins, as it does for `startup_command`. Anything with no icon of its own keeps its source glyph, and `icon = ""` counts as unset.
+
+Custom icons render unstyled: emoji bring their own color, and nerd font glyphs take the default foreground. The icon column is padded to the widest icon you configured, so a double-width emoji on one row doesn't push its name out of line with the rest.
+
+If one icon still sits a column off, add a trailing space to it:
+
+```toml
+[[session]]
+name = "update"
+path = "~/c/update"
+icon = "⬆️ "   # note the trailing space
+```
+
+Terminals disagree about how wide an emoji is, and nothing in a TUI can ask which way yours went. Emoji written with a variation selector — `⬆️` is `U+2B06` plus `U+FE0F`, as are `🖼️` and `🖥️` — measure as two cells but are drawn in one by WezTerm and others, which leaves that row short. A trailing space is counted into the row but not into the column width, so it fixes the one icon without shifting anything else.
+
+This is picker-only. `sesh list --icons` keeps the source glyphs, because the scripts and external pickers that parse its output trim a known-width glyph — see [#246](https://github.com/joshmedeski/sesh/issues/246). Custom icons are also suppressed entirely with `show_icons = false`.
+
+#### Starting with a filter
+
+`--query` (`-q`) opens the picker with its filter already typed out, which is handy for tmux keybinds that scope the list to one slice of your sessions:
+
+```sh
+bind-key "P" display-popup -h 90% -w 50% -E "sesh picker -q work/"
+```
+
+The query goes in exactly as if you'd typed it, so the list is narrowed the moment sessions load, and backspacing widens it again. Sigils work too — `-q '#'` opens straight into [number jumping](#jumping-by-number) and `-q /` into [alias mode](#session-aliases).
+
+A query that matches a single session doesn't connect on its own; the picker opens with that row highlighted and waits for <kbd>enter</kbd>. Neither does a query that spells out an alias with `alias_auto_connect` on — auto-connect stays a reward for actually typing it, so a scripted `--query` never connects somewhere you didn't look.
+
+This is per-invocation only, with no `[tui]` equivalent: a default query would silently hide sessions on every launch.
+
+#### Jumping by number
+
+Typing `#` as the first character numbers the rows and turns the next digit into a jump — the fastest way to reach one of your first few sessions without reading their names:
+
+```
+filter: #
+
+> 1 sesh
+  2 dotfiles
+  3 my-project
+```
+
+Pressing <kbd>3</kbd> connects to `my-project` immediately. Only `1`–`9` jump, and only the first nine rows are numbered.
+
+The numbers follow the visible list, so anything typed after the sigil narrows it first and renumbers what's left — `#a` then <kbd>2</kbd> jumps to the second match for `a`. A digit with no row at that position does nothing rather than filtering.
+
+Only a leading `#` counts, so `feat#123` filters normally. If you configure `alias_filter_prefix = "#"`, alias mode wins and this mode is unreachable.
+
+#### Removing a zoxide entry
+
+A directory you deleted or renamed keeps showing up in the picker until zoxide is told about it. <kbd>ctrl+x</kbd> on a zoxide row prunes it where you noticed it, behind a confirmation:
+
+```
+╭────────────────────────────────────────────────────────╮
+│                                                        │
+│    Do you want to remove this directory from zoxide?   │
+│                                                        │
+│                    ~/c/some-old-project                │
+│                                                        │
+│                      Yes      No                       │
+│                                                        │
+╰────────────────────────────────────────────────────────╯
+```
+
+<kbd>y</kbd> or <kbd>enter</kbd> removes it, <kbd>n</kbd>, <kbd>q</kbd>, or <kbd>esc</kbd> cancels, and <kbd>←</kbd>/<kbd>→</kbd> or <kbd>tab</kbd> move between the buttons. Nothing typed while the dialog is open reaches the filter, so the list is exactly as you left it either way.
+
+Only zoxide rows can be removed — a tmux session, a `[[session]]` block, or a tmuxinator config is not zoxide's to forget, so <kbd>ctrl+x</kbd> says so and does nothing. The row disappears only once the removal actually succeeded; a backend that refuses it reports the error and leaves the row in place.
+
+The removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, the cache is rewritten behind the removal so the next launch doesn't list the directory again.
+
+#### Preview pane
+
+With `preview = true`, the highlighted session is previewed beside the list, using exactly the same output as `sesh preview` — live tmux panes via `capture-pane`, your `preview_command` for configured sessions, and a directory listing otherwise:
+
+```
+> sesh                │ $ eza --icons
+  dotfiles            │  README.md    main.go
+  my-project          │  picker/      previewer/
+```
+
+The pane is off by default, and `ctrl+o` toggles it at any time.
+
+`preview_width` is the share of the terminal, in percent, guaranteed to the pane. The session list is capped at 60 columns, so on a wide terminal everything past that cap goes to the preview on top of this share; on a narrow one the list is never squeezed below 40 columns.
+
+`preview_border` picks the divider between the two panes: `line` (default), `thick`, `double`, or `none` for no divider at all. Turning it off gives the divider's column to the preview text:
+
+```toml
+[tui]
+preview_border = "none"
+```
+
+```
+> sesh                 $ eza --icons
+  dotfiles              README.md    main.go
+  my-project            picker/      previewer/
+```
+
+`preview_min_width` (default `100`) is the narrowest terminal that gets a split at all. Below it the picker renders the list only, and the pane comes back on its own once the window has room — handy in small tmux popups. Preview commands run in the background as the cursor moves, so a slow one never blocks the list, and a failing one is reported in the pane instead of taking the picker down.
 
 ### Default Session
 
@@ -661,6 +1015,74 @@ name = "tmux config"
 path = "~/c/dotfiles/.config/tmux"
 startup_command = "nvim tmux.conf"
 preview_command = "bat --color=always ~/c/dotfiles/.config/tmux/tmux.conf"
+```
+
+A session can also set `icon` to replace the source glyph it gets in the picker — see [Custom icons](#custom-icons).
+
+### Session Aliases
+
+Fuzzy matching is great for discovery, but the top result for `wp` shifts as sessions come and go, so muscle memory never quite forms. An alias gives a session a short, fixed name you can always count on:
+
+```toml
+[[session]]
+name = "wallpaper"
+path = "~/c/wallpaper"
+alias = "wp"
+alias_auto_connect = true
+
+[[session]]
+name = "dotfiles"
+path = "~/.config"
+alias = "dot"
+```
+
+Aliases must be unique (case-insensitively) — sesh reports an error at startup if two sessions share one.
+
+On the command line, `sesh connect wp` behaves exactly like `sesh connect wallpaper`. In the picker, aliased sessions are tagged with a chip so they stay discoverable:
+
+```
+>  wp wallpaper
+   dot dotfiles
+   my-project
+```
+
+Typing an alias exactly resolves to that session and nothing else, regardless of how fuzzy matching would have ranked it — the whole point being that the result never shifts:
+
+```
+filter: wp
+
+>  wp wallpaper
+```
+
+Anything short of an exact alias is fuzzy-matched as usual, so `w` and `wpx` behave like any other query. An alias resolves even when its session isn't in the current list — say you're running `sesh picker --tmux` and it isn't started yet.
+
+With `alias_auto_connect = true`, typing the full alias connects immediately — no <kbd>Enter</kbd>. It is opt-in per session because it is only worth it for the handful you jump to constantly.
+
+Aliases that share a prefix (`w` and `wp`) are allowed. `[tui] alias_auto_connect_delay` (default `150ms`) is the grace period before auto-connect fires, which leaves room to finish typing the longer one. Raise it if you type slowly, or lower it to `"0s"` to fire the instant the alias is complete.
+
+To keep typing past an alias in a one-off invocation, run the picker with `--no-alias-auto`.
+
+#### Browsing aliases
+
+Typing `/` as the first character narrows the picker to aliased sessions only, which is how you go from "I know I set up a shortcut for this" to the session without remembering the shortcut:
+
+```
+filter: /
+
+>  wp  wallpaper
+   dot dotfiles
+   tc  tmux config
+```
+
+What you type next narrows further, matching aliases by prefix (`/t` finds `tc`) and then falling back to session names (`/config` also finds `tc`, since aliases come first and names are matched anywhere). Aliases whose sessions aren't running still show up.
+
+Completing an alias in this mode connects immediately, whether or not it set `alias_auto_connect` — reaching for `/` says the next thing you type is a shortcut to jump to. `alias_auto_connect_delay` still applies, so `/w` leaves room to become `/wp`, and `--no-alias-auto` still holds it back.
+
+Only a leading `/` counts, so `code/app` filters normally. But a query that *starts* with a path — `/Users/you/code` — would enter alias mode instead, so pick a different sigil if you filter that way:
+
+```toml
+[tui]
+alias_filter_prefix = "@"   # or "" to turn the mode off
 ```
 
 ### Path substitution
@@ -730,8 +1152,182 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
+| `icon` | Icon shown for matching sessions in the picker — see [Custom icons](#custom-icons) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
+
+### Worktrees
+
+`sesh worktree connect <number>` connects to a git worktree for a GitHub issue or
+pull request as a tmux session, creating the worktree first if it doesn't exist yet
+— the same create-or-attach convention as `sesh connect`. Configure each repository
+with a `[[worktree]]` block:
+
+```toml
+# macOS: activate this terminal app after connecting from outside tmux
+terminal = "wezterm"
+
+[[worktree]]
+repo = "nutiliti/nutiliti"          # GitHub org/repo
+path = "~/c/nu"                      # local repo root
+worktree_dir = "w"                   # worktrees go here (relative to path, or absolute); default ".wk"
+branch_template = "jam/{number}-1"   # {number} is the issue/PR number; default "{number}"
+base_branch = "origin/main"          # branch new worktrees from this; default "origin/main"
+fetch = true                         # git fetch before creating; default true
+create_command = "pnpm i"            # runs once, on the connect that creates the worktree
+startup_command = "nu_setup"         # runs when connecting to a worktree that already existed
+
+[[worktree]]
+repo = "joshmedeski/joshmedeski.com"
+path = "~/c/joshmedeski_com"
+worktree_dir = "w"
+create_command = "pnpm i"
+
+[[worktree]]
+repo = "joshmedeski/sesh"
+path = "~/c/sesh"
+worktree_dir = "w"
+```
+
+Usage:
+
+```bash
+sesh worktree connect 2345                       # detect repo from cwd, connect to worktree for issue/PR 2345
+sesh worktree connect 2345 --repo joshmedeski/sesh   # target a repo explicitly (no cwd needed)
+sesh worktree connect 2345 --pr                  # force the pull-request path
+sesh worktree connect 2345 --switch              # switch (not attach) — for invocation outside tmux
+```
+
+Each flag also has a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`.
+
+`sesh` auto-detects whether `<number>` is an issue or a PR via `gh`. For your own
+PRs it resolves the closing issue (falling back to the first `#N` reference in the
+PR title or body); for others' PRs it creates a detached worktree and runs `gh pr checkout`.
+When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
+the new session and (on macOS) activates the `terminal` app.
+
+##### `create_command` vs `startup_command`
+
+The two are exclusive, and which one runs depends on whether the connect created the
+worktree:
+
+| | worktree created by this connect | worktree already existed |
+|---|---|---|
+| `create_command` | runs | — |
+| `startup_command` | — | runs |
+
+`create_command` is the one-time setup a fresh worktree needs — `pnpm i`, seeding a
+`.env`, generating a client — which would be wasted work on every reconnect.
+`startup_command` is what you want each time you come back to a worktree, like
+opening an editor. Creating deliberately does not run `startup_command`, so
+`create_command` is the whole of what happens on creation; if you want both, chain
+them: `create_command = "pnpm i && nvim"`.
+
+Either way the command is only sent when the **tmux session** is new, so
+reattaching to a session that is still alive runs nothing.
+
+#### Connecting to a worktree from the browser (macOS)
+
+With a `[browser]` configured, `sesh worktree connect --browser` reads the URL of
+your browser's active tab, extracts the GitHub `org/repo` and issue/PR number, and
+connects to the matching worktree — no need to type the number or be inside the repo.
+
+```toml
+[browser]
+application = "Helium"
+# url_command = "URL of active tab of front window"  # optional; Safari uses "URL of current tab of front window"
+```
+
+```bash
+# With github.com/joshmedeski/sesh/issues/409 open in the front tab:
+sesh worktree connect --browser   # or: sesh wt c -b
+```
+
+The URL's `org/repo` is matched against your `[[worktree]]` entries by `repo`. Both
+`/issues/N` and `/pull/N` URLs are supported. macOS only.
+
+#### Listing worktrees with their issue titles
+
+`sesh worktree list` shows every worktree for a repo with the issue title beside
+its number, so you can tell `409` from `411` at a glance:
+
+```bash
+sesh worktree list --path ~/c/nu/w          # or: sesh wt ls --path ~/c/nu/w
+sesh worktree list --repo nutiliti/nutiliti # select the repo by name instead
+sesh worktree list                          # detect the repo from the current directory
+sesh worktree list --json                   # machine-readable output
+sesh worktree list --refresh                # refetch every title, ignoring the cache
+```
+
+```
+89   Tmuxifier Support
+409  Add git worktree support: `sesh worktree create <number>`
+411  feat: configurable dashboard for sesh
+```
+
+`--path` and `--repo` are two ways to select the same `[[worktree]]` block. Only
+numerically named directories count as worktrees, which is what `sesh worktree
+connect` creates.
+
+Titles are cached under `$XDG_CACHE_HOME/sesh/github-issues.v1.json` (falling back
+to `~/.cache/sesh`), so listing is normally instant. Only numbers that are new or
+past their 24-hour TTL cost a request, and those are fetched in a single batched
+GraphQL query rather than one `gh` call per worktree. If a refresh fails — offline,
+rate-limited — the cached titles are still shown rather than failing the listing.
+
+`--refresh` refetches every title and state regardless of how fresh the cached
+ones are, for a title edited or an issue closed since the last listing, and writes
+what it gets back to the cache. The cache is disposable either way: deleting the
+file has the same effect as one `--refresh`.
+
+#### Picking a worktree interactively
+
+`sesh worktree picker` puts the same list in a picker and connects to whatever you
+choose. Each row shows the issue number, a color-coded badge for its state, and
+its title:
+
+```bash
+sesh worktree picker                          # or: sesh wt p
+sesh worktree picker --repo nutiliti/nutiliti # select the repo by name
+sesh worktree picker --path ~/c/nu/w          # or by worktree root
+sesh worktree picker --query 409              # prefill the filter
+sesh worktree picker --icons                  # pill-shaped badges (needs a nerd font)
+sesh worktree picker --switch                 # switch, for invocation outside tmux
+sesh worktree picker --refresh                # refetch titles on the way in
+```
+
+```
+>  89   OPEN    Tmuxifier Support
+  409   MERGED  Add git worktree support: `sesh worktree connect <number>`
+  411   CLOSED  feat: configurable dashboard for sesh
+  412
+```
+
+Badges follow GitHub's own coding — green for open, purple for merged, red for
+closed. A worktree whose issue never resolved (deleted, or a number that was never
+an issue) shows its bare number.
+
+With `show_icons` enabled (or `--icons`), the badges are rounded off with nerd font
+half circles into pills — `OPEN` — rather than squared off with filled
+spaces. Both forms are the same width, so the titles line up either way.
+
+Typing filters on the number and the title together, so `409`, `worktree support`,
+and `409 worktree` all find the same row. `enter` connects, `esc` quits without
+connecting, and `ctrl+j`/`ctrl+k` move — the same keys as the session picker.
+
+The picker opens on the cached titles, then refetches them behind the rows already
+on screen: an issue renamed or closed since the last listing corrects itself a
+moment after the picker opens, without you having to ask. The rows stay usable
+throughout — your query and the row you were on are kept — and because nobody asked
+for that refresh, one that fails is passed over quietly, leaving the cached titles
+in place.
+
+`ctrl+r` asks for the same refetch at any time, and does report a failure since you
+asked for it. `--refresh` does it on the way in instead, before the first row is
+drawn, which is the slower way to get the same titles.
+
+Connecting goes through `sesh worktree connect`, so a picked worktree lands in
+exactly the session that command would have created, `startup_command` included.
 
 ### Listing Configurations
 
@@ -740,8 +1336,6 @@ Session configurations will load by default if no flags are provided (the return
 ```sh
 sesh list -c
 ```
-
-Set the file as an executable and it will be run when you connect to the specified session.
 
 ## Contributing
 
@@ -755,6 +1349,16 @@ I've decided to start over and build a session manager from the ground up. This 
 
 The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
 
+## StarMapper
+
+<a href="https://starmapper.bruniaux.com/joshmedeski/sesh?utm_source=map-embed&utm_medium=readme&utm_campaign=stargazer-map">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh?theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh?theme=light" />
+    <img alt="StarMapper" src="https://starmapper.bruniaux.com/api/map-image/joshmedeski/sesh" />
+  </picture>
+</a>
+
 ## Contributors
 
 <a href="https://github.com/joshmedeski/sesh/graphs/contributors">
@@ -765,4 +1369,4 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date)](https://www.star-history.com/#joshmedeski/sesh&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=joshmedeski/sesh&type=Date)](https://star-history.dera.page/#joshmedeski/sesh&Date)

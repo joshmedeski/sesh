@@ -1,0 +1,292 @@
+name: Test
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build 🛠️
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27"
+      - name: Build all release targets
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: build --snapshot --clean
+
+  tests:
+    name: Tests 🧪
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27"
+      - name: Create mocks
+        run: go tool mockery
+      # Piping go test straight into go-junit-report hides its output: a
+      # compile error in a test package used to surface only as "exit code 1"
+      # with an empty summary. Tee the raw stream into the job log and build
+      # the report from the saved copy. The step exits with go test's own
+      # status, not the report generator's, so a build failure is a failure
+      # regardless of how the XML came out.
+      - name: Run tests
+        run: |
+          go test -cover -race -v ./... 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          go tool go-junit-report < test.log > report.xml
+          exit "$status"
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: |
+            report.xml
+        if: always()
+
+  # Benchmarks run on their own, on a single runner and without the race
+  # detector: under -race the numbers measure the race detector, and mixing
+  # runners makes the comparison noise rather than signal.
+  #
+  # Informational for now — the job never fails on a regression. See
+  # CONTRIBUTING.md ("Benchmarks") for the thresholds we intend to enforce
+  # once we know what the runner's noise floor actually is.
+  bench:
+    name: Benchmarks 📊
+    runs-on: ubuntu-latest
+    # Enough to leave the chart on the pull request, and no more. On a fork's
+    # pull request GITHUB_TOKEN stays read-only whatever this block says, so
+    # the comment step skips forks; the job summary carries the same chart
+    # either way. Note this is not `contents: write` — nothing here can push.
+    permissions:
+      contents: read
+      pull-requests: write
+    # A real -benchtime costs real time, and a pull request runs the suite
+    # twice: once for head and once for the merge base.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27"
+      - name: Create mocks
+        run: go tool mockery
+      # -benchtime is a duration, not an iteration count: `-benchtime=100x`
+      # pins every benchmark to 100 iterations, which for a nanosecond-scale
+      # one is microseconds of total work. That never reaches steady state, so
+      # it measures warmup and scheduler jitter instead of the code. Measured
+      # over 10 runs on an idle machine, 100x put RankMatches/n=10 at +-125%
+      # and BlacklistFilter/n=10 at +-70%, and read 2.9x high in absolute
+      # terms; 100ms holds both to +-1%. A threshold can only be as tight as
+      # the measurement under it.
+      #
+      # Both sides are compiled up front so the runs can be interleaved. The
+      # previous shape — the whole suite at head, then the whole suite at the
+      # merge base — put ten minutes between the two arms, and a shared runner
+      # does not hold still for ten minutes. Any drift over that gap landed
+      # entirely on whichever arm ran second, and `-count=6` collects a
+      # benchmark's six samples back to back, so each arm is one contiguous
+      # block in time: drift separates the blocks cleanly and a rank test
+      # calls that significant however far either block wandered. A pull
+      # request touching no benchmarked code reported 25 of 96 benchmarks
+      # "moved", 24 of them in the same direction.
+      #
+      # Alternating the arms round by round spreads any drift across both of
+      # them instead of confounding it with the comparison.
+      - name: Build both sides of the comparison
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mkdir -p bin
+          build() {
+            for pkg in lister picker; do
+              go test -c -o "$PWD/bin/$1-$pkg.test" "./$pkg"
+            done
+          }
+          build head
+          [ "${{ github.event_name }}" = pull_request ] || exit 0
+          # Mocks are gitignored, so they survive the checkout. Mockery cannot
+          # regenerate a mock for a package that no longer compiles, so a mock
+          # generated at one revision referencing a type that does not exist at
+          # the other kills it before it can replace itself. Clear them out
+          # first; every mock_*.go here is generated.
+          head_sha="$(git rev-parse HEAD)"
+          git checkout --detach --quiet "$BASE_SHA"
+          find . -name 'mock_*.go' -delete
+          go tool mockery
+          build base
+          git checkout --detach --quiet "$head_sha"
+          find . -name 'mock_*.go' -delete
+          go tool mockery
+      - name: Run the benchmarks, interleaved
+        run: |
+          : > head.txt
+          : > base.txt
+          root="$PWD"
+          for round in 1 2 3 4 5 6; do
+            for arm in head base; do
+              [ -f "bin/$arm-lister.test" ] || continue
+              for pkg in lister picker; do
+                # Run from the package directory, which is where `go test`
+                # would have run it from.
+                ( cd "$pkg" && "$root/bin/$arm-$pkg.test" \
+                    -test.run='^$' -test.bench=. -test.benchmem \
+                    -test.benchtime=100ms -test.count=1 ) | tee -a "$arm.txt"
+              done
+            done
+          done
+      - name: Compare against the merge base
+        run: |
+          # A base that predates a benchmark has nothing to compare it to, so
+          # fall back to reporting head alone rather than failing the job.
+          if [ -s base.txt ] && grep -q '^Benchmark' base.txt; then
+            go tool benchstat base.txt head.txt > benchstat.txt
+          else
+            go tool benchstat head.txt > benchstat.txt
+          fi
+      # benchstat answers the question precisely; the chart answers it at a
+      # glance, which is what gets read on a pull request. It plots only the
+      # benchmarks that moved, ranked by how much work the change costs, names
+      # each one in English rather than as a Go benchmark name, and opens with
+      # a one-sentence verdict — so the comment says what happened before
+      # anyone reads a number.
+      #
+      # The committed baseline under testdata/bench is for the local loop and
+      # is deliberately not used here: it belongs to whichever machine
+      # recorded it, and both of the runs this job wants are already on disk.
+      - name: Build the report
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # No merge base means nothing to chart — on a push to main, or on a
+          # base that predates the benchmarks. The benchstat table below still
+          # reports head on its own.
+          if [ -s base.txt ] && grep -q '^Benchmark' base.txt; then
+            # The chart names each run by its file, which here is "base.txt".
+            # These "#" lines are not benchmark-format configuration, so
+            # benchfmt ignores them and the chart reads them back as notes.
+            sed -i "1i # merge base ${BASE_SHA:0:7}" base.txt
+            sed -i "1i # head ${HEAD_SHA:0:7}" head.txt
+            go run ./internal/benchchart -format markdown \
+              -baseline base.txt -current head.txt > comment.md
+          else
+            printf '<!-- benchchart -->\n## Benchmarks 📊\n\n' > comment.md
+          fi
+          # One body, posted to the pull request and written to the job
+          # summary, so the two never disagree.
+          {
+            printf '<details><summary>benchstat table</summary>\n\n'
+            printf '```text\n%s\n```\n\n</details>\n\n' "$(cat benchstat.txt)"
+            echo '_Informational: this job never fails on a regression. See CONTRIBUTING.md ("Benchmarks")._'
+          } >> comment.md
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
+      # --edit-last rewrites this job's previous comment instead of adding
+      # another, so pushing ten times to a pull request leaves one comment
+      # showing the current numbers rather than ten showing its history.
+      # --create-if-none covers the first push, when there is nothing to edit.
+      - name: Comment on the pull request
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --edit-last --create-if-none --body-file comment.md
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: benchmarks
+          path: |
+            head.txt
+            base.txt
+            benchstat.txt
+            comment.md
+          if-no-files-found: warn
+
+  # The benchstat comparison above answers "did this PR regress anything"; it
+  # cannot answer "when did this get slow", because it only ever sees two
+  # commits. This job keeps the history: every push to main appends a point to
+  # a chart published at the repo's GitHub Pages site.
+  #
+  # It is a separate job so the `bench` job that runs on pull requests keeps
+  # read-only access to the repository — a job with `contents: write` should not
+  # run on code from a fork. (`bench` does take `pull-requests: write`, to leave
+  # its chart on the pull request; that cannot push anything.) It reuses
+  # `bench`'s artifact rather than re-running the suite.
+  bench-history:
+    name: Benchmark history 📈
+    needs: bench
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # Two pushes to main landing at once would both try to push gh-pages, and
+    # the loser would fail on a non-fast-forward. Serialize instead.
+    concurrency:
+      group: bench-history
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: benchmarks
+      - name: Reduce to one sample per benchmark
+        run: |
+          python3 .github/scripts/bench-median.py < head.txt > history.txt
+          cat history.txt
+      - name: Publish to the benchmark dashboard
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: sesh
+          tool: go
+          output-file-path: history.txt
+          # lister and picker both define benchmarks; without the suffix, two
+          # that happen to share a name would land in the same series.
+          go-force-package-suffix: "true"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          # 125% matches the time/op threshold in CONTRIBUTING.md. Nothing
+          # fails: main is already merged by the time this runs, so an alert is
+          # a notification, not a gate.
+          alert-threshold: "125%"
+          fail-on-alert: false
+          # Alerts land in the job summary only. This action compares one point
+          # against the single previous point with a fixed ratio and no model
+          # of variance, which misfires two ways: it flags runner noise as a
+          # regression, and it ratchets, because one lucky-fast commit becomes
+          # the baseline that makes the next ordinary commit look slow. It
+          # alerted on all three commits it saw before this change, including
+          # one that touched only this YAML file.
+          #
+          # The comparison worth acting on is the benchstat table in the PR
+          # job, which has several samples and reports significance. This chart
+          # answers the question benchstat cannot -- "when did this get slow" --
+          # and wants a trend line for that, not a per-commit verdict.
+          comment-on-alert: false
+          summary-always: true
+          max-items-in-chart: 100

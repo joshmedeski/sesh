@@ -9,7 +9,7 @@ Sesh is a smart terminal session manager written in Go that helps users create a
 ## Core Architecture
 
 - **Module**: `github.com/joshmedeski/sesh/v2`
-- **Go Version**: 1.25.0
+- **Go Version**: 1.27.0
 - **Main Entry Point**: `main.go` → `seshcli.App()`
 
 ### Key Packages
@@ -56,7 +56,7 @@ go test -cover -race ./namer/...             # Test specific package
 Mocks are configured in `.mockery.yaml` and placed alongside interfaces:
 ```bash
 just mock
-# Or: GOFLAGS="-buildvcs=false" mockery
+# Or: GOFLAGS="-buildvcs=false" go tool mockery
 ```
 
 ## Configuration

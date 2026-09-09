@@ -32,6 +32,44 @@ func (t *RealTmux) ListWindows(targetSession string) ([]*model.TmuxWindow, error
 	return parseTmuxWindowsOutput(output)
 }
 
+func listAllWindowNamesFormat(format string) string {
+	if format == "" {
+		format = model.DefaultWindowNameFormat
+	}
+	variables := []string{
+		"#{session_name}",
+		format,
+	}
+	return strings.Join(variables, separator)
+}
+
+// ListAllWindowNames returns the formatted window names of every session,
+// keyed by session name, in a single tmux invocation.
+func (t *RealTmux) ListAllWindowNames(format string) (map[string][]string, error) {
+	output, err := t.shell.ListCmd(t.bin, "list-windows", "-a", "-F", listAllWindowNamesFormat(format))
+	if err != nil {
+		return nil, err
+	}
+	return parseAllWindowNamesOutput(output), nil
+}
+
+func parseAllWindowNamesOutput(rawList []string) map[string][]string {
+	windowNames := make(map[string][]string)
+	for _, line := range rawList {
+		// Split on the first separator only: window names are more likely to
+		// contain it than session names (which come from directory names).
+		session, name, found := strings.Cut(line, separator)
+		if !found {
+			continue
+		}
+		if session == "" || name == "" {
+			continue
+		}
+		windowNames[session] = append(windowNames[session], name)
+	}
+	return windowNames
+}
+
 func parseTmuxWindowsOutput(rawList []string) ([]*model.TmuxWindow, error) {
 	windows := make([]*model.TmuxWindow, 0, len(rawList))
 	for _, line := range rawList {

@@ -291,3 +291,128 @@ func TestBlacklistedFlag(t *testing.T) {
 		})
 	}
 }
+
+func TestList_ShowWindows(t *testing.T) {
+	newLister := func(showWindows bool, mockTmux *tmux.MockTmux) Lister {
+		config := model.Config{}
+		config.TUI.ShowWindows = showWindows
+		return NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+	}
+
+	t.Run("attaches window names when enabled", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+			{Name: "sesh", Path: "/p"},
+		}, nil)
+		mockTmux.EXPECT().ListAllWindowNames("").Return(map[string][]string{
+			"sesh": {"editor", "server"},
+		}, nil).Once()
+
+		result, err := newLister(true, mockTmux).List(ListOptions{Tmux: true})
+		assert.NoError(t, err)
+		session := result.Directory[result.OrderedIndex[0]]
+		assert.Equal(t, []string{"editor", "server"}, session.WindowNames)
+		// One tmux call for all sessions, not one per session.
+		mockTmux.AssertExpectations(t)
+	})
+
+	t.Run("does not call tmux when disabled", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+			{Name: "sesh", Path: "/p"},
+		}, nil)
+
+		result, err := newLister(false, mockTmux).List(ListOptions{Tmux: true})
+		assert.NoError(t, err)
+		session := result.Directory[result.OrderedIndex[0]]
+		assert.Nil(t, session.WindowNames)
+		mockTmux.AssertNotCalled(t, "ListAllWindowNames")
+	})
+
+	t.Run("does not call tmux when tmux is not a listed source", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+
+		_, err := newLister(true, mockTmux).List(ListOptions{Config: true})
+		assert.NoError(t, err)
+		mockTmux.AssertNotCalled(t, "ListAllWindowNames")
+	})
+}
+
+func TestMergedSortOrderGroup(t *testing.T) {
+	mockTmux := new(tmux.MockTmux)
+	mockZoxide := new(zoxide.MockZoxide)
+	mockHome := new(home.MockHome)
+	mockTmuxinator := new(tmuxinator.MockTmuxinator)
+
+	mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+		{Name: "live", Path: "/live"},
+	}, nil)
+	mockZoxide.On("ListResults").Return([]*model.ZoxideResult{
+		{Path: "/hot", Score: 90},
+		{Path: "/notes", Score: 20},
+		{Path: "/cold", Score: 1},
+	}, nil)
+	for path, short := range map[string]string{"/hot": "hot", "/notes": "notes", "/cold": "cold"} {
+		mockHome.On("ShortenHome", path).Return(short, nil)
+	}
+	mockHome.On("ExpandPath", "/notes").Return("/notes", nil)
+	mockHome.On("ExpandPath", "/never").Return("/never", nil)
+
+	config := model.Config{
+		// "notes" is a config session zoxide also knows: it should sort by the
+		// score zoxide has for its path, not by coming from the config source.
+		SessionConfigs: []model.SessionConfig{
+			{Name: "notes-cfg", Path: "/notes"},
+			{Name: "never-cfg", Path: "/never"},
+		},
+		SortOrder: model.SortOrder{"tmux", []string{"config", "zoxide"}},
+	}
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+
+	result, err := l.List(ListOptions{Tmux: true, Config: true, Zoxide: true})
+	assert.NoError(t, err)
+
+	names := make([]string, 0, len(result.OrderedIndex))
+	groups := make([]int, 0, len(result.OrderedIndex))
+	for _, key := range result.OrderedIndex {
+		names = append(names, result.Directory[key].Name)
+		groups = append(groups, result.Directory[key].Group)
+	}
+
+	// tmux stays pinned in its own group; config and zoxide interleave by
+	// score, and the config session zoxide has never seen trails the group.
+	assert.Equal(t, []string{"live", "hot", "notes-cfg", "notes", "cold", "never-cfg"}, names)
+	assert.Equal(t, []int{0, 1, 1, 1, 1, 1}, groups)
+}
+
+func TestFlatSortOrderKeepsSourceBlocks(t *testing.T) {
+	mockTmux := new(tmux.MockTmux)
+	mockZoxide := new(zoxide.MockZoxide)
+	mockHome := new(home.MockHome)
+	mockTmuxinator := new(tmuxinator.MockTmuxinator)
+
+	mockZoxide.On("ListResults").Return([]*model.ZoxideResult{
+		{Path: "/hot", Score: 90},
+	}, nil)
+	mockHome.On("ShortenHome", "/hot").Return("hot", nil)
+	mockHome.On("ExpandPath", "/never").Return("/never", nil)
+
+	config := model.Config{
+		SessionConfigs: []model.SessionConfig{{Name: "never-cfg", Path: "/never"}},
+		SortOrder:      model.SortOrder{"config", "zoxide"},
+	}
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+
+	result, err := l.List(ListOptions{Config: true, Zoxide: true})
+	assert.NoError(t, err)
+
+	names := make([]string, 0, len(result.OrderedIndex))
+	groups := make([]int, 0, len(result.OrderedIndex))
+	for _, key := range result.OrderedIndex {
+		names = append(names, result.Directory[key].Name)
+		groups = append(groups, result.Directory[key].Group)
+	}
+	// Unmerged, the unscored config session still leads its own block.
+	assert.Equal(t, []string{"never-cfg", "hot"}, names)
+	assert.Equal(t, []int{0, 1}, groups)
+}

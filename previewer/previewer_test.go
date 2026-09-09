@@ -213,8 +213,7 @@ func (suite *PreviewerTestSuite) setupConfigMocks(inputName string, trimmedName 
 		Path:           expectedPath,
 		PreviewCommand: previewCommand,
 	}, true)
-	suite.mockShell.On("PrepareCmd", previewCommand, map[string]string{"{}": expectedPath}).Return(previewCommandParts, nil)
-	suite.mockShell.On("Cmd", "ls", "-la").Return(expectedOutput, nil)
+	suite.mockShell.On("ShellCmd", previewCommand, map[string]string{"{}": expectedPath}).Return(expectedOutput, nil)
 }
 
 func (suite *PreviewerTestSuite) setupDirectoryMocks(inputName, trimmedName, expectedPath, expectedOutput string) {

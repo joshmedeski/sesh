@@ -3,6 +3,7 @@ package seshcli
 import (
 	"fmt"
 
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,9 @@ func NewLastCommand(base *BaseDeps) *cobra.Command {
 				// TODO: silently fail?
 				return fmt.Errorf("No last session found")
 			}
-			deps.Tmux.SwitchClient(lastSession.Name)
+			if _, err := deps.Tmux.SwitchOrAttach(lastSession.Name, model.ConnectOpts{}); err != nil {
+				return err
+			}
 			return nil
 		},
 	}

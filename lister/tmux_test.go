@@ -201,3 +201,81 @@ func TestListTmuxSessionsError(t *testing.T) {
 		assert.Contains(t, err.Error(), "couldn't list tmux sessions")
 	})
 }
+
+func TestListTmuxInheritsAliasFromConfig(t *testing.T) {
+	mockTmux := new(tmux.MockTmux)
+	mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+		makeTmuxSession("wallpaper", "/home/user/wallpaper"),
+		makeTmuxSession("dotfiles", "/home/user/dotfiles"),
+		makeTmuxSession("notes", "/home/user/notes"),
+	}, nil)
+
+	config := model.Config{
+		SessionConfigs: []model.SessionConfig{
+			{Name: "wallpaper", Alias: "wp"},
+			{Name: "dotfiles", Alias: "DOT"},
+		},
+	}
+	lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator))
+
+	realLister, ok := lister.(*RealLister)
+	if !ok {
+		log.Fatal("Cannot convert lister to *RealLister")
+	}
+
+	sessions, err := listTmux(realLister)
+	assert.Nil(t, err)
+	assert.Equal(t, "wp", sessions.Directory["tmux:wallpaper"].Alias)
+	assert.Equal(t, "DOT", sessions.Directory["tmux:dotfiles"].Alias)
+	assert.Equal(t, "", sessions.Directory["tmux:notes"].Alias)
+}
+
+func TestAttachWindowNames(t *testing.T) {
+	t.Run("fills in window names for tmux sessions only", func(t *testing.T) {
+		sessions := model.SeshSessions{
+			OrderedIndex: []string{"tmux:sesh", "config:sesh", "tmux:unknown"},
+			Directory: model.SeshSessionMap{
+				"tmux:sesh":    {Src: "tmux", Name: "sesh"},
+				"config:sesh":  {Src: "config", Name: "sesh", WindowNames: []string{"configured"}},
+				"tmux:unknown": {Src: "tmux", Name: "unknown"},
+			},
+		}
+		attachWindowNames(sessions, map[string][]string{
+			"sesh": {"editor", "server"},
+		})
+
+		assert.Equal(t, []string{"editor", "server"}, sessions.Directory["tmux:sesh"].WindowNames)
+		assert.Equal(t, []string{"configured"}, sessions.Directory["config:sesh"].WindowNames,
+			"config sessions keep their configured window names")
+		assert.Nil(t, sessions.Directory["tmux:unknown"].WindowNames)
+	})
+
+	t.Run("no-op when there are no window names", func(t *testing.T) {
+		sessions := model.SeshSessions{
+			OrderedIndex: []string{"tmux:sesh"},
+			Directory:    model.SeshSessionMap{"tmux:sesh": {Src: "tmux", Name: "sesh"}},
+		}
+		attachWindowNames(sessions, nil)
+		assert.Nil(t, sessions.Directory["tmux:sesh"].WindowNames)
+	})
+}
+
+func TestTmuxWindowNames(t *testing.T) {
+	t.Run("returns nil when tmux fails", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.EXPECT().ListAllWindowNames("").Return(nil, assert.AnError)
+		l := &RealLister{tmux: mockTmux}
+		assert.Nil(t, tmuxWindowNames(l))
+	})
+
+	t.Run("returns the window names", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		format := "#{?#{pane_title},#{pane_title},#{window_name}}"
+		mockTmux.EXPECT().ListAllWindowNames(format).Return(map[string][]string{"sesh": {"editor"}}, nil)
+		l := &RealLister{
+			config: model.Config{TUI: model.TUIConfig{WindowNameFormat: format}},
+			tmux:   mockTmux,
+		}
+		assert.Equal(t, map[string][]string{"sesh": {"editor"}}, tmuxWindowNames(l))
+	})
+}

@@ -14,9 +14,10 @@ type (
 	SeshWindowMap  map[string]WindowConfig
 
 	SeshSession struct {
-		Src  string // The source of the session (config, tmux, zoxide, tmuxinator)
-		Name string // The display name
-		Path string // The absolute directory path
+		Src   string // The source of the session (config, tmux, zoxide, tmuxinator)
+		Name  string // The display name
+		Alias string // The configured alias for the session (empty when none)
+		Path  string // The absolute directory path
 
 		StartupCommand        string         // The command to run when the session is started
 		PreviewCommand        string         // The command to run when the session is previewed
@@ -30,9 +31,15 @@ type (
 		Branch                string         // Current git branch (populated by dashboard)
 		GitStatus             string         // Current git status (populated by dashboard)
 		Created               *time.Time     // Session creation time
-		LastAttached          *time.Time     // Last attach time
+		LastAttached          *time.Time     // Last time the session was attached (used for the dashboard age column)
 		Activity              *time.Time     // Last activity time
 		Alerts                []string       // Active alerts (e.g. bell, activity)
+
+		// Group is the index of the sort_order block this session was listed
+		// under. Sessions sharing one are contiguous in OrderedIndex, which is
+		// what the picker draws its group separator from. It is not part of
+		// `sesh list --json`: it describes the list, not the session.
+		Group int `json:"-"`
 	}
 
 	SeshSrcs struct {

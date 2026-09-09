@@ -9,21 +9,25 @@ import (
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
+	ListAllWindowNames(format string) (map[string][]string, error)
 	NewSession(sessionName string, startDir string) (string, error)
-	NewWindow(startDir string, name string) (string, error)
-	NewWindowInSession(name string, startDir string, targetSession string) (string, error)
+	NewWindowInSession(opts model.TmuxWindowOpts) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
-	NextWindow() (string, error)
+	NextWindowInSession(targetSession string) (string, error)
 	SelectWindow(targetWindow string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 	ListTmuxPanes() ([]*model.TmuxPane, error)
 	SelectPane(windowIndex int, paneIndex int) (string, error)
 	GetCurrentSession() (string, error)
 	KillSession(session string) (string, error)
+	ListClients() ([]model.TmuxClient, error)
+	ResolveClient() string
+	SwitchClientTarget(client string, targetSession string) (string, error)
+	RenameSession(target string, newName string) (string, error)
 }
 
 type RealTmux struct {
@@ -55,16 +59,13 @@ func (t *RealTmux) NewSession(sessionName string, startDir string) (string, erro
 	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", sessionName, "-c", startDir)
 }
 
-func (t *RealTmux) NewWindow(startDir string, name string) (string, error) {
-	return t.shell.Cmd(t.bin, "new-window", "-n", name, "-c", startDir)
-}
-
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {
 	return t.shell.Cmd(t.bin, "capture-pane", "-e", "-p", "-t", targetSession)
 }
 
-func (t *RealTmux) NextWindow() (string, error) {
-	return t.shell.Cmd(t.bin, "next-window")
+func (t *RealTmux) NextWindowInSession(targetSession string) (string, error) {
+	// trailing colon forces session (not window) target resolution
+	return t.shell.Cmd(t.bin, "next-window", "-t", targetSession+":")
 }
 
 func (t *RealTmux) IsAttached() bool {
@@ -73,4 +74,8 @@ func (t *RealTmux) IsAttached() bool {
 
 func (t *RealTmux) KillSession(session string) (string, error) {
 	return t.shell.Cmd(t.bin, "kill-session", "-t", session)
+}
+
+func (t *RealTmux) SwitchClientTarget(client string, targetSession string) (string, error) {
+	return t.shell.Cmd(t.bin, "switch-client", "-c", client, "-t", targetSession)
 }

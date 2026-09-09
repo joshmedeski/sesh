@@ -7,18 +7,22 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/cloner"
 	"github.com/joshmedeski/sesh/v2/configurator"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
+	"github.com/joshmedeski/sesh/v2/focuser"
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/ls"
+	"github.com/joshmedeski/sesh/v2/mkdirer"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -31,6 +35,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
+	"github.com/joshmedeski/sesh/v2/worktree"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -45,6 +50,8 @@ type BaseDeps struct {
 	Json       json.Json
 	Replacer   replacer.Replacer
 	Git        git.Git
+	Github     github.Github
+	Focuser    focuser.Focuser
 	Dir        dir.Dir
 	Zoxide     zoxide.Zoxide
 	Tmuxinator tmuxinator.Tmuxinator
@@ -64,6 +71,9 @@ type Deps struct {
 	Icon          icon.Icon
 	Previewer     previewer.Previewer
 	Cloner        cloner.Cloner
+	Worktree      worktree.Worktree
+	Browser       browser.Browser
+	Mkdirer       mkdirer.Mkdirer
 }
 
 // NewBaseDeps constructs all config-free dependencies.
@@ -79,8 +89,9 @@ func NewBaseDeps() *BaseDeps {
 	r := replacer.NewReplacer()
 
 	g := git.NewGit(sh)
+	gh := github.NewGithub(sh, g)
+	fo := focuser.NewFocuser(runtime, sh)
 	d := dir.NewDir(os, g, path)
-	z := zoxide.NewZoxide(sh)
 	ti := tmuxinator.NewTmuxinator(sh)
 
 	return &BaseDeps{
@@ -93,8 +104,9 @@ func NewBaseDeps() *BaseDeps {
 		Json:       j,
 		Replacer:   r,
 		Git:        g,
+		Github:     gh,
+		Focuser:    fo,
 		Dir:        d,
-		Zoxide:     z,
 		Tmuxinator: ti,
 	}
 }
@@ -107,6 +119,10 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	}
 
 	slog.Debug("deps: BuildAll", "config", config)
+
+	// Zoxide is the frecency backend; its commands come from config, so it
+	// is constructed here rather than in the config-free NewBaseDeps.
+	b.Zoxide = zoxide.NewZoxide(b.Shell, config.Frecency)
 
 	t := tmux.NewTmux(b.Os, b.Shell, config.TmuxCommand)
 
@@ -123,11 +139,24 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
-	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator)
+	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Focuser)
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
-	pk := picker.NewPicker(config)
+	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
+	issueCache := cache.NewNamespace[github.Issue](
+		worktree.IssueCacheName, worktree.IssueCacheVersion, worktree.IssueCacheTTL,
+	).WithMissingTTL(worktree.IssueCacheMissingTTL)
+	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
+	// Removing an entry from the picker has to be written through to the cache,
+	// or the next launch reads back the directory that was just removed. Nil
+	// when caching is off: the picker refetches every time anyway.
+	var refreshCache picker.CacheRefreshFunc
+	if cachedLi != nil {
+		refreshCache = func() { cachedLi.RefreshCache(lister.ListOptions{}) }
+	}
+	pk := picker.NewPicker(config, p, b.Home, usedLister, b.Zoxide, refreshCache)
+	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{
 		BaseDeps:      *b,
@@ -142,6 +171,9 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 		Icon:          ic,
 		Previewer:     p,
 		Cloner:        cl,
+		Worktree:      wt,
+		Browser:       br,
+		Mkdirer:       mk,
 	}, nil
 }
 

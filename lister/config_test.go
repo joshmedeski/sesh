@@ -48,3 +48,29 @@ func TestListConfigSessions(t *testing.T) {
 		assert.Equal(t, "sesh config", sessions.Name)
 	})
 }
+
+func TestListConfigIncludesAlias(t *testing.T) {
+	mockHome := new(home.MockHome)
+	mockHome.On("ExpandPath", "/home/user/wallpaper").Return("/home/user/wallpaper", nil)
+	mockHome.On("ExpandPath", "/home/user/notes").Return("/home/user/notes", nil)
+	mockTmux := new(tmux.MockTmux)
+	mockZoxide := new(zoxide.MockZoxide)
+	mockTmuxinator := new(tmuxinator.MockTmuxinator)
+	config := model.Config{
+		SessionConfigs: []model.SessionConfig{
+			{Name: "wallpaper", Path: "/home/user/wallpaper", Alias: "wp"},
+			{Name: "notes", Path: "/home/user/notes"},
+		},
+	}
+	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator)
+
+	realLister, ok := lister.(*RealLister)
+	if !ok {
+		log.Fatal("Cannot convert lister to *RealLister")
+	}
+
+	sessions, err := listConfig(realLister)
+	assert.Nil(t, err)
+	assert.Equal(t, "wp", sessions.Directory["config:wallpaper"].Alias)
+	assert.Equal(t, "", sessions.Directory["config:notes"].Alias)
+}

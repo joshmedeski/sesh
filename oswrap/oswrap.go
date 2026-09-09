@@ -11,6 +11,9 @@ type Os interface {
 	Getenv(key string) string
 	ExpandEnv(s string) string
 	Stat(name string) (os.FileInfo, error)
+	MkdirAll(path string, perm os.FileMode) error
+	Getwd() (string, error)
+	ReadDir(name string) ([]os.DirEntry, error)
 }
 
 type RealOs struct{}
@@ -41,4 +44,16 @@ func (o *RealOs) ExpandEnv(s string) string {
 
 func (o *RealOs) Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
+}
+
+func (o *RealOs) MkdirAll(path string, perm os.FileMode) error {
+	return os.MkdirAll(path, perm)
+}
+
+func (o *RealOs) Getwd() (string, error) {
+	return os.Getwd()
+}
+
+func (o *RealOs) ReadDir(name string) ([]os.DirEntry, error) {
+	return os.ReadDir(name)
 }

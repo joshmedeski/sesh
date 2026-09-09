@@ -343,3 +343,138 @@ branch refs/heads/main
 		assert.Equal(t, "", name)
 	})
 }
+
+// Sibling-worktree layout from issue #388:
+//
+//	~/work/path/bernoulli/master   (main clone)
+//	~/work/path/bernoulli/dev      (added via `git worktree add ../dev`)
+func newSiblingWorktreeNamer(cfg model.Config) (*RealNamer, *pathwrap.MockPath, *git.MockGit) {
+	mockPathwrap := new(pathwrap.MockPath)
+	mockGit := new(git.MockGit)
+	mockHome := new(home.MockHome)
+	return &RealNamer{pathwrap: mockPathwrap, git: mockGit, home: mockHome, config: cfg}, mockPathwrap, mockGit
+}
+
+func TestGitNameWithWorktreeRootOption(t *testing.T) {
+	siblingList := `worktree /Users/semi/work/path/bernoulli/master
+HEAD aaaaaaa
+branch refs/heads/master
+
+worktree /Users/semi/work/path/bernoulli/dev
+HEAD bbbbbbb
+branch refs/heads/dev
+`
+
+	t.Run("sibling worktree without options reproduces broken long name", func(t *testing.T) {
+		n, mp, mg := newSiblingWorktreeNamer(model.Config{DirLength: 1})
+		path := "/Users/semi/work/path/bernoulli/dev"
+		mg.On("WorktreeList", path).Return(true, siblingList, nil)
+		mp.On("Base", "/Users/semi/work/path/bernoulli/master").Return("master")
+
+		name, err := gitName(n, path)
+		assert.NoError(t, err)
+		// The sibling path is not a prefix of the main worktree path, so
+		// TrimPrefix returns the unchanged absolute path — the bug from #388.
+		assert.Equal(t, "master/Users/semi/work/path/bernoulli/dev", name)
+	})
+
+	t.Run("git_namer_use_worktree_root anchors on current worktree", func(t *testing.T) {
+		n, mp, mg := newSiblingWorktreeNamer(model.Config{GitNamerUseWorktreeRoot: true})
+		path := "/Users/semi/work/path/bernoulli/dev"
+		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/dev", nil)
+		mp.On("Base", "/Users/semi/work/path/bernoulli/dev").Return("dev")
+
+		name, err := gitName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "dev", name)
+	})
+
+	t.Run("git_namer_use_worktree_root + git_dir_length=2 produces parent/worktree", func(t *testing.T) {
+		cfg := model.Config{GitNamerUseWorktreeRoot: true, GitDirLength: 2}
+		n, _, mg := newSiblingWorktreeNamer(cfg)
+		path := "/Users/semi/work/path/bernoulli/dev"
+		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/dev", nil)
+
+		name, err := gitName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "bernoulli/dev", name)
+	})
+
+	t.Run("git_namer_use_worktree_root + git_dir_length=2 on main worktree", func(t *testing.T) {
+		cfg := model.Config{GitNamerUseWorktreeRoot: true, GitDirLength: 2}
+		n, _, mg := newSiblingWorktreeNamer(cfg)
+		path := "/Users/semi/work/path/bernoulli/master"
+		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/master", nil)
+
+		name, err := gitName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "bernoulli/master", name)
+	})
+
+	t.Run("git_namer_use_worktree_root preserves subdirectory under worktree", func(t *testing.T) {
+		cfg := model.Config{GitNamerUseWorktreeRoot: true, GitDirLength: 2}
+		n, _, mg := newSiblingWorktreeNamer(cfg)
+		path := "/Users/semi/work/path/bernoulli/dev/src/pkg"
+		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/dev", nil)
+
+		name, err := gitName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "bernoulli/dev/src/pkg", name)
+	})
+
+	t.Run("git_dir_length=2 without use_worktree_root on nested worktree", func(t *testing.T) {
+		// Nested .wk/ layout — main worktree path IS a prefix, so existing
+		// logic works; git_dir_length just expands the repo-name segment.
+		cfg := model.Config{GitDirLength: 2}
+		n, _, mg := newSiblingWorktreeNamer(cfg)
+		path := "/Users/hansolo/code/project/nu/.wk/5969"
+		list := `worktree /Users/hansolo/code/project/nu
+HEAD bb976dcdc
+branch refs/heads/main
+
+worktree /Users/hansolo/code/project/nu/.wk/5969
+HEAD f31c5985c
+branch refs/heads/jam/5969
+`
+		mg.On("WorktreeList", path).Return(true, list, nil)
+
+		name, err := gitName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "project/nu/.wk/5969", name)
+	})
+
+	t.Run("git_namer_use_worktree_root on non-git directory", func(t *testing.T) {
+		cfg := model.Config{GitNamerUseWorktreeRoot: true}
+		n, _, mg := newSiblingWorktreeNamer(cfg)
+		path := "/Users/hansolo/.config/nvim"
+		mg.On("ShowTopLevel", path).Return(false, "", nil)
+
+		name, err := gitName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "", name)
+	})
+}
+
+func TestGitRootNameWithWorktreeRootOption(t *testing.T) {
+	t.Run("git_namer_use_worktree_root collapses nested subdir to worktree", func(t *testing.T) {
+		cfg := model.Config{GitNamerUseWorktreeRoot: true, GitDirLength: 2}
+		n, _, mg := newSiblingWorktreeNamer(cfg)
+		path := "/Users/semi/work/path/bernoulli/dev/src/pkg"
+		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/dev", nil)
+
+		name, err := gitRootName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "bernoulli/dev", name)
+	})
+
+	t.Run("git_namer_use_worktree_root on non-git directory", func(t *testing.T) {
+		cfg := model.Config{GitNamerUseWorktreeRoot: true}
+		n, _, mg := newSiblingWorktreeNamer(cfg)
+		path := "/Users/hansolo/.config/nvim"
+		mg.On("ShowTopLevel", path).Return(false, "", nil)
+
+		name, err := gitRootName(n, path)
+		assert.NoError(t, err)
+		assert.Equal(t, "", name)
+	})
+}

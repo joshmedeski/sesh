@@ -3,7 +3,10 @@ package configurator
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
+	"time"
+	"unicode/utf8"
 
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -116,12 +119,74 @@ func (c *RealConfigurator) applyDefaults(config *model.Config) {
 	if config.DirLength < 1 {
 		config.DirLength = 1
 	}
+	if config.GitDirLength < 1 {
+		config.GitDirLength = 1
+	}
 	if config.TUI.Prompt == "" {
 		config.TUI.Prompt = "> "
 	}
 	if config.TUI.Placeholder == "" {
 		config.TUI.Placeholder = "Filter Sessions..."
 	}
+	if config.TUI.AliasAutoConnectDelay == "" {
+		config.TUI.AliasAutoConnectDelay = model.DefaultAliasAutoConnectDelay
+	}
+	if config.TUI.AliasFilterPrefix == nil {
+		prefix := model.DefaultAliasFilterPrefix
+		config.TUI.AliasFilterPrefix = &prefix
+	}
+}
+
+// validateAliases rejects alias configurations that can't behave predictably.
+// Aliases that share a prefix (`w` and `wp`) are allowed on purpose: the
+// auto-connect delay is what makes them usable together.
+func validateAliases(config *model.Config) error {
+	if _, err := time.ParseDuration(config.TUI.AliasAutoConnectDelay); err != nil {
+		return fmt.Errorf("invalid alias_auto_connect_delay %q: %w", config.TUI.AliasAutoConnectDelay, err)
+	}
+
+	// An empty prefix disables alias-filter mode, so only non-empty values are
+	// checked. More than one character would mean the mode only engages partway
+	// through typing, and whitespace can't be told apart from a normal query.
+	if prefix := config.TUI.AliasFilterPrefix; prefix != nil && *prefix != "" {
+		if utf8.RuneCountInString(*prefix) > 1 {
+			return fmt.Errorf("invalid alias_filter_prefix %q: must be a single character", *prefix)
+		}
+		if strings.TrimSpace(*prefix) == "" {
+			return fmt.Errorf("invalid alias_filter_prefix %q: must not be whitespace", *prefix)
+		}
+	}
+
+	seen := make(map[string]string, len(config.SessionConfigs))
+	for _, session := range config.SessionConfigs {
+		if session.Alias == "" {
+			continue
+		}
+		key := strings.ToLower(session.Alias)
+		if owner, exists := seen[key]; exists {
+			return fmt.Errorf("duplicate alias %q used by both %q and %q", session.Alias, owner, session.Name)
+		}
+		seen[key] = session.Name
+	}
+	return nil
+}
+
+// validateNameSubstitutions rejects rules that can't be applied so the user
+// hears about a bad rule at load time instead of getting silently ignored
+// naming later. A rule needs something to look for, and a regex rule needs a
+// pattern that actually compiles.
+func validateNameSubstitutions(config *model.Config) error {
+	for i, rule := range config.NameSubstitutions {
+		if rule.Find == "" {
+			return fmt.Errorf("name_substitution rule %d has an empty find", i+1)
+		}
+		if rule.Regex {
+			if _, err := regexp.Compile(rule.Find); err != nil {
+				return fmt.Errorf("invalid name_substitution regex %q: %w", rule.Find, err)
+			}
+		}
+	}
+	return nil
 }
 
 func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Config, error) {
@@ -145,6 +210,12 @@ func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Confi
 	}
 
 	c.applyDefaults(&config)
+	if err := validateAliases(&config); err != nil {
+		return config, err
+	}
+	if err := validateNameSubstitutions(&config); err != nil {
+		return config, err
+	}
 	return config, nil
 }
 
@@ -177,6 +248,12 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 	}
 
 	c.applyDefaults(&config)
+	if err := validateAliases(&config); err != nil {
+		return config, err
+	}
+	if err := validateNameSubstitutions(&config); err != nil {
+		return config, err
+	}
 	return config, nil
 }
 

@@ -17,21 +17,34 @@ import (
 // string used in the status column (shared with the sessions section). Each
 // part is styled with a distinct ANSI colour so the counts are distinguishable
 // at a glance: staged green, unstaged yellow, deleted red, untracked magenta.
+//
+// The parts are emitted as one continuous ANSI run with only a final reset, so
+// an outer cursor/hover background applied by renderRow is not cancelled by
+// per-part reset sequences. Spaces between parts are left unstyled so they
+// inherit the row's highlight background cleanly.
 func formatGitStatus(status git.StatusSummary) string {
 	parts := make([]string, 0, 4)
 	if status.Staged > 0 {
-		parts = append(parts, lipgloss.NewStyle().Foreground(colorStaged).Render(fmt.Sprintf("+%d", status.Staged)))
+		parts = append(parts, ansiFg(colorStaged)+fmt.Sprintf("+%d", status.Staged))
 	}
 	if status.Unstaged > 0 {
-		parts = append(parts, lipgloss.NewStyle().Foreground(colorUnstaged).Render(fmt.Sprintf("~%d", status.Unstaged)))
+		parts = append(parts, ansiFg(colorUnstaged)+fmt.Sprintf("~%d", status.Unstaged))
 	}
 	if status.Deleted > 0 {
-		parts = append(parts, lipgloss.NewStyle().Foreground(colorDeleted).Render(fmt.Sprintf("-%d", status.Deleted)))
+		parts = append(parts, ansiFg(colorDeleted)+fmt.Sprintf("-%d", status.Deleted))
 	}
 	if status.Untracked > 0 {
-		parts = append(parts, lipgloss.NewStyle().Foreground(colorUntracked).Render(fmt.Sprintf("!%d", status.Untracked)))
+		parts = append(parts, ansiFg(colorUntracked)+fmt.Sprintf("!%d", status.Untracked))
 	}
-	return strings.Join(parts, " ")
+	if len(parts) == 0 {
+		return ""
+	}
+	return strings.Join(parts, " ") + "\x1b[0m"
+}
+
+// ansiFg returns an ANSI 256-colour foreground sequence for c.
+func ansiFg(c lipgloss.ANSIColor) string {
+	return fmt.Sprintf("\x1b[38;5;%dm", int(c))
 }
 
 // configuredLoadedMsg carries the config-source sessions (sorted) plus the set
@@ -175,7 +188,11 @@ func (s *ConfiguredSection) handleKey(msg tea.KeyPressMsg) (Section, tea.Cmd) {
 }
 
 // handleFilterKey consumes keys while type-to-filter is active (mirrors
-// SessionsSection).
+// SessionsSection): printable characters append to the query, backspace (and
+// its ctrl+h / ctrl+backspace aliases) delete the last rune, j/k and the arrow
+// keys move the cursor through the filtered results, enter selects the
+// highlighted filtered item and exits filtering, and esc cancels filtering
+// without selecting.
 func (s *ConfiguredSection) handleFilterKey(msg tea.KeyPressMsg) {
 	if isBackspaceKey(msg) {
 		if s.filterQuery != "" {
@@ -186,10 +203,20 @@ func (s *ConfiguredSection) handleFilterKey(msg tea.KeyPressMsg) {
 		return
 	}
 	switch msg.String() {
-	case "esc", "enter":
+	case "esc":
 		s.filtering = false
 		s.filterQuery = ""
 		s.applyFilter()
+	case "enter":
+		s.applyFilter()
+		s.selectItem()
+		s.filtering = false
+		s.filterQuery = ""
+		s.applyFilter()
+	case "j", "down":
+		s.cursorDown(1)
+	case "k", "up":
+		s.cursorUp(1)
 	default:
 		if msg.Text != "" {
 			s.filterQuery += msg.Text

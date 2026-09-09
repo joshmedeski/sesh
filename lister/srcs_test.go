@@ -4,36 +4,38 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func TestSortSources(t *testing.T) {
 	defaultSources := []string{"tmux", "config", "tmuxinator", "zoxide"}
 	tests := map[string]struct {
-		sortOrder []string
+		sortOrder model.SortOrder
 		expected  []string
 	}{
 		"a normal configuration": {
-			sortOrder: []string{"tmuxinator", "zoxide", "config", "tmux"},
+			sortOrder: model.SortOrder{"tmuxinator", "zoxide", "config", "tmux"},
 			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
 		},
 		"empty configuration": {
-			sortOrder: []string{},
+			sortOrder: model.SortOrder{},
 			expected:  []string{"tmux", "config", "tmuxinator", "zoxide"},
 		},
 		"partial configuration": {
-			sortOrder: []string{"tmuxinator"},
+			sortOrder: model.SortOrder{"tmuxinator"},
 			expected:  []string{"tmuxinator", "tmux", "config", "zoxide"},
 		},
 		"superfluous elements": {
-			sortOrder: []string{"tmuxinator", "apple", "zoxide", "banana", "config", "chocolate", "tmux"},
+			sortOrder: model.SortOrder{"tmuxinator", "apple", "zoxide", "banana", "config", "chocolate", "tmux"},
 			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
 		},
 		"configuration with capitalization": {
-			sortOrder: []string{"tMuxiNator", "Zoxide", "conFIg", "tmux"},
+			sortOrder: model.SortOrder{"tMuxiNator", "Zoxide", "conFIg", "tmux"},
 			expected:  []string{"tmuxinator", "zoxide", "config", "tmux"},
 		},
 		"configuration with duplicate elements": {
-			sortOrder: []string{"tmuxinator", "zoxide", "tmuxinator", "config", "tmuxinator", "tmux", "tmuxinator", "tmuxinator"},
+			sortOrder: model.SortOrder{"tmuxinator", "zoxide", "tmuxinator", "config", "tmuxinator", "tmux", "tmuxinator", "tmuxinator"},
 			expected:  []string{"zoxide", "config", "tmux", "tmuxinator"},
 		},
 	}
@@ -41,6 +43,48 @@ func TestSortSources(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			actual := sortSources(defaultSources, tt.sortOrder)
 			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestGroupSources(t *testing.T) {
+	defaultSources := []string{"tmux", "config", "tmuxinator", "zoxide"}
+	tests := map[string]struct {
+		sortOrder model.SortOrder
+		expected  [][]string
+	}{
+		"no sort order leaves every source on its own": {
+			sortOrder: nil,
+			expected:  [][]string{{"tmux"}, {"config"}, {"tmuxinator"}, {"zoxide"}},
+		},
+		"a flat sort order leaves every source on its own": {
+			sortOrder: model.SortOrder{"zoxide", "tmux", "config", "tmuxinator"},
+			expected:  [][]string{{"zoxide"}, {"tmux"}, {"config"}, {"tmuxinator"}},
+		},
+		"a nested entry merges its sources into one group": {
+			sortOrder: model.SortOrder{"tmux", []string{"config", "zoxide"}, "tmuxinator"},
+			expected:  [][]string{{"tmux"}, {"config", "zoxide"}, {"tmuxinator"}},
+		},
+		"a nested entry decoded from toml merges too": {
+			sortOrder: model.SortOrder{"tmux", []any{"config", "zoxide"}},
+			expected:  [][]string{{"tmux"}, {"config", "zoxide"}, {"tmuxinator"}},
+		},
+		"unlisted sources trail as groups of one": {
+			sortOrder: model.SortOrder{[]string{"zoxide", "tmux"}},
+			expected:  [][]string{{"zoxide", "tmux"}, {"config"}, {"tmuxinator"}},
+		},
+		"a source named twice joins the last group that claims it": {
+			sortOrder: model.SortOrder{[]string{"tmux", "zoxide"}, []string{"config", "zoxide"}},
+			expected:  [][]string{{"tmux"}, {"config", "zoxide"}, {"tmuxinator"}},
+		},
+		"a group naming only inactive sources is skipped": {
+			sortOrder: model.SortOrder{[]string{"apple", "banana"}, "zoxide"},
+			expected:  [][]string{{"zoxide"}, {"tmux"}, {"config"}, {"tmuxinator"}},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, groupSources(defaultSources, tt.sortOrder))
 		})
 	}
 }

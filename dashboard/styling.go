@@ -14,10 +14,16 @@ import (
 
 // Shared color palette (see design spec).
 var (
-	colorAccent    = lipgloss.ANSIColor(14) // accent (cyan)
-	colorDimmed    = lipgloss.ANSIColor(8)  // dimmed / border
-	colorBorder    = lipgloss.ANSIColor(8)
-	colorText      = lipgloss.ANSIColor(15) // white text
+	colorAccent = lipgloss.ANSIColor(14) // accent (cyan)
+	colorDimmed = lipgloss.ANSIColor(8)  // dimmed / border
+	colorBorder = lipgloss.ANSIColor(8)
+	colorText   = lipgloss.ANSIColor(15) // white text
+	// colorPillText is the alias pill's label colour on a selected row. Black
+	// mirrors the terminal's typical default background, so it stays legible
+	// on the accent pill fill the same way the unselected chip's reverse-video
+	// label does (its text is the terminal's own contrasting background).
+	colorPillText  = lipgloss.ANSIColor(0)  // black
+	colorAge       = lipgloss.ANSIColor(7)  // light gray (distinct from highlight bg)
 	colorBranch    = lipgloss.ANSIColor(5)  // magenta
 	colorStatus    = lipgloss.ANSIColor(10) // green
 	colorHighlight = lipgloss.ANSIColor(8)
@@ -46,6 +52,13 @@ func warningStyle() lipgloss.Style {
 
 func dimmedStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(colorDimmed)
+}
+
+// ageStyle is the neutral, muted foreground for the Open sessions age column.
+// It deliberately avoids colorDimmed (the cursor background) so the age stays
+// readable when a row is highlighted.
+func ageStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(colorAge)
 }
 
 func textStyle() lipgloss.Style {
@@ -138,18 +151,70 @@ func renderSimpleRow(cells []col, selected, focused bool) string {
 	return rowMarker(selected, focused) + strings.Join(rendered, "")
 }
 
+// Powerline half circles used to round off the alias chip, matching the
+// picker’s default alias styling.
+const (
+	chipLeftGlyph  = "\ue0b6"
+	chipRightGlyph = "\ue0b4"
+)
+
+// aliasChip renders a configured alias as a rounded pill. It returns an empty
+// string when there is no alias. The chip uses reverse video over the dashboard
+// accent color so the background is the theme accent and the foreground is the
+// terminal’s own contrasting background color, matching the picker’s alias
+// chip conventions. The half circles are painted with the same accent so the
+// pill reads as one shape.
+func aliasChip(alias string) string {
+	if alias == "" {
+		return ""
+	}
+	fill := lipgloss.NewStyle().Foreground(colorAccent)
+	label := fill.Reverse(true).Render(alias)
+	return fill.Render(chipLeftGlyph) + label + fill.Render(chipRightGlyph) + " "
+}
+
+// aliasChipSelected renders the alias pill for a selected row as a continuous
+// ANSI run. The pill keeps an explicit accent background of its own rather than
+// inheriting the cursor highlight, so the alias reads the same as its
+// unselected chip. The label text is the contrasting terminal-background colour
+// (colorPillText), while the powerline half circles stay accent-coloured over
+// the cursor background, so the rounded edges read as one shape with the pill
+// and the row highlight continues unbroken outside it. The cursor background is
+// restored after the pill so the name that follows stays on the highlight.
+func aliasChipSelected(alias string) string {
+	accent := ansiFg(colorAccent)
+	return accent + chipLeftGlyph +
+		ansiBg(colorAccent) + ansiFg(colorPillText) + alias +
+		ansiBg(colorHighlight) + accent + chipRightGlyph + " "
+}
+
+// ansiBg returns an ANSI 256-colour background sequence for c.
+func ansiBg(c lipgloss.ANSIColor) string {
+	return fmt.Sprintf("\x1b[48;5;%dm", int(c))
+}
+
+// namePrefix returns the raw ANSI prefix (bold + foreground) for the session
+// name, without a trailing reset, so it can be embedded in a continuous ANSI
+// run when the row is selected.
+func namePrefix(current bool) string {
+	if current {
+		return "\x1b[1m" + ansiFg(colorAccent)
+	}
+	return ansiFg(colorText)
+}
+
 // renderOpenRow renders a Tab 1 (Open) session row with columns:
-// marker(2) | name(24) | att(2) | windows(5) | dir(fill) | branch(16) |
-// status(12) | age(5) | alerts(2).
+// marker(2) | alias+name(22) | att(2) | windows(5) | dir(fill) | branch(16) |
+// status(12) | age(5, last attached) | alerts(2).
 // Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att,
 // <50 drop windows.
-func renderOpenRow(width int, selected, current bool, name string, attached, windows int, dir, branch, status string, created *time.Time, alerts []string) string {
-	return renderOpenRowFocused(width, selected, current, true, name, attached, windows, dir, branch, status, created, alerts)
+func renderOpenRow(width int, selected, current bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
+	return renderOpenRowFocused(width, selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
 }
 
 // renderOpenRowFocused is renderOpenRow with an explicit focused flag, so
 // unfocused panes render a dimmed selection highlight.
-func renderOpenRowFocused(width int, selected, current, focused bool, name string, attached, windows int, dir, branch, status string, created *time.Time, alerts []string) string {
+func renderOpenRowFocused(width int, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
 	includeWindows := width >= 50
 	includeBranch := width >= 70
 	includeAtt := width >= 70
@@ -157,7 +222,7 @@ func renderOpenRowFocused(width int, selected, current, focused bool, name strin
 	includeAge := width >= 90
 	includeAlerts := width >= 90
 
-	fixed := 24
+	fixed := 22
 	if includeAtt {
 		fixed += 2
 	}
@@ -214,7 +279,30 @@ func renderOpenRowFocused(width int, selected, current, focused bool, name strin
 		cols = append(cols, col{text: attText, width: 2})
 	}
 
-	cols = append(cols, col{text: truncateRight(name, 24), width: 20, style: nameStyle})
+	chip := aliasChip(alias)
+	nameBudget := 22
+	if chip != "" {
+		nameBudget -= lipgloss.Width(chip)
+		if nameBudget < 1 {
+			nameBudget = 1
+		}
+	}
+	truncated := truncateRight(name, nameBudget)
+	var nameText string
+	switch {
+	case selected && chip != "":
+		// One continuous ANSI run so the cursor background survives the pill
+		// and the name (no nested resets from pre-rendered text).
+		nameText = aliasChipSelected(alias) + namePrefix(current) + truncated
+	case selected:
+		nameText = namePrefix(current) + truncated
+	default:
+		nameText = nameStyle.Render(truncated)
+		if chip != "" {
+			nameText = chip + nameText
+		}
+	}
+	cols = append(cols, col{text: nameText, width: 18})
 
 	// if includeWindows {
 	// 	cols = append(cols, col{text: fmt.Sprintf("%2dw", windows), width: 7, style: textStyle(), align: lipgloss.Left})
@@ -224,10 +312,10 @@ func renderOpenRowFocused(width int, selected, current, focused bool, name strin
 		cols = append(cols, col{text: truncateRight(paren(branch), 16), width: 14, style: branchStyle(), align: lipgloss.Left})
 	}
 	if includeStatus {
-		cols = append(cols, col{text: truncateRightANSI(status, 12), width: 12})
+		cols = append(cols, col{text: truncateRightANSI(status, 12), width: 12, style: branchStyle()})
 	}
 	if includeAge {
-		cols = append(cols, col{text: formatAge(created), width: 5, style: dimmedStyle(), align: lipgloss.Left})
+		cols = append(cols, col{text: formatAge(lastAttached), width: 5, style: ageStyle(), align: lipgloss.Left})
 	}
 	if includeAlerts {
 		alertText := ""
@@ -240,13 +328,13 @@ func renderOpenRowFocused(width int, selected, current, focused bool, name strin
 	return renderRow(rowMarker(selected, focused), cols, selected, focused)
 }
 
-// formatAge renders a compact relative age ("2h"/"3d"/"4mo") for a session
-// creation time, or "" when created is nil/zero.
-func formatAge(created *time.Time) string {
-	if created == nil || created.IsZero() {
+// formatAge renders a compact relative age ("2h"/"3d"/"4mo") for a session's
+// last attached time, or "" when lastAttached is nil/zero.
+func formatAge(lastAttached *time.Time) string {
+	if lastAttached == nil || lastAttached.IsZero() {
 		return ""
 	}
-	since := time.Since(*created)
+	since := time.Since(*lastAttached)
 	if since < 0 {
 		return ""
 	}

@@ -157,7 +157,9 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 
 // handleFilterKey consumes keys while type-to-filter is active: printable
 // characters append to the query, backspace (and its ctrl+h / ctrl+backspace
-// aliases) delete the last rune, esc/enter exit and clear the filter.
+// aliases) delete the last rune, j/k and the arrow keys move the cursor
+// through the filtered results, enter selects the highlighted filtered item
+// and exits filtering, and esc cancels filtering without selecting.
 func (s *SessionsSection) handleFilterKey(msg tea.KeyPressMsg) (*SessionsSection, tea.Cmd) {
 	if isBackspaceKey(msg) {
 		if s.filterQuery != "" {
@@ -168,10 +170,20 @@ func (s *SessionsSection) handleFilterKey(msg tea.KeyPressMsg) (*SessionsSection
 		return s, nil
 	}
 	switch msg.String() {
-	case "esc", "enter":
+	case "esc":
 		s.filtering = false
 		s.filterQuery = ""
 		s.applyFilter()
+	case "enter":
+		s.applyFilter()
+		s.selectItem()
+		s.filtering = false
+		s.filterQuery = ""
+		s.applyFilter()
+	case "j", "down":
+		s.cursorDown(1)
+	case "k", "up":
+		s.cursorUp(1)
 	default:
 		if msg.Text != "" {
 			s.filterQuery += msg.Text
@@ -229,7 +241,7 @@ func (s *SessionsSection) applyFilter() {
 	q := strings.ToLower(s.filterQuery)
 	out := make([]model.SeshSession, 0, len(s.sessions))
 	for _, sess := range s.sessions {
-		if strings.Contains(strings.ToLower(sess.Name), q) {
+		if strings.Contains(strings.ToLower(sess.Name), q) || strings.Contains(strings.ToLower(sess.Alias), q) {
 			out = append(out, sess)
 		}
 	}
@@ -472,5 +484,5 @@ func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	sess := s.visible()[i]
 	dir := collapseHome(sess.Path, s.deps.HomeDir)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return renderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.Created, sess.Alerts)
+	return renderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
 }

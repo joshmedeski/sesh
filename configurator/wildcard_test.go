@@ -20,6 +20,7 @@ pattern = "~/work/*"
 startup_command = "make dev"
 preview_command = "ls -la"
 disable_startup_command = true
+icon = "🏠"
 `)
 		config := model.Config{}
 		err := toml.Unmarshal(input, &config)
@@ -31,6 +32,8 @@ disable_startup_command = true
 		assert.Equal(t, "make dev", config.WildcardConfigs[1].StartupCommand)
 		assert.Equal(t, "ls -la", config.WildcardConfigs[1].PreviewCommand)
 		assert.True(t, config.WildcardConfigs[1].DisableStartCommand)
+		assert.Equal(t, "🏠", config.WildcardConfigs[1].Icon)
+		assert.Equal(t, "", config.WildcardConfigs[0].Icon)
 	})
 }
 

@@ -37,15 +37,7 @@ type FileCache struct {
 // NewFileCache creates a FileCache that stores data at $XDG_CACHE_HOME/sesh/sessions.gob
 // (falling back to ~/.cache/sesh/sessions.gob).
 func NewFileCache() *FileCache {
-	dir := os.Getenv("XDG_CACHE_HOME")
-	if dir == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			home = "."
-		}
-		dir = filepath.Join(home, ".cache")
-	}
-	return &FileCache{path: filepath.Join(dir, "sesh", "sessions.gob")}
+	return &FileCache{path: filepath.Join(Dir(), "sessions.gob")}
 }
 
 // NewFileCacheWithPath creates a FileCache at a specific path (useful for testing).
@@ -66,22 +58,10 @@ func (c *FileCache) Read() (CachedData, error) {
 }
 
 func (c *FileCache) Write(sessions model.SeshSessions) error {
-	if err := os.MkdirAll(filepath.Dir(c.path), 0o755); err != nil {
-		return fmt.Errorf("cache mkdir: %w", err)
-	}
-
 	var buf bytes.Buffer
 	cached := CachedData{Sessions: sessions, Timestamp: time.Now()}
 	if err := gob.NewEncoder(&buf).Encode(cached); err != nil {
 		return fmt.Errorf("cache encode: %w", err)
 	}
-
-	tmp := c.path + ".tmp"
-	if err := os.WriteFile(tmp, buf.Bytes(), 0o644); err != nil {
-		return fmt.Errorf("cache write tmp: %w", err)
-	}
-	if err := os.Rename(tmp, c.path); err != nil {
-		return fmt.Errorf("cache rename: %w", err)
-	}
-	return nil
+	return writeAtomic(c.path, buf.Bytes())
 }

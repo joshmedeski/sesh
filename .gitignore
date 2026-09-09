@@ -23,9 +23,12 @@ mock_*
 # Go workspace file
 go.work
 
-# binary
-sesh
+# binary (repo root only; not the skills/sesh/ directory)
+/sesh
 
 dist/
 share/
 .DS_Store
+
+# Local benchmark runs charted by `just bench-compare`
+.bench/

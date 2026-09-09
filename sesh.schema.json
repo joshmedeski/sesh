@@ -31,14 +31,63 @@
     },
     "sort_order": {
       "type": "array",
-      "description": "Order in which session sources appear in the list",
+      "description": "Order in which session sources appear in the list. An entry may be a source name, listed as its own block, or a nested array of source names, merged into a single block ordered by zoxide score.",
       "items": {
-        "type": "string"
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "description": "Sources merged into one block, ordered by zoxide score. Sessions whose path zoxide has never seen score 0 and trail the block.",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        ]
       }
     },
     "dir_length": {
       "type": "integer",
       "description": "Number of directory components to use when naming sessions (minimum 1)",
+      "minimum": 1,
+      "default": 1
+    },
+    "name_substitution": {
+      "type": "array",
+      "description": "Rewrite the path a session name is derived from before it becomes a tmux session name. Rules run against the home-collapsed path for every path-derived source (zoxide, directories, wildcards) but not existing tmux sessions. When no rule matches, naming falls back to the usual git/directory strategies.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "find": {
+            "type": "string",
+            "description": "Text to look for. Matched literally unless regex is true."
+          },
+          "replace": {
+            "type": "string",
+            "description": "Text that find is replaced with. With regex enabled it may reference capture groups as $1, $2, and so on."
+          },
+          "regex": {
+            "type": "boolean",
+            "description": "Treat find as a Go regular expression instead of a literal string.",
+            "default": false
+          }
+        },
+        "required": [
+          "find"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "git_namer_use_worktree_root": {
+      "type": "boolean",
+      "description": "Derive git session names from the current worktree's top-level directory instead of the main repo root. Useful when worktrees are added as siblings of the main clone (e.g. `git worktree add ../feat`).",
+      "default": false
+    },
+    "git_dir_length": {
+      "type": "integer",
+      "description": "Number of directory components to use when naming git-detected sessions (minimum 1). Mirrors dir_length but applies to git strategies.",
       "minimum": 1,
       "default": 1
     },
@@ -52,6 +101,52 @@
       "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",
       "default": "tmux"
     },
+    "terminal": {
+      "type": "string",
+      "description": "Terminal emulator app to activate (macOS only) after an out-of-tmux connect, e.g. \"wezterm\""
+    },
+    "browser": {
+      "type": "object",
+      "description": "Read the active browser tab URL (macOS only) for `sesh worktree connect --browser`.",
+      "additionalProperties": false,
+      "properties": {
+        "application": {
+          "type": "string",
+          "description": "Browser application name, e.g. \"Helium\"."
+        },
+        "url_command": {
+          "type": "string",
+          "description": "AppleScript fragment yielding the URL. Default: \"URL of active tab of front window\"."
+        }
+      }
+    },
+    "frecency": {
+      "type": "object",
+      "description": "Override the frecency directory-jumping backend commands to use an alternative to zoxide (e.g. fasd, autojump, memy). Empty fields fall back to the zoxide defaults.",
+      "properties": {
+        "list_command": {
+          "type": "string",
+          "description": "Command that lists all tracked entries, one path per line. A leading numeric score is detected and used when present.",
+          "default": "zoxide query --list --score"
+        },
+        "query_command": {
+          "type": "string",
+          "description": "Command that resolves a single input to a path. The {} placeholder is replaced with the query string.",
+          "default": "zoxide query {}"
+        },
+        "add_command": {
+          "type": "string",
+          "description": "Command that records a path to bump its frecency after connecting. The {} placeholder is replaced with the path.",
+          "default": "zoxide add {}"
+        },
+        "remove_command": {
+          "type": "string",
+          "description": "Command that removes a path from the backend, used by the picker's ctrl+x binding. The {} placeholder is replaced with the path.",
+          "default": "zoxide remove {}"
+        }
+      },
+      "additionalProperties": false
+    },
     "tui": {
       "type": "object",
       "description": "Settings for the Sesh Picker TUI",
@@ -60,6 +155,15 @@
           "type": "boolean",
           "description": "Show icons in the picker TUI"
         },
+        "show_windows": {
+          "type": "boolean",
+          "description": "Show the window names of each session in the picker TUI (display only, never part of the selected value)"
+        },
+        "window_name_format": {
+          "type": "string",
+          "description": "tmux format rendered for each window when show_windows is enabled. tmux interprets the value, including conditionals and #() commands.",
+          "default": "#{window_name}"
+        },
         "prompt": {
           "type": "string",
           "description": "The prompt shown in the picker TUI"
@@ -67,6 +171,46 @@
         "placeholder": {
           "type": "string",
           "description": "The placeholder text in the picker TUI"
+        },
+        "alias_auto_connect_delay": {
+          "type": "string",
+          "description": "Grace period between typing a session alias and auto-connecting to it, leaving room to finish typing a longer alias that shares a prefix. Any Go duration string (e.g. \"150ms\", \"1s\").",
+          "default": "150ms"
+        },
+        "alias_filter_prefix": {
+          "type": "string",
+          "description": "Single character that, typed first in the picker, narrows the list to aliased sessions (e.g. \"/tc\" finds the \"tc\" alias). Set to an empty string to disable.",
+          "default": "/",
+          "maxLength": 1
+        },
+        "preview": {
+          "type": "boolean",
+          "description": "Show a preview of the highlighted session beside the list in the picker TUI, using the same output as `sesh preview`",
+          "default": false
+        },
+        "preview_width": {
+          "type": "integer",
+          "description": "Share of the terminal width, in percent, guaranteed to the preview pane. The session list keeps its column cap, so any width left over goes to the preview on top of this.",
+          "default": 60,
+          "minimum": 10,
+          "maximum": 90
+        },
+        "preview_min_width": {
+          "type": "integer",
+          "description": "Narrowest terminal, in columns, that still gets a preview pane. Below this the picker renders the session list only.",
+          "default": 100,
+          "minimum": 1
+        },
+        "group_separator": {
+      "type": "boolean",
+      "description": "Draw a faint rule between the sort_order groups in the picker, so the boundary between live tmux sessions and everywhere else stays visible. Suppressed while the list is filtered.",
+      "default": false
+    },
+    "preview_border": {
+          "type": "string",
+          "description": "Divider drawn between the session list and the preview pane. Use \"none\" for no divider.",
+          "enum": ["line", "thick", "double", "none"],
+          "default": "line"
         }
       },
       "additionalProperties": false
@@ -119,6 +263,19 @@
             "type": "boolean",
             "description": "Disable the default startup command for this session",
             "default": false
+          },
+          "alias": {
+            "type": "string",
+            "description": "Short exact-match shortcut for this session. Shown as a chip in the picker, and resolved by `sesh connect <alias>`. Must be unique across sessions."
+          },
+          "alias_auto_connect": {
+            "type": "boolean",
+            "description": "Connect to this session as soon as its alias is fully typed in the picker, without pressing enter. Requires `alias`.",
+            "default": false
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon shown for this session in the picker instead of its source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
           },
           "startup_command": {
             "type": "string",
@@ -198,6 +355,56 @@
             "items": {
               "type": "string"
             }
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon shown for matching sessions in the picker instead of their source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "worktree": {
+      "type": "array",
+      "description": "Per-repo git worktree configurations for `sesh worktree`",
+      "items": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "GitHub repository as org/repo"
+          },
+          "path": {
+            "type": "string",
+            "description": "Local repository root (supports ~ for home directory)"
+          },
+          "worktree_dir": {
+            "type": "string",
+            "description": "Where worktrees are created; relative to path or absolute",
+            "default": ".wk"
+          },
+          "branch_template": {
+            "type": "string",
+            "description": "Branch name template; {number} is replaced with the issue/PR number",
+            "default": "{number}"
+          },
+          "base_branch": {
+            "type": "string",
+            "description": "Ref new worktrees branch from",
+            "default": "origin/main"
+          },
+          "fetch": {
+            "type": "boolean",
+            "description": "Run git fetch before creating the worktree",
+            "default": true
+          },
+          "startup_command": {
+            "type": "string",
+            "description": "Shell command to run when connecting to a worktree that already existed"
+          },
+          "create_command": {
+            "type": "string",
+            "description": "Shell command to run instead of startup_command on the connect that creates the worktree"
           }
         },
         "additionalProperties": false

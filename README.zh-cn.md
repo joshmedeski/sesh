@@ -57,6 +57,18 @@ yay -S sesh-bin
 </details>
 
 <details>
+  <summary>Fedora（Copr）</summary>
+
+可以从 [buckaroogeek/Tmux_sesh](https://copr.fedorainfracloud.org/coprs/buckaroogeek/Tmux_sesh/) Copr 仓库安装 sesh（支持 Fedora 和 EPEL 10）：
+
+```sh
+sudo dnf copr enable buckaroogeek/Tmux_sesh
+sudo dnf install tmux-sesh
+```
+
+</details>
+
+<details>
   <summary>Go</summary>
 
 或者，您可以使用 Go 的 `go install` 命令安装 Sesh：
@@ -430,6 +442,30 @@ sort_order = [
   "config", # 结果顺序：config, tmux, tmuxinator, zoxide
 ]
 ```
+
+### 选择器 TUI
+
+选择器 TUI 可以通过一些选项进行配置，以自定义其行为，这个选择器是外部模糊选择器的一个有用替代品。
+
+```toml
+[tui]
+prompt = "> "
+placeholder = "Filter sessions... "
+show_icons = false
+show_windows = false
+```
+
+当 `show_windows = true` 时，每一行还会在会话名称之后以暗色列出该会话中的窗口名称。放不下的窗口名称会汇总为 `+N`：
+
+```
+>  sesh editor server logs
+   dotfiles nvim shell
+   my-project code server db +2
+   scratch
+```
+
+窗口名称仅用于显示：选中某一行仍然只返回会话名称，输入窗口名称也不会匹配到它所属的会话。活动 tmux 会话的窗口名称通过一次 tmux 调用获取，因此无论您有多少会话，该选项的开销都相同。
+
 ### 默认会话
 
 可以配置默认会话以在连接到会话时运行命令。这对于运行开发服务器或启动 tmux 插件很有用。
@@ -536,4 +572,4 @@ Sesh 是我广受欢迎的 [t-smart-tmux-session-manager](https://github.com/jos
 
 ## Star 历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=joshmedeski/sesh&type=Date)](https://www.star-history.com/#joshmedeski/sesh&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=joshmedeski/sesh&type=Date)](https://star-history.dera.page/#joshmedeski/sesh&Date)
