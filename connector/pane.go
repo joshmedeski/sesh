@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/mux"
 )
 
 func isTmuxPaneFormat(name string) bool {
@@ -12,7 +13,7 @@ func isTmuxPaneFormat(name string) bool {
 }
 
 func tmuxPaneStrategy(c *RealConnector, name string) (model.Connection, error) {
-	if !c.tmux.IsAttached() || !isTmuxPaneFormat(name) {
+	if !c.mux.IsAttached() || !isTmuxPaneFormat(name) {
 		return model.Connection{Found: false}, nil
 	}
 
@@ -37,7 +38,11 @@ func tmuxPaneStrategy(c *RealConnector, name string) (model.Connection, error) {
 }
 
 func connectToTmuxPane(c *RealConnector, connection model.Connection, _ model.ConnectOpts) (string, error) {
-	panes, err := c.tmux.ListTmuxPanes()
+	navigator, ok := c.mux.(mux.PaneNavigator)
+	if !ok {
+		return "", fmt.Errorf("cannot connect to pane %q: the multiplexer does not support pane navigation", connection.Session.Name)
+	}
+	panes, err := navigator.ListTmuxPanes()
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +63,7 @@ func connectToTmuxPane(c *RealConnector, connection model.Connection, _ model.Co
 	for _, pane := range panes {
 		paneKey := fmt.Sprintf("tmux-pane:%s/%s", pane.WindowName, pane.PaneID)
 		if paneKey == targetPaneKey {
-			return c.tmux.SelectPane(pane.WindowIndex, pane.PaneIndex)
+			return navigator.SelectPane(pane.WindowIndex, pane.PaneIndex)
 		}
 	}
 

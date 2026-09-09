@@ -7,8 +7,8 @@ import (
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/ls"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/mux"
 	"github.com/joshmedeski/sesh/v2/shell"
-	"github.com/joshmedeski/sesh/v2/tmux"
 )
 
 type Previewer interface {
@@ -23,7 +23,7 @@ type RealPreviewer struct {
 
 func NewPreviewer(
 	lister lister.Lister,
-	tmux tmux.Tmux,
+	m mux.Mux,
 	icon icon.Icon,
 	dir dir.Dir,
 	home home.Home,
@@ -32,7 +32,7 @@ func NewPreviewer(
 	shell shell.Shell,
 ) Previewer {
 	strategies := []PreviewStrategy{
-		NewTmuxStrategy(lister, tmux),
+		NewTmuxStrategy(lister, m),
 		NewConfigStrategy(lister, shell),
 		NewDefaultConfigStrategy(lister, config, ls),
 		NewDirectoryStrategy(home, dir, ls),

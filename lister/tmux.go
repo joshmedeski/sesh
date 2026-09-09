@@ -12,7 +12,7 @@ func tmuxKey(name string) string {
 }
 
 func listTmux(l *RealLister) (model.SeshSessions, error) {
-	tmuxSessions, err := l.tmux.ListSessions()
+	tmuxSessions, err := l.mux.ListSessions()
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmux sessions: %q", err)
 	}
@@ -42,7 +42,7 @@ func listTmux(l *RealLister) (model.SeshSessions, error) {
 // single tmux call. Failures are non-fatal: the picker simply renders sessions
 // without their window names.
 func tmuxWindowNames(l *RealLister) map[string][]string {
-	windowNames, err := l.tmux.ListAllWindowNames(l.config.TUI.WindowNameFormat)
+	windowNames, err := l.mux.ListAllWindowNames(l.config.TUI.WindowNameFormat)
 	if err != nil {
 		return nil
 	}
@@ -133,7 +133,7 @@ func (l *RealLister) GetAttachedTmuxSession() (model.SeshSession, bool) {
 }
 
 func GetAttachedTmuxSession(l *RealLister) (model.SeshSession, bool) {
-	tmuxSessions, err := l.tmux.ListSessions()
+	tmuxSessions, err := l.mux.ListSessions()
 	if err != nil {
 		return model.SeshSession{}, false
 	}

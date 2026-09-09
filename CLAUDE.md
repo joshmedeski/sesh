@@ -19,6 +19,7 @@ Sesh is a smart terminal session manager written in Go that helps users create a
 - `connector/` - Handles session connections with type-specific strategies
 - `namer/` - Session naming with strategy pattern (git bare → git → directory fallback)
 - `configurator/` - Configuration management (`sesh.toml` in `$XDG_CONFIG_HOME/sesh`)
+- `mux/` - Multiplexer interface every session operation goes through (`mux.Mux` plus optional `PaneNavigator`/`ClientSwitcher` capabilities); tmux is the only implementation today
 - `tmux/`, `zoxide/`, `tmuxinator/` - External tool integrations
 - `model/` - Shared data structures (Config, SeshSession, ConnectOpts)
 

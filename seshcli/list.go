@@ -36,7 +36,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			panes, _ := cmd.Flags().GetBool("panes")
 			blacklisted, _ := cmd.Flags().GetBool("blacklisted")
 
-			if panes && !deps.Tmux.IsAttached() {
+			if panes && !deps.Mux.IsAttached() {
 				return errors.New("--panes requires being inside a tmux session")
 			}
 

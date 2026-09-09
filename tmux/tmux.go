@@ -2,11 +2,13 @@ package tmux
 
 import (
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/mux"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/shell"
 )
 
 type Tmux interface {
+	Name() string
 	ListSessions() ([]*model.TmuxSession, error)
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
 	ListAllWindowNames(format string) (map[string][]string, error)
@@ -74,3 +76,12 @@ func (t *RealTmux) IsAttached() bool {
 func (t *RealTmux) SwitchClientTarget(client string, targetSession string) (string, error) {
 	return t.shell.Cmd(t.bin, "switch-client", "-c", client, "-t", targetSession)
 }
+
+// tmux is the reference backend: it satisfies mux.Mux and every capability.
+var (
+	_ mux.Mux            = (*RealTmux)(nil)
+	_ mux.PaneNavigator  = (*RealTmux)(nil)
+	_ mux.ClientSwitcher = (*RealTmux)(nil)
+)
+
+func (t *RealTmux) Name() string { return "tmux" }

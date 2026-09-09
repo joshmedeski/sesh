@@ -54,6 +54,7 @@ type (
 		GitNamerUseWorktreeRoot bool                 `toml:"git_namer_use_worktree_root"`
 		GitDirLength            int                  `toml:"git_dir_length"`
 		SeparatorAware          bool                 `toml:"separator_aware"`
+		Multiplexer             string               `toml:"multiplexer"`
 		TmuxCommand             string               `toml:"tmux_command"`
 		Terminal                string               `toml:"terminal"`
 		Browser                 BrowserConfig        `toml:"browser"`

@@ -96,6 +96,12 @@
       "description": "Enable separator-aware configuration for the picker",
       "default": false
     },
+    "multiplexer": {
+      "type": "string",
+      "enum": ["auto", "tmux", "herdr"],
+      "description": "Which multiplexer backend sessions live in. \"auto\" picks herdr when sesh runs inside a herdr pane (HERDR_ENV is set) and tmux everywhere else",
+      "default": "auto"
+    },
     "tmux_command": {
       "type": "string",
       "description": "Terminal multiplexer command to use instead of tmux (e.g. \"psmux\")",

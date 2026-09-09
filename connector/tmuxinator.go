@@ -24,5 +24,5 @@ func connectToTmuxinator(c *RealConnector, connection model.Connection, opts mod
 	if _, err := c.tmuxinator.Start(connection.Session.Name); err != nil {
 		return "", fmt.Errorf("failed to start tmuxinator session: %w", err)
 	}
-	return c.tmux.SwitchOrAttach(connection.Session.Name, opts)
+	return c.mux.SwitchOrAttach(connection.Session.Name, opts)
 }

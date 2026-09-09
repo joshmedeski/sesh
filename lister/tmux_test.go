@@ -236,7 +236,7 @@ func TestTmuxWindowNames(t *testing.T) {
 	t.Run("returns nil when tmux fails", func(t *testing.T) {
 		mockTmux := new(tmux.MockTmux)
 		mockTmux.EXPECT().ListAllWindowNames("").Return(nil, assert.AnError)
-		l := &RealLister{tmux: mockTmux}
+		l := &RealLister{mux: mockTmux}
 		assert.Nil(t, tmuxWindowNames(l))
 	})
 
@@ -246,7 +246,7 @@ func TestTmuxWindowNames(t *testing.T) {
 		mockTmux.EXPECT().ListAllWindowNames(format).Return(map[string][]string{"sesh": {"editor"}}, nil)
 		l := &RealLister{
 			config: model.Config{TUI: model.TUIConfig{WindowNameFormat: format}},
-			tmux:   mockTmux,
+			mux:    mockTmux,
 		}
 		assert.Equal(t, map[string][]string{"sesh": {"editor"}}, tmuxWindowNames(l))
 	})

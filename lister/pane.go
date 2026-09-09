@@ -1,11 +1,17 @@
 package lister
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/mux"
 )
+
+// ErrPanesUnsupported is returned when the multiplexer cannot address
+// individual panes, so `sesh list --panes` has nothing to list.
+var ErrPanesUnsupported = errors.New("the multiplexer does not support listing panes")
 
 func tmuxPaneKey(windowName string, paneID string) string {
 	return fmt.Sprintf("tmux-pane:%s/%s", windowName, paneID)
@@ -20,7 +26,11 @@ func tmuxPaneDisplayName(pane *model.TmuxPane) string {
 }
 
 func listTmuxPanes(l *RealLister) (model.SeshSessions, error) {
-	tmuxPanes, err := l.tmux.ListTmuxPanes()
+	navigator, ok := l.mux.(mux.PaneNavigator)
+	if !ok {
+		return model.SeshSessions{}, ErrPanesUnsupported
+	}
+	tmuxPanes, err := navigator.ListTmuxPanes()
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmux panes: %q", err)
 	}

@@ -610,6 +610,22 @@ tmux_command = "psmux"
 
 This replaces the `tmux` binary in all commands sesh runs (session creation, switching, attaching, etc.). The configured multiplexer must support tmux's CLI interface.
 
+### Herdr
+
+Sesh can drive [herdr](https://herdr.dev) instead of tmux. A sesh session becomes a herdr workspace and a sesh window becomes a tab; listing, connecting, previews, startup commands, `sesh window`, and `sesh rename` all work the same way. Sesh talks to herdr over its socket API, so it needs a running herdr server (herdr 0.8.2 or newer).
+
+By default sesh picks the backend from its environment: inside a herdr pane it drives herdr, everywhere else it drives tmux, so a single config works for both. To pin it, set `multiplexer` in your `sesh.toml`:
+
+```toml
+multiplexer = "herdr" # "auto" (default), "tmux", or "herdr"
+```
+
+Notes when running on herdr:
+
+- Herdr workspace labels don't have to be unique. Sesh connects to the first workspace whose label matches, and accepts a workspace ID (for example `wJ`) anywhere it accepts a session name.
+- `sesh list --panes` and pane targets (`window/pane`) are tmux-only, as is tmuxinator.
+- Attaching from outside herdr focuses the workspace and then launches the `herdr` client (`HERDR_BIN_PATH` if set, otherwise `herdr` on your `PATH`).
+
 ### Custom Frecency Backend (fasd, autojump, etc.)
 
 Sesh uses [zoxide](https://github.com/ajeetdsouza/zoxide) as its default frecency directory-jumping backend, but you can point it at an alternative such as [fasd](https://github.com/clvv/fasd), [fasder](https://github.com/khwang0/fasder), [autojump](https://github.com/wting/autojump), or [memy](https://github.com/xvello/memy) by overriding the commands in a `[frecency]` table. This is useful for tools that track files _and_ directories, unlike zoxide which tracks directories only.

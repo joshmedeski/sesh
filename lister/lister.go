@@ -5,7 +5,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/mux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
@@ -26,7 +26,7 @@ type Lister interface {
 type RealLister struct {
 	config     model.Config
 	home       home.Home
-	tmux       tmux.Tmux
+	mux        mux.Mux
 	zoxide     zoxide.Zoxide
 	tmuxinator tmuxinator.Tmuxinator
 
@@ -37,11 +37,11 @@ type RealLister struct {
 	wildcards     []expandedWildcard
 }
 
-func NewLister(config model.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide, tmuxinator tmuxinator.Tmuxinator) Lister {
+func NewLister(config model.Config, home home.Home, m mux.Mux, zoxide zoxide.Zoxide, tmuxinator tmuxinator.Tmuxinator) Lister {
 	return &RealLister{
 		config:     config,
 		home:       home,
-		tmux:       tmux,
+		mux:        m,
 		zoxide:     zoxide,
 		tmuxinator: tmuxinator,
 	}

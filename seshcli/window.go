@@ -111,7 +111,7 @@ func listWindows(cmd *cobra.Command, base *BaseDeps) error {
 		return err
 	}
 
-	windows, err := deps.Tmux.ListWindows(targetSession)
+	windows, err := deps.Mux.ListWindows(targetSession)
 	if err != nil {
 		return err
 	}
@@ -163,12 +163,12 @@ func connectWindow(cmd *cobra.Command, base *BaseDeps, name string) error {
 // session has to already be running to have anything to list.
 func requireSession(deps *Deps, targetSession string) error {
 	if targetSession == "" {
-		if !deps.Tmux.IsAttached() {
+		if !deps.Mux.IsAttached() {
 			return errors.New("not inside a tmux session, use --target to specify one")
 		}
 		return nil
 	}
-	sessions, err := deps.Tmux.ListSessions()
+	sessions, err := deps.Mux.ListSessions()
 	if err != nil {
 		return err
 	}

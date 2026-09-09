@@ -23,7 +23,7 @@ func NewLastCommand(base *BaseDeps) *cobra.Command {
 				// TODO: silently fail?
 				return fmt.Errorf("No last session found")
 			}
-			if _, err := deps.Tmux.SwitchOrAttach(lastSession.Name, model.ConnectOpts{}); err != nil {
+			if _, err := deps.Mux.SwitchOrAttach(lastSession.Name, model.ConnectOpts{}); err != nil {
 				return err
 			}
 			return nil

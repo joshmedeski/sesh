@@ -6,8 +6,8 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/mux"
 	"github.com/joshmedeski/sesh/v2/replacer"
-	"github.com/joshmedeski/sesh/v2/tmux"
 )
 
 type Startup interface {
@@ -16,16 +16,16 @@ type Startup interface {
 
 type RealStartup struct {
 	lister   lister.Lister
-	tmux     tmux.Tmux
+	mux      mux.Mux
 	config   model.Config
 	home     home.Home
 	replacer replacer.Replacer
 }
 
 func NewStartup(
-	config model.Config, lister lister.Lister, tmux tmux.Tmux, home home.Home, replacer replacer.Replacer,
+	config model.Config, lister lister.Lister, m mux.Mux, home home.Home, replacer replacer.Replacer,
 ) Startup {
-	return &RealStartup{lister, tmux, config, home, replacer}
+	return &RealStartup{lister, m, config, home, replacer}
 }
 
 func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
@@ -68,24 +68,24 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		}
 
 		// create the new window
-		if ret, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
+		if ret, err := s.mux.NewWindowInSession(model.TmuxWindowOpts{
 			Name:          windowConfig.Name,
 			StartDir:      windowConfig.Path,
 			TargetSession: session.Name,
 		}); err != nil {
 			return ret, err
 		}
-		if ret, err := s.tmux.SendKeys(session.Name, windowConfig.StartupScript); err != nil {
+		if ret, err := s.mux.SendKeys(session.Name, windowConfig.StartupScript); err != nil {
 			return ret, err
 		}
 	}
-	s.tmux.NextWindowInSession(session.Name)
+	s.mux.NextWindowInSession(session.Name)
 
 	for _, strategy := range strategies {
 		if command, err := strategy(s, session); err != nil {
 			return "", fmt.Errorf("failed to determine startup command: %w", err)
 		} else if command != "" {
-			s.tmux.SendKeys(session.Name, command)
+			s.mux.SendKeys(session.Name, command)
 			return fmt.Sprintf("executing startup command: %s", command), nil
 		}
 	}

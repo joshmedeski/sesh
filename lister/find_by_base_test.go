@@ -16,7 +16,7 @@ func TestFindTmuxSessionByBase(t *testing.T) {
 		}
 		mockTmux := new(tmux.MockTmux)
 		mockTmux.On("ListSessions").Return(sessions, nil)
-		return &RealLister{tmux: mockTmux}
+		return &RealLister{mux: mockTmux}
 	}
 
 	t.Run("exact match wins", func(t *testing.T) {

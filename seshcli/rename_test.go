@@ -12,7 +12,7 @@ import (
 )
 
 // tmuxRenamer embeds the generated tmux mock (so it satisfies the full
-// tmux.Tmux interface) and overrides RenameSession to capture its arguments.
+// mux.Mux interface) and overrides RenameSession to capture its arguments.
 type tmuxRenamer struct {
 	*tmux.MockTmux
 	called     bool
@@ -107,7 +107,7 @@ func TestRunEnrich(t *testing.T) {
 
 		deps := &Deps{Lister: mockLister, Namer: mockNamer}
 		deps.Github = mockGithub
-		deps.Tmux = mockTmux
+		deps.Mux = mockTmux
 
 		err := runEnrich(deps, nil)
 
@@ -129,7 +129,7 @@ func TestRunEnrich(t *testing.T) {
 
 		deps := &Deps{Lister: mockLister, Namer: mockNamer}
 		deps.Github = mockGithub
-		deps.Tmux = mockTmux
+		deps.Mux = mockTmux
 
 		err := runEnrich(deps, nil)
 

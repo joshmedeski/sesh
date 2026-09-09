@@ -6,9 +6,9 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/mux"
 	"github.com/joshmedeski/sesh/v2/namer"
 	"github.com/joshmedeski/sesh/v2/startup"
-	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/tmuxinator"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
@@ -25,7 +25,7 @@ type RealConnector struct {
 	lister     lister.Lister
 	namer      namer.Namer
 	startup    startup.Startup
-	tmux       tmux.Tmux
+	mux        mux.Mux
 	zoxide     zoxide.Zoxide
 	tmuxinator tmuxinator.Tmuxinator
 	focuser    focuser.Focuser
@@ -38,7 +38,7 @@ func NewConnector(
 	lister lister.Lister,
 	namer namer.Namer,
 	startup startup.Startup,
-	tmux tmux.Tmux,
+	m mux.Mux,
 	zoxide zoxide.Zoxide,
 	tmuxinator tmuxinator.Tmuxinator,
 	focuser focuser.Focuser,
@@ -50,7 +50,7 @@ func NewConnector(
 		lister,
 		namer,
 		startup,
-		tmux,
+		m,
 		zoxide,
 		tmuxinator,
 		focuser,

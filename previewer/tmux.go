@@ -2,23 +2,23 @@ package previewer
 
 import (
 	"github.com/joshmedeski/sesh/v2/lister"
-	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/mux"
 )
 
 type TmuxPreviewStrategy struct {
 	lister lister.Lister
-	tmux   tmux.Tmux
+	mux    mux.Mux
 }
 
-func NewTmuxStrategy(lister lister.Lister, tmux tmux.Tmux) *TmuxPreviewStrategy {
-	return &TmuxPreviewStrategy{lister: lister, tmux: tmux}
+func NewTmuxStrategy(lister lister.Lister, m mux.Mux) *TmuxPreviewStrategy {
+	return &TmuxPreviewStrategy{lister: lister, mux: m}
 }
 
 func (s *TmuxPreviewStrategy) Execute(name string) (string, error) {
 	session, sessionExists := s.lister.FindTmuxSession(name)
 
 	if sessionExists {
-		output, err := s.tmux.CapturePane(session.Name)
+		output, err := s.mux.CapturePane(session.Name)
 		if err != nil {
 			return "", err
 		}

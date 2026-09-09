@@ -44,7 +44,7 @@ func runEnrich(deps *Deps, args []string) error {
 	if newName == "" || newName == target.Name {
 		return nil
 	}
-	_, err := deps.Tmux.RenameSession(target.Name, newName)
+	_, err := deps.Mux.RenameSession(target.Name, newName)
 	return err
 }
 

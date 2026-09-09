@@ -48,7 +48,7 @@ func (c *RealConnector) ensureSession(name string) (model.SeshSession, error) {
 		}
 		return connection.Session, nil
 	}
-	if _, err := c.tmux.NewSession(connection.Session.Name, connection.Session.Path); err != nil {
+	if _, err := c.mux.NewSession(connection.Session.Name, connection.Session.Path); err != nil {
 		return model.SeshSession{}, fmt.Errorf("failed to create tmux session: %w", err)
 	}
 	c.startup.Exec(connection.Session)
@@ -61,8 +61,8 @@ func (c *RealConnector) focusSession(sessionName string, doSwitch bool) (string,
 	// When invoked from outside tmux (e.g. osascript/browser dispatcher),
 	// `switch-client -t` has no current client to act on. Find the active
 	// client, switch it explicitly, and bring the terminal to the front.
-	if doSwitch && !c.tmux.IsAttached() {
+	if doSwitch && !c.mux.IsAttached() {
 		return c.connectDetached(sessionName)
 	}
-	return c.tmux.SwitchOrAttach(sessionName, model.ConnectOpts{Switch: doSwitch})
+	return c.mux.SwitchOrAttach(sessionName, model.ConnectOpts{Switch: doSwitch})
 }

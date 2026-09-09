@@ -19,7 +19,7 @@ func TestConfigWildcardStartupStrategy(t *testing.T) {
 
 	s := &RealStartup{
 		lister:   mockLister,
-		tmux:     mockTmux,
+		mux:      mockTmux,
 		config:   model.Config{},
 		home:     mockHome,
 		replacer: mockReplacer,

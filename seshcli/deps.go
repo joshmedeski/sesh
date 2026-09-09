@@ -17,6 +17,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/focuser"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
+	"github.com/joshmedeski/sesh/v2/herdr"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/json"
@@ -24,6 +25,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/ls"
 	"github.com/joshmedeski/sesh/v2/mkdirer"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/mux"
 	"github.com/joshmedeski/sesh/v2/namer"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
@@ -61,7 +63,7 @@ type BaseDeps struct {
 type Deps struct {
 	BaseDeps
 	Config        model.Config
-	Tmux          tmux.Tmux
+	Mux           mux.Mux
 	Lister        lister.Lister
 	Picker        picker.Picker
 	CachingLister *lister.CachingLister
@@ -124,10 +126,14 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	// is constructed here rather than in the config-free NewBaseDeps.
 	b.Zoxide = zoxide.NewZoxide(b.Shell, config.Frecency)
 
-	t := tmux.NewTmux(b.Os, b.Shell, config.TmuxCommand)
+	t := selectMux(config, b.Os, b.Shell)
+	ti := b.Tmuxinator
+	if t.Name() != "tmux" {
+		ti = tmuxinator.NewDisabled()
+	}
 
 	l := ls.NewLs(config, b.Shell)
-	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator)
+	li := lister.NewLister(config, b.Home, t, b.Zoxide, ti)
 
 	var usedLister lister.Lister = li
 	var cachedLi *lister.CachingLister
@@ -139,7 +145,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 
 	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
-	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Focuser)
+	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, ti, b.Focuser)
 	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
@@ -161,7 +167,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	return &Deps{
 		BaseDeps:      *b,
 		Config:        config,
-		Tmux:          t,
+		Mux:           t,
 		Lister:        usedLister,
 		Picker:        pk,
 		CachingLister: cachedLi,
@@ -190,4 +196,23 @@ func buildDeps(cmd *cobra.Command, base *BaseDeps) (*Deps, error) {
 		return nil, err
 	}
 	return deps, nil
+}
+
+// selectMux picks the multiplexer backend. "auto" follows the environment:
+// inside a herdr pane sesh drives herdr, everywhere else tmux, so one config
+// works for a user who runs both.
+func selectMux(config model.Config, os oswrap.Os, sh shell.Shell) mux.Mux {
+	choice := config.Multiplexer
+	if choice == "" || choice == "auto" {
+		choice = "tmux"
+		if os.Getenv("HERDR_ENV") != "" || os.Getenv("HERDR_WORKSPACE_ID") != "" {
+			choice = herdr.Name
+		}
+	}
+	switch choice {
+	case herdr.Name:
+		return herdr.NewHerdr(os, sh, herdr.NewSocketClient(herdr.SocketPath(os)), "")
+	default:
+		return tmux.NewTmux(os, sh, config.TmuxCommand)
+	}
 }

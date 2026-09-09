@@ -33,7 +33,7 @@ func (c *RealConnector) ConnectWindow(opts model.WindowConnectOpts) (string, err
 	}
 
 	if name != "" && !opts.New {
-		windows, err := c.tmux.ListWindows(session.Name)
+		windows, err := c.mux.ListWindows(session.Name)
 		if err != nil {
 			return "", fmt.Errorf("failed to list windows in '%s': %w", session.Name, err)
 		}
@@ -48,7 +48,7 @@ func (c *RealConnector) ConnectWindow(opts model.WindowConnectOpts) (string, err
 		}
 	}
 
-	target, err := c.tmux.NewWindowInSession(model.TmuxWindowOpts{
+	target, err := c.mux.NewWindowInSession(model.TmuxWindowOpts{
 		Name:          name,
 		StartDir:      startDir,
 		TargetSession: session.Name,
@@ -73,14 +73,14 @@ func (c *RealConnector) ConnectWindow(opts model.WindowConnectOpts) (string, err
 // than becoming the pane's process the way it does on create.
 func (c *RealConnector) reuseWindow(sessionName string, target string, opts model.WindowConnectOpts) (string, error) {
 	if opts.Command != "" {
-		if _, err := c.tmux.SendKeys(target, opts.Command); err != nil {
+		if _, err := c.mux.SendKeys(target, opts.Command); err != nil {
 			return "", fmt.Errorf("failed to send command to '%s': %w", target, err)
 		}
 	}
 	if opts.Background {
 		return target, nil
 	}
-	if _, err := c.tmux.SelectWindow(target); err != nil {
+	if _, err := c.mux.SelectWindow(target); err != nil {
 		return "", fmt.Errorf("failed to select window '%s': %w", target, err)
 	}
 	if _, err := c.focusSession(sessionName, opts.Switch); err != nil {
