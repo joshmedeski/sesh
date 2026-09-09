@@ -8,6 +8,7 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.5
 	github.com/charmbracelet/colorprofile v0.4.3
+	github.com/charmbracelet/ultraviolet v0.0.0-20260703014108-f5a850f9c2b7
 	github.com/charmbracelet/x/ansi v0.11.8
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20250424160509-463d218d4745
@@ -23,7 +24,6 @@ require (
 	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/brunoga/deep v1.3.1 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20260703014108-f5a850f9c2b7 // indirect
 	github.com/charmbracelet/x/exp/charmtone v0.0.0-20260202112129-266036769e93 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
