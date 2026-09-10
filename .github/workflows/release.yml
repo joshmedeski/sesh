@@ -11,6 +11,9 @@ permissions:
 jobs:
   tests:
     uses: ./.github/workflows/test.yml
+    permissions:
+      contents: write
+      pull-requests: write
 
   goreleaser:
     name: Build and Publish
