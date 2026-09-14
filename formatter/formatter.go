@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/joshmedeski/sesh/v2/ansi"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -31,35 +32,6 @@ func NewFormatter(icon icon.Icon) Formatter {
 	return &RealFormatter{icon: icon}
 }
 
-var colorCodes = map[string]int{
-	"black":          30,
-	"red":            31,
-	"green":          32,
-	"yellow":         33,
-	"blue":           34,
-	"magenta":        35,
-	"cyan":           36,
-	"white":          37,
-	"bright-black":   90,
-	"gray":           90,
-	"grey":           90,
-	"bright-red":     91,
-	"bright-green":   92,
-	"bright-yellow":  93,
-	"bright-blue":    94,
-	"bright-magenta": 95,
-	"bright-cyan":    96,
-	"bright-white":   97,
-}
-
-func colorCode(color string) (int, bool) {
-	if color == "" {
-		return 0, true
-	}
-	code, ok := colorCodes[strings.ToLower(strings.TrimSpace(color))]
-	return code, ok
-}
-
 func renderColors(format string, noColor bool) (string, error) {
 	const prefix = "{fg:"
 
@@ -81,7 +53,7 @@ func renderColors(format string, noColor bool) (string, error) {
 
 		token := format[:end+1]
 		color := strings.TrimSpace(token[len(prefix) : len(token)-1])
-		code, ok := colorCode(color)
+		code, ok := ansi.ColorCode(color)
 		if !ok || code == 0 {
 			return "", fmt.Errorf("unsupported format color %q (use black, red, green, yellow, blue, magenta, cyan, white, or a bright-* variant)", color)
 		}

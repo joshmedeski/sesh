@@ -9,31 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestColorCode(t *testing.T) {
-	tests := []struct {
-		name  string
-		color string
-		code  int
-		ok    bool
-	}{
-		{"standard color", "blue", 34, true},
-		{"bright color", "bright-blue", 94, true},
-		{"case and whitespace", "  Bright-Magenta  ", 95, true},
-		{"gray alias", "gray", 90, true},
-		{"grey alias", "grey", 90, true},
-		{"empty color", "", 0, true},
-		{"unsupported color", "orange", 0, false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			code, ok := colorCode(tt.color)
-			assert.Equal(t, tt.code, code)
-			assert.Equal(t, tt.ok, ok)
-		})
-	}
-}
-
 func TestRenderColors(t *testing.T) {
 	t.Run("renders foreground color and reset", func(t *testing.T) {
 		got, err := renderColors("{fg:blue}hello{/fg}", false)
