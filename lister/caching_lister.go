@@ -39,7 +39,7 @@ func (cl *CachingLister) List(opts ListOptions) (model.SeshSessions, error) {
 		age := time.Since(cached.Timestamp)
 		if age < softTTL {
 			slog.Debug("cache: hit (fresh)", "age", age)
-			return cl.applyFilters(cached.Sessions, opts), nil
+			return cl.finish(cached.Sessions, opts)
 		}
 		// Stale -- return immediately but revalidate in background
 		slog.Debug("cache: hit (stale, revalidating)", "age", age)
@@ -48,7 +48,7 @@ func (cl *CachingLister) List(opts ListOptions) (model.SeshSessions, error) {
 			defer cl.wg.Done()
 			cl.revalidate(innerOpts)
 		}()
-		return cl.applyFilters(cached.Sessions, opts), nil
+		return cl.finish(cached.Sessions, opts)
 	}
 
 	// Cold start -- fetch synchronously
@@ -60,7 +60,17 @@ func (cl *CachingLister) List(opts ListOptions) (model.SeshSessions, error) {
 	if writeErr := cl.cache.Write(sessions); writeErr != nil {
 		slog.Warn("cache: write failed on cold start", "error", writeErr)
 	}
-	return cl.applyFilters(sessions, opts), nil
+	return cl.finish(sessions, opts)
+}
+
+// finish applies view-level filtering and then display formatting without
+// changing the raw session data stored in the cache.
+func (cl *CachingLister) finish(sessions model.SeshSessions, opts ListOptions) (model.SeshSessions, error) {
+	filtered := cl.applyFilters(sessions, opts)
+	if !needsFormatting(opts) {
+		return filtered, nil
+	}
+	return cl.inner.Format(filtered, opts)
 }
 
 // applyFilters applies view-level filters that should not affect what gets
@@ -166,6 +176,10 @@ func (cl *CachingLister) Wait() {
 }
 
 // --- Delegate all other Lister methods to inner ---
+
+func (cl *CachingLister) Format(sessions model.SeshSessions, opts ListOptions) (model.SeshSessions, error) {
+	return cl.inner.Format(sessions, opts)
+}
 
 func (cl *CachingLister) ListTmuxPanes() (model.SeshSessions, error) {
 	return cl.inner.ListTmuxPanes()

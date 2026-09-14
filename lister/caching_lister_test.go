@@ -408,3 +408,29 @@ func TestCachingLister_HideDuplicates_PostCache(t *testing.T) {
 	cl.Wait()
 	inner.AssertNotCalled(t, "List")
 }
+
+func TestCachingLister_FormatsAfterCacheRead(t *testing.T) {
+	dir := t.TempDir()
+	fc := cache.NewFileCacheWithPath(filepath.Join(dir, "sessions.gob"))
+	inner := lister.NewMockLister(t)
+
+	sessions := fakeSessions()
+	require.NoError(t, fc.Write(sessions))
+
+	opts := lister.ListOptions{Format: "{name}", FormatSet: true}
+	formatted := fakeSessions()
+	formattedSession := formatted.Directory["tmux:main"]
+	formattedSession.Name = "formatted-main"
+	formatted.Directory["tmux:main"] = formattedSession
+	inner.On("Format", sessions, opts).Return(formatted, nil).Once()
+
+	cl := lister.NewCachingLister(inner, fc)
+	got, err := cl.List(opts)
+	require.NoError(t, err)
+	assert.Equal(t, "formatted-main", got.Directory["tmux:main"].Name)
+
+	cached, err := fc.Read()
+	require.NoError(t, err)
+	assert.Equal(t, "main", cached.Sessions.Directory["tmux:main"].Name)
+	inner.AssertNotCalled(t, "List")
+}

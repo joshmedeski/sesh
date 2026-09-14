@@ -39,14 +39,6 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			formatChanged := cmd.Flags().Changed("format")
 			iconExcludes, _ := cmd.Flags().GetStringSlice("icons-exclude")
 
-			renderFormat := listFormat
-			if formatChanged {
-				renderFormat, err = renderListFormatColors(listFormat, noColor)
-				if err != nil {
-					return err
-				}
-			}
-
 			if jsonOutput && formatChanged {
 				return errors.New("--format cannot be used with --json")
 			}
@@ -67,6 +59,9 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 				HideDuplicates: hideDuplicates,
 				Panes:          panes,
 				Blacklisted:    blacklisted,
+				Format:         listFormat,
+				FormatSet:      formatChanged,
+				IconExcludes:   iconExcludes,
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)
@@ -81,32 +76,8 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 				return nil
 			}
 
-			var activeWindowNames map[string]string
-			if formatChanged && listFormatUsesActiveWindowName(renderFormat) && hasTmuxSessions(sessions) {
-				windowNames, err := deps.Tmux.ListAllWindowNames(activeWindowNameFormat)
-				if err == nil {
-					activeWindowNames = firstActiveWindowNameBySession(windowNames)
-				}
-			}
-
 			for _, i := range sessions.OrderedIndex {
-				session := sessions.Directory[i]
-				name := session.Name
-				if icons && !sourceIconExcluded(iconExcludes, session.Src) {
-					if noColor {
-						name = deps.Icon.AddIconNoColor(session)
-					} else {
-						name = deps.Icon.AddIcon(session)
-					}
-				}
-				if formatChanged {
-					activeWindowName := ""
-					if session.Src == "tmux" {
-						activeWindowName = activeWindowNames[session.Name]
-					}
-					name = formatListSession(renderFormat, session, name, activeWindowName)
-				}
-				fmt.Println(name)
+				fmt.Println(sessions.Directory[i].Name)
 			}
 
 			return nil

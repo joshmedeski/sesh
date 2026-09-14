@@ -299,7 +299,7 @@ func BenchmarkIconResolverWildcard(b *testing.B) {
 				}
 				config := model.Config{WildcardConfigs: wildcards}
 				h := benchHome(b)
-				finder := lister.NewLister(config, h, nil, nil, nil)
+				finder := lister.NewLister(config, h, nil, nil, nil, nil)
 				resolveIcon := buildIconResolver(config, h, finder)
 				if resolveIcon == nil {
 					b.Fatal("expected an icon resolver for a config that declares wildcard icons")
