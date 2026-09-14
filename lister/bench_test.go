@@ -132,7 +132,7 @@ func benchLister(n int, tweak func(*model.Config)) *RealLister {
 	if tweak != nil {
 		tweak(&config)
 	}
-	return NewLister(config, benchHome{}, mockTmux, mockZoxide, mockTmuxinator).(*RealLister)
+	return NewLister(config, benchHome{}, mockTmux, mockZoxide, mockTmuxinator, nil).(*RealLister)
 }
 
 // benchSessions is the merged, unfiltered list the post-merge stages operate
@@ -248,6 +248,10 @@ type benchInnerLister struct {
 
 func (l *benchInnerLister) List(ListOptions) (model.SeshSessions, error) {
 	panic("benchInnerLister.List: unexpected live fetch in benchmark")
+}
+
+func (l *benchInnerLister) Format(sessions model.SeshSessions, _ ListOptions) (model.SeshSessions, error) {
+	return sessions, nil
 }
 
 func (l *benchInnerLister) ListTmuxPanes() (model.SeshSessions, error) {

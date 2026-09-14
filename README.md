@@ -372,6 +372,65 @@ To continuously refresh previews of active tmux sessions, add `--watch` to the p
 
 Watch mode polls only active tmux sessions; directory and configured-session previews still render once. The default interval is 500 milliseconds and can be changed with `--interval 100ms`.
 
+
+#### Custom list formatting
+
+`--format` lets external pickers control how each `sesh list` row is rendered without changing the default output. The following placeholders are available:
+
+| Placeholder | Value |
+| --- | --- |
+| `{name}` | The normal display name, including the source icon when `--icons` is set |
+| `{session}` | The raw session name |
+| `{source}` | Session source (`tmux`, `config`, `zoxide`, etc.) |
+| `{path}` | Session path |
+| `{active_window_name}` | The active tmux window name; empty for non-tmux sessions |
+| `{active_window_name_prefix}` | The active window name followed by a space, or empty when there is none |
+
+For example, used in combination with tmux plugin [tmux-nerd-font-window-name](https://github.com/joshmedeski/tmux-nerd-font-window-name)
+
+```sh
+sesh list --icons --format '{active_window_name_prefix}{name}'
+```
+
+```text
+  neovim-config
+  sesh
+ dotfiles
+```
+
+To use the active-window icon *instead of* the normal tmux source icon while keeping source icons for config/zoxide/etc., exclude only the tmux source icon:
+
+```sh
+sesh list --icons --icons-exclude tmux --format '{active_window_name_prefix}{name}'
+```
+
+Foreground colors can be scoped directly in the format using `{fg:COLOR}` and `{/fg}`. This keeps presentation in the format instead of tying a color to a particular placeholder:
+
+```sh
+sesh list --icons --icons-exclude tmux \
+  --format '{fg:yellow}{active_window_name_prefix}{/fg}{name}'
+```
+
+Colors can be applied to any part of the row, for example:
+
+```sh
+sesh list --format '{fg:gray}{source}{/fg} {fg:bright-cyan}{active_window_name}{/fg} {name}'
+```
+
+Supported colors are `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, and their `bright-*` variants. `gray`/`grey` are aliases for `bright-black`. `--no-color` removes format color tokens as well as built-in source-icon coloring.
+
+The active window names are fetched live in one tmux call and only when the format uses an active-window-name placeholder. A tmux lookup failure simply leaves the active-window-name placeholders empty. `--format` cannot be combined with `--json`.
+
+Arbitrary formatted rows are display output and are not parsed back by `sesh connect`. When using fzf, keep the raw session name in a hidden field and show only the formatted field:
+
+```sh
+selected="$(
+  sesh list --icons --format $'{session}\t{active_window_name_prefix}{name}' |
+    fzf --delimiter=$'\t' --with-nth=2
+)"
+sesh connect "${selected%%$'\t'*}"
+```
+
 #### tmux + [television](https://github.com/alexpasmantier/television)
 
 If you prefer to use television instead of fzf, you can add a binding to your tmux config that opens the [sesh channel](https://alexpasmantier.github.io/television/community/channels-unix/#sesh) in a tmux popup.

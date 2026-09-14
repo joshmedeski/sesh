@@ -35,6 +35,13 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			hideDuplicates, _ := cmd.Flags().GetBool("hide-duplicates")
 			panes, _ := cmd.Flags().GetBool("panes")
 			blacklisted, _ := cmd.Flags().GetBool("blacklisted")
+			listFormat, _ := cmd.Flags().GetString("format")
+			formatChanged := cmd.Flags().Changed("format")
+			iconExcludes, _ := cmd.Flags().GetStringSlice("icons-exclude")
+
+			if jsonOutput && formatChanged {
+				return errors.New("--format cannot be used with --json")
+			}
 
 			if panes && !deps.Tmux.IsAttached() {
 				return errors.New("--panes requires being inside a tmux session")
@@ -52,6 +59,9 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 				HideDuplicates: hideDuplicates,
 				Panes:          panes,
 				Blacklisted:    blacklisted,
+				Format:         listFormat,
+				FormatSet:      formatChanged,
+				IconExcludes:   iconExcludes,
 			})
 			if err != nil {
 				return fmt.Errorf("couldn't list sessions: %q", err)
@@ -67,15 +77,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			for _, i := range sessions.OrderedIndex {
-				name := sessions.Directory[i].Name
-				if icons {
-					if noColor {
-						name = deps.Icon.AddIconNoColor(sessions.Directory[i])
-					} else {
-						name = deps.Icon.AddIcon(sessions.Directory[i])
-					}
-				}
-				fmt.Println(name)
+				fmt.Println(sessions.Directory[i].Name)
 			}
 
 			return nil
@@ -93,6 +95,8 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("hide-duplicates", "d", false, "hide duplicate entries")
 	cmd.Flags().BoolP("panes", "p", false, "show panes in current session")
 	cmd.Flags().BoolP("blacklisted", "b", false, "show blacklisted sessions")
+	cmd.Flags().String("format", "", "format each session row ({name}, {session}, {source}, {path}, {active_window_name}, {active_window_name_prefix}; colors: {fg:yellow}...{/fg})")
+	cmd.Flags().StringSlice("icons-exclude", nil, "don't show source icons for these session sources (for example: tmux)")
 
 	return cmd
 }
