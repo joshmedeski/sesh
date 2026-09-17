@@ -92,7 +92,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.27"
+          go-version: "1.26"
       - name: Create mocks
         run: go tool mockery
       # -benchtime is a duration, not an iteration count: `-benchtime=100x`
@@ -124,7 +124,7 @@ jobs:
           mkdir -p bin
           build() {
             for pkg in lister picker; do
-              go test -c -o "$PWD/bin/$1-$pkg.test" "./$pkg"
+              go test -c -o "$PWD/bin/$1-$pkg.test" "./$pkg" || return 1
             done
           }
           build head
@@ -137,8 +137,10 @@ jobs:
           head_sha="$(git rev-parse HEAD)"
           git checkout --detach --quiet "$BASE_SHA"
           find . -name 'mock_*.go' -delete
-          go tool mockery
-          build base
+          if ! (go tool mockery && build base); then
+            echo "::warning::the merge base does not build here; charting head alone"
+            rm -f bin/base-*.test
+          fi
           git checkout --detach --quiet "$head_sha"
           find . -name 'mock_*.go' -delete
           go tool mockery
