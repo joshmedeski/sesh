@@ -40,9 +40,12 @@ jobs:
       COUNT: ${{ inputs.count || '6' }}
     steps:
       - uses: actions/checkout@v7
+      # Matches the Benchmarks job in test.yml rather than the floor in
+      # go.mod: a noise floor is only a threshold for the job it was measured
+      # under, and that job pins newest Go so it can build the merge base too.
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.26"
+          go-version: "1.27"
       - name: Create mocks
         run: go tool mockery
 
