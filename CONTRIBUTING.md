@@ -12,7 +12,7 @@ Sesh has a specific vision: **stay simple, do one thing well**. We aim to be a f
 
 ### Prerequisites
 
-- **Go 1.24+** - [Installation guide](https://golang.org/doc/install)
+- **Go 1.26+** - [Installation guide](https://golang.org/doc/install)
 - **tmux** - Terminal multiplexer
 - **zoxide** - Smart directory jumper
 - **just** - Command runner ([installation](https://github.com/casey/just#installation))
