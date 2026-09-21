@@ -90,6 +90,8 @@ func TestDelta(t *testing.T) {
 		{"a regression is signed", pair(steady(100), steady(150)), "+50.0%"},
 		{"an improvement is signed", pair(steady(100), steady(50)), "-50.0%"},
 		{"a move inside the noise floor is not a number", pair(steady(100), steady(101)), "~"},
+		{"a move the runner cannot tell from itself is not a number", pair(steady(100), steady(104)), "~"},
+		{"a move clear of the runner's own noise is signed", pair(steady(100), steady(106)), "+6.0%"},
 		{"a move inside the runs' own spread is not a number", row{base: []float64{50, 100, 150}, head: steady(130)}, "~"},
 		{"no baseline means the branch added it", pair(nil, steady(10)), "new"},
 		{"no current run means the branch removed it", pair(steady(10), nil), "gone"},

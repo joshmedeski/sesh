@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -31,6 +32,36 @@ func newRemovableModel(err error) (Model, *[]string) {
 	m := New(testFetchFunc(sessions), opts)
 	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
 	return result.(Model), removed
+}
+
+// newKillableModel loads the test sessions with both backends wired, and
+// returns the record of the session names the kill func was asked to kill.
+func newKillableModel(err error) (Model, *[]string) {
+	killed := &[]string{}
+	sessions := testSessions()
+	opts := testOptionsWith(func(o *Options) {
+		o.Remove = func(string) error { return nil }
+		o.Kill = func(name string) error {
+			*killed = append(*killed, name)
+			return err
+		}
+	})
+	m := New(testFetchFunc(sessions), opts)
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	return result.(Model), killed
+}
+
+// cursorOnSrc moves the cursor to the first row from the given source.
+func cursorOnSrc(t *testing.T, m Model, src string) Model {
+	t.Helper()
+	for i, item := range m.filtered {
+		if item.item.src == src {
+			m.cursor = i
+			return m
+		}
+	}
+	t.Fatalf("no %s row in the test sessions", src)
+	return m
 }
 
 // cursorOnZoxide moves the cursor to the zoxide row of testSessions.
@@ -63,22 +94,118 @@ func TestCtrlX_OpensDialogOnZoxideRow(t *testing.T) {
 	assert.True(t, m.confirm.yes, "the dialog should open with Yes focused")
 }
 
-func TestCtrlX_InertOnNonZoxideRows(t *testing.T) {
-	for _, src := range []string{"tmux", "config", "tmuxinator"} {
+func TestCtrlX_InertOnRowsNeitherBackendOwns(t *testing.T) {
+	for _, src := range []string{"config", "tmuxinator"} {
 		t.Run(src, func(t *testing.T) {
-			m, _ := newRemovableModel(nil)
-			for i, item := range m.filtered {
-				if item.item.src == src {
-					m.cursor = i
-					break
-				}
-			}
+			m, _ := newKillableModel(nil)
+			m = cursorOnSrc(t, m, src)
+
 			m = press(m, ctrlX)
 
 			assert.Nil(t, m.confirm, "ctrl+x should not open the dialog on a %s row", src)
-			assert.Contains(t, m.status, "Only zoxide entries")
+			assert.Contains(t, m.status, "Only tmux sessions and zoxide entries")
 		})
 	}
+}
+
+func TestCtrlX_OpensTheKillDialogOnATmuxRow(t *testing.T) {
+	m, _ := newKillableModel(nil)
+	m = cursorOnSrc(t, m, tmuxSrc)
+
+	m = press(m, ctrlX)
+
+	require.NotNil(t, m.confirm, "ctrl+x on a tmux row should open the dialog")
+	assert.Equal(t, actionKill, m.confirm.action)
+	assert.Equal(t, "my-project", m.confirm.name)
+	assert.True(t, m.confirm.yes)
+}
+
+func TestCtrlX_InertOnATmuxRowWithoutAKillFunc(t *testing.T) {
+	m, _ := newRemovableModel(nil)
+	m = cursorOnSrc(t, m, tmuxSrc)
+
+	m = press(m, ctrlX)
+
+	assert.Nil(t, m.confirm)
+	assert.Contains(t, m.status, "Only tmux sessions and zoxide entries")
+}
+
+func TestConfirm_YesKillsTheSession(t *testing.T) {
+	m, killed := newKillableModel(nil)
+	m = cursorOnSrc(t, m, tmuxSrc)
+	m = press(m, ctrlX)
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: 'y'})
+	m = result.(Model)
+	assert.Nil(t, m.confirm)
+	require.NotNil(t, cmd)
+
+	m = press(m, cmd())
+	assert.Equal(t, []string{"my-project"}, *killed)
+	assert.Len(t, m.allItems, 4)
+	for _, item := range m.allItems {
+		assert.NotEqual(t, "my-project", item.name)
+	}
+}
+
+func TestKill_FailureKeepsTheRow(t *testing.T) {
+	m, _ := newKillableModel(errors.New("session not found"))
+	m = cursorOnSrc(t, m, tmuxSrc)
+	m = press(m, ctrlX)
+
+	result, cmd := m.Update(tea.KeyPressMsg{Code: 'y'})
+	m = press(result.(Model), cmd())
+
+	assert.Len(t, m.allItems, 5, "a failed kill must not drop the row")
+	assert.Contains(t, m.status, "Couldn't kill session")
+	assert.Contains(t, m.status, "session not found")
+}
+
+func TestKill_DropsTheTmuxRowNotItsNamesake(t *testing.T) {
+	sessions := model.SeshSessions{
+		OrderedIndex: []string{"t", "z"},
+		Directory: model.SeshSessionMap{
+			"t": {Name: "app", Src: tmuxSrc, Path: "/live/app"},
+			"z": {Name: "app", Src: zoxideSrc, Path: "/stale/app"},
+		},
+	}
+	opts := testOptionsWith(func(o *Options) {
+		o.Remove = func(string) error { return nil }
+		o.Kill = func(string) error { return nil }
+	})
+	result, _ := New(testFetchFunc(sessions), opts).Update(sessionsLoadedMsg{sessions: sessions})
+	m := cursorOnSrc(t, result.(Model), tmuxSrc)
+
+	m = press(m, ctrlX)
+	confirmed, cmd := m.Update(tea.KeyPressMsg{Code: 'y'})
+	m = press(confirmed.(Model), cmd())
+
+	require.Len(t, m.allItems, 1)
+	assert.Equal(t, zoxideSrc, m.allItems[0].src, "the zoxide entry must survive the session it was named after")
+}
+
+func TestKill_DropsTheRowWhoseCwdMovedSinceItWasListed(t *testing.T) {
+	m, _ := newKillableModel(nil)
+	m = cursorOnSrc(t, m, tmuxSrc)
+	m = press(m, ctrlX)
+
+	// A kill targets the name, so the row goes even though the path the
+	// session was listed with no longer matches.
+	m = press(m, entryRemovedMsg{action: actionKill, name: "my-project", path: "/somewhere/else"})
+
+	assert.Len(t, m.allItems, 4)
+}
+
+func TestConfirmView_AsksAboutKillingOnATmuxRow(t *testing.T) {
+	m, _ := newKillableModel(nil)
+	m = press(m, tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = cursorOnSrc(t, m, tmuxSrc)
+	m = press(m, ctrlX)
+
+	out := ansi.Strip(m.View().Content)
+
+	assert.Contains(t, out, "Do you want to kill this tmux session?")
+	assert.NotContains(t, out, "/home/user/my-project", "a kill targets the name, so the path is noise")
 }
 
 func TestCtrlX_InertWhileLoading(t *testing.T) {
@@ -273,8 +400,8 @@ func TestRemoval_PullsTheCursorBackFromTheLastRow(t *testing.T) {
 }
 
 func TestStatus_ClearedByTheNextKeypress(t *testing.T) {
-	m, _ := newRemovableModel(nil)
-	m.cursor = 0 // a tmux row
+	m, _ := newKillableModel(nil)
+	m = cursorOnSrc(t, m, "config")
 	m = press(m, ctrlX)
 	require.NotEmpty(t, m.status)
 
@@ -374,5 +501,35 @@ func TestRealPicker_RemoveEntry(t *testing.T) {
 		p := &RealPicker{zoxide: mockZoxide}
 
 		assert.NoError(t, p.removeEntry("/stale/app"))
+	})
+}
+
+func TestRealPicker_KillSession(t *testing.T) {
+	t.Run("refreshes the cache after a successful kill", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.EXPECT().KillSession("my-project").Return("", nil)
+		refreshed := 0
+		p := &RealPicker{tmux: mockTmux, refreshCache: func() { refreshed++ }}
+
+		assert.NoError(t, p.killSession("my-project"))
+		assert.Equal(t, 1, refreshed)
+	})
+
+	t.Run("leaves the cache alone when the kill failed", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.EXPECT().KillSession("my-project").Return("", errors.New("session not found"))
+		refreshed := 0
+		p := &RealPicker{tmux: mockTmux, refreshCache: func() { refreshed++ }}
+
+		assert.Error(t, p.killSession("my-project"))
+		assert.Zero(t, refreshed)
+	})
+
+	t.Run("kills without a cache to refresh", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockTmux.EXPECT().KillSession("my-project").Return("", nil)
+		p := &RealPicker{tmux: mockTmux}
+
+		assert.NoError(t, p.killSession("my-project"))
 	})
 }

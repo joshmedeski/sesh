@@ -150,9 +150,10 @@ type Options struct {
 	// suppressed while the list is filtered, where the groups no longer occupy
 	// contiguous ranges.
 	GroupSeparator bool
-	// Remove drops an entry from the frecency backend. Nil leaves ctrl+x
-	// inert.
+	// Remove drops an entry from the frecency backend, and Kill ends a live
+	// tmux session. Nil leaves ctrl+x inert on the rows it would have owned.
 	Remove RemoveFunc
+	Kill   KillFunc
 }
 
 type Model struct {
@@ -197,11 +198,12 @@ type Model struct {
 	// tick can tell whether it is stale.
 	aliasSeq int
 
-	// removeFunc drops an entry from the frecency backend, and confirm is the
-	// dialog guarding it — non-nil only while it is open, so its presence is
-	// the mode. status is a one-line message under the filter input,
-	// cleared by the next keypress.
+	// removeFunc drops an entry from the frecency backend and killFunc ends a
+	// live tmux session; confirm is the dialog guarding both — non-nil only
+	// while it is open, so its presence is the mode. status is a one-line
+	// message under the filter input, cleared by the next keypress.
 	removeFunc RemoveFunc
+	killFunc   KillFunc
 	confirm    *confirmState
 	status     string
 
@@ -412,6 +414,7 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		aliasAutoConnectDelay:   opts.AliasAutoConnectDelay,
 		disableAliasAutoConnect: opts.DisableAliasAutoConnect,
 		removeFunc:              opts.Remove,
+		killFunc:                opts.Kill,
 		previewFunc:             opts.PreviewFunc,
 		previewOn:               opts.Preview,
 		previewWidthPct:         previewWidth(opts.PreviewWidth),
@@ -533,10 +536,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			// The row is still in the list, and saying nothing would read as a
 			// removal that worked.
-			m.status = removalFailed(msg.err)
+			m.status = removalFailed(msg.action, msg.err)
 			return m, nil
 		}
-		m.dropItem(msg.name, msg.path)
+		m.dropItem(msg.action, msg.name, msg.path)
 		return m, m.schedulePreview()
 
 	case tea.WindowSizeMsg:

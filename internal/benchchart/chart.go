@@ -381,6 +381,12 @@ func delta(r row) string {
 	return fmt.Sprintf("%+.1f%%", relative(r)*100)
 }
 
+// noiseFloor is the smallest delta the runner can tell apart from itself.
+// Measured by charting a commit against its own parent: an unchanged
+// BenchmarkView/n=100 moved 8% between two runs, and six samples of it can
+// still report a spread tight enough to call that separation significant.
+const noiseFloor = 0.05
+
 // significant asks whether a delta clears the noise of the runs it came from.
 // It is what decides whether a benchmark is worth a row at all, so the floor
 // matters: without it, a pair of unusually steady runs reports a 0.3%
@@ -389,7 +395,7 @@ func significant(r row) bool {
 	if len(r.base) == 0 || len(r.head) == 0 || median(r.base) == 0 {
 		return false
 	}
-	return math.Abs(relative(r)) > max(spread(r.base)+spread(r.head), 0.02)
+	return math.Abs(relative(r)) > max(spread(r.base)+spread(r.head), noiseFloor)
 }
 
 func style(r row) lipgloss.Style {

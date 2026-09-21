@@ -11,6 +11,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/previewer"
+	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 )
 
@@ -60,6 +61,9 @@ type RealPicker struct {
 	// zoxide is the frecency backend, reached only to remove an entry the user
 	// confirmed removing from the picker.
 	zoxide zoxide.Zoxide
+	// tmux is reached only to kill a live session the user confirmed killing
+	// from the picker.
+	tmux tmux.Tmux
 	// refreshCache refetches the session list into the cache after a removal.
 	// Nil when caching is off, which is also when there is nothing to refresh.
 	refreshCache CacheRefreshFunc
@@ -71,13 +75,14 @@ type RealPicker struct {
 // forgotten until the entry aged out on its own.
 type CacheRefreshFunc func()
 
-func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards WildcardFinder, zoxide zoxide.Zoxide, refreshCache CacheRefreshFunc) Picker {
+func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards WildcardFinder, zoxide zoxide.Zoxide, tmux tmux.Tmux, refreshCache CacheRefreshFunc) Picker {
 	return &RealPicker{
 		config:       config,
 		previewer:    previewer,
 		home:         home,
 		wildcards:    wildcards,
 		zoxide:       zoxide,
+		tmux:         tmux,
 		refreshCache: refreshCache,
 	}
 }
@@ -88,6 +93,19 @@ func NewPicker(config model.Config, previewer previewer.Previewer, home home.Hom
 // removal.
 func (p *RealPicker) removeEntry(path string) error {
 	if err := p.zoxide.Remove(path); err != nil {
+		return err
+	}
+	if p.refreshCache != nil {
+		p.refreshCache()
+	}
+	return nil
+}
+
+// killSession ends a live tmux session and refreshes the cache behind it, for
+// the same reason removeEntry does: the cache is what the next launch reads,
+// and without this it would offer a session that no longer exists.
+func (p *RealPicker) killSession(name string) error {
+	if _, err := p.tmux.KillSession(name); err != nil {
 		return err
 	}
 	if p.refreshCache != nil {
@@ -232,6 +250,10 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 	if p.zoxide != nil {
 		removeFunc = p.removeEntry
 	}
+	var killFunc KillFunc
+	if p.tmux != nil {
+		killFunc = p.killSession
+	}
 
 	m := New(fetchFunc, Options{
 		ShowIcons:               showIcons,
@@ -253,6 +275,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		PreviewFunc:             previewFunc,
 		GroupSeparator:          p.config.TUI.GroupSeparator,
 		Remove:                  removeFunc,
+		Kill:                    killFunc,
 	})
 	prog := tea.NewProgram(m)
 	result, err := prog.Run()

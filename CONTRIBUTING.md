@@ -177,6 +177,12 @@ Some caveats the chart itself will remind you of:
   order of the samples, so a run drifting from 110µs to 138µs under its own
   measurement separates perfectly from a steady one and scores `p=0.002`
   against it. That is a fact about the machine, not the code.
+- **Nothing under 5% is reported at all.** A row has to move further than both
+  runs' own sample spread and a 5% floor before the chart calls it a move. The
+  floor is what the runner can resolve, not what matters: charting a commit
+  against its own parent has put an untouched `BenchmarkView/n=100` 8% apart,
+  and six samples are few enough to report a spread tight enough to call that
+  separation real. Under that, `allocs/op` is the only thing worth reading.
 - **It is not benchstat.** The noise check is a sample-range comparison, not
   the significance test benchstat runs, and ninety-six simultaneous comparisons
   will turn up the odd false positive whatever the test. Broad strokes: use it
