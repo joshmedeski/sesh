@@ -157,7 +157,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	if cachedLi != nil {
 		refreshCache = func() { cachedLi.RefreshCache(lister.ListOptions{}) }
 	}
-	pk := picker.NewPicker(config, p, b.Home, usedLister, b.Zoxide, refreshCache)
+	pk := picker.NewPicker(config, p, b.Home, usedLister, b.Zoxide, t, refreshCache)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{

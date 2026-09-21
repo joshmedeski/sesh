@@ -986,9 +986,11 @@ The numbers follow the visible list, so anything typed after the sigil narrows i
 
 Only a leading `#` counts, so `feat#123` filters normally. If you configure `alias_filter_prefix = "#"`, alias mode wins and this mode is unreachable.
 
-#### Removing a zoxide entry
+#### Removing a row
 
-A directory you deleted or renamed keeps showing up in the picker until zoxide is told about it. <kbd>ctrl+x</kbd> on a zoxide row prunes it where you noticed it, behind a confirmation:
+<kbd>ctrl+x</kbd> gets rid of the highlighted row, and what that means depends on where the row came from: a live tmux session is killed, a zoxide entry is pruned from the frecency backend. Either way it happens behind a confirmation.
+
+A directory you deleted or renamed keeps showing up in the picker until zoxide is told about it, so <kbd>ctrl+x</kbd> on a zoxide row prunes it where you noticed it:
 
 ```
 ╭────────────────────────────────────────────────────────╮
@@ -1002,11 +1004,27 @@ A directory you deleted or renamed keeps showing up in the picker until zoxide i
 ╰────────────────────────────────────────────────────────╯
 ```
 
-<kbd>y</kbd> or <kbd>enter</kbd> removes it, <kbd>n</kbd>, <kbd>q</kbd>, or <kbd>esc</kbd> cancels, and <kbd>←</kbd>/<kbd>→</kbd> or <kbd>tab</kbd> move between the buttons. Nothing typed while the dialog is open reaches the filter, so the list is exactly as you left it either way.
+On a tmux row it runs `tmux kill-session` instead, which is the built-in launcher's equivalent of the <kbd>ctrl+d</kbd> binding in the [fzf setup](#fzf):
 
-Only zoxide rows can be removed — a tmux session, a `[[session]]` block, or a tmuxinator config is not zoxide's to forget, so <kbd>ctrl+x</kbd> says so and does nothing. The row disappears only once the removal actually succeeded; a backend that refuses it reports the error and leaves the row in place.
+```
+╭────────────────────────────────────────────────────────╮
+│                                                        │
+│          Do you want to kill this tmux session?        │
+│                                                        │
+│                       my-project                       │
+│                                                        │
+│                      Yes      No                       │
+│                                                        │
+╰────────────────────────────────────────────────────────╯
+```
 
-The removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, the cache is rewritten behind the removal so the next launch doesn't list the directory again.
+<kbd>y</kbd> or <kbd>enter</kbd> confirms, <kbd>n</kbd>, <kbd>q</kbd>, or <kbd>esc</kbd> cancels, and <kbd>←</kbd>/<kbd>→</kbd> or <kbd>tab</kbd> move between the buttons. Nothing typed while the dialog is open reaches the filter, so the list is exactly as you left it either way.
+
+Only tmux and zoxide rows can be removed — a `[[session]]` block or a tmuxinator config describes a session that might exist, and getting rid of either means editing a file, so <kbd>ctrl+x</kbd> says so and does nothing. The row disappears only once the command actually succeeded; a backend that refuses it reports the error and leaves the row in place.
+
+Killing the session you are attached to is allowed: tmux moves your client to another session, or exits if that was the last one. The picker goes with it, since it was running there.
+
+The zoxide removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, the cache is rewritten behind either action so the next launch doesn't list what just went away.
 
 #### Preview pane
 

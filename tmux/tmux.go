@@ -27,6 +27,7 @@ type Tmux interface {
 	ResolveClient() string
 	SwitchClientTarget(client string, targetSession string) (string, error)
 	RenameSession(target string, newName string) (string, error)
+	KillSession(target string) (string, error)
 }
 
 type RealTmux struct {
