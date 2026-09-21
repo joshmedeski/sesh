@@ -15,6 +15,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/dir"
 	"github.com/joshmedeski/sesh/v2/execwrap"
 	"github.com/joshmedeski/sesh/v2/focuser"
+	"github.com/joshmedeski/sesh/v2/formatter"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
@@ -127,7 +128,9 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	t := tmux.NewTmux(b.Os, b.Shell, config.TmuxCommand)
 
 	l := ls.NewLs(config, b.Shell)
-	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator)
+	ic := icon.NewIcon(config)
+	fm := formatter.NewFormatter(ic)
+	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator, fm)
 
 	var usedLister lister.Lister = li
 	var cachedLi *lister.CachingLister
@@ -140,7 +143,6 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
 	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
 	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Focuser)
-	ic := icon.NewIcon(config)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
 	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)

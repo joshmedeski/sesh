@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/joshmedeski/sesh/v2/ansi"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -37,11 +38,11 @@ type Glyph struct {
 
 // Glyphs maps session source names to their icon and color.
 var Glyphs = map[string]Glyph{
-	"tmux":       {Icon: tmuxIcon, ColorCode: 34},
-	"config":     {Icon: configIcon, ColorCode: 90},
-	"zoxide":     {Icon: zoxideIcon, ColorCode: 36},
-	"tmuxinator": {Icon: tmuxinatorIcon, ColorCode: 33},
-	"tmux-pane":  {Icon: tmuxPaneIcon, ColorCode: 32},
+	"tmux":       {Icon: tmuxIcon, ColorCode: ansi.Blue},
+	"config":     {Icon: configIcon, ColorCode: ansi.BrightBlack},
+	"zoxide":     {Icon: zoxideIcon, ColorCode: ansi.Cyan},
+	"tmuxinator": {Icon: tmuxinatorIcon, ColorCode: ansi.Yellow},
+	"tmux-pane":  {Icon: tmuxPaneIcon, ColorCode: ansi.Green},
 }
 
 func ansiString(code int, s string) string {

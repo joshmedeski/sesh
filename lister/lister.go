@@ -3,6 +3,7 @@ package lister
 import (
 	"sync"
 
+	"github.com/joshmedeski/sesh/v2/formatter"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/tmux"
@@ -21,6 +22,7 @@ type Lister interface {
 	FindConfigWildcard(path string) (model.WildcardConfig, bool)
 	FindZoxideSession(name string) (model.SeshSession, bool)
 	FindTmuxinatorConfig(name string) (model.SeshSession, bool)
+	Format(sessions model.SeshSessions, opts ListOptions) (model.SeshSessions, error)
 }
 
 type RealLister struct {
@@ -29,6 +31,7 @@ type RealLister struct {
 	tmux       tmux.Tmux
 	zoxide     zoxide.Zoxide
 	tmuxinator tmuxinator.Tmuxinator
+	formatter  formatter.Formatter
 
 	// wildcards caches config.WildcardConfigs with their patterns expanded, so
 	// resolving a wildcard for every session in a list expands each pattern
@@ -37,12 +40,20 @@ type RealLister struct {
 	wildcards     []expandedWildcard
 }
 
-func NewLister(config model.Config, home home.Home, tmux tmux.Tmux, zoxide zoxide.Zoxide, tmuxinator tmuxinator.Tmuxinator) Lister {
+func NewLister(
+	config model.Config,
+	home home.Home,
+	tmux tmux.Tmux,
+	zoxide zoxide.Zoxide,
+	tmuxinator tmuxinator.Tmuxinator,
+	formatter formatter.Formatter,
+) Lister {
 	return &RealLister{
 		config:     config,
 		home:       home,
 		tmux:       tmux,
 		zoxide:     zoxide,
 		tmuxinator: tmuxinator,
+		formatter:  formatter,
 	}
 }

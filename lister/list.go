@@ -21,6 +21,9 @@ type (
 		HideDuplicates bool
 		Panes          bool
 		Blacklisted    bool
+		Format         string
+		FormatSet      bool
+		IconExcludes   []string
 	}
 	srcStrategy func(*RealLister) (model.SeshSessions, error)
 )
@@ -145,7 +148,7 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	}
 	attachWindowNames(sessions, windowNames)
 
-	return sessions, nil
+	return l.Format(sessions, opts)
 }
 
 // groupOrder lays out one sort_order group's sessions. A group of one keeps the
