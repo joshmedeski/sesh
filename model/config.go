@@ -59,6 +59,7 @@ type (
 		Browser                 BrowserConfig        `toml:"browser"`
 		Frecency                FrecencyConfig       `toml:"frecency"`
 		TUI                     TUIConfig            `toml:"tui"`
+		Dashboard               DashboardConfig      `toml:"dashboard"`
 	}
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
@@ -193,6 +194,53 @@ type (
 		// with a flat sort_order every source is its own group, and a rule
 		// between each of them is more lines than most lists want.
 		GroupSeparator bool `toml:"group_separator"`
+	}
+
+	DashboardConfig struct {
+		Title    string                   `toml:"title"`
+		Sections []DashboardSectionConfig `toml:"sections"`
+	}
+
+	DashboardSectionConfig struct {
+		Type  string `toml:"type"`
+		Title string `toml:"title"`
+		// Width and Row are retained for backwards compatibility with older
+		// configs; they are parsed but ignored (the dashboard now uses a
+		// fixed two-tab layout with a vertical widget stack).
+		Width  float64          `toml:"width"`
+		Row    int              `toml:"row"`
+		Groups []DashboardGroup `toml:"groups,omitempty"`
+		SSH    []SSHHostConfig  `toml:"ssh,omitempty"`
+		Custom CustomConfig     `toml:"custom"`
+		Docker DockerConfig     `toml:"docker"`
+		Git    GitConfig        `toml:"git"`
+	}
+
+	DashboardGroup struct {
+		Name     string   `toml:"name"`
+		Patterns []string `toml:"patterns"`
+	}
+
+	SSHHostConfig struct {
+		Name     string `toml:"name"`
+		Host     string `toml:"host"`
+		Port     int    `toml:"port"`
+		Username string `toml:"username"`
+	}
+
+	CustomConfig struct {
+		Command string `toml:"command"`
+		Refresh int    `toml:"refresh"`
+	}
+
+	DockerConfig struct {
+		All     bool     `toml:"all"`
+		Filters []string `toml:"filters"`
+	}
+
+	GitConfig struct {
+		Paths   []string `toml:"paths"`
+		Refresh int      `toml:"refresh"`
 	}
 
 	WildcardConfig struct {

@@ -1,0 +1,205 @@
+package sections
+
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
+	"github.com/joshmedeski/sesh/v2/model"
+)
+
+type sshStatusMsg struct {
+	index  int
+	status string
+}
+
+type SSHHost struct {
+	Name     string
+	Host     string
+	Port     int
+	Username string
+	Status   string
+}
+
+type SSHSection struct {
+	config  model.DashboardSectionConfig
+	deps    core.SectionDeps
+	hosts   []SSHHost
+	cursor  int
+	chosen  string
+	loading bool
+}
+
+func NewSSHSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
+	hosts := make([]SSHHost, len(cfg.SSH))
+	for i, h := range cfg.SSH {
+		hosts[i] = SSHHost{
+			Name:     h.Name,
+			Host:     h.Host,
+			Port:     h.Port,
+			Username: h.Username,
+			Status:   "checking",
+		}
+	}
+	return &SSHSection{
+		config:  cfg,
+		deps:    deps,
+		hosts:   hosts,
+		loading: len(hosts) > 0,
+	}
+}
+
+func (s *SSHSection) Name() string    { return s.config.Title }
+func (s *SSHSection) TotalItems() int { return len(s.hosts) }
+func (s *SSHSection) Width() float64  { return s.config.Width }
+func (s *SSHSection) Chosen() string  { return s.chosen }
+
+func (s *SSHSection) Init() tea.Cmd {
+	if len(s.hosts) == 0 {
+		return nil
+	}
+	cmds := make([]tea.Cmd, len(s.hosts))
+	for i, h := range s.hosts {
+		idx := i
+		host := h
+		cmds[i] = s.checkHost(idx, host)
+	}
+	return tea.Batch(cmds...)
+}
+
+func (s *SSHSection) checkHost(index int, host SSHHost) tea.Cmd {
+	return func() tea.Msg {
+		user := host.Username
+		if user == "" {
+			user = os.Getenv("USER")
+		}
+		port := host.Port
+		if port == 0 {
+			port = 22
+		}
+		target := fmt.Sprintf("%s@%s", user, host.Host)
+		_, err := s.deps.Runner.Run("ssh",
+			"-p", fmt.Sprintf("%d", port),
+			"-o", "ConnectTimeout=3",
+			"-o", "BatchMode=yes",
+			"-O", "check",
+			target,
+		)
+		status := "online"
+		if err != nil {
+			status = "offline"
+		}
+		return sshStatusMsg{index: index, status: status}
+	}
+}
+
+// ClickAt moves the cursor to the clicked row.
+func (s *SSHSection) ClickAt(row int) {
+	if len(s.hosts) == 0 {
+		return
+	}
+	s.cursor = min(max(row, 0), len(s.hosts)-1)
+}
+
+func (s *SSHSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
+	switch msg := msg.(type) {
+	case sshStatusMsg:
+		if msg.index >= 0 && msg.index < len(s.hosts) {
+			s.hosts[msg.index].Status = msg.status
+		}
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "j", "down":
+			if s.cursor < len(s.hosts)-1 {
+				s.cursor++
+			}
+		case "k", "up":
+			if s.cursor > 0 {
+				s.cursor--
+			}
+		case "enter":
+			if len(s.hosts) > 0 {
+				s.chosen = s.hosts[s.cursor].Host
+			}
+		case "r":
+			cmds := make([]tea.Cmd, len(s.hosts))
+			for i, h := range s.hosts {
+				h.Status = "checking"
+				idx := i
+				host := h
+				cmds[i] = s.checkHost(idx, host)
+			}
+			return s, tea.Batch(cmds...)
+		}
+	}
+	return s, nil
+}
+
+func (s *SSHSection) ViewBorderless(width, height int, focused bool) (string, string) {
+	var b strings.Builder
+
+	title := s.config.Title
+	if title == "" {
+		title = "SSH"
+	}
+
+	const minWidth = 20
+	if width < minWidth {
+		return title, "  SSH"
+	}
+
+	if len(s.hosts) == 0 {
+		return title, "  No hosts configured"
+	}
+
+	available := max(height, 1)
+
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Bold(true)
+	onlineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
+	offlineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+	checkingStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
+
+	end := min(s.cursor+1, len(s.hosts))
+	start := max(end-available, 0)
+	if len(s.hosts) <= available {
+		start = 0
+		end = len(s.hosts)
+	}
+
+	for i := start; i < end; i++ {
+		h := s.hosts[i]
+		selected := i == s.cursor
+
+		statusText := "○ checking"
+		statusStyle := checkingStyle
+		switch h.Status {
+		case "online":
+			statusText = "● online"
+			statusStyle = onlineStyle
+		case "offline":
+			statusText = "● offline"
+			statusStyle = offlineStyle
+		}
+
+		nameDisplay := h.Name
+		if nameDisplay == "" {
+			nameDisplay = h.Host
+		}
+
+		cells := []render.Col{
+			{Text: nameDisplay, Style: labelStyle},
+			{Text: " "},
+			{Text: statusText, Style: statusStyle},
+		}
+
+		b.WriteString(render.RenderSimpleRow(cells, selected, focused))
+		b.WriteString("\n")
+	}
+
+	return title, b.String()
+}

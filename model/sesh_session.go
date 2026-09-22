@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type (
 	SeshSessions struct {
 		// catalog of the sessions
@@ -12,9 +14,10 @@ type (
 	SeshWindowMap  map[string]WindowConfig
 
 	SeshSession struct {
-		Src  string // The source of the session (config, tmux, zoxide, tmuxinator)
-		Name string // The display name
-		Path string // The absolute directory path
+		Src   string // The source of the session (config, tmux, zoxide, tmuxinator)
+		Name  string // The display name
+		Alias string // The configured alias for the session (empty when none)
+		Path  string // The absolute directory path
 
 		StartupCommand        string         // The command to run when the session is started
 		PreviewCommand        string         // The command to run when the session is previewed
@@ -31,6 +34,13 @@ type (
 		// what the picker draws its group separator from. It is not part of
 		// `sesh list --json`: it describes the list, not the session.
 		Group int `json:"-"`
+
+		Branch       string     // Current git branch (populated by dashboard)
+		GitStatus    string     // Current git status (populated by dashboard)
+		Created      *time.Time // Session creation time
+		LastAttached *time.Time // Last attach time
+		Activity     *time.Time // Last activity time
+		Alerts       []string   // Active alerts (e.g. bell, activity)
 	}
 
 	SeshSrcs struct {
