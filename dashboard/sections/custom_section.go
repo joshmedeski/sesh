@@ -1,4 +1,4 @@
-package dashboard
+package sections
 
 import (
 	"strings"
@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -16,12 +17,12 @@ type customOutputMsg struct {
 
 type CustomSection struct {
 	config  model.DashboardSectionConfig
-	deps    SectionDeps
+	deps    core.SectionDeps
 	output  string
 	loading bool
 }
 
-func NewCustomSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+func NewCustomSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
 	return &CustomSection{
 		config:  cfg,
 		deps:    deps,
@@ -43,14 +44,14 @@ func (s *CustomSection) fetchOutput() tea.Msg {
 	if cmd == "" {
 		return customOutputMsg{output: "No command configured"}
 	}
-	out, err := runShellCommand(cmd)
+	out, err := s.deps.Runner.RunShell(cmd)
 	if err != nil {
 		return customOutputMsg{err: err}
 	}
 	return customOutputMsg{output: string(out)}
 }
 
-func (s *CustomSection) Update(msg tea.Msg) (Section, tea.Cmd) {
+func (s *CustomSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case customOutputMsg:
 		s.loading = false

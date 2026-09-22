@@ -1,4 +1,5 @@
-package dashboard
+// footer.go
+package render
 
 import (
 	"strconv"
@@ -10,16 +11,16 @@ import (
 // tabTitles are the two permanent tab labels.
 var tabTitles = []string{"Open", "Configured"}
 
-// renderHeader renders the two-row header: a tab line (with an optional
+// RenderHeader renders the two-row header: a tab line (with an optional
 // right-pinned "N active" count on wide terminals) followed by a full-width
 // rule in the border color.
-func renderHeader(activePage int, activeCount int, width int) string {
+func RenderHeader(activePage int, activeCount int, width int) string {
 	var parts []string
 	for i, t := range tabTitles {
 		if i == activePage {
 			parts = append(parts, accentStyle().Render(t))
 		} else {
-			parts = append(parts, dimmedStyle().Render(t))
+			parts = append(parts, DimmedStyle().Render(t))
 		}
 	}
 	sep := lipgloss.NewStyle().Foreground(colorBorder).Render(" │ ")
@@ -27,7 +28,7 @@ func renderHeader(activePage int, activeCount int, width int) string {
 
 	right := ""
 	if width >= 50 {
-		right = dimmedStyle().Render(strconv.Itoa(activeCount) + " active")
+		right = DimmedStyle().Render(strconv.Itoa(activeCount) + " active")
 	}
 
 	spacer := strings.Repeat(" ", max(width-lipgloss.Width(tabLine)-lipgloss.Width(right), 0))
@@ -71,12 +72,12 @@ func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
 	}, right
 }
 
-// renderFooter renders the one-row footer for the active page. While the
+// RenderFooter renders the one-row footer for the active page. While the
 // focused pane is filtering, a filter line replaces the binds entirely. Small
 // terminals: <70 cols drop labels (keys only), <30 keep only tab j/k enter q ?.
 // If the fully-labeled footer would overflow the available width, labels are
 // dropped so the footer never wraps.
-func renderFooter(page, width int, sortLabel string, filtering bool, query string) string {
+func RenderFooter(page, width int, sortLabel string, filtering bool, query string) string {
 	if filtering {
 		return renderFilterFooter(query, width)
 	}
@@ -100,9 +101,9 @@ func renderFooter(page, width int, sortLabel string, filtering bool, query strin
 // normal binds (no right-pinned help).
 func renderFilterFooter(query string, width int) string {
 	parts := []string{
-		accentStyle().Render("filter:") + " " + textStyle().Render(query),
-		accentStyle().Render("esc") + " " + dimmedStyle().Render("clear"),
-		accentStyle().Render("enter") + " " + dimmedStyle().Render("done"),
+		accentStyle().Render("filter:") + " " + TextStyle().Render(query),
+		accentStyle().Render("esc") + " " + DimmedStyle().Render("clear"),
+		accentStyle().Render("enter") + " " + DimmedStyle().Render("done"),
 	}
 	line := strings.Join(parts, lipgloss.NewStyle().Foreground(colorBorder).Render(" │ "))
 	return lipgloss.NewStyle().Width(width).Render(line)
@@ -130,7 +131,7 @@ func footerFits(binds []keybind, right keybind, width int) bool {
 func renderFooterLine(binds []keybind, right keybind, showLabels bool, width int) string {
 	format := func(b keybind) string {
 		if showLabels && b.label != "" {
-			return accentStyle().Render(b.key) + " " + dimmedStyle().Render(b.label)
+			return accentStyle().Render(b.key) + " " + DimmedStyle().Render(b.label)
 		}
 		return accentStyle().Render(b.key)
 	}

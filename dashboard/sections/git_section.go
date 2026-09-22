@@ -1,4 +1,4 @@
-package dashboard
+package sections
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -25,14 +27,14 @@ type gitRepo struct {
 
 type GitSection struct {
 	config  model.DashboardSectionConfig
-	deps    SectionDeps
+	deps    core.SectionDeps
 	repos   []gitRepo
 	cursor  int
 	chosen  string
 	loading bool
 }
 
-func NewGitSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+func NewGitSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
 	return &GitSection{
 		config:  cfg,
 		deps:    deps,
@@ -62,7 +64,7 @@ func (s *GitSection) fetchRepos() tea.Msg {
 			expanded = filepath.Join(s.deps.HomeDir, p[2:])
 		}
 
-		branch, err := runCommand("git", "-C", expanded, "rev-parse", "--abbrev-ref", "HEAD")
+		branch, err := s.deps.Runner.Run("git", "-C", expanded, "rev-parse", "--abbrev-ref", "HEAD")
 		if err != nil || strings.TrimSpace(branch) == "" {
 			repos = append(repos, gitRepo{
 				Path:   p,
@@ -72,7 +74,7 @@ func (s *GitSection) fetchRepos() tea.Msg {
 			continue
 		}
 
-		statusOut, err := runCommand("git", "-C", expanded, "status", "--porcelain")
+		statusOut, err := s.deps.Runner.Run("git", "-C", expanded, "status", "--porcelain")
 		status := ""
 		if err == nil {
 			lines := strings.Split(strings.TrimRight(statusOut, "\n"), "\n")
@@ -143,7 +145,7 @@ func (s *GitSection) ClickAt(row int) {
 	s.cursor = min(max(row, 0), len(s.repos)-1)
 }
 
-func (s *GitSection) Update(msg tea.Msg) (Section, tea.Cmd) {
+func (s *GitSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case gitReposLoadedMsg:
 		s.loading = false
@@ -210,22 +212,22 @@ func (s *GitSection) ViewBorderless(width, height int, focused bool) (string, st
 		selected := i == s.cursor
 
 		if !repo.IsRepo {
-			b.WriteString(renderSimpleRow([]col{{text: repo.Name + " (not a git repo)", style: errorStyle}}, selected, focused))
+			b.WriteString(render.RenderSimpleRow([]render.Col{{Text: repo.Name + " (not a git repo)", Style: errorStyle}}, selected, focused))
 			b.WriteString("\n")
 			continue
 		}
 
-		cells := []col{
-			{text: repo.Name, style: nameStyle},
+		cells := []render.Col{
+			{Text: repo.Name, Style: nameStyle},
 		}
 		if repo.Branch != "" {
-			cells = append(cells, col{text: "(" + repo.Branch + ")", style: branchStyle})
+			cells = append(cells, render.Col{Text: "(" + repo.Branch + ")", Style: branchStyle})
 		}
 		if repo.Status != "" {
-			cells = append(cells, col{text: " " + repo.Status, style: statusStyle})
+			cells = append(cells, render.Col{Text: " " + repo.Status, Style: statusStyle})
 		}
 
-		b.WriteString(renderSimpleRow(cells, selected, focused))
+		b.WriteString(render.RenderSimpleRow(cells, selected, focused))
 		b.WriteString("\n")
 	}
 

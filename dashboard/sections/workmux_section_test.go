@@ -1,8 +1,9 @@
-package dashboard
+package sections
 
 import (
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -11,6 +12,17 @@ import (
 
 func u64p(v uint64) *uint64 { return &v }
 func strp(s string) *string { return &s }
+
+// pressKey constructs a tea.KeyPressMsg whose String() matches the given key
+// name (mirrors the helper in the root dashboard package).
+func pressKey(key string) tea.KeyPressMsg {
+	switch key {
+	case "enter":
+		return tea.KeyPressMsg{Code: tea.KeyEnter}
+	default:
+		return tea.KeyPressMsg{Text: key, Code: rune(key[0])}
+	}
+}
 
 func TestParseWorkmuxStatus(t *testing.T) {
 	fixture := `{"agents":[

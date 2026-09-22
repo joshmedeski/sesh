@@ -10,6 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -19,34 +20,19 @@ type sessionsLoadedMsg struct {
 	err      error
 }
 
-type branchLoadedMsg struct {
-	path   string
-	branch string
-}
-
-type statusLoadedMsg struct {
-	path   string
-	status string
-}
-
 type currentSessionMsg struct {
 	name string
 }
 
 type SessionsSection struct {
-	config        model.DashboardSectionConfig
-	deps          SectionDeps
-	sessions      []model.SeshSession
-	filtered      []model.SeshSession // filtered view when filtering
-	cursor        int
-	offset        int
+	config   model.DashboardSectionConfig
+	deps     SectionDeps
+	sessions []model.SeshSession
+	ListState
 	loading       bool
 	chosen        string
 	totalSessions int
-	viewHeight    int
 	sortMode      string // "name" | "recent" | "created"
-	filtering     bool
-	filterQuery   string
 	currentName   string
 }
 
@@ -161,35 +147,7 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 // through the filtered results, enter selects the highlighted filtered item
 // and exits filtering, and esc cancels filtering without selecting.
 func (s *SessionsSection) handleFilterKey(msg tea.KeyPressMsg) (*SessionsSection, tea.Cmd) {
-	if isBackspaceKey(msg) {
-		if s.filterQuery != "" {
-			r := []rune(s.filterQuery)
-			s.filterQuery = string(r[:len(r)-1])
-		}
-		s.applyFilter()
-		return s, nil
-	}
-	switch msg.String() {
-	case "esc":
-		s.filtering = false
-		s.filterQuery = ""
-		s.applyFilter()
-	case "enter":
-		s.applyFilter()
-		s.selectItem()
-		s.filtering = false
-		s.filterQuery = ""
-		s.applyFilter()
-	case "j", "down":
-		s.cursorDown(1)
-	case "k", "up":
-		s.cursorUp(1)
-	default:
-		if msg.Text != "" {
-			s.filterQuery += msg.Text
-			s.applyFilter()
-		}
-	}
+	s.ListState.handleFilterKey(msg, s.sessions, sessionsMatch, s.selectItem)
 	return s, nil
 }
 
@@ -233,29 +191,18 @@ func (s *SessionsSection) applySort() {
 // applyFilter rebuilds the filtered view from the master list and clamps the
 // cursor.
 func (s *SessionsSection) applyFilter() {
-	if !s.filtering || s.filterQuery == "" {
-		s.filtered = nil
-		s.clampCursor()
-		return
-	}
-	q := strings.ToLower(s.filterQuery)
-	out := make([]model.SeshSession, 0, len(s.sessions))
-	for _, sess := range s.sessions {
-		if strings.Contains(strings.ToLower(sess.Name), q) || strings.Contains(strings.ToLower(sess.Alias), q) {
-			out = append(out, sess)
-		}
-	}
-	s.filtered = out
-	s.clampCursor()
+	s.ListState.applyFilter(s.sessions, sessionsMatch)
+}
+
+// sessionsMatch reports whether a session matches the query by name or alias.
+func sessionsMatch(sess model.SeshSession, q string) bool {
+	return strings.Contains(strings.ToLower(sess.Name), q) || strings.Contains(strings.ToLower(sess.Alias), q)
 }
 
 // visible returns the currently displayed list (filtered view while filtering,
 // the full sorted list otherwise).
 func (s *SessionsSection) visible() []model.SeshSession {
-	if s.filtering && s.filtered != nil {
-		return s.filtered
-	}
-	return s.sessions
+	return s.ListState.visible(s.sessions)
 }
 
 // timeOrZero returns t as a non-pointer time.Time, treating nil as the zero
@@ -332,7 +279,7 @@ func (s *SessionsSection) fetchStatuses() tea.Cmd {
 			if err != nil {
 				return statusLoadedMsg{path: path, status: ""}
 			}
-			return statusLoadedMsg{path: path, status: formatGitStatus(status)}
+			return statusLoadedMsg{path: path, status: render.FormatGitStatus(status)}
 		})
 	}
 	return tea.Batch(cmds...)
@@ -348,57 +295,20 @@ func (s *SessionsSection) applyStatus(path, status string) {
 }
 
 func (s *SessionsSection) clampCursor() {
-	n := len(s.visible())
-	if s.cursor >= n {
-		s.cursor = max(n-1, 0)
-	}
-	if s.offset >= n {
-		s.offset = 0
-	}
+	s.ListState.clampCursor(len(s.visible()))
 }
 
 func (s *SessionsSection) cursorUp(n int) {
-	s.cursor -= n
-	if s.cursor < 0 {
-		s.cursor = 0
-	}
-	if s.cursor < s.offset {
-		s.offset = s.cursor
-	}
+	s.ListState.cursorUp(n)
 }
 
 func (s *SessionsSection) cursorDown(n int) {
-	s.cursor += n
-	maxIdx := max(len(s.visible())-1, 0)
-	if s.cursor > maxIdx {
-		s.cursor = maxIdx
-	}
-	visible := s.visibleCount()
-	if s.cursor >= s.offset+visible {
-		s.offset = s.cursor - visible + 1
-	}
-}
-
-func (s *SessionsSection) visibleCount() int {
-	if s.viewHeight <= 0 {
-		return 20
-	}
-	return max(s.viewHeight, 1)
+	s.ListState.cursorDown(n, len(s.visible()))
 }
 
 // ClickAt moves the cursor to the clicked view row, scrolling to reveal it.
 func (s *SessionsSection) ClickAt(row int) {
-	n := len(s.visible())
-	if n == 0 {
-		return
-	}
-	s.cursor = min(max(s.offset+row, 0), n-1)
-	if s.cursor < s.offset {
-		s.offset = s.cursor
-	}
-	if visible := s.visibleCount(); s.cursor >= s.offset+visible {
-		s.offset = s.cursor - visible + 1
-	}
+	s.ListState.ClickAt(row, len(s.visible()))
 }
 
 func (s *SessionsSection) killSession() tea.Cmd {
@@ -482,7 +392,7 @@ func (s *SessionsSection) renderItem(i, width int) string {
 // panes render a dimmed selection highlight.
 func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	sess := s.visible()[i]
-	dir := collapseHome(sess.Path, s.deps.HomeDir)
+	dir := render.CollapseHome(sess.Path, s.deps.HomeDir)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return renderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
+	return render.RenderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
 }

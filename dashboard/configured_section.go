@@ -6,46 +6,11 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 
-	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
-
-// formatGitStatus renders a git.StatusSummary as the "+n ~n -n !n" compact
-// string used in the status column (shared with the sessions section). Each
-// part is styled with a distinct ANSI colour so the counts are distinguishable
-// at a glance: staged green, unstaged yellow, deleted red, untracked magenta.
-//
-// The parts are emitted as one continuous ANSI run with only a final reset, so
-// an outer cursor/hover background applied by renderRow is not cancelled by
-// per-part reset sequences. Spaces between parts are left unstyled so they
-// inherit the row's highlight background cleanly.
-func formatGitStatus(status git.StatusSummary) string {
-	parts := make([]string, 0, 4)
-	if status.Staged > 0 {
-		parts = append(parts, ansiFg(colorStaged)+fmt.Sprintf("+%d", status.Staged))
-	}
-	if status.Unstaged > 0 {
-		parts = append(parts, ansiFg(colorUnstaged)+fmt.Sprintf("~%d", status.Unstaged))
-	}
-	if status.Deleted > 0 {
-		parts = append(parts, ansiFg(colorDeleted)+fmt.Sprintf("-%d", status.Deleted))
-	}
-	if status.Untracked > 0 {
-		parts = append(parts, ansiFg(colorUntracked)+fmt.Sprintf("!%d", status.Untracked))
-	}
-	if len(parts) == 0 {
-		return ""
-	}
-	return strings.Join(parts, " ") + "\x1b[0m"
-}
-
-// ansiFg returns an ANSI 256-colour foreground sequence for c.
-func ansiFg(c lipgloss.ANSIColor) string {
-	return fmt.Sprintf("\x1b[38;5;%dm", int(c))
-}
 
 // configuredLoadedMsg carries the config-source sessions (sorted) plus the set
 // of tmux session names currently running (used for the running-state column).
@@ -59,18 +24,13 @@ type configuredLoadedMsg struct {
 // Selecting a session sets Chosen() to the session name; the CLI connector
 // opens it.
 type ConfiguredSection struct {
-	config      model.DashboardSectionConfig
-	deps        SectionDeps
-	sessions    []model.SeshSession
-	filtered    []model.SeshSession // filtered view when filtering
-	running     map[string]bool
-	cursor      int
-	offset      int
-	loading     bool
-	chosen      string
-	viewHeight  int
-	filtering   bool
-	filterQuery string
+	config   model.DashboardSectionConfig
+	deps     SectionDeps
+	sessions []model.SeshSession
+	ListState
+	running map[string]bool
+	loading bool
+	chosen  string
 }
 
 func NewConfiguredSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -194,119 +154,40 @@ func (s *ConfiguredSection) handleKey(msg tea.KeyPressMsg) (Section, tea.Cmd) {
 // highlighted filtered item and exits filtering, and esc cancels filtering
 // without selecting.
 func (s *ConfiguredSection) handleFilterKey(msg tea.KeyPressMsg) {
-	if isBackspaceKey(msg) {
-		if s.filterQuery != "" {
-			r := []rune(s.filterQuery)
-			s.filterQuery = string(r[:len(r)-1])
-		}
-		s.applyFilter()
-		return
-	}
-	switch msg.String() {
-	case "esc":
-		s.filtering = false
-		s.filterQuery = ""
-		s.applyFilter()
-	case "enter":
-		s.applyFilter()
-		s.selectItem()
-		s.filtering = false
-		s.filterQuery = ""
-		s.applyFilter()
-	case "j", "down":
-		s.cursorDown(1)
-	case "k", "up":
-		s.cursorUp(1)
-	default:
-		if msg.Text != "" {
-			s.filterQuery += msg.Text
-			s.applyFilter()
-		}
-	}
+	s.ListState.handleFilterKey(msg, s.sessions, configuredMatch, s.selectItem)
 }
 
 // applyFilter rebuilds the filtered view from the master list and clamps the
 // cursor.
 func (s *ConfiguredSection) applyFilter() {
-	if !s.filtering || s.filterQuery == "" {
-		s.filtered = nil
-		s.clampCursor()
-		return
-	}
-	q := strings.ToLower(s.filterQuery)
-	out := make([]model.SeshSession, 0, len(s.sessions))
-	for _, sess := range s.sessions {
-		if strings.Contains(strings.ToLower(sess.Name), q) {
-			out = append(out, sess)
-		}
-	}
-	s.filtered = out
-	s.clampCursor()
+	s.ListState.applyFilter(s.sessions, configuredMatch)
+}
+
+// configuredMatch reports whether a session matches the query by name.
+func configuredMatch(sess model.SeshSession, q string) bool {
+	return strings.Contains(strings.ToLower(sess.Name), q)
 }
 
 // visible returns the currently displayed list.
 func (s *ConfiguredSection) visible() []model.SeshSession {
-	if s.filtering && s.filtered != nil {
-		return s.filtered
-	}
-	return s.sessions
+	return s.ListState.visible(s.sessions)
 }
 
 func (s *ConfiguredSection) clampCursor() {
-	n := len(s.visible())
-	if s.cursor >= n {
-		s.cursor = max(n-1, 0)
-	}
-	if s.offset >= n {
-		s.offset = 0
-	}
+	s.ListState.clampCursor(len(s.visible()))
 }
 
 func (s *ConfiguredSection) cursorUp(n int) {
-	s.cursor -= n
-	if s.cursor < 0 {
-		s.cursor = 0
-	}
-	if s.cursor < s.offset {
-		s.offset = s.cursor
-	}
+	s.ListState.cursorUp(n)
 }
 
 func (s *ConfiguredSection) cursorDown(n int) {
-	s.cursor += n
-	if maxIdx := len(s.visible()) - 1; s.cursor > maxIdx {
-		if maxIdx < 0 {
-			s.cursor = 0
-		} else {
-			s.cursor = maxIdx
-		}
-	}
-	visible := s.visibleCount()
-	if s.cursor >= s.offset+visible {
-		s.offset = s.cursor - visible + 1
-	}
-}
-
-func (s *ConfiguredSection) visibleCount() int {
-	if s.viewHeight <= 0 {
-		return 20
-	}
-	return max(s.viewHeight, 1)
+	s.ListState.cursorDown(n, len(s.visible()))
 }
 
 // ClickAt moves the cursor to the clicked view row, scrolling to reveal it.
 func (s *ConfiguredSection) ClickAt(row int) {
-	n := len(s.visible())
-	if n == 0 {
-		return
-	}
-	s.cursor = min(max(s.offset+row, 0), n-1)
-	if s.cursor < s.offset {
-		s.offset = s.cursor
-	}
-	if visible := s.visibleCount(); s.cursor >= s.offset+visible {
-		s.offset = s.cursor - visible + 1
-	}
+	s.ListState.ClickAt(row, len(s.visible()))
 }
 
 func (s *ConfiguredSection) selectItem() {
@@ -354,7 +235,7 @@ func (s *ConfiguredSection) fetchStatuses() tea.Cmd {
 			if err != nil {
 				return statusLoadedMsg{path: path, status: ""}
 			}
-			return statusLoadedMsg{path: path, status: formatGitStatus(status)}
+			return statusLoadedMsg{path: path, status: render.FormatGitStatus(status)}
 		})
 	}
 	return tea.Batch(cmds...)
@@ -408,8 +289,8 @@ func (s *ConfiguredSection) ViewBorderless(width, height int, focused bool) (str
 	var b strings.Builder
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
-		path := collapseHome(sess.Path, s.deps.HomeDir)
-		b.WriteString(renderConfiguredRowFocused(width, i == s.cursor, focused, sess.Name, sess.StartupCommand, s.running[sess.Name], path, sess.Branch, sess.GitStatus))
+		path := render.CollapseHome(sess.Path, s.deps.HomeDir)
+		b.WriteString(render.RenderConfiguredRowFocused(width, i == s.cursor, focused, sess.Name, sess.StartupCommand, s.running[sess.Name], path, sess.Branch, sess.GitStatus))
 		b.WriteString("\n")
 	}
 

@@ -1,4 +1,4 @@
-package dashboard
+package sections
 
 import (
 	"encoding/json"
@@ -9,6 +9,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -47,7 +49,7 @@ type workmuxLoadedMsg struct {
 
 type WorkmuxSection struct {
 	config     model.DashboardSectionConfig
-	deps       SectionDeps
+	deps       core.SectionDeps
 	agents     []wmAgent
 	cursor     int
 	offset     int
@@ -57,7 +59,7 @@ type WorkmuxSection struct {
 	viewHeight int
 }
 
-func NewWorkmuxSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+func NewWorkmuxSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
 	return &WorkmuxSection{
 		config:  cfg,
 		deps:    deps,
@@ -76,7 +78,7 @@ func (s *WorkmuxSection) Init() tea.Cmd {
 
 func (s *WorkmuxSection) fetch() tea.Cmd {
 	return func() tea.Msg {
-		out, err := runCommand("workmux", "status", "--json", "--git")
+		out, err := s.deps.Runner.Run("workmux", "status", "--json", "--git")
 		if err != nil {
 			return workmuxLoadedMsg{errMsg: fmt.Sprintf("workmux not found or errored: %v", err)}
 		}
@@ -98,7 +100,7 @@ func parseWorkmuxStatus(out string) ([]wmAgent, error) {
 	return status.Agents, nil
 }
 
-func (s *WorkmuxSection) Update(msg tea.Msg) (Section, tea.Cmd) {
+func (s *WorkmuxSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case workmuxLoadedMsg:
 		s.loading = false
@@ -268,25 +270,25 @@ func renderWorkmuxRowFocused(width int, selected, focused bool, a wmAgent) strin
 		// 	kind = min(max(width-23, 4), 24)
 		// }
 
-		cols := []col{
-			{text: wmStateGlyph(a.Status), width: stateW},
-			{text: truncateRight(a.AgentKind, 24), width: kind, style: textStyle()},
-			{text: truncateRight(paren(a.Branch), 24), width: branchW, style: branchStyle()},
-			{text: wmElapsed(a.ElapsedSecs), width: elapsedW, style: dimmedStyle(), align: lipgloss.Left},
+		cols := []render.Col{
+			{Text: wmStateGlyph(a.Status), Width: stateW},
+			{Text: render.TruncateRight(a.AgentKind, 24), Width: kind, Style: render.TextStyle()},
+			{Text: render.TruncateRight(render.Paren(a.Branch), 24), Width: branchW, Style: render.BranchStyle()},
+			{Text: wmElapsed(a.ElapsedSecs), Width: elapsedW, Style: render.DimmedStyle(), Align: lipgloss.Left},
 		}
 		// if title != "" {
-		// 	cols = append(cols, col{text: truncateRight(title, titleW), width: titleW, style: dimmedStyle()})
+		// 	cols = append(cols, render.Col{Text: render.TruncateRight(title, titleW), Width: titleW, Style: render.DimmedStyle()})
 		// }
-		return renderRow(rowMarker(selected, focused), cols, selected, focused)
+		return render.RenderRow(render.RowMarker(selected, focused), cols, selected, focused)
 	}
 
 	// Too narrow for branch+elapsed: state+kind only (2 cols, 1 sep).
 	kind := max(width-5, 1)
-	cols := []col{
-		{text: wmStateGlyph(a.Status), width: stateW},
-		{text: truncateRight(a.AgentKind, 24), width: kind, style: textStyle()},
+	cols := []render.Col{
+		{Text: wmStateGlyph(a.Status), Width: stateW},
+		{Text: render.TruncateRight(a.AgentKind, 24), Width: kind, Style: render.TextStyle()},
 	}
-	return renderRow(rowMarker(selected, focused), cols, selected, focused)
+	return render.RenderRow(render.RowMarker(selected, focused), cols, selected, focused)
 }
 
 // wmStateGlyph returns the styled state glyph for an agent status:
@@ -300,7 +302,7 @@ func wmStateGlyph(status string) string {
 	case "done":
 		return lipgloss.NewStyle().Render("✅")
 	default:
-		return dimmedStyle().Render("-")
+		return render.DimmedStyle().Render("-")
 	}
 }
 
@@ -313,13 +315,13 @@ func wmGitCell(g *wmGit) string {
 	}
 	var b strings.Builder
 	if g.HasStaged {
-		b.WriteString(successStyle().Render("+"))
+		b.WriteString(render.SuccessStyle().Render("+"))
 	}
 	if g.HasUnstaged {
-		b.WriteString(warningStyle().Render("~"))
+		b.WriteString(render.WarningStyle().Render("~"))
 	}
 	if g.HasUnmergedCommits {
-		b.WriteString(lipgloss.NewStyle().Foreground(colorDeleted).Render("u"))
+		b.WriteString(lipgloss.NewStyle().Foreground(render.ColorDeleted).Render("u"))
 	}
 	return b.String()
 }

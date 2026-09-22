@@ -3,16 +3,14 @@ package dashboard
 import (
 	"strings"
 	"testing"
-	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	uv "github.com/charmbracelet/ultraviolet"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/dashboard/sections"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -44,6 +42,18 @@ func (s *stubSection) ViewBorderless(width, height int, focused bool) (string, s
 		focused       bool
 	}{width, height, focused}
 	return s.name, s.name
+}
+
+// clickStub is a Section that records ClickAt rows, for testing the Model's
+// mouse routing without depending on optional-widget internals (the widgets'
+// own ClickAt behavior is covered in dashboard/sections).
+type clickStub struct {
+	stubSection
+	clicks []int
+}
+
+func (s *clickStub) ClickAt(row int) {
+	s.clicks = append(s.clicks, row)
 }
 
 // testModel builds a Model with stub widgets and default dimensions.
@@ -184,7 +194,7 @@ func TestBuildSections_SessionsEntryCarriesTitleNotGroups(t *testing.T) {
 // --- New ---
 
 func TestNewBuildsDefaultModel(t *testing.T) {
-	m := New(model.DashboardConfig{}, nil, nil, nil, nil, nil, "/home/user")
+	m := New(model.DashboardConfig{}, nil, nil, nil, nil, nil, nil, "/home/user")
 	require.NotNil(t, m.sessions)
 	require.NotNil(t, m.configured)
 	assert.Equal(t, pageOpen, m.page)
@@ -247,7 +257,7 @@ func TestBackspaceAliasForCtrlH(t *testing.T) {
 func TestCtrlJKMoveBetweenRows(t *testing.T) {
 	// Row 1 = [sessions, details], row 2 = [a, b].
 	// Flat: [sessions(0), details(1), a(2), b(3)].
-	details := NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
+	details := sections.NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
 	m := testModel(details, &stubSection{name: "a"}, &stubSection{name: "b"})
 
 	m.focus = 0
@@ -259,7 +269,7 @@ func TestCtrlJKMoveBetweenRows(t *testing.T) {
 
 func TestCtrlJKDownClampsColumn(t *testing.T) {
 	// Row 1 = [sessions, details], row 2 = [a] (only one column).
-	details := NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
+	details := sections.NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
 	m := testModel(details, &stubSection{name: "a"})
 	m.focus = 1 // details (row1 col 1)
 	m = updateModel(m, pressKey("ctrl+j"))
@@ -324,7 +334,7 @@ func TestJumpFocusWithDetailsPane(t *testing.T) {
 	// Row 1 = [sessions, details], row 2 = [a, b].
 	// Flat: [sessions(0), details(1), a(2), b(3)].
 	m := testModel(
-		NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{}),
+		sections.NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{}),
 		&stubSection{name: "a"},
 		&stubSection{name: "b"},
 	)
@@ -363,7 +373,7 @@ func TestRealDecodeCtrlNavKeys(t *testing.T) {
 	// bytes through handleKey and assert they reach the nav handlers. This
 	// fails if a future decoder change makes these bytes map to a different
 	// string/code.
-	details := NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
+	details := sections.NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
 	m := testModel(details, &stubSection{name: "a"}, &stubSection{name: "b"})
 	// flat panes: [sessions(0), details(1), a(2), b(3)]
 
@@ -402,9 +412,9 @@ func TestRealDecodeCtrlNavKeys(t *testing.T) {
 // --- Model: pane order / row separation ---
 
 func TestRowSeparation_WithDetails(t *testing.T) {
-	details := NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
-	ssh := NewSSHSection(model.DashboardSectionConfig{Type: "ssh", Title: "SSH"}, SectionDeps{})
-	git := NewGitSection(model.DashboardSectionConfig{Type: "git", Title: "Git"}, SectionDeps{})
+	details := sections.NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
+	ssh := sections.NewSSHSection(model.DashboardSectionConfig{Type: "ssh", Title: "SSH"}, SectionDeps{})
+	git := sections.NewGitSection(model.DashboardSectionConfig{Type: "git", Title: "Git"}, SectionDeps{})
 	m := testModel(ssh, git, details) // config order: ssh, git, details
 
 	row1 := m.row1Panes()
@@ -418,7 +428,7 @@ func TestRowSeparation_WithDetails(t *testing.T) {
 }
 
 func TestRowSeparation_NoDetails(t *testing.T) {
-	ssh := NewSSHSection(model.DashboardSectionConfig{Type: "ssh", Title: "SSH"}, SectionDeps{})
+	ssh := sections.NewSSHSection(model.DashboardSectionConfig{Type: "ssh", Title: "SSH"}, SectionDeps{})
 	m := testModel(ssh)
 
 	row1 := m.row1Panes()
@@ -552,7 +562,7 @@ func TestConfiguredFiltering(t *testing.T) {
 }
 
 func TestSyncHoveredSessionSkippedOnConfiguredPage(t *testing.T) {
-	ds := NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{})
+	ds := sections.NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{})
 	m := testModel(ds)
 	m.page = pageConfigured
 	_, cmd := m.syncHoveredSession()
@@ -667,601 +677,15 @@ func TestRowHeights_DegenerateTiny(t *testing.T) {
 	assert.Equal(t, 4, m.row2Height)
 }
 
-// --- Header / footer rendering ---
-
-func TestRenderHeaderContainsTabsAndCount(t *testing.T) {
-	h := renderHeader(0, 3, 80)
-	assert.Contains(t, h, "Open")
-	assert.Contains(t, h, "Configured")
-	assert.Contains(t, h, "3 active")
-}
-
-func TestRenderHeaderSmallDropsCount(t *testing.T) {
-	h := renderHeader(0, 3, 40)
-	assert.NotContains(t, h, "active")
-}
-
-func TestRenderFooterPage0(t *testing.T) {
-	f := renderFooter(0, 120, "name", false, "")
-	assert.Contains(t, f, "ctrl+d")
-	assert.Contains(t, f, "1-9")
-	assert.Contains(t, f, "panes")
-	assert.Contains(t, f, "sort:name")
-	assert.NotContains(t, f, "widgets")
-}
-
-func TestRenderFooterPage0DropsLabelsWhenOverflow(t *testing.T) {
-	// The labeled tab-1 footer (after dropping the `t group` bind) is 94 cols,
-	// so at 90 cols labels are dropped (keys only) rather than wrapping.
-	f := renderFooter(0, 90, "name", false, "")
-	assert.Contains(t, f, "1-9")
-	assert.NotContains(t, f, "panes")
-}
-
-func TestRenderFooterPage1(t *testing.T) {
-	f := renderFooter(1, 100, "name", false, "")
-	assert.NotContains(t, f, "ctrl+d")
-	assert.Contains(t, f, "filter")
-	assert.Contains(t, f, "refresh")
-}
-
-func TestRenderFooterNarrowKeysOnly(t *testing.T) {
-	f := renderFooter(0, 50, "name", false, "")
-	assert.Contains(t, f, "ctrl+d")
-	assert.NotContains(t, f, "kill")
-}
-
-func TestRenderFooterTiny(t *testing.T) {
-	f := renderFooter(0, 20, "name", false, "")
-	assert.Contains(t, f, "tab")
-	assert.Contains(t, f, "j/k")
-	assert.Contains(t, f, "enter")
-	assert.NotContains(t, f, "ctrl+d")
-}
-
-func TestRenderFooterFiltering(t *testing.T) {
-	f := renderFooter(0, 120, "name", true, "foo")
-	assert.Contains(t, f, "filter:")
-	assert.Contains(t, f, "foo")
-	assert.Contains(t, f, "esc")
-	assert.Contains(t, f, "enter")
-	// The filter line replaces all binds, so no quit/help/panes binds remain.
-	assert.NotContains(t, f, "quit")
-	assert.NotContains(t, f, "help")
-	assert.NotContains(t, f, "ctrl+d")
-}
-
-// --- Frame rendering ---
-
-func TestRenderFrame_ContainsTitlesAndJunctions(t *testing.T) {
-	panes := []framePane{
-		{title: "Sessions", content: "row1\nrow2", width: 16, focused: true},
-		{title: "Details", content: "x", width: 16, focused: false},
-	}
-	out := renderFrame(panes, 6)
-	assert.Contains(t, out, "Sessions")
-	assert.Contains(t, out, "Details")
-	for _, j := range []string{"┬", "┴", "┌", "┐", "└", "┘"} {
-		assert.Contains(t, out, j)
-	}
-}
-
-func TestRenderFrame_TopBorderTitlesInOrder(t *testing.T) {
-	panes := []framePane{
-		{title: "Sessions", content: "", width: 16, focused: false},
-		{title: "Details", content: "", width: 16, focused: false},
-		{title: "Git", content: "", width: 16, focused: false},
-	}
-	out := renderFrame(panes, 4)
-	top := strings.Split(out, "\n")[0]
-	iS := strings.Index(top, "Sessions")
-	iD := strings.Index(top, "Details")
-	iG := strings.Index(top, "Git")
-	assert.True(t, iS >= 0 && iD > iS && iG > iD)
-}
-
-func TestRenderFrame_FocusedTitleAccent(t *testing.T) {
-	panes := []framePane{
-		{title: "Sessions", content: "", width: 16, focused: true},
-		{title: "Details", content: "", width: 16, focused: false},
-	}
-	out := renderFrame(panes, 4)
-	assert.Contains(t, out, accentStyle().Render(" Sessions "))
-}
-
-func TestRenderFrame_ContentHeight(t *testing.T) {
-	panes := []framePane{{title: "A", content: "line", width: 6, focused: false}}
-	out := renderFrame(panes, 5)
-	lines := strings.Split(out, "\n")
-	// 1 top + 3 content + 1 bottom = 5 lines
-	assert.Len(t, lines, 5)
-}
-
-// --- Configured page frame ---
-
-func TestViewConfiguredPageSinglePaneFrame(t *testing.T) {
-	m := testModel()
-	m.configured = &ConfiguredSection{config: model.DashboardSectionConfig{Title: "Configured"}}
-	m.page = pageConfigured
-	m.width = 50
-	m.height = 10
-	m = m.withLayout()
-	out := m.viewConfiguredPage()
-	assert.Contains(t, out, "Configured")
-	assert.NotContains(t, out, "┬")
-	assert.NotContains(t, out, "┴")
-}
-
-func TestViewFrameWidthMatchesModel(t *testing.T) {
-	// Regression: the shared frame's chrome (n-1 junctions + 2 corners) must be
-	// subtracted from pane widths so the frame is exactly m.width wide. If not,
-	// the outer .Width() word-wraps the trailing chars onto the next row.
-	m := testModel(&stubSection{name: "a"}, &stubSection{name: "b"})
-	m.width = 120
-	m.height = 30
-	m = m.withLayout()
-	v := m.View()
-	lines := strings.Split(v.Content, "\n")
-	assert.Len(t, lines, 30) // header 2 + content 27 + footer 1
-	for i, l := range lines {
-		assert.Equalf(t, 120, lipgloss.Width(l), "line %d width", i)
-	}
-}
-
-func TestViewConfiguredPageWidthMatchesModel(t *testing.T) {
-	m := testModel()
-	m.page = pageConfigured
-	m.width = 120
-	m.height = 30
-	m = m.withLayout()
-	v := m.View()
-	lines := strings.Split(v.Content, "\n")
-	assert.Len(t, lines, 30)
-	for i, l := range lines {
-		assert.Equalf(t, 120, lipgloss.Width(l), "line %d width", i)
-	}
-}
-
-// --- Row rendering ---
-
-func TestRenderOpenRow_FullColumns(t *testing.T) {
-	row := renderOpenRow(100, true, false, "mysession", "", 0, 3, "~/code/proj", "main", "+1 ~2", nil, nil)
-	assert.Contains(t, row, "mysession")
-	assert.Contains(t, row, "(main)")
-	assert.Contains(t, row, "+1 ~2")
-}
-
-func TestRenderOpenRow_DropsStatusUnder90(t *testing.T) {
-	row := renderOpenRow(80, false, false, "s", "", 0, 1, "~/d", "main", "+1", nil, nil)
-	assert.Contains(t, row, "(main)")
-	assert.NotContains(t, row, "+1")
-}
-
-func TestRenderOpenRow_DropsBranchUnder70(t *testing.T) {
-	row := renderOpenRow(60, false, false, "foo", "", 0, 1, "~/d", "main", "+1", nil, nil)
-	assert.NotContains(t, row, "(main)")
-}
-
-func TestRenderOpenRow_DropsWindowsUnder50(t *testing.T) {
-	row := renderOpenRow(40, false, false, "foo", "", 0, 1, "~/d", "main", "+1", nil, nil)
-	assert.NotContains(t, row, "1w")
-}
-
-func TestRenderOpenRow_AttachedIndicator(t *testing.T) {
-	row := renderOpenRow(100, false, false, "s", "", 1, 1, "~/d", "", "", nil, nil)
-	assert.Contains(t, row, "●")
-	row = renderOpenRow(100, false, false, "s", "", 0, 1, "~/d", "", "", nil, nil)
-	assert.NotContains(t, row, "●")
-}
-
-func TestRenderOpenRow_Age(t *testing.T) {
-	twoH := time.Now().Add(-2 * time.Hour)
-	row := renderOpenRow(100, false, false, "s", "", 0, 1, "~/d", "", "", &twoH, nil)
-	assert.Contains(t, row, "2h")
-
-	threeD := time.Now().Add(-3 * 24 * time.Hour)
-	row = renderOpenRow(100, false, false, "s", "", 0, 1, "~/d", "", "", &threeD, nil)
-	assert.Contains(t, row, "3d")
-
-	fourMo := time.Now().Add(-4 * 30 * 24 * time.Hour)
-	row = renderOpenRow(100, false, false, "s", "", 0, 1, "~/d", "", "", &fourMo, nil)
-	assert.Contains(t, row, "4mo")
-
-	// Age uses a dedicated light-gray foreground so it remains readable on the
-	// cursor highlight background (which shares the dimmed gray colour).
-	assert.Contains(t, row, "\x1b[38;5;7m")
-
-	// Selected rows still show the age text with the same foreground.
-	selected := renderOpenRow(100, true, false, "s", "", 0, 1, "~/d", "", "", &twoH, nil)
-	assert.Contains(t, selected, "2h")
-	assert.Contains(t, selected, "\x1b[38;5;7")
-
-	// Nil/zero last attached → blank age.
-	assert.Equal(t, "", formatAge(nil))
-	zero := time.Time{}
-	assert.Equal(t, "", formatAge(&zero))
-}
-
-func TestRenderOpenRow_Alerts(t *testing.T) {
-	row := renderOpenRow(100, false, false, "s", "", 0, 1, "~/d", "", "", nil, []string{"bell"})
-	assert.Contains(t, row, "!")
-	row = renderOpenRow(100, false, false, "s", "", 0, 1, "~/d", "", "", nil, nil)
-	assert.NotContains(t, row, "!")
-}
-
-func TestRenderOpenRow_CurrentHighlight(t *testing.T) {
-	row := renderOpenRow(100, false, true, "mysession", "", 0, 1, "~/d", "", "", nil, nil)
-	assert.Contains(t, row, "\x1b[1;38;5;14m") // bold cyan accent
-}
-
-func TestRenderConfiguredRow(t *testing.T) {
-	row := renderConfiguredRow(100, false, "proj", "", true, "~/code/proj", "main", "+1")
-	assert.Contains(t, row, "proj")
-	assert.Contains(t, row, "●")
-	assert.Contains(t, row, "~/code/proj")
-	assert.Contains(t, row, "(main)")
-}
-
-func TestRenderConfiguredRowNotRunning(t *testing.T) {
-	row := renderConfiguredRow(100, false, "proj", "", false, "", "main", "")
-	assert.Contains(t, row, "○")
-	assert.Contains(t, row, "-")
-}
-
-func TestRenderConfiguredRow_StartupCommandIndicator(t *testing.T) {
-	// The startup-command "*" indicator was removed; the column stays blank.
-	row := renderConfiguredRow(100, false, "proj", "make run", true, "~/code/proj", "", "")
-	assert.NotContains(t, row, "*")
-	assert.NotContains(t, row, "\x1b[38;5;11m") // no yellow
-
-	row = renderConfiguredRow(100, false, "proj", "", true, "~/code/proj", "", "")
-	assert.NotContains(t, row, "*")
-}
-
-func TestRenderConfiguredRow_DropsCmdAndBranchUnder70(t *testing.T) {
-	row := renderConfiguredRow(60, false, "proj", "make run", true, "~/code/proj", "main", "")
-	assert.NotContains(t, row, "*")
-	assert.NotContains(t, row, "(main)")
-}
-
-func TestFormatGitStatusColored(t *testing.T) {
-	got := formatGitStatus(git.StatusSummary{Staged: 1, Unstaged: 2, Deleted: 3, Untracked: 4})
-	// Each part carries its own distinct ANSI 256 foreground colour.
-	assert.Contains(t, got, "\x1b[38;5;10m") // staged green
-	assert.Contains(t, got, "\x1b[38;5;11m") // unstaged yellow
-	assert.Contains(t, got, "\x1b[38;5;9m")  // deleted red
-	assert.Contains(t, got, "\x1b[38;5;5m")  // untracked magenta
-	// Visible text is unchanged.
-	require.True(t, strings.Contains(got, "+1") && strings.Contains(got, "~2") &&
-		strings.Contains(got, "-3") && strings.Contains(got, "!4"))
-}
-
-func TestFormatGitStatusOmitsZeroParts(t *testing.T) {
-	got := formatGitStatus(git.StatusSummary{Staged: 2, Untracked: 1})
-	assert.NotContains(t, got, "~")
-	assert.NotContains(t, got, "-")
-	assert.Contains(t, got, "\x1b[38;5;10m")
-	assert.Contains(t, got, "\x1b[38;5;5m")
-}
-
-func TestRenderOpenRow_StyledStatusKeepsWidth(t *testing.T) {
-	styled := formatGitStatus(git.StatusSummary{Staged: 1, Unstaged: 2})
-	row := renderOpenRow(100, false, false, "mysession", "", 0, 3, "~/code/proj", "main", styled, nil, nil)
-	// The status cell has no outer foreground, so the embedded colours remain.
-	assert.Contains(t, row, "\x1b[38;5;10m")
-	assert.Contains(t, row, "\x1b[38;5;11m")
-	// Embedded escapes do not inflate the visible row width.
-	plain := renderOpenRow(100, false, false, "mysession", "", 0, 3, "~/code/proj", "main", "+1 ~2", nil, nil)
-	assert.Equal(t, lipgloss.Width(plain), lipgloss.Width(row))
-}
-
-func TestRenderConfiguredRow_StyledStatusKeepsWidth(t *testing.T) {
-	styled := formatGitStatus(git.StatusSummary{Deleted: 3, Untracked: 4})
-	row := renderConfiguredRow(100, false, "proj", "", false, "~/code/proj", "main", styled)
-	assert.Contains(t, row, "\x1b[38;5;9m")
-	assert.Contains(t, row, "\x1b[38;5;5m")
-	assert.Equal(t, 100, lipgloss.Width(row))
-}
-
-func firstResetIndex(s string) int {
-	if i := strings.Index(s, "\x1b[0m"); i >= 0 {
-		return i
-	}
-	return strings.Index(s, "\x1b[m")
-}
-
-// TestGitStatusHoverBackgroundCoversAllParts verifies that when a row with a
-// coloured git-status cell is highlighted, the cursor background is applied to
-// every status glyph, not just the first one. The status string must avoid
-// per-part reset sequences so the outer highlight background stays active
-// across the whole cell.
-func TestGitStatusHoverBackgroundCoversAllParts(t *testing.T) {
-	status := formatGitStatus(git.StatusSummary{Staged: 1, Unstaged: 2, Deleted: 3, Untracked: 4})
-	cell := renderRow("", []col{{text: status, width: 12, style: branchStyle()}}, true, true)
-
-	plain := strings.TrimRight(ansi.Strip(cell), " ")
-	require.Equal(t, "+1 ~2 -3 !4", plain)
-
-	// Each status glyph keeps its distinct foreground colour.
-	for _, seq := range []string{"\x1b[38;5;10m", "\x1b[38;5;11m", "\x1b[38;5;9m", "\x1b[38;5;5m"} {
-		assert.Contains(t, cell, seq)
-	}
-
-	// The highlight background starts before the first status glyph.
-	greenIdx := strings.Index(cell, "\x1b[38;5;10m+1")
-	require.GreaterOrEqual(t, greenIdx, 0)
-	assert.Contains(t, cell[:greenIdx], ";48;5;8m")
-
-	// No reset appears between the first status glyph and the final "!4", so
-	// the cursor background stays active for every glyph.
-	afterGreen := cell[greenIdx:]
-	resetIdx := firstResetIndex(afterGreen)
-	require.GreaterOrEqual(t, resetIdx, 0)
-	lastTokenIdx := strings.Index(afterGreen, "!4")
-	require.GreaterOrEqual(t, lastTokenIdx, 0)
-	assert.Greater(t, resetIdx, lastTokenIdx)
-}
-
-// --- Sessions section (flat list) ---
-
-func TestFlattenSessionsSortedAlphabetically(t *testing.T) {
-	sessions := model.SeshSessions{
-		OrderedIndex: []string{"z", "a", "m"},
-		Directory: model.SeshSessionMap{
-			"z": {Name: "z"},
-			"a": {Name: "a"},
-			"m": {Name: "m"},
-		},
-	}
-	flat := flattenSessions(sessions)
-	require.Len(t, flat, 3)
-	assert.Equal(t, []string{"a", "m", "z"}, []string{flat[0].Name, flat[1].Name, flat[2].Name})
-}
-
-func TestSessionsSectionTKeyIsNoop(t *testing.T) {
-	s := &SessionsSection{sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}}}
-	updated, cmd := s.handleKey(pressKey("t"))
-	assert.Nil(t, cmd)
-	// The list is flat; `t` no longer collapses/expands anything, so the
-	// cursor and list are untouched.
-	assert.Equal(t, 0, updated.cursor)
-	assert.Len(t, updated.sessions, 2)
-}
-
-// --- Configured section ---
-
-func TestConfiguredSectionBasic(t *testing.T) {
-	cs := NewConfiguredSection(model.DashboardSectionConfig{Type: "configured", Title: "Configured"}, SectionDeps{})
-	assert.Equal(t, "Configured", cs.Name())
-	assert.Equal(t, "", cs.Chosen())
-	assert.Equal(t, 0, cs.TotalItems())
-}
-
-func TestConfiguredSectionViewLoading(t *testing.T) {
-	cs := NewConfiguredSection(model.DashboardSectionConfig{Type: "configured", Title: "Configured"}, SectionDeps{})
-	title, content := cs.ViewBorderless(80, 10, true)
-	assert.Equal(t, "Configured", title)
-	assert.Contains(t, content, "Loading")
-}
-
-func TestConfiguredSectionSelectItem(t *testing.T) {
-	cs := &ConfiguredSection{sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}}}
-	cs.cursor = 1
-	cs.selectItem()
-	assert.Equal(t, "b", cs.chosen)
-}
-
-// --- Sort modes ---
-
-func sessionNames(ss []model.SeshSession) []string {
-	out := make([]string, len(ss))
-	for i, s := range ss {
-		out[i] = s.Name
-	}
-	return out
-}
-
-func TestSessionsSectionSortModeCycle(t *testing.T) {
-	now := time.Now()
-	t1 := now.Add(-1 * time.Hour)
-	t2 := now.Add(-2 * time.Hour)
-	t3 := now.Add(-3 * time.Hour)
-	c1 := now.Add(-10 * time.Hour)
-	c2 := now.Add(-20 * time.Hour)
-	c3 := now.Add(-30 * time.Hour)
-
-	s := &SessionsSection{
-		sessions: []model.SeshSession{
-			{Name: "b", LastAttached: &t1, Created: &c2},
-			{Name: "a", LastAttached: &t2, Created: &c1},
-			{Name: "c", LastAttached: &t3, Created: &c3},
-		},
-		sortMode: "name",
-	}
-	s.applySort()
-	assert.Equal(t, []string{"a", "b", "c"}, sessionNames(s.sessions))
-
-	s.cycleSortMode() // name → recent
-	assert.Equal(t, "recent", s.SortLabel())
-	assert.Equal(t, []string{"b", "a", "c"}, sessionNames(s.sessions))
-
-	s.cycleSortMode() // recent → created
-	assert.Equal(t, "created", s.SortLabel())
-	assert.Equal(t, []string{"a", "b", "c"}, sessionNames(s.sessions))
-
-	s.cycleSortMode() // created → name
-	assert.Equal(t, "name", s.SortLabel())
-	assert.Equal(t, []string{"a", "b", "c"}, sessionNames(s.sessions))
-}
-
-func TestSessionsSectionSKeyCyclesSort(t *testing.T) {
-	s := &SessionsSection{
-		sessions: []model.SeshSession{{Name: "b"}, {Name: "a"}},
-		sortMode: "name",
-	}
-	updated, _ := s.handleKey(pressKey("s"))
-	assert.Equal(t, "recent", updated.sortMode)
-	updated, _ = updated.handleKey(pressKey("s"))
-	assert.Equal(t, "created", updated.sortMode)
-	updated, _ = updated.handleKey(pressKey("s"))
-	assert.Equal(t, "name", updated.sortMode)
-}
-
-// --- Type-to-filter ---
-
-func TestFilterMatchesCaseInsensitive(t *testing.T) {
-	s := &SessionsSection{
-		sessions:  []model.SeshSession{{Name: "Alpha"}, {Name: "BETA"}, {Name: "alpine"}},
-		filtering: true,
-	}
-	s.filterQuery = "ALP"
-	s.applyFilter()
-	require.Len(t, s.filtered, 2)
-	assert.Equal(t, "Alpha", s.filtered[0].Name)
-	assert.Equal(t, "alpine", s.filtered[1].Name)
-}
-
-func TestConfiguredFilterMatchesCaseInsensitive(t *testing.T) {
-	s := &ConfiguredSection{
-		sessions:  []model.SeshSession{{Name: "Alpha"}, {Name: "beta"}},
-		filtering: true,
-	}
-	s.filterQuery = "ALP"
-	s.applyFilter()
-	require.Len(t, s.filtered, 1)
-	assert.Equal(t, "Alpha", s.filtered[0].Name)
-}
-
-// --- Filter navigation / enter / esc (regression) ---
-
-// apSessions returns a section whose "ap" query filters 5 sessions down to
-// [api, app, ape] (cursor on the first match).
-func apSessionsSection() *SessionsSection {
-	s := &SessionsSection{
-		sessions: []model.SeshSession{
-			{Name: "api"}, {Name: "app"}, {Name: "ape"}, {Name: "zoo"}, {Name: "yak"},
-		},
-		filtering:   true,
-		filterQuery: "ap",
-	}
-	s.applyFilter()
-	return s
-}
-
-func apConfiguredSection() *ConfiguredSection {
-	s := &ConfiguredSection{
-		sessions: []model.SeshSession{
-			{Name: "api"}, {Name: "app"}, {Name: "ape"}, {Name: "zoo"}, {Name: "yak"},
-		},
-		running:     map[string]bool{},
-		filtering:   true,
-		filterQuery: "ap",
-	}
-	s.applyFilter()
-	return s
-}
-
-func TestSessionsFilterNavigationMovesThroughResults(t *testing.T) {
-	s := apSessionsSection()
-	require.Len(t, s.filtered, 3)
-
-	// j/k and the arrow keys move the cursor through the filtered results.
-	step := func(key string) *SessionsSection {
-		updated, _ := s.handleKey(pressKey(key))
-		return updated
-	}
-	s = step("j")
-	assert.Equal(t, 1, s.cursor)
-	s = step("down")
-	assert.Equal(t, 2, s.cursor)
-	s = step("j") // clamped at the last filtered item
-	assert.Equal(t, 2, s.cursor)
-	s = step("k")
-	assert.Equal(t, 1, s.cursor)
-	s = step("up")
-	assert.Equal(t, 0, s.cursor)
-	s = step("k") // clamped at the first filtered item
-	assert.Equal(t, 0, s.cursor)
-
-	// Navigation never mutates the query or exits filtering.
-	assert.True(t, s.filtering)
-	assert.Equal(t, "ap", s.filterQuery)
-	assert.Equal(t, []string{"api", "app", "ape"}, sessionNames(s.filtered))
-}
-
-func TestSessionsFilterEnterSelectsHighlightedAndExits(t *testing.T) {
-	s := apSessionsSection()
-	s.cursor = 2 // highlight "ape"
-
-	updated, _ := s.handleKey(pressKey("enter"))
-	assert.Equal(t, "ape", updated.chosen)
-	assert.False(t, updated.filtering)
-	assert.Equal(t, "", updated.filterQuery)
-}
-
-func TestSessionsFilterEscCancelsWithoutSelecting(t *testing.T) {
-	s := apSessionsSection()
-	s.cursor = 2 // a filtered item is highlighted, but esc must not select it
-
-	updated, _ := s.handleKey(pressKey("esc"))
-	assert.False(t, updated.filtering)
-	assert.Equal(t, "", updated.filterQuery)
-	assert.Equal(t, "", updated.chosen)
-}
-
-func TestConfiguredFilterNavigationMovesThroughResults(t *testing.T) {
-	s := apConfiguredSection()
-	require.Len(t, s.filtered, 3)
-
-	step := func(key string) *ConfiguredSection {
-		updated, _ := s.handleKey(pressKey(key))
-		return updated.(*ConfiguredSection)
-	}
-	s = step("j")
-	assert.Equal(t, 1, s.cursor)
-	s = step("down")
-	assert.Equal(t, 2, s.cursor)
-	s = step("j") // clamped at the last filtered item
-	assert.Equal(t, 2, s.cursor)
-	s = step("k")
-	assert.Equal(t, 1, s.cursor)
-	s = step("up")
-	assert.Equal(t, 0, s.cursor)
-	s = step("k") // clamped at the first filtered item
-	assert.Equal(t, 0, s.cursor)
-
-	assert.True(t, s.filtering)
-	assert.Equal(t, "ap", s.filterQuery)
-	assert.Equal(t, []string{"api", "app", "ape"}, sessionNames(s.filtered))
-}
-
-func TestConfiguredFilterEnterSelectsHighlightedAndExits(t *testing.T) {
-	s := apConfiguredSection()
-	s.cursor = 1 // highlight "app"
-
-	updated, _ := s.handleKey(pressKey("enter"))
-	cfg := updated.(*ConfiguredSection)
-	assert.Equal(t, "app", cfg.chosen)
-	assert.False(t, cfg.filtering)
-	assert.Equal(t, "", cfg.filterQuery)
-}
-
-func TestConfiguredFilterEscCancelsWithoutSelecting(t *testing.T) {
-	s := apConfiguredSection()
-	s.cursor = 1 // a filtered item is highlighted, but esc must not select it
-
-	updated, _ := s.handleKey(pressKey("esc"))
-	cfg := updated.(*ConfiguredSection)
-	assert.False(t, cfg.filtering)
-	assert.Equal(t, "", cfg.filterQuery)
-	assert.Equal(t, "", cfg.chosen)
-}
+// --- Type-to-filter routing through the Model ---
 
 func TestFilterRoutingWhileTyping(t *testing.T) {
 	m := testModel()
 	m.sessions = &SessionsSection{
-		sessions:  []model.SeshSession{{Name: "a"}, {Name: "b"}},
-		filtering: true,
+		sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}},
+		ListState: ListState{
+			filtering: true,
+		},
 	}
 
 	// Printable keys append to the query (q doesn't quit).
@@ -1309,9 +733,11 @@ func TestFilterRoutingWhileTyping(t *testing.T) {
 func TestFilterEnterSelectsHighlightedAndExits(t *testing.T) {
 	m := testModel()
 	m.sessions = &SessionsSection{
-		sessions:    []model.SeshSession{{Name: "a"}, {Name: "b"}},
-		filtering:   true,
-		filterQuery: "a",
+		sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}},
+		ListState: ListState{
+			filtering:   true,
+			filterQuery: "a",
+		},
 	}
 	m.sessions.applyFilter()
 	result, cmd := m.Update(pressKey("enter"))
@@ -1329,73 +755,12 @@ func TestFilterSlashToggles(t *testing.T) {
 	assert.True(t, m.sessions.filtering)
 }
 
-// --- Current-session highlight ---
-
-func TestSessionsSectionRenderItemCurrentHighlight(t *testing.T) {
-	s := &SessionsSection{
-		sessions:    []model.SeshSession{{Name: "active", Path: "/home/u/active"}},
-		cursor:      1, // row 0 is not selected, so only the name accent shows
-		currentName: "active",
-	}
-	row := s.renderItem(0, 100)
-	assert.Contains(t, row, "\x1b[1;38;5;14m") // bold cyan accent on the name
-}
-
-func TestSessionsSectionRenderItemNonCurrentNotAccent(t *testing.T) {
-	s := &SessionsSection{
-		sessions:    []model.SeshSession{{Name: "active", Path: "/home/u/active"}},
-		cursor:      1, // row 0 not selected → no marker accent either
-		currentName: "other",
-	}
-	row := s.renderItem(0, 100)
-	assert.NotContains(t, row, "\x1b[38;5;14m")
-}
-
-// --- Live preview (DetailsSection) ---
-
-func TestDetailsSectionHoverKicksCapture(t *testing.T) {
-	ds := NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{}).(*DetailsSection)
-	_, cmd := ds.Update(hoveredSessionMsg{Name: "sesh", Path: "/x", Windows: 1})
-	assert.NotNil(t, cmd)
-}
-
-func TestDetailsSectionPreviewLoadedUpdatesState(t *testing.T) {
-	ds := &DetailsSection{hoveredName: "sesh"}
-	updated, _ := ds.Update(previewLoadedMsg{name: "sesh", output: "hello\nworld"})
-	assert.Equal(t, "hello\nworld", updated.(*DetailsSection).previewOutput)
-
-	// Stale capture for a previous hover is ignored.
-	updated2, _ := updated.(*DetailsSection).Update(previewLoadedMsg{name: "other", output: "stale"})
-	assert.Equal(t, "hello\nworld", updated2.(*DetailsSection).previewOutput)
-}
-
-func TestDetailsSectionPreviewTickContinues(t *testing.T) {
-	ds := &DetailsSection{hoveredName: "sesh"}
-	_, cmd := ds.Update(previewTickMsg{name: "sesh"})
-	assert.NotNil(t, cmd)
-
-	// Stale tick (hover moved) stops the ticker.
-	_, cmd = ds.Update(previewTickMsg{name: "other"})
-	assert.Nil(t, cmd)
-
-	// Empty hover stops the ticker.
-	_, cmd = ds.Update(previewTickMsg{name: ""})
-	assert.Nil(t, cmd)
-}
-
-func TestDetailsSectionHoverClearStopsPreview(t *testing.T) {
-	ds := &DetailsSection{hoveredName: "sesh", previewOutput: "x"}
-	updated, cmd := ds.Update(hoveredSessionMsg{Name: ""})
-	assert.Nil(t, cmd)
-	assert.Equal(t, "", updated.(*DetailsSection).hoveredName)
-	assert.Equal(t, "", updated.(*DetailsSection).previewOutput)
-}
+// --- Mouse hit-testing ---
 
 func TestHitTestPageOpen(t *testing.T) {
-	m := testModel(
-		&WorkmuxSection{agents: []wmAgent{{}, {}}},
-		&SSHSection{hosts: []SSHHost{{Host: "a"}, {Host: "b"}}},
-	)
+	wm := sections.NewWorkmuxSection(model.DashboardSectionConfig{Title: "Workmux"}, SectionDeps{})
+	ssh := sections.NewSSHSection(model.DashboardSectionConfig{Title: "SSH"}, SectionDeps{})
+	m := testModel(wm, ssh)
 	m.width = 100
 	m.height = 30
 	m = m.withLayout()
@@ -1412,7 +777,7 @@ func TestHitTestPageOpen(t *testing.T) {
 	idx, sec, row, ok = m.hitTest(10, row2Top+2)
 	require.True(t, ok)
 	assert.Equal(t, 1, idx)
-	assert.IsType(t, &WorkmuxSection{}, sec)
+	assert.Same(t, wm, sec)
 	assert.Equal(t, 1, row)
 
 	// Header click → miss.
@@ -1447,8 +812,8 @@ func TestHitTestPageConfigured(t *testing.T) {
 }
 
 func TestMouseClickFocusesPaneAndSelectsRow(t *testing.T) {
-	wm := &WorkmuxSection{agents: []wmAgent{{}, {}, {}}, viewHeight: 10}
-	m := testModel(wm)
+	w := &clickStub{stubSection: stubSection{name: "w"}}
+	m := testModel(w)
 	m.width = 100
 	m.height = 30
 	m = m.withLayout()
@@ -1456,135 +821,70 @@ func TestMouseClickFocusesPaneAndSelectsRow(t *testing.T) {
 	row2Top := 2 + m.row1Height
 	updated := updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 2, Button: tea.MouseLeft})
 	assert.Equal(t, 1, updated.focus)
-	assert.Equal(t, 1, wm.cursor) // clicked view row 1 → absolute row 1
+	assert.Equal(t, []int{1}, w.clicks) // clicked view row 1 → ClickAt(1)
 
 	// Non-left clicks are ignored.
 	updated = updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 2, Button: tea.MouseRight})
 	assert.Equal(t, 0, updated.focus)
-	assert.Equal(t, 1, wm.cursor)
+	assert.Equal(t, []int{1}, w.clicks)
 }
 
 func TestMouseClickScrollsSectionIntoView(t *testing.T) {
-	wm := &WorkmuxSection{agents: make([]wmAgent, 30), viewHeight: 10, offset: 20, cursor: 20}
-	m := testModel(wm)
+	// The workmux widget's own scroll-on-click behavior is covered in
+	// dashboard/sections (TestWorkmuxClickAt); here we verify the Model routes
+	// the clicked view row to the widget's ClickAt.
+	w := &clickStub{stubSection: stubSection{name: "w"}}
+	m := testModel(w)
 	m.width = 100
 	m.height = 30
 	m = m.withLayout()
 
 	row2Top := 2 + m.row1Height
 	updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 5, Button: tea.MouseLeft})
-	assert.Equal(t, 24, wm.cursor)
-	assert.Equal(t, 20, wm.offset)
+	assert.Equal(t, []int{4}, w.clicks)
 }
 
-// --- Alias support (Open sessions) ---
+// --- Configured page frame (Model-level View) ---
 
-func TestFilterMatchesAlias(t *testing.T) {
-	s := &SessionsSection{
-		sessions: []model.SeshSession{
-			{Name: "wallpaper", Alias: "wp"},
-			{Name: "dotfiles", Alias: "dot"},
-			{Name: "notes"},
-		},
-		filtering:   true,
-		filterQuery: "wp",
+func TestViewConfiguredPageSinglePaneFrame(t *testing.T) {
+	m := testModel()
+	m.configured = &ConfiguredSection{config: model.DashboardSectionConfig{Title: "Configured"}}
+	m.page = pageConfigured
+	m.width = 50
+	m.height = 10
+	m = m.withLayout()
+	out := m.viewConfiguredPage()
+	assert.Contains(t, out, "Configured")
+	assert.NotContains(t, out, "┬")
+	assert.NotContains(t, out, "┴")
+}
+
+func TestViewFrameWidthMatchesModel(t *testing.T) {
+	// Regression: the shared frame's chrome (n-1 junctions + 2 corners) must be
+	// subtracted from pane widths so the frame is exactly m.width wide. If not,
+	// the outer .Width() word-wraps the trailing chars onto the next row.
+	m := testModel(&stubSection{name: "a"}, &stubSection{name: "b"})
+	m.width = 120
+	m.height = 30
+	m = m.withLayout()
+	v := m.View()
+	lines := strings.Split(v.Content, "\n")
+	assert.Len(t, lines, 30) // header 2 + content 27 + footer 1
+	for i, l := range lines {
+		assert.Equalf(t, 120, lipgloss.Width(l), "line %d width", i)
 	}
-	s.applyFilter()
-	require.Len(t, s.filtered, 1)
-	assert.Equal(t, "wallpaper", s.filtered[0].Name)
-
-	// Case-insensitive alias matching.
-	s.filterQuery = "DOT"
-	s.applyFilter()
-	require.Len(t, s.filtered, 1)
-	assert.Equal(t, "dotfiles", s.filtered[0].Name)
-
-	// A query that matches neither name nor alias returns nothing.
-	s.filterQuery = "xyz"
-	s.applyFilter()
-	assert.Empty(t, s.filtered)
 }
 
-func TestRenderOpenRowWithAlias(t *testing.T) {
-	row := renderOpenRow(100, false, false, "wallpaper", "wp", 0, 1, "~/d", "", "", nil, nil)
-	assert.Contains(t, row, "wallpaper")
-	// The alias is rendered as a rounded pill using powerline half circles,
-	// matching the picker’s default alias chip style.
-	assert.Contains(t, ansi.Strip(row), "\ue0b6wp\ue0b4")
-	assert.NotContains(t, row, "[wp]")
-	// The pill uses reverse video over the dashboard accent color so the
-	// effective background is the theme accent (cyan 14).
-	assert.Contains(t, row, "38;5;14m")
-	assert.Contains(t, row, "\x1b[7")
-
-	// Without an alias the chip is absent.
-	noAlias := renderOpenRow(100, false, false, "wallpaper", "", 0, 1, "~/d", "", "", nil, nil)
-	assert.NotContains(t, noAlias, "\ue0b6")
-	assert.NotContains(t, noAlias, "[wp]")
-}
-
-// TestAliasRowHoverBackgroundCoversPillAndName verifies that when a row with
-// an alias is selected, the alias pill keeps its own accent background while
-// the cursor highlight continues unbroken around it. The pill and name must be
-// emitted as one continuous ANSI run — no reset may interrupt the highlight
-// between the pill’s left glyph and the end of the name.
-func TestAliasRowHoverBackgroundCoversPillAndName(t *testing.T) {
-	row := renderOpenRow(100, true, false, "wallpaper", "wp", 0, 1, "~/d", "", "", nil, nil)
-
-	// The cursor background starts before the pill’s left glyph.
-	glyphIdx := strings.Index(row, chipLeftGlyph)
-	require.GreaterOrEqual(t, glyphIdx, 0)
-	assert.Contains(t, row[:glyphIdx], ";48;5;8m")
-
-	// The pill paints an explicit accent background around the alias text, so
-	// the pill keeps its own fill instead of taking the cursor highlight.
-	aliasIdx := strings.Index(row, "wp")
-	require.GreaterOrEqual(t, aliasIdx, 0)
-	assert.Contains(t, row[glyphIdx:aliasIdx], "\x1b[48;5;14m")
-	// The label text contrasts with the accent fill.
-	assert.Contains(t, row[glyphIdx:aliasIdx], "\x1b[38;5;0m")
-
-	// The cursor background is restored after the pill, so the name that
-	// follows stays on the row highlight.
-	assert.Contains(t, row[aliasIdx:], "\x1b[48;5;8m")
-
-	// No reset appears between the pill’s left glyph and the end of the name,
-	// so the highlight stays active across the pill and the name.
-	afterGlyph := row[glyphIdx:]
-	nameEnd := strings.Index(afterGlyph, "wallpaper")
-	require.GreaterOrEqual(t, nameEnd, 0)
-	nameEnd += len("wallpaper")
-	resetIdx := firstResetIndex(afterGlyph)
-	require.GreaterOrEqual(t, resetIdx, 0)
-	assert.GreaterOrEqual(t, resetIdx, nameEnd)
-
-	// The rounded theme-aware pill is preserved: the alias reads as one shape
-	// between the half circles, painted with the accent foreground.
-	assert.Contains(t, ansi.Strip(row), "\ue0b6wp\ue0b4")
-	assert.Contains(t, row, "38;5;14m")
-}
-
-// TestRenderOpenRow_NameColumnSlim locks in the slimmer Open-session name
-// column: the name cell is 18 visible cells wide (was 20), so the directory
-// column starts at marker(2) + att(2) + sep(1) + name(18) + sep(1) = 24.
-func TestRenderOpenRow_NameColumnSlim(t *testing.T) {
-	row := renderOpenRow(100, false, false, "short", "", 0, 1, "~/d", "", "", nil, nil)
-	dirIdx := strings.Index(ansi.Strip(row), "~/d")
-	require.GreaterOrEqual(t, dirIdx, 0)
-	assert.Equal(t, 24, dirIdx)
-}
-
-func TestSelectByAliasReturnsSessionName(t *testing.T) {
-	s := &SessionsSection{
-		sessions: []model.SeshSession{
-			{Name: "wallpaper", Alias: "wp"},
-			{Name: "dotfiles"},
-		},
-		filtering:   true,
-		filterQuery: "wp",
+func TestViewConfiguredPageWidthMatchesModel(t *testing.T) {
+	m := testModel()
+	m.page = pageConfigured
+	m.width = 120
+	m.height = 30
+	m = m.withLayout()
+	v := m.View()
+	lines := strings.Split(v.Content, "\n")
+	assert.Len(t, lines, 30)
+	for i, l := range lines {
+		assert.Equalf(t, 120, lipgloss.Width(l), "line %d width", i)
 	}
-	s.applyFilter()
-	require.Len(t, s.filtered, 1)
-	s.selectItem()
-	assert.Equal(t, "wallpaper", s.chosen)
 }

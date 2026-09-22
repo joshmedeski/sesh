@@ -1,4 +1,4 @@
-package dashboard
+package sections
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/mem"
@@ -28,7 +29,7 @@ type SystemSection struct {
 	hasError   bool
 }
 
-func NewSystemSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+func NewSystemSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
 	return &SystemSection{
 		config: cfg,
 	}
@@ -69,7 +70,7 @@ func (s *SystemSection) Init() tea.Cmd {
 	return fetchSystemMetrics
 }
 
-func (s *SystemSection) Update(msg tea.Msg) (Section, tea.Cmd) {
+func (s *SystemSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case systemMetricsMsg:
 		if msg.err == nil {

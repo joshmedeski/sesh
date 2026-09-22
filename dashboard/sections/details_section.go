@@ -1,4 +1,4 @@
-package dashboard
+package sections
 
 import (
 	"fmt"
@@ -8,14 +8,10 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/model"
 )
-
-type hoveredSessionMsg struct {
-	Name    string
-	Path    string
-	Windows int
-}
 
 type windowNamesLoadedMsg struct {
 	WindowIdx    []string
@@ -42,7 +38,7 @@ type previewTickMsg struct {
 
 type DetailsSection struct {
 	config              model.DashboardSectionConfig
-	deps                SectionDeps
+	deps                core.SectionDeps
 	viewHeight          int
 	hoveredName         string
 	hoveredPath         string
@@ -55,12 +51,17 @@ type DetailsSection struct {
 	previewOutput       string
 }
 
-func NewDetailsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+func NewDetailsSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
 	return &DetailsSection{
 		config: cfg,
 		deps:   deps,
 	}
 }
+
+// LayoutRow reports the dashboard row this widget occupies (row 1, alongside
+// the sessions list). The root Model detects the details widget through this
+// marker interface so it never needs to import this package's concrete type.
+func (s *DetailsSection) LayoutRow() int { return 1 }
 
 func (s *DetailsSection) Name() string    { return s.config.Title }
 func (s *DetailsSection) TotalItems() int { return 0 }
@@ -70,7 +71,7 @@ func (s *DetailsSection) Chosen() string  { return "" }
 func (s *DetailsSection) WindowNames(name string) tea.Cmd {
 	return func() tea.Msg {
 		format := "#{window_index}|#{window_active}|#{pane_current_command}"
-		out, err := runCommand("tmux", "list-windows", "-t", name, "-F", format)
+		out, err := s.deps.Runner.Run("tmux", "list-windows", "-t", name, "-F", format)
 		if err != nil {
 			return windowNamesLoadedMsg{}
 		}
@@ -131,7 +132,7 @@ func (s *DetailsSection) Init() tea.Cmd { return nil }
 // empty preview (never a crash).
 func (s *DetailsSection) capturePreview(name string) tea.Cmd {
 	return func() tea.Msg {
-		out, err := runCommand("tmux", "capture-pane", "-t", name, "-p", "-e")
+		out, err := s.deps.Runner.Run("tmux", "capture-pane", "-t", name, "-p", "-e")
 		if err != nil {
 			out = ""
 		}
@@ -146,9 +147,9 @@ func previewTick(name string) tea.Cmd {
 	})
 }
 
-func (s *DetailsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
+func (s *DetailsSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
-	case hoveredSessionMsg:
+	case core.HoveredSessionMsg:
 		// Hover cleared: stop refreshing and clear the preview.
 		if msg.Name == "" {
 			s.hoveredName = ""
@@ -270,7 +271,7 @@ func previewLines(output string, width, n int) []string {
 	start := max(len(raw)-n, 0)
 	taken := raw[start:]
 	for i, line := range taken {
-		out[i] = truncateRightANSI(line, width)
+		out[i] = render.TruncateRightANSI(line, width)
 	}
 	return out
 }

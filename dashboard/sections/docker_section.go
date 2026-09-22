@@ -1,4 +1,4 @@
-package dashboard
+package sections
 
 import (
 	"strings"
@@ -6,6 +6,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -23,14 +25,14 @@ type dockerContainer struct {
 
 type DockerSection struct {
 	config     model.DashboardSectionConfig
-	deps       SectionDeps
+	deps       core.SectionDeps
 	containers []dockerContainer
 	cursor     int
 	chosen     string
 	loading    bool
 }
 
-func NewDockerSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+func NewDockerSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
 	return &DockerSection{
 		config:  cfg,
 		deps:    deps,
@@ -56,7 +58,7 @@ func (s *DockerSection) fetchContainers() tea.Msg {
 		args = append(args, "--filter", f)
 	}
 
-	out, err := runCommand("docker", args...)
+	out, err := s.deps.Runner.Run("docker", args...)
 	if err != nil {
 		return dockerContainersLoadedMsg{containers: nil}
 	}
@@ -90,7 +92,7 @@ func (s *DockerSection) ClickAt(row int) {
 	s.cursor = min(max(row, 0), len(s.containers)-1)
 }
 
-func (s *DockerSection) Update(msg tea.Msg) (Section, tea.Cmd) {
+func (s *DockerSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case dockerContainersLoadedMsg:
 		s.loading = false
@@ -163,16 +165,16 @@ func (s *DockerSection) ViewBorderless(width, height int, focused bool) (string,
 
 		nameWidth := max(max(width-30, 10), 20)
 
-		cells := []col{
-			{text: " "},
-			{text: "●", style: stateStyle},
-			{text: " "},
-			{text: truncateString(c.Name, nameWidth), style: nameStyle},
-			{text: " "},
-			{text: truncateString(c.Status, width-nameWidth-10), style: statusStyle},
+		cells := []render.Col{
+			{Text: " "},
+			{Text: "●", Style: stateStyle},
+			{Text: " "},
+			{Text: truncateString(c.Name, nameWidth), Style: nameStyle},
+			{Text: " "},
+			{Text: truncateString(c.Status, width-nameWidth-10), Style: statusStyle},
 		}
 
-		b.WriteString(renderSimpleRow(cells, selected, focused))
+		b.WriteString(render.RenderSimpleRow(cells, selected, focused))
 		b.WriteString("\n")
 	}
 

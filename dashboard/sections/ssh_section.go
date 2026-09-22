@@ -1,4 +1,4 @@
-package dashboard
+package sections
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -26,14 +28,14 @@ type SSHHost struct {
 
 type SSHSection struct {
 	config  model.DashboardSectionConfig
-	deps    SectionDeps
+	deps    core.SectionDeps
 	hosts   []SSHHost
 	cursor  int
 	chosen  string
 	loading bool
 }
 
-func NewSSHSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+func NewSSHSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
 	hosts := make([]SSHHost, len(cfg.SSH))
 	for i, h := range cfg.SSH {
 		hosts[i] = SSHHost{
@@ -81,7 +83,7 @@ func (s *SSHSection) checkHost(index int, host SSHHost) tea.Cmd {
 			port = 22
 		}
 		target := fmt.Sprintf("%s@%s", user, host.Host)
-		_, err := runCommand("ssh",
+		_, err := s.deps.Runner.Run("ssh",
 			"-p", fmt.Sprintf("%d", port),
 			"-o", "ConnectTimeout=3",
 			"-o", "BatchMode=yes",
@@ -104,7 +106,7 @@ func (s *SSHSection) ClickAt(row int) {
 	s.cursor = min(max(row, 0), len(s.hosts)-1)
 }
 
-func (s *SSHSection) Update(msg tea.Msg) (Section, tea.Cmd) {
+func (s *SSHSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case sshStatusMsg:
 		if msg.index >= 0 && msg.index < len(s.hosts) {
@@ -189,13 +191,13 @@ func (s *SSHSection) ViewBorderless(width, height int, focused bool) (string, st
 			nameDisplay = h.Host
 		}
 
-		cells := []col{
-			{text: nameDisplay, style: labelStyle},
-			{text: " "},
-			{text: statusText, style: statusStyle},
+		cells := []render.Col{
+			{Text: nameDisplay, Style: labelStyle},
+			{Text: " "},
+			{Text: statusText, Style: statusStyle},
 		}
 
-		b.WriteString(renderSimpleRow(cells, selected, focused))
+		b.WriteString(render.RenderSimpleRow(cells, selected, focused))
 		b.WriteString("\n")
 	}
 

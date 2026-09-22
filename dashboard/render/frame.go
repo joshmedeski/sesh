@@ -1,4 +1,5 @@
-package dashboard
+// frame.go
+package render
 
 import (
 	"strings"
@@ -7,12 +8,12 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// framePane is a single pane inside the shared frame.
-type framePane struct {
-	title   string
-	content string
-	width   int
-	focused bool
+// FramePane is a single pane inside the shared frame.
+type FramePane struct {
+	Title   string
+	Content string
+	Width   int
+	Focused bool
 }
 
 // borderText renders s in the border color.
@@ -20,7 +21,7 @@ func borderText(s string) string {
 	return lipgloss.NewStyle().Foreground(colorBorder).Render(s)
 }
 
-// renderFrame draws one shared frame around an ordered list of panes:
+// RenderFrame draws one shared frame around an ordered list of panes:
 //
 //	┌─ title ─┬─ title ─┬─ title ─┐
 //	│ content │ content │ content │
@@ -28,7 +29,7 @@ func borderText(s string) string {
 //
 // Panes are separated by junction characters (┬ ┴ on the border lines, │ on
 // content rows). Content height inside the frame is height - 2.
-func renderFrame(panes []framePane, height int) string {
+func RenderFrame(panes []FramePane, height int) string {
 	if len(panes) == 0 {
 		return ""
 	}
@@ -46,7 +47,7 @@ func renderFrame(panes []framePane, height int) string {
 		if i > 0 {
 			b.WriteString(borderText("┬"))
 		}
-		b.WriteString(frameSegment(p.title, p.width, p.focused))
+		b.WriteString(frameSegment(p.Title, p.Width, p.Focused))
 	}
 	b.WriteString(borderText("┐"))
 	b.WriteString("\n")
@@ -55,7 +56,7 @@ func renderFrame(panes []framePane, height int) string {
 	for row := 0; row < innerHeight; row++ {
 		b.WriteString(borderText("│"))
 		for _, p := range panes {
-			b.WriteString(padWidth(paneLine(p.content, row), p.width))
+			b.WriteString(padWidth(paneLine(p.Content, row), p.Width))
 			b.WriteString(borderText("│"))
 		}
 		b.WriteString("\n")
@@ -67,7 +68,7 @@ func renderFrame(panes []framePane, height int) string {
 		if i > 0 {
 			b.WriteString(borderText("┴"))
 		}
-		b.WriteString(borderText(strings.Repeat("─", p.width)))
+		b.WriteString(borderText(strings.Repeat("─", p.Width)))
 	}
 	b.WriteString(borderText("┘"))
 
@@ -86,7 +87,7 @@ func frameSegment(title string, width int, focused bool) string {
 		return borderText(strings.Repeat("─", width))
 	}
 
-	style := dimmedStyle()
+	style := DimmedStyle()
 	if focused {
 		style = accentStyle()
 	}
@@ -96,7 +97,7 @@ func frameSegment(title string, width int, focused bool) string {
 		maxTitle = 1
 	}
 	if utf8.RuneCountInString(title) > maxTitle {
-		title = truncateRight(title, maxTitle)
+		title = TruncateRight(title, maxTitle)
 	}
 
 	filler := width - 3 - utf8.RuneCountInString(title)

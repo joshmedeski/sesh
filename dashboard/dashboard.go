@@ -7,6 +7,8 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/joshmedeski/sesh/v2/connector"
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -50,13 +52,14 @@ type Model struct {
 	lastHoveredSession string
 }
 
-func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, sh shell.Shell, homeDir string) Model {
+func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, sh shell.Shell, runner CommandRunner, homeDir string) Model {
 	deps := SectionDeps{
 		Tmux:      tmux,
 		Lister:    lister,
 		Git:       git,
 		Connector: connector,
 		Shell:     sh,
+		Runner:    runner,
 		HomeDir:   homeDir,
 	}
 
@@ -425,9 +428,11 @@ func (m Model) jumpFocus(digit int) Model {
 }
 
 // detailsIndex returns the index of the details widget in m.widgets, or -1.
+// The details widget is detected through its LayoutRow marker (row 1) so the
+// root package never needs to import the concrete widget type.
 func (m Model) detailsIndex() int {
 	for i, w := range m.widgets {
-		if _, ok := w.(*DetailsSection); ok {
+		if _, ok := w.(interface{ LayoutRow() int }); ok {
 			return i
 		}
 	}
@@ -449,7 +454,7 @@ func (m Model) row1Panes() []Section {
 func (m Model) row2Order() []int {
 	order := make([]int, 0, len(m.widgets))
 	for i, w := range m.widgets {
-		if _, ok := w.(*DetailsSection); ok {
+		if _, ok := w.(interface{ LayoutRow() int }); ok {
 			continue
 		}
 		order = append(order, i)
@@ -495,7 +500,7 @@ func (m Model) syncHoveredSession() (Model, tea.Cmd) {
 
 	dsIdx := -1
 	for i, w := range m.widgets {
-		if _, ok := w.(*DetailsSection); ok {
+		if _, ok := w.(interface{ LayoutRow() int }); ok {
 			dsIdx = i
 			break
 		}
@@ -510,7 +515,7 @@ func (m Model) syncHoveredSession() (Model, tea.Cmd) {
 	}
 	m.lastHoveredSession = name
 
-	updated, cmd := m.widgets[dsIdx].Update(hoveredSessionMsg{Name: name, Path: path, Windows: windows})
+	updated, cmd := m.widgets[dsIdx].Update(core.HoveredSessionMsg{Name: name, Path: path, Windows: windows})
 	m.widgets[dsIdx] = updated
 	return m, cmd
 }
@@ -624,9 +629,9 @@ func (m Model) View() tea.View {
 		return tea.NewView("Terminal too small for dashboard")
 	}
 
-	header := renderHeader(m.page, m.sessions.totalSessions, m.width)
+	header := render.RenderHeader(m.page, m.sessions.totalSessions, m.width)
 	filtering, query := m.focusedFilterState()
-	footer := renderFooter(m.page, m.width, m.sortLabel(), filtering, query)
+	footer := render.RenderFooter(m.page, m.width, m.sortLabel(), filtering, query)
 
 	var content string
 	if m.page == pageOpen {
@@ -664,7 +669,7 @@ func (m Model) viewOpenPage() string {
 // flat focus index of the first pane in the row.
 func (m Model) renderRow(panes []Section, widths []int, height int, flatOffset int) string {
 	innerHeight := height - 2
-	fp := make([]framePane, 0, len(panes))
+	fp := make([]render.FramePane, 0, len(panes))
 	for i, s := range panes {
 		width := m.width
 		if i < len(widths) {
@@ -673,9 +678,9 @@ func (m Model) renderRow(panes []Section, widths []int, height int, flatOffset i
 		focused := m.focus == flatOffset+i
 		title, content := s.ViewBorderless(width, innerHeight, focused)
 		title = fmt.Sprintf("%d %s", flatOffset+i+1, title)
-		fp = append(fp, framePane{title: title, content: content, width: width, focused: focused})
+		fp = append(fp, render.FramePane{Title: title, Content: content, Width: width, Focused: focused})
 	}
-	return renderFrame(fp, height)
+	return render.RenderFrame(fp, height)
 }
 
 func (m Model) viewConfiguredPage() string {
@@ -684,8 +689,8 @@ func (m Model) viewConfiguredPage() string {
 	// them to keep the frame exactly m.width wide.
 	paneWidth := max(m.width-2, 1)
 	title, content := m.configured.ViewBorderless(paneWidth, innerHeight, true)
-	return renderFrame([]framePane{
-		{title: title, content: content, width: paneWidth, focused: true},
+	return render.RenderFrame([]render.FramePane{
+		{Title: title, Content: content, Width: paneWidth, Focused: true},
 	}, m.contentHeight)
 }
 
