@@ -35,6 +35,9 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 				DisableStartupCommand: session.DisableStartCommand,
 				Tmuxinator:            session.Tmuxinator,
 				WindowNames:           session.Windows,
+				Alias:                 session.Alias,
+				AliasAutoConnect:      session.AliasAutoConnect,
+				Tmuxp:                 session.Tmuxp,
 			}
 		}
 	}

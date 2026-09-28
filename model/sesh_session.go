@@ -25,6 +25,12 @@ type (
 		WindowConfigs         []WindowConfig // The windows used in session config
 		WindowNames           []string       // The names of the windows in session config
 		Score                 float64        // The score of the session (from Zoxide)
+		Icon                  string         // The configured icon, resolved from session name, path, or wildcard
+		Alias                 string         // The alias of the session in config
+		AliasAutoConnect      bool           // Whether typing the alias connects without enter
+		Tmuxp                 string         // Name of the tmuxp config
+		Wildcard              string         // The [[wildcard]] pattern matching the session path
+		TmuxWindows           []TmuxWindow   // The live windows of a tmux session
 
 		// Group is the index of the sort_order block this session was listed
 		// under. Sessions sharing one are contiguous in OrderedIndex, which is

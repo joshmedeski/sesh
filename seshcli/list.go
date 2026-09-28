@@ -68,7 +68,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			if jsonOutput {
-				var sessionsArray []model.SeshSession
+				sessionsArray := make([]model.SeshSession, 0, len(sessions.OrderedIndex))
 				for _, i := range sessions.OrderedIndex {
 					sessionsArray = append(sessionsArray, sessions.Directory[i])
 				}
