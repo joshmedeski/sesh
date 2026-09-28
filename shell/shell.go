@@ -150,13 +150,13 @@ func (c *RealShell) PrepareCmd(cmd string, replacements map[string]string) ([]st
 
 // userShell returns the shell binary to run script commands with. It
 // prefers $SHELL (the user's configured login shell) so aliases, functions
-// and syntax the user expects are honored, and falls back to /bin/sh when
+// and syntax the user expects are honored, and falls back to sh when
 // $SHELL is unset (e.g. minimal/CI environments).
 func userShell() string {
 	if sh := os.Getenv("SHELL"); sh != "" {
 		return sh
 	}
-	return "/bin/sh"
+	return "sh"
 }
 
 // shellQuote wraps s in single quotes so it is treated as one literal shell
