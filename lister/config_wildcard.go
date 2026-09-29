@@ -1,6 +1,7 @@
 package lister
 
 import (
+	pathpkg "path"
 	"path/filepath"
 	"strings"
 
@@ -60,7 +61,8 @@ func (l *RealLister) FindConfigWildcard(path string) (model.WildcardConfig, bool
 }
 
 func matchWildcard(pattern, path string) bool {
-	cleanPath := filepath.Clean(path)
+	// Use slash normalization here (and pathpkg instead of filepath below) for Windows compat.
+	cleanPath := filepath.ToSlash(filepath.Clean(path))
 
 	if strings.HasSuffix(pattern, "/**") {
 		prefix := strings.TrimSuffix(pattern, "/**")
@@ -70,6 +72,6 @@ func matchWildcard(pattern, path string) bool {
 		return len(cleanPath) > len(prefix)+1
 	}
 
-	matched, err := filepath.Match(pattern, cleanPath)
+	matched, err := pathpkg.Match(pattern, cleanPath)
 	return err == nil && matched
 }

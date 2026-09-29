@@ -82,7 +82,7 @@ func TestShellPrepareCmd(t *testing.T) {
 func TestShellShellCmd(t *testing.T) {
 	t.Run("runs compound commands with shell operators (&&, ||, |, ;)", func(t *testing.T) {
 		mockExec := new(execwrap.MockExec)
-		mockExec.On("LookPath", mock.Anything).Return("/bin/sh", nil)
+		mockExec.On("LookPath", userShell()).Return(userShell(), nil)
 		shell := &RealShell{exec: mockExec}
 
 		out, err := shell.ShellCmd("echo one && echo two", map[string]string{})
@@ -92,7 +92,7 @@ func TestShellShellCmd(t *testing.T) {
 
 	t.Run("substitutes placeholders with shell-quoted values", func(t *testing.T) {
 		mockExec := new(execwrap.MockExec)
-		mockExec.On("LookPath", mock.Anything).Return("/bin/sh", nil)
+		mockExec.On("LookPath", userShell()).Return(userShell(), nil)
 		shell := &RealShell{exec: mockExec}
 
 		// A path containing a space and a shell metacharacter must be
@@ -106,7 +106,7 @@ func TestShellShellCmd(t *testing.T) {
 
 	t.Run("returns an error when the command fails", func(t *testing.T) {
 		mockExec := new(execwrap.MockExec)
-		mockExec.On("LookPath", mock.Anything).Return("/bin/sh", nil)
+		mockExec.On("LookPath", userShell()).Return(userShell(), nil)
 		shell := &RealShell{exec: mockExec}
 
 		_, err := shell.ShellCmd("exit 1", map[string]string{})

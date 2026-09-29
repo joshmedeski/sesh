@@ -45,7 +45,8 @@ func NewTmux(os oswrap.Os, shell shell.Shell, bin string) Tmux {
 }
 
 func (t *RealTmux) AttachSession(targetSession string) (string, error) {
-	return t.shell.Cmd(t.bin, "attach-session", "-t", targetSession)
+	// Using t.shell.Cmd() here (capturing stdout/stderr in buffers) would block psmux on Windows.
+	return t.shell.CmdWithOutput(t.bin, "attach-session", "-t", targetSession)
 }
 
 func (t *RealTmux) SwitchClient(targetSession string) (string, error) {

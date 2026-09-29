@@ -61,7 +61,7 @@ func TestSwitchOrAttach(t *testing.T) {
 		mockOs.ExpectedCalls = nil
 		mockShell.ExpectedCalls = nil
 		mockOs.On("Getenv", "TMUX").Return("")
-		mockShell.On("Cmd", "tmux", "attach-session", "-t", mock.Anything).Return("", nil)
+		mockShell.On("CmdWithOutput", "tmux", "attach-session", "-t", mock.Anything).Return("", nil)
 		response, error := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
 		assert.Equal(t, "attaching to tmux session: dotfiles", response)
 		assert.Equal(t, nil, error)
@@ -94,10 +94,10 @@ func TestCustomBin(t *testing.T) {
 		mockOs.ExpectedCalls = nil
 		mockShell.ExpectedCalls = nil
 		mockOs.On("Getenv", "TMUX").Return("")
-		mockShell.On("Cmd", "psmux", "attach-session", "-t", "dotfiles").Return("", nil)
+		mockShell.On("CmdWithOutput", "psmux", "attach-session", "-t", "dotfiles").Return("", nil)
 		response, err := psmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
 		assert.Nil(t, err)
 		assert.Equal(t, "attaching to tmux session: dotfiles", response)
-		mockShell.AssertCalled(t, "Cmd", "psmux", "attach-session", "-t", "dotfiles")
+		mockShell.AssertCalled(t, "CmdWithOutput", "psmux", "attach-session", "-t", "dotfiles")
 	})
 }

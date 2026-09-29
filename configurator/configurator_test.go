@@ -33,13 +33,16 @@ func (o *testOs) UserConfigDir() (string, error) {
 }
 
 func (o *testOs) ReadFile(name string) ([]byte, error) {
+	// Slash normalization for Windows compatibility.
+	cleanName := filepath.ToSlash(filepath.Clean(name))
+
 	if o.readFileErr != nil {
-		if err, ok := o.readFileErr[name]; ok {
+		if err, ok := o.readFileErr[cleanName]; ok {
 			return nil, err
 		}
 	}
 	if o.files != nil {
-		if data, ok := o.files[name]; ok {
+		if data, ok := o.files[cleanName]; ok {
 			return data, nil
 		}
 	}
@@ -80,7 +83,8 @@ func (o *testOs) ReadDir(name string) ([]os.DirEntry, error) {
 
 func testdataPath(name string) string {
 	abs, _ := filepath.Abs(filepath.Join("testdata", name))
-	return abs
+	// Slash normalization for Windows compatibility.
+	return filepath.ToSlash(abs)
 }
 
 func TestGetConfig_DefaultPath(t *testing.T) {
@@ -210,14 +214,17 @@ func TestGetConfig_ImportPathWithEnvVar(t *testing.T) {
 
 	mainTOML := []byte(`import = ["$CONFIGS/imported.toml"]` + "\n")
 
+	// Windows-compatible absolute path (with drive letter on Windows)
+	importPath, _ := filepath.Abs("/custom/dir/imported.toml")
+
 	mockOs := &testOs{
 		homeDir: "/home/testuser",
 		envVars: map[string]string{
 			"CONFIGS": "/custom/dir",
 		},
 		files: map[string][]byte{
-			"/main/sesh.toml":           mainTOML,
-			"/custom/dir/imported.toml": importData,
+			"/main/sesh.toml":            mainTOML,
+			filepath.ToSlash(importPath): importData,
 		},
 	}
 	mockPath := pathwrap.NewPath()
