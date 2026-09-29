@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"log/slog"
+	"strings"
 
 	"github.com/joshmedeski/sesh/v2/dashboard/core"
 	"github.com/joshmedeski/sesh/v2/dashboard/render"
@@ -34,49 +35,48 @@ type SectionFactory func(cfg model.DashboardSectionConfig, deps SectionDeps) Sec
 
 type Registry map[string]SectionFactory
 
-// registry maps configurable widget types to their factories. The "sessions"
-// type is now implicit (always built) and is therefore not part of the
-// addable widget registry.
+// registry maps configurable section types to their factories. "sessions" is
+// kept as an alias of an unconfigured "sources" section (tmux sessions only).
 var registry = Registry{
 	// "details": sections.NewDetailsSection,
-	"system":  sections.NewSystemSection,
-	"ssh":     sections.NewSSHSection,
-	"git":     sections.NewGitSection,
-	"custom":  sections.NewCustomSection,
-	"docker":  sections.NewDockerSection,
-	"workmux": sections.NewWorkmuxSection,
+	"system":   sections.NewSystemSection,
+	"ssh":      sections.NewSSHSection,
+	"git":      sections.NewGitSection,
+	"custom":   sections.NewCustomSection,
+	"docker":   sections.NewDockerSection,
+	"workmux":  sections.NewWorkmuxSection,
+	"sources":  NewSourcesSection,
+	"sessions": NewSourcesSection,
 }
 
-// BuiltSections is the result of BuildSections: the two permanent lists plus
-// the optional user-configured widgets.
+// BuiltSections is the result of BuildSections: the Configured tab's list plus
+// the first page's sections.
 type BuiltSections struct {
-	Sessions   *SessionsSection
 	Configured *ConfiguredSection
 	Widgets    []Section
 }
 
-// BuildSections always builds the Open (sessions) and Configured lists. Config
-// `[dashboard.sections]` entries are treated as optional widgets only; the
-// "sessions" type and unknown types are logged and skipped. If a legacy
-// "sessions" entry exists, its Title is carried over to the implicit sessions
-// list; Groups are parsed but no longer applied (grouping was removed).
-func BuildSections(cfg model.DashboardConfig, deps SectionDeps) BuiltSections {
-	sessionsCfg := model.DashboardSectionConfig{Type: "sessions", Title: "Sessions"}
-
+// BuildSections builds the Configured list and the first page from the
+// `[[dashboard.section]]` entries, in config order. A "worktree" entry lists
+// the [[worktree]] block whose repo matches its own. Unknown types and
+// unmatched repos are logged and skipped. With no usable entries the first
+// page is a single tmux sessions list.
+func BuildSections(cfg model.DashboardConfig, worktrees []model.WorktreeConfig, deps SectionDeps) BuiltSections {
 	var widgets []Section
 	for _, sc := range cfg.Sections {
-		switch sc.Type {
-		case "":
+		if sc.Type == "" {
 			slog.Warn("unknown dashboard section type")
 			continue
-		case "sessions":
-			slog.Warn("dashboard section type \"sessions\" is now implicit; ignoring entry")
-			if sc.Groups != nil {
-				slog.Warn("dashboard \"sessions\" groups are no longer applied; sessions render as a flat list")
+		}
+		if sc.Type == "worktree" {
+			wc, ok := findWorktreeConfig(worktrees, sc.Repo)
+			if !ok {
+				slog.Warn("dashboard worktree section has no matching [[worktree]] block", "repo", sc.Repo)
+				continue
 			}
-			if sc.Title != "" {
-				sessionsCfg.Title = sc.Title
-			}
+			ws := NewWorktreeSection(wc, deps)
+			ws.title = sc.Title
+			widgets = append(widgets, ws)
 			continue
 		}
 		factory, ok := registry[sc.Type]
@@ -93,18 +93,26 @@ func BuildSections(cfg model.DashboardConfig, deps SectionDeps) BuiltSections {
 		}
 		widgets = append(widgets, factory(sc, deps))
 	}
+	if len(widgets) == 0 {
+		widgets = []Section{NewSourcesSection(model.DashboardSectionConfig{Type: "sources", Title: "Sessions"}, deps)}
+	}
 
-	sessions := NewSessionsSection(sessionsCfg, deps).(*SessionsSection)
-	sessions.sortOrder = cfg.SortOrder
-	sessions.sortMode = sessions.sortModes()[0]
 	configured := NewConfiguredSection(
 		model.DashboardSectionConfig{Type: "configured", Title: "Configured"},
 		deps,
 	).(*ConfiguredSection)
 
 	return BuiltSections{
-		Sessions:   sessions,
 		Configured: configured,
 		Widgets:    widgets,
 	}
+}
+
+func findWorktreeConfig(worktrees []model.WorktreeConfig, repo string) (model.WorktreeConfig, bool) {
+	for _, wc := range worktrees {
+		if repo != "" && strings.EqualFold(wc.Repo, repo) {
+			return wc, true
+		}
+	}
+	return model.WorktreeConfig{}, false
 }

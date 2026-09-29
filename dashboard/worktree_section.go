@@ -35,6 +35,7 @@ type WorktreeSection struct {
 	chosen   int
 	sortMode string
 	changes  map[string]int
+	title    string
 }
 
 func NewWorktreeSection(cfg model.WorktreeConfig, deps SectionDeps) *WorktreeSection {
@@ -62,7 +63,12 @@ func (s *WorktreeSection) TabTitle() string {
 
 func (s *WorktreeSection) Width() float64 { return 0 }
 
-func (s *WorktreeSection) Name() string { return s.config.Repo }
+func (s *WorktreeSection) Name() string {
+	if s.title != "" {
+		return s.title
+	}
+	return s.config.Repo
+}
 
 func (s *WorktreeSection) TotalItems() int { return len(s.sessions) }
 

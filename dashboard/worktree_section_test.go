@@ -169,3 +169,37 @@ func TestFooterShowsWorktreeSortLabel(t *testing.T) {
 	m = updateModel(m, pressKey("s"))
 	assert.Contains(t, ansi.Strip(m.View().Content), "sort:age")
 }
+
+func TestBuildSectionsWorktreeMatchesRepo(t *testing.T) {
+	worktrees := []model.WorktreeConfig{
+		{Repo: "Nutiliti/nutiliti", Path: "~/c/nu"},
+		{Repo: "joshmedeski/sesh", Path: "~/c/sesh"},
+	}
+	built := BuildSections(model.DashboardConfig{Sections: []model.DashboardSectionConfig{
+		{Type: "worktree", Repo: "JoshMedeski/Sesh"},
+		{Type: "worktree", Repo: "nobody/missing"},
+		{Type: "worktree", Repo: "nutiliti/nutiliti", Title: "Nutiliti"},
+	}}, worktrees, SectionDeps{})
+
+	require.Len(t, built.Widgets, 2)
+	sesh := built.Widgets[0].(*WorktreeSection)
+	assert.Equal(t, worktrees[1], sesh.config)
+	assert.Equal(t, "joshmedeski/sesh", sesh.Name())
+	assert.Equal(t, "Nutiliti", built.Widgets[1].Name())
+}
+
+func TestDashboardWorktreePaneConnects(t *testing.T) {
+	cfg := model.Config{
+		WorktreeConfigs: []model.WorktreeConfig{{Repo: "joshmedeski/sesh", Path: "~/c/sesh"}},
+		Dashboard: model.DashboardConfig{Sections: []model.DashboardSectionConfig{
+			{Type: "worktree", Repo: "joshmedeski/sesh"},
+		}},
+	}
+	m := New(cfg, SectionDeps{})
+	m = updateModel(m, loadedWorktrees("joshmedeski/sesh"))
+	assert.Contains(t, ansi.Strip(m.View().Content), "tmux command updates")
+
+	m = updateModel(m, pressKey("enter"))
+	require.NotNil(t, m.ChosenWorktree())
+	assert.Equal(t, model.WorktreeConnectOpts{Number: 358, Repo: "joshmedeski/sesh"}, *m.ChosenWorktree())
+}

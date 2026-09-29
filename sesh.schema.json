@@ -419,26 +419,7 @@
           "description": "Title displayed in the dashboard header",
           "default": "SESH COMMAND CENTER"
         },
-        "sort_order": {
-          "type": "array",
-          "description": "Sources the dashboard's Open tab lists, in order. An entry may be a source name, listed as its own block, or a nested array of source names, merged into a single block ordered by zoxide score. Unset, the Open tab lists only tmux sessions.",
-          "items": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "array",
-                "description": "Sources merged into one block, ordered by zoxide score. Sessions whose path zoxide has never seen score 0 and trail the block.",
-                "items": {
-                  "type": "string"
-                },
-                "minItems": 1
-              }
-            ]
-          }
-        },
-        "sections": {
+        "section": {
           "type": "array",
           "description": "Dashboard sections to display (order determines layout position)",
           "items": {
@@ -446,7 +427,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "description": "Section type: 'sessions', 'details', 'system', 'ssh', 'git', 'custom', 'docker', or 'workmux'"
+                "description": "Section type: 'sources', 'worktree', 'system', 'ssh', 'git', 'custom', 'docker', or 'workmux'"
               },
               "title": {
                 "type": "string",
@@ -564,6 +545,29 @@
                   }
                 },
                 "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "description": "Session sources a 'sources' section lists, in the same format as the top-level sort_order: an entry may be a source name, listed as its own block, or a nested array of source names, merged into a single block ordered by zoxide score.",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "array",
+                      "description": "Sources merged into one block, ordered by zoxide score. Sessions whose path zoxide has never seen score 0 and trail the block.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    }
+                  ]
+                }
+              },
+              "repo": {
+                "type": "string",
+                "description": "GitHub \"org/repo\" of the [[worktree]] block a 'worktree' section lists, matched case-insensitively"
               }
             },
             "required": ["type"],

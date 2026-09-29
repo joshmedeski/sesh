@@ -48,6 +48,13 @@ func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Sect
 	}
 }
 
+func NewSourcesSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+	s := NewSessionsSection(cfg, deps).(*SessionsSection)
+	s.sortOrder = cfg.Sources
+	s.sortMode = s.sortModes()[0]
+	return s
+}
+
 func (s *SessionsSection) Width() float64 {
 	return s.config.Width
 }
@@ -60,6 +67,16 @@ func (s *SessionsSection) Name() string {
 // number of items in the section
 func (s *SessionsSection) TotalItems() int {
 	return s.totalSessions
+}
+
+func (s *SessionsSection) TmuxCount() int {
+	n := 0
+	for _, sess := range s.sessions {
+		if sess.Src == "tmux" {
+			n++
+		}
+	}
+	return n
 }
 
 // SortLabel implements Sorter.

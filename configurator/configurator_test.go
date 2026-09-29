@@ -516,9 +516,26 @@ func TestGetConfig_GroupSeparator(t *testing.T) {
 	assert.True(t, config.TUI.GroupSeparator)
 }
 
-func TestGetConfig_DashboardSortOrderNestedGroup(t *testing.T) {
-	config, err := configFromTOML(t, "[dashboard]\nsort_order = [\"tmux\", [\"config\", \"zoxide\"]]\n")
+func TestGetConfig_DashboardSourcesSection(t *testing.T) {
+	config, err := configFromTOML(t, "[[dashboard.section]]\ntype = \"sources\"\ntitle = \"Sources\"\nsources = [\"tmux\", [\"config\", \"zoxide\"]]\n")
 	assert.NoError(t, err)
-	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, config.Dashboard.SortOrder.SortGroups())
+	require.Len(t, config.Dashboard.Sections, 1)
+	section := config.Dashboard.Sections[0]
+	assert.Equal(t, "sources", section.Type)
+	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, section.Sources.SortGroups())
 	assert.Empty(t, config.SortOrder)
+}
+
+func TestGetConfig_DashboardSourcesSectionStrictMode(t *testing.T) {
+	config, err := configFromTOML(t, "strict_mode = true\n[[dashboard.section]]\ntype = \"sources\"\nsources = [\"tmux\", [\"config\", \"zoxide\"]]\n")
+	assert.NoError(t, err)
+	require.Len(t, config.Dashboard.Sections, 1)
+	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, config.Dashboard.Sections[0].Sources.SortGroups())
+}
+
+func TestGetConfig_DashboardWorktreeSectionStrictMode(t *testing.T) {
+	config, err := configFromTOML(t, "strict_mode = true\n[[dashboard.section]]\ntype = \"worktree\"\nrepo = \"joshmedeski/sesh\"\n")
+	assert.NoError(t, err)
+	require.Len(t, config.Dashboard.Sections, 1)
+	assert.Equal(t, "joshmedeski/sesh", config.Dashboard.Sections[0].Repo)
 }

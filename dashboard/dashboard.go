@@ -18,12 +18,11 @@ const (
 
 // Model is the dashboard TUI. It has two permanent tabs (page 0 "Dashboard" and
 // page 1 "Configured") followed by one tab per [[worktree]] config entry, in
-// config order. Tab 1 lays panes out in two rows of shared frames: row 1 is
-// the sessions list, row 2 is the remaining widgets side by side. Every other
-// tab is a single-pane list.
+// config order. Tab 1 is built from the [[dashboard.section]] entries and lays
+// them out in two rows of shared frames: row 1 is the first section, row 2 is
+// the rest side by side. Every other tab is a single-pane list.
 type Model struct {
 	config     model.DashboardConfig
-	sessions   *SessionsSection
 	configured *ConfiguredSection
 	worktrees  []*WorktreeSection
 	widgets    []Section
@@ -32,7 +31,7 @@ type Model struct {
 	// for worktrees[i].
 	page int
 	// focus is the focused pane index on page 0, row-major over the flat pane
-	// list [row1..., row2...]. 0 = sessions list. Ignored on page 1.
+	// list [row1..., row2...]. Ignored on other pages.
 	focus int
 
 	width    int
@@ -55,7 +54,7 @@ type Model struct {
 }
 
 func New(config model.Config, deps SectionDeps) Model {
-	built := BuildSections(config.Dashboard, deps)
+	built := BuildSections(config.Dashboard, config.WorktreeConfigs, deps)
 	worktrees := make([]*WorktreeSection, 0, len(config.WorktreeConfigs))
 	for _, wc := range config.WorktreeConfigs {
 		worktrees = append(worktrees, NewWorktreeSection(wc, deps))
@@ -63,7 +62,6 @@ func New(config model.Config, deps SectionDeps) Model {
 
 	m := Model{
 		config:     config.Dashboard,
-		sessions:   built.Sessions,
 		configured: built.Configured,
 		worktrees:  worktrees,
 		widgets:    built.Widgets,
@@ -76,8 +74,8 @@ func New(config model.Config, deps SectionDeps) Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	cmds := make([]tea.Cmd, 0, len(m.widgets)+len(m.worktrees)+2)
-	cmds = append(cmds, m.sessions.Init(), m.configured.Init())
+	cmds := make([]tea.Cmd, 0, len(m.widgets)+len(m.worktrees)+1)
+	cmds = append(cmds, m.configured.Init())
 	for _, w := range m.worktrees {
 		cmds = append(cmds, w.Init())
 	}
@@ -191,12 +189,6 @@ func paneCol(x int, widths []int) int {
 func (m Model) broadcast(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	s, c := m.sessions.Update(msg)
-	m.sessions = s.(*SessionsSection)
-	if c != nil {
-		cmds = append(cmds, c)
-	}
-
 	cfg, c := m.configured.Update(msg)
 	m.configured = cfg.(*ConfiguredSection)
 	if c != nil {
@@ -294,15 +286,15 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return m.routeKey(msg)
 }
 
-// focusedSection returns the currently focused pane (sessions list, configured
-// list, or a widget).
+// focusedSection returns the currently focused pane: the page's list, or the
+// focused section on page 0 (nil when there is none).
 func (m Model) focusedSection() Section {
 	if m.page != pageOpen {
 		return m.pageSection()
 	}
 	wi := m.flatWidgetIndex(m.focus)
 	if wi < 0 {
-		return m.sessions
+		return nil
 	}
 	return m.widgets[wi]
 }
@@ -323,23 +315,13 @@ func (m Model) focusedFilterState() (filtering bool, query string) {
 	return false, ""
 }
 
-// sortLabel returns the current sort mode label: the sessions list's on page
-// 0 (defaulting to "name"), otherwise the page section's when it is a Sorter,
-// else "".
+// sortLabel returns the focused pane's sort mode label, or "" when the
+// focused pane cannot be sorted.
 func (m Model) sortLabel() string {
-	if m.page != pageOpen {
-		if sorter, ok := m.pageSection().(Sorter); ok {
-			return sorter.SortLabel()
-		}
-		return ""
+	if sorter, ok := m.focusedSection().(Sorter); ok {
+		return sorter.SortLabel()
 	}
-	if m.sessions == nil {
-		return "name"
-	}
-	if label := m.sessions.SortLabel(); label != "" {
-		return label
-	}
-	return "name"
+	return ""
 }
 
 // isCtrlKey reports whether msg is ctrl+<letter>. It matches both the string
@@ -382,12 +364,10 @@ func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	default:
 		wi := m.flatWidgetIndex(m.focus)
 		if wi < 0 {
-			updated, cmd = m.sessions.Update(msg)
-			m.sessions = updated.(*SessionsSection)
-		} else {
-			updated, cmd = m.widgets[wi].Update(msg)
-			m.widgets[wi] = updated
+			return m, nil
 		}
+		updated, cmd = m.widgets[wi].Update(msg)
+		m.widgets[wi] = updated
 	}
 
 	if msg.String() == "enter" {
@@ -456,8 +436,7 @@ func (m Model) moveFocusRow(dir int) Model {
 	return m
 }
 
-// jumpFocus sets focus to the pane at the given 1-based flat position (1 =
-// sessions) on page 0, lazygit-style. Out-of-range digits and the configured
+// jumpFocus sets focus to the pane at the given 1-based flat position on page 0, lazygit-style. Out-of-range digits and the configured
 // page are a no-op.
 func (m Model) jumpFocus(digit int) Model {
 	if m.page != pageOpen {
@@ -483,19 +462,8 @@ func (m Model) detailsIndex() int {
 	return -1
 }
 
-// row1Panes returns row 1: the sessions list, followed by the details widget
-// (if configured).
-func (m Model) row1Panes() []Section {
-	panes := []Section{m.sessions}
-	if di := m.detailsIndex(); di >= 0 {
-		panes = append(panes, m.widgets[di])
-	}
-	return panes
-}
-
-// row2Order returns the widget indices for row 2 (all non-details widgets in
-// config order).
-func (m Model) row2Order() []int {
+// paneOrder returns the indices of every non-details widget, in config order.
+func (m Model) paneOrder() []int {
 	order := make([]int, 0, len(m.widgets))
 	for i, w := range m.widgets {
 		if _, ok := w.(interface{ LayoutRow() int }); ok {
@@ -506,7 +474,30 @@ func (m Model) row2Order() []int {
 	return order
 }
 
-// row2Panes returns row 2: all non-details widgets in config order.
+// row1Panes returns row 1: the first section, followed by the details widget
+// (if configured).
+func (m Model) row1Panes() []Section {
+	var panes []Section
+	if order := m.paneOrder(); len(order) > 0 {
+		panes = append(panes, m.widgets[order[0]])
+	}
+	if di := m.detailsIndex(); di >= 0 {
+		panes = append(panes, m.widgets[di])
+	}
+	return panes
+}
+
+// row2Order returns the widget indices for row 2: every non-details widget
+// after the first, in config order.
+func (m Model) row2Order() []int {
+	order := m.paneOrder()
+	if len(order) == 0 {
+		return nil
+	}
+	return order[1:]
+}
+
+// row2Panes returns row 2: every non-details widget after the first.
 func (m Model) row2Panes() []Section {
 	order := m.row2Order()
 	panes := make([]Section, 0, len(order))
@@ -517,26 +508,33 @@ func (m Model) row2Panes() []Section {
 }
 
 // flatWidgetIndex maps a flat row-major focus index on page 0 to a widget
-// index, or -1 for the sessions list.
+// index, or -1 when no pane sits there.
 func (m Model) flatWidgetIndex(idx int) int {
-	if idx <= 0 {
-		return -1 // sessions
+	order := m.paneOrder()
+	if idx < 0 {
+		return -1
+	}
+	if idx == 0 {
+		if len(order) > 0 {
+			return order[0]
+		}
+		return m.detailsIndex()
 	}
 	row1Len := len(m.row1Panes())
 	if idx < row1Len {
-		return m.detailsIndex() // idx == 1 → details
+		return m.detailsIndex()
 	}
-	order := m.row2Order()
+	row2 := m.row2Order()
 	i := idx - row1Len
-	if i < 0 || i >= len(order) {
+	if i < 0 || i >= len(row2) {
 		return -1
 	}
-	return order[i]
+	return row2[i]
 }
 
 // syncHoveredSession keeps the Details widget in sync with the hovered session
-// in the sessions list. It only runs on page 0 (avoids background tmux queries
-// from tab 2).
+// in the first sessions list. It only runs on page 0 (avoids background tmux
+// queries from tab 2).
 func (m Model) syncHoveredSession() (Model, tea.Cmd) {
 	if m.page != pageOpen {
 		return m, nil
@@ -553,7 +551,11 @@ func (m Model) syncHoveredSession() (Model, tea.Cmd) {
 		return m, nil
 	}
 
-	name, path, windows := m.sessions.HoveredSession()
+	sessions := m.firstSessions()
+	if sessions == nil {
+		return m, nil
+	}
+	name, path, windows := sessions.HoveredSession()
 	if name == m.lastHoveredSession {
 		return m, nil
 	}
@@ -562,6 +564,26 @@ func (m Model) syncHoveredSession() (Model, tea.Cmd) {
 	updated, cmd := m.widgets[dsIdx].Update(core.HoveredSessionMsg{Name: name, Path: path, Windows: windows})
 	m.widgets[dsIdx] = updated
 	return m, cmd
+}
+
+// firstSessions returns the first sessions list on page 0, or nil.
+func (m Model) firstSessions() *SessionsSection {
+	for _, w := range m.widgets {
+		if s, ok := w.(*SessionsSection); ok {
+			return s
+		}
+	}
+	return nil
+}
+
+// activeCount is the tmux session count shown in the header, or -1 to hide it
+// when page 0 has no sessions list.
+func (m Model) activeCount() int {
+	s := m.firstSessions()
+	if s == nil {
+		return -1
+	}
+	return s.TmuxCount()
 }
 
 // withLayout recomputes the layout: content height (header 2 + footer 1), the
@@ -673,7 +695,7 @@ func (m Model) View() tea.View {
 		return tea.NewView("Terminal too small for dashboard")
 	}
 
-	header := render.RenderHeader(m.page, m.sessions.totalSessions, m.width, m.worktreeTabTitles()...)
+	header := render.RenderHeader(m.page, m.activeCount(), m.width, m.worktreeTabTitles()...)
 	filtering, query := m.focusedFilterState()
 	footer := render.RenderFooter(m.page, m.width, m.sortLabel(), filtering, query)
 

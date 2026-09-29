@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/sections"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -290,24 +291,31 @@ func TestSessionsClickAtSkipsHeaderRow(t *testing.T) {
 	assert.Equal(t, 0, s.cursor)
 }
 
-func TestDashboardSortOrderListOptions(t *testing.T) {
-	built := BuildSections(model.DashboardConfig{}, SectionDeps{})
-	assert.Equal(t, lister.ListOptions{Tmux: true}, built.Sessions.listOptions())
-	assert.Equal(t, "name", built.Sessions.SortLabel())
+func sourcesSection(sources model.SortOrder) *SessionsSection {
+	built := BuildSections(model.DashboardConfig{Sections: []model.DashboardSectionConfig{
+		{Type: "sources", Title: "Sources", Sources: sources},
+	}}, nil, SectionDeps{})
+	return built.Widgets[0].(*SessionsSection)
+}
 
-	sortOrder := model.SortOrder{"tmux", []any{"config", "zoxide"}}
-	built = BuildSections(model.DashboardConfig{SortOrder: sortOrder}, SectionDeps{})
+func TestSourcesSectionListOptions(t *testing.T) {
+	built := BuildSections(model.DashboardConfig{}, nil, SectionDeps{})
+	assert.Equal(t, lister.ListOptions{Tmux: true}, built.Widgets[0].(*SessionsSection).listOptions())
+	assert.Equal(t, "name", built.Widgets[0].(*SessionsSection).SortLabel())
+
+	sources := model.SortOrder{"tmux", []any{"config", "zoxide"}}
+	s := sourcesSection(sources)
+	assert.Equal(t, "Sources", s.Name())
 	assert.Equal(t, lister.ListOptions{
 		Tmux: true, Config: true, Zoxide: true,
 		HideDuplicates: true,
-		SortOrder:      sortOrder,
-	}, built.Sessions.listOptions())
-	assert.Equal(t, "order", built.Sessions.SortLabel())
+		SortOrder:      sources,
+	}, s.listOptions())
+	assert.Equal(t, "order", s.SortLabel())
 }
 
-func TestDashboardSortOrderKeepsListerOrder(t *testing.T) {
-	built := BuildSections(model.DashboardConfig{SortOrder: model.SortOrder{"tmux", []any{"config", "zoxide"}}}, SectionDeps{})
-	s := built.Sessions
+func TestSourcesSectionKeepsListerOrder(t *testing.T) {
+	s := sourcesSection(model.SortOrder{"tmux", []any{"config", "zoxide"}})
 	s.Update(sessionsLoadedMsg{sessions: model.SeshSessions{
 		OrderedIndex: []string{"t", "z1", "c", "z2"},
 		Directory: model.SeshSessionMap{
@@ -329,6 +337,20 @@ func TestDashboardSortOrderKeepsListerOrder(t *testing.T) {
 	}
 	assert.Equal(t, "order", s.SortLabel())
 	assert.Equal(t, order, sessionNames(s.visible()))
+}
+
+func TestFooterSortFollowsFocusedPane(t *testing.T) {
+	sources := sourcesSection(model.SortOrder{"tmux", []any{"config", "zoxide"}})
+	m := testModel(sources, sections.NewSystemSection(model.DashboardSectionConfig{Type: "system"}, SectionDeps{}))
+	m.width = 140
+	m.widgets[0].(*SessionsSection).sortMode = "name"
+	assert.Contains(t, ansi.Strip(m.View().Content), "sort:name")
+
+	m.focus = 1
+	assert.Contains(t, ansi.Strip(m.View().Content), "sort:order")
+
+	m.focus = 2
+	assert.NotContains(t, ansi.Strip(m.View().Content), "sort:")
 }
 
 func TestKillSkipsNonTmuxSessions(t *testing.T) {

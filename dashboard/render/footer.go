@@ -13,8 +13,8 @@ import (
 var tabTitles = []string{"Dashboard", "Configured"}
 
 // RenderHeader renders the two-row header: a tab line (with an optional
-// right-pinned "N active" count on wide terminals) followed by a full-width
-// rule in the border color.
+// right-pinned "N active" count on wide terminals, hidden when activeCount is
+// negative) followed by a full-width rule in the border color.
 func RenderHeader(activePage int, activeCount int, width int, extraTabs ...string) string {
 	var parts []string
 	for i, t := range slices.Concat(tabTitles, extraTabs) {
@@ -28,7 +28,7 @@ func RenderHeader(activePage int, activeCount int, width int, extraTabs ...strin
 	tabLine := strings.Join(parts, sep)
 
 	right := ""
-	if width >= 50 {
+	if width >= 50 && activeCount >= 0 {
 		right = DimmedStyle().Render(strconv.Itoa(activeCount) + " active")
 	}
 
@@ -51,17 +51,21 @@ type keybind struct {
 func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
 	right := keybind{"?", "help"}
 	if page == 0 {
-		return []keybind{
+		binds := []keybind{
 			{"tab", "page"},
 			{"j/k", "move"},
 			{"enter", "open"},
-			{"s", "sort:" + sortLabel},
-			{"/", "filter"},
-			{"r", "refresh"},
-			{"1-9", "panes"},
-			{"ctrl+d", "kill"},
-			{"q", "quit"},
-		}, right
+		}
+		if sortLabel != "" {
+			binds = append(binds, keybind{"s", "sort:" + sortLabel})
+		}
+		return append(binds,
+			keybind{"/", "filter"},
+			keybind{"r", "refresh"},
+			keybind{"1-9", "panes"},
+			keybind{"ctrl+d", "kill"},
+			keybind{"q", "quit"},
+		), right
 	}
 	binds := []keybind{
 		{"tab", "page"},
