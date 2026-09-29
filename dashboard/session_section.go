@@ -298,7 +298,7 @@ func (s *SessionsSection) HoveredSession() (name, path string, windows int) {
 }
 
 func (s *SessionsSection) ViewBorderless(width, height int, focused bool) (string, string) {
-	s.viewHeight = height
+	s.viewHeight = max(height-1, 1)
 
 	title := s.config.Title
 	if title == "" {
@@ -323,10 +323,11 @@ func (s *SessionsSection) ViewBorderless(width, height int, focused bool) (strin
 	// Calculate active available viewing rows (the pane content area, already
 	// reduced by the shared frame's top/bottom borders).
 	visible := s.visible()
-	available := max(height, 1)
-	end := min(s.offset+available, len(visible))
+	end := min(s.offset+s.viewHeight, len(visible))
 
 	var b strings.Builder
+	b.WriteString(render.RenderOpenHeader(width, branchColumnWidth(visible), aliasColumnWidth(visible), max(s.deps.IconWidth, 1)))
+	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		b.WriteString(s.renderItemFocused(i, width, focused))
 		b.WriteString("\n")
@@ -347,13 +348,21 @@ func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	sess := visible[i]
 	dir := render.CollapseHome(sess.Path, s.deps.HomeDir)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return render.RenderOpenRowFocused(width, branchColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
+	return render.RenderOpenRowFocused(width, branchColumnWidth(visible), aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
 }
 
 func branchColumnWidth(sessions []model.SeshSession) int {
 	w := 0
 	for _, sess := range sessions {
-		w = max(w, lipgloss.Width(render.Paren(sess.Branch)))
+		w = max(w, lipgloss.Width(sess.Branch))
 	}
 	return w
+}
+
+func aliasColumnWidth(sessions []model.SeshSession) int {
+	aliases := make([]string, len(sessions))
+	for i, sess := range sessions {
+		aliases[i] = sess.Alias
+	}
+	return render.AliasColumn(aliases...)
 }

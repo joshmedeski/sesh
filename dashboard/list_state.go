@@ -90,12 +90,14 @@ func (ls *ListState) visibleCount() int {
 	return max(ls.viewHeight, 1)
 }
 
-// ClickAt moves the cursor to the clicked view row, scrolling to reveal it.
+// ClickAt moves the cursor to the clicked view row (below the column header
+// row), scrolling to reveal it.
 func (ls *ListState) ClickAt(row, count int) {
-	if count == 0 {
+	row--
+	if count == 0 || row < 0 {
 		return
 	}
-	ls.cursor = min(max(ls.offset+row, 0), count-1)
+	ls.cursor = min(ls.offset+row, count-1)
 	if ls.cursor < ls.offset {
 		ls.offset = ls.cursor
 	}

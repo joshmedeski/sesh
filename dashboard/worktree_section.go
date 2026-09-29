@@ -174,7 +174,7 @@ func expandHome(path, homeDir string) string {
 }
 
 func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (string, string) {
-	s.viewHeight = height
+	s.viewHeight = max(height-1, 1)
 	title := s.Name()
 
 	switch {
@@ -187,10 +187,12 @@ func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (strin
 	}
 
 	visible := s.visible()
-	end := min(s.offset+max(height, 1), len(visible))
+	end := min(s.offset+s.viewHeight, len(visible))
 	branchCol := branchColumnWidth(visible)
 
 	var b strings.Builder
+	b.WriteString(render.RenderWorktreeHeader(width, branchCol, max(s.deps.IconWidth, 1)))
+	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
 		e := s.entries[sess.Path]

@@ -51,14 +51,6 @@ func CollapseHome(path, homeDir string) string {
 	return path
 }
 
-// Paren wraps s in parentheses when non-empty, otherwise returns "".
-func Paren(s string) string {
-	if s == "" {
-		return ""
-	}
-	return "(" + s + ")"
-}
-
 // TruncateRight truncates s to maxRunes runes, appending "…" when truncated.
 func TruncateRight(s string, maxRunes int) string {
 	runes := []rune(s)

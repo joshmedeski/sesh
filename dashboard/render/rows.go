@@ -28,10 +28,20 @@ func RowMarker(selected, focused bool) string {
 
 // Col describes a single column in a list row.
 type Col struct {
+	Title string
 	Text  string
 	Width int
 	Style lipgloss.Style
 	Align lipgloss.Position
+}
+
+// RenderColumnTitles renders the column titles of cols, aligned with RenderRow.
+func RenderColumnTitles(cols []Col) string {
+	titles := make([]Col, len(cols))
+	for i, c := range cols {
+		titles[i] = Col{Text: c.Title, Width: c.Width, Style: DimmedStyle().Bold(true)}
+	}
+	return RenderRow("  ", titles, false, true)
 }
 
 // RenderRow joins columns with a single space and applies the shared cursor
@@ -75,104 +85,83 @@ func RenderSimpleRow(cells []Col, selected, focused bool) string {
 	return RowMarker(selected, focused) + strings.Join(rendered, "")
 }
 
-// Powerline half circles used to round off the alias chip, matching the
-// picker’s default alias styling.
 const (
-	chipLeftGlyph  = "\ue0b6"
-	chipRightGlyph = "\ue0b4"
+	pillLeftGlyph  = "\ue0b6"
+	pillRightGlyph = "\ue0b4"
 )
 
-// aliasChip renders a configured alias as a rounded pill. It returns an empty
-// string when there is no alias. The chip uses reverse video over the dashboard
-// accent color so the background is the theme accent and the foreground is the
-// terminal’s own contrasting background color, matching the picker’s alias
-// chip conventions. The half circles are painted with the same accent so the
-// pill reads as one shape.
-func aliasChip(alias string) string {
+func aliasPill(alias string, selected, focused bool) string {
 	if alias == "" {
 		return ""
 	}
-	fill := lipgloss.NewStyle().Foreground(colorAccent)
-	label := fill.Reverse(true).Render(alias)
-	return fill.Render(chipLeftGlyph) + label + fill.Render(chipRightGlyph) + " "
+	if !selected {
+		fill := lipgloss.NewStyle().Foreground(colorText)
+		return fill.Render(pillLeftGlyph) + fill.Reverse(true).Render(alias) + fill.Render(pillRightGlyph)
+	}
+	rowBg := colorHighlight
+	if !focused {
+		rowBg = colorHighlightDim
+	}
+	fg := ansiFg(colorText)
+	return fg + pillLeftGlyph +
+		ansiBg(colorText) + ansiFg(colorPillText) + alias +
+		ansiBg(rowBg) + fg + pillRightGlyph
 }
 
-// aliasChipSelected renders the alias pill for a selected row as a continuous
-// ANSI run. The pill keeps an explicit accent background of its own rather than
-// inheriting the cursor highlight, so the alias reads the same as its
-// unselected chip. The label text is the contrasting terminal-background colour
-// (colorPillText), while the powerline half circles stay accent-coloured over
-// the cursor background, so the rounded edges read as one shape with the pill
-// and the row highlight continues unbroken outside it. The cursor background is
-// restored after the pill so the name that follows stays on the highlight.
-func aliasChipSelected(alias string) string {
-	accent := ansiFg(colorAccent)
-	return accent + chipLeftGlyph +
-		ansiBg(colorAccent) + ansiFg(colorPillText) + alias +
-		ansiBg(colorHighlight) + accent + chipRightGlyph + " "
-}
-
-// ansiBg returns an ANSI 256-colour background sequence for c.
 func ansiBg(c lipgloss.ANSIColor) string {
 	return fmt.Sprintf("\x1b[48;5;%dm", int(c))
 }
 
-// namePrefix returns the raw ANSI prefix (bold + foreground) for the session
-// name, without a trailing reset, so it can be embedded in a continuous ANSI
-// run when the row is selected.
-func namePrefix(current bool) string {
-	if current {
-		return "\x1b[1m" + ansiFg(colorAccent)
+// AliasColumn returns the alias column width for the given aliases: wide
+// enough for the longest alias and its header, or 0 when none are set.
+func AliasColumn(aliases ...string) int {
+	w := 0
+	for _, a := range aliases {
+		w = max(w, lipgloss.Width(a))
 	}
-	return ansiFg(colorText)
+	if w == 0 {
+		return 0
+	}
+	return max(w+lipgloss.Width(pillLeftGlyph+pillRightGlyph), len("ALIAS"))
 }
 
 // renderOpenRow renders a Tab 1 (Open) session row with columns:
-// marker(2) | icon | att(2) | alias+name(18) | dir(fill) | branch(longest) |
-// status(12) | age(5, last attached) | alerts(2).
+// marker(2) | icon | att(2) | name(18) | alias(longest) | dir(fill) |
+// branch(longest) | status(12) | age(5, last attached) | alerts(2).
 // Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att.
 func renderOpenRow(width int, selected, current bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
-	return RenderOpenRowFocused(width, lipgloss.Width(Paren(branch)), IconCol("", "tmux", 1, selected), selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
+	return RenderOpenRowFocused(width, lipgloss.Width(branch), AliasColumn(alias), IconCol("", "tmux", 1, selected), selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
 }
 
 // RenderOpenRowFocused is renderOpenRow with an explicit focused flag, so
 // unfocused panes render a dimmed selection highlight.
-func RenderOpenRowFocused(width, branchCol int, iconCol Col, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
-	includeBranch := width >= 70
+func RenderOpenRowFocused(width, branchCol, aliasCol int, iconCol Col, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
+	cols := openCols(width, branchCol, aliasCol, iconCol, selected, current, focused, name, alias, attached, dir, branch, status, lastAttached, alerts)
+	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+}
+
+// RenderOpenHeader renders the Open tab column titles.
+func RenderOpenHeader(width, branchCol, aliasCol, iconWidth int) string {
+	return RenderColumnTitles(openCols(width, branchCol, aliasCol, Col{Width: iconWidth}, false, false, true, "", "", 0, "", "", "", nil, nil))
+}
+
+func openCols(width, branchCol, aliasCol int, iconCol Col, selected, current, focused bool, name, alias string, attached int, dir, branch, status string, lastAttached *time.Time, alerts []string) []Col {
 	includeAtt := width >= 70
+	includeBranch := width >= 70
 	includeStatus := width >= 90
 	includeAge := width >= 90
 	includeAlerts := width >= 90
 
 	fixed := 18 + iconCol.Width
-	if includeAtt {
-		fixed += 2
-	}
-	if includeStatus {
-		fixed += 12
-	}
-	if includeAge {
-		fixed += 5
-	}
-	if includeAlerts {
-		fixed += 2
-	}
-
-	numCols := 3 // icon + name + dir
-	if includeAtt {
-		numCols++
-	}
-	if includeBranch {
-		numCols++
-	}
-	if includeStatus {
-		numCols++
-	}
-	if includeAge {
-		numCols++
-	}
-	if includeAlerts {
-		numCols++
+	numCols := 3
+	for _, c := range []struct {
+		on    bool
+		width int
+	}{{includeAtt, 2}, {aliasCol > 0, aliasCol}, {includeBranch, 0}, {includeStatus, 12}, {includeAge, 5}, {includeAlerts, 2}} {
+		if c.on {
+			fixed += c.width
+			numCols++
+		}
 	}
 
 	flex := width - 2 - fixed - (numCols - 1)
@@ -188,7 +177,6 @@ func RenderOpenRowFocused(width, branchCol int, iconCol Col, selected, current, 
 	}
 
 	cols := []Col{iconCol}
-
 	if includeAtt {
 		attText := ""
 		if attached > 0 {
@@ -196,41 +184,19 @@ func RenderOpenRowFocused(width, branchCol int, iconCol Col, selected, current, 
 		}
 		cols = append(cols, Col{Text: attText, Width: 2})
 	}
-
-	chip := aliasChip(alias)
-	nameBudget := 18
-	if chip != "" {
-		nameBudget -= lipgloss.Width(chip)
-		if nameBudget < 1 {
-			nameBudget = 1
-		}
+	cols = append(cols, Col{Title: "NAME", Text: TruncateRight(name, 18), Width: 18, Style: nameStyle})
+	if aliasCol > 0 {
+		cols = append(cols, Col{Title: "ALIAS", Text: aliasPill(alias, selected, focused), Width: aliasCol})
 	}
-	truncated := TruncateRight(name, nameBudget)
-	var nameText string
-	switch {
-	case selected && chip != "":
-		// One continuous ANSI run so the cursor background survives the pill
-		// and the name (no nested resets from pre-rendered text).
-		nameText = aliasChipSelected(alias) + namePrefix(current) + truncated
-	case selected:
-		nameText = namePrefix(current) + truncated
-	default:
-		nameText = nameStyle.Render(truncated)
-		if chip != "" {
-			nameText = chip + nameText
-		}
-	}
-	cols = append(cols, Col{Text: nameText, Width: 18})
-
-	cols = append(cols, Col{Text: truncateDirLeft(dir, dirWidth), Width: dirWidth, Style: TextStyle()})
+	cols = append(cols, Col{Title: "DIRECTORY", Text: truncateDirLeft(dir, dirWidth), Width: dirWidth, Style: TextStyle()})
 	if includeBranch {
-		cols = append(cols, Col{Text: TruncateRight(Paren(branch), branchWidth), Width: branchWidth, Style: BranchStyle(), Align: lipgloss.Left})
+		cols = append(cols, Col{Title: "BRANCH", Text: TruncateRight(branch, branchWidth), Width: branchWidth, Style: BranchStyle(), Align: lipgloss.Left})
 	}
 	if includeStatus {
-		cols = append(cols, Col{Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
+		cols = append(cols, Col{Title: "STATUS", Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
 	}
 	if includeAge {
-		cols = append(cols, Col{Text: formatAge(lastAttached), Width: 5, Style: ageStyle(), Align: lipgloss.Left})
+		cols = append(cols, Col{Title: "AGE", Text: formatAge(lastAttached), Width: 5, Style: ageStyle(), Align: lipgloss.Left})
 	}
 	if includeAlerts {
 		alertText := ""
@@ -239,20 +205,31 @@ func RenderOpenRowFocused(width, branchCol int, iconCol Col, selected, current, 
 		}
 		cols = append(cols, Col{Text: alertText, Width: 2})
 	}
-
-	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+	return cols
 }
 
 // renderConfiguredRow renders a Tab 2 (Configured) session row with columns:
-// marker(2) | cmd(2) | name(24) | state(2) | path(fill) | branch(16) |
-// status(12). The cmd column ("*") and branch drop together below 70 cols.
-func renderConfiguredRow(width int, selected bool, name, startupCommand string, running bool, path, branch, status string) string {
-	return RenderConfiguredRowFocused(width, IconCol("", "config", 1, selected), selected, true, name, startupCommand, running, path, branch, status)
+// marker(2) | icon | cmd(2) | state(2) | name(24) | alias(longest) |
+// path(fill) | branch(16) | status(12). The cmd column and branch drop
+// together below 70 cols.
+func renderConfiguredRow(width int, selected bool, name, alias, startupCommand string, running bool, path, branch, status string) string {
+	return RenderConfiguredRowFocused(width, AliasColumn(alias), IconCol("", "config", 1, selected), selected, true, name, alias, startupCommand, running, path, branch, status)
 }
 
 // RenderConfiguredRowFocused is renderConfiguredRow with an explicit focused
 // flag, so unfocused panes render a dimmed selection highlight.
-func RenderConfiguredRowFocused(width int, iconCol Col, selected, focused bool, name, startupCommand string, running bool, path, branch, status string) string {
+func RenderConfiguredRowFocused(width, aliasCol int, iconCol Col, selected, focused bool, name, alias, startupCommand string, running bool, path, branch, status string) string {
+	cols := configuredCols(width, aliasCol, iconCol, selected, focused, name, alias, running, path, branch, status)
+	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+}
+
+// RenderConfiguredHeader renders the Configured tab column titles.
+func RenderConfiguredHeader(width, aliasCol, iconWidth int) string {
+	cols := configuredCols(width, aliasCol, Col{Width: iconWidth}, false, true, "", "", false, "", "", "")
+	return RenderColumnTitles(cols)
+}
+
+func configuredCols(width, aliasCol int, iconCol Col, selected, focused bool, name, alias string, running bool, path, branch, status string) []Col {
 	includeBranch := width >= 70
 
 	stateText := "○"
@@ -268,33 +245,32 @@ func RenderConfiguredRowFocused(width int, iconCol Col, selected, focused bool, 
 
 	fixed := iconCol.Width + 24 + 2 + 12
 	numCols := 5
+	if aliasCol > 0 {
+		fixed += aliasCol
+		numCols++
+	}
 	if includeBranch {
-		fixed += 2 + 16 // cmd + branch
+		fixed += 2 + 16
 		numCols += 2
 	}
-	pathWidth := width - 2 - fixed - (numCols - 1)
-	if pathWidth < 1 {
-		pathWidth = 1
-	}
+	pathWidth := max(width-2-fixed-(numCols-1), 1)
 
 	cols := make([]Col, 0, numCols)
 	cols = append(cols, iconCol)
 	if includeBranch {
-		cmdText := ""
-		// if startupCommand != "" {
-		// 	cmdText = WarningStyle().Render("*")
-		// }
-		cols = append(cols, Col{Text: cmdText, Width: 2})
+		cols = append(cols, Col{Width: 2})
 	}
 	cols = append(cols, Col{Text: stateText, Width: 2, Style: stateColStyle})
-	cols = append(cols, Col{Text: TruncateRight(name, 24), Width: 24, Style: TextStyle()})
-	cols = append(cols, Col{Text: truncateDirLeft(path, pathWidth), Width: pathWidth, Style: TextStyle()})
-	if includeBranch {
-		cols = append(cols, Col{Text: TruncateRight(Paren(branch), 16), Width: 16, Style: BranchStyle()})
+	cols = append(cols, Col{Title: "NAME", Text: TruncateRight(name, 24), Width: 24, Style: TextStyle()})
+	if aliasCol > 0 {
+		cols = append(cols, Col{Title: "ALIAS", Text: aliasPill(alias, selected, focused), Width: aliasCol})
 	}
-	cols = append(cols, Col{Text: TruncateRightANSI(status, 12), Width: 12})
-
-	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+	cols = append(cols, Col{Title: "DIRECTORY", Text: truncateDirLeft(path, pathWidth), Width: pathWidth, Style: TextStyle()})
+	if includeBranch {
+		cols = append(cols, Col{Title: "BRANCH", Text: TruncateRight(branch, 16), Width: 16, Style: BranchStyle()})
+	}
+	cols = append(cols, Col{Title: "STATUS", Text: TruncateRightANSI(status, 12), Width: 12})
+	return cols
 }
 
 func branchColumn(flex, longest int) int {
@@ -305,6 +281,16 @@ func branchColumn(flex, longest int) int {
 // marker(2) | icon | number(7) | title(fill) | branch(longest) | status(12).
 // The branch drops below 70 cols. Closed issues render their title dimmed.
 func RenderWorktreeRowFocused(width, branchCol int, iconCol Col, selected, focused bool, number int, title string, closed bool, branch, status string) string {
+	cols := worktreeCols(width, branchCol, iconCol, selected, "#"+strconv.Itoa(number), title, closed, branch, status)
+	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+}
+
+// RenderWorktreeHeader renders the worktree tab column titles.
+func RenderWorktreeHeader(width, branchCol, iconWidth int) string {
+	return RenderColumnTitles(worktreeCols(width, branchCol, Col{Width: iconWidth}, false, "", "", false, "", ""))
+}
+
+func worktreeCols(width, branchCol int, iconCol Col, selected bool, number, title string, closed bool, branch, status string) []Col {
 	includeBranch := width >= 70
 
 	fixed := iconCol.Width + 7 + 12
@@ -331,15 +317,14 @@ func RenderWorktreeRowFocused(width, branchCol int, iconCol Col, selected, focus
 
 	cols := []Col{
 		iconCol,
-		{Text: "#" + strconv.Itoa(number), Width: 7, Style: numberStyle},
-		{Text: TruncateRight(title, titleWidth), Width: titleWidth, Style: titleStyle},
+		{Title: "ISSUE", Text: number, Width: 7, Style: numberStyle},
+		{Title: "TITLE", Text: TruncateRight(title, titleWidth), Width: titleWidth, Style: titleStyle},
 	}
 	if includeBranch {
-		cols = append(cols, Col{Text: TruncateRight(Paren(branch), branchWidth), Width: branchWidth, Style: BranchStyle()})
+		cols = append(cols, Col{Title: "BRANCH", Text: TruncateRight(branch, branchWidth), Width: branchWidth, Style: BranchStyle()})
 	}
-	cols = append(cols, Col{Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
-
-	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+	cols = append(cols, Col{Title: "STATUS", Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
+	return cols
 }
 
 // IconCol is the leading icon column of a list row: the configured icon, or

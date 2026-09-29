@@ -273,7 +273,7 @@ func renderWorkmuxRowFocused(width int, selected, focused bool, a wmAgent) strin
 		cols := []render.Col{
 			{Text: wmStateGlyph(a.Status), Width: stateW},
 			{Text: render.TruncateRight(a.AgentKind, 24), Width: kind, Style: render.TextStyle()},
-			{Text: render.TruncateRight(render.Paren(a.Branch), 24), Width: branchW, Style: render.BranchStyle()},
+			{Text: render.TruncateRight(a.Branch, 24), Width: branchW, Style: render.BranchStyle()},
 			{Text: wmElapsed(a.ElapsedSecs), Width: elapsedW, Style: render.DimmedStyle(), Align: lipgloss.Left},
 		}
 		// if title != "" {

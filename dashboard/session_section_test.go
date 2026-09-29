@@ -214,7 +214,7 @@ func TestSessionsSectionRenderItemLongBranchFullAndAligned(t *testing.T) {
 	}
 	first := ansi.Strip(s.renderItem(0, 160))
 	second := ansi.Strip(s.renderItem(1, 160))
-	assert.Contains(t, first, "("+long+")")
+	assert.Contains(t, first, long)
 	assert.Equal(t, strings.Index(first, "~2"), strings.Index(second, "!1"))
 }
 
@@ -277,4 +277,15 @@ func TestSessionsSectionRenderItemShowsResolvedIcon(t *testing.T) {
 		ListState: ListState{cursor: 1},
 	}
 	assert.True(t, strings.HasPrefix(ansi.Strip(s.renderItem(0, 100)), "  🏠"))
+}
+
+func TestSessionsClickAtSkipsHeaderRow(t *testing.T) {
+	s := &SessionsSection{sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}, {Name: "c"}}}
+	s.cursor = 1
+	s.ClickAt(0)
+	assert.Equal(t, 1, s.cursor)
+	s.ClickAt(3)
+	assert.Equal(t, 2, s.cursor)
+	s.ClickAt(1)
+	assert.Equal(t, 0, s.cursor)
 }

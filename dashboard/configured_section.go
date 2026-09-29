@@ -208,9 +208,9 @@ func (s *ConfiguredSection) applyStatus(path, status string) {
 }
 
 // ViewBorderless renders the configured list with columns:
-// marker(2) | name(24) | state(2) | path(fill) | branch(16) | status(12).
+// marker(2) | state(2) | name(24) | alias(longest) | path(fill) | branch(16) | status(12).
 func (s *ConfiguredSection) ViewBorderless(width, height int, focused bool) (string, string) {
-	s.viewHeight = height
+	s.viewHeight = max(height-1, 1)
 
 	title := s.config.Title
 	if title == "" {
@@ -230,15 +230,16 @@ func (s *ConfiguredSection) ViewBorderless(width, height int, focused bool) (str
 		return title, "  No sessions configured"
 	}
 
-	available := max(height, 1)
 	visible := s.visible()
-	end := min(s.offset+available, len(visible))
+	end := min(s.offset+s.viewHeight, len(visible))
 
 	var b strings.Builder
+	b.WriteString(render.RenderConfiguredHeader(width, aliasColumnWidth(visible), max(s.deps.IconWidth, 1)))
+	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
 		path := render.CollapseHome(sess.Path, s.deps.HomeDir)
-		b.WriteString(render.RenderConfiguredRowFocused(width, iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, focused, sess.Name, sess.StartupCommand, s.running[sess.Name], path, sess.Branch, sess.GitStatus))
+		b.WriteString(render.RenderConfiguredRowFocused(width, aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, focused, sess.Name, sess.Alias, sess.StartupCommand, s.running[sess.Name], path, sess.Branch, sess.GitStatus))
 		b.WriteString("\n")
 	}
 

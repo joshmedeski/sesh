@@ -7,15 +7,11 @@ import (
 
 // Shared color palette (see design spec).
 var (
-	colorAccent = lipgloss.ANSIColor(14) // accent (cyan)
-	colorDimmed = lipgloss.ANSIColor(8)  // dimmed / border
-	colorBorder = lipgloss.ANSIColor(8)
-	colorText   = lipgloss.ANSIColor(15) // white text
-	// colorPillText is the alias pill's label colour on a selected row. Black
-	// mirrors the terminal's typical default background, so it stays legible
-	// on the accent pill fill the same way the unselected chip's reverse-video
-	// label does (its text is the terminal's own contrasting background).
-	colorPillText  = lipgloss.ANSIColor(0)  // black
+	colorAccent    = lipgloss.ANSIColor(14) // accent (cyan)
+	colorDimmed    = lipgloss.ANSIColor(8)  // dimmed / border
+	colorBorder    = lipgloss.ANSIColor(8)
+	colorText      = lipgloss.ANSIColor(15) // white text
+	colorPillText  = lipgloss.ANSIColor(0)
 	colorAge       = lipgloss.ANSIColor(7)  // light gray (distinct from highlight bg)
 	colorBranch    = lipgloss.ANSIColor(5)  // magenta
 	colorStatus    = lipgloss.ANSIColor(10) // green

@@ -97,7 +97,7 @@ func TestWorktreeRowShowsNumberTitleAndBranch(t *testing.T) {
 	s.Update(branchLoadedMsg{path: "/r/w/358", branch: "jam/358-tmux-command-updates"})
 	_, content := s.ViewBorderless(120, 10, true)
 	assert.Contains(t, ansi.Strip(content), "#358    tmux command updates")
-	assert.Contains(t, ansi.Strip(content), "(jam/358-tmux-command-updates)")
+	assert.Contains(t, ansi.Strip(content), "jam/358-tmux-command-updates")
 }
 
 func TestWorktreeIconFallsBackToRepoRootIcon(t *testing.T) {
@@ -110,7 +110,7 @@ func TestWorktreeIconFallsBackToRepoRootIcon(t *testing.T) {
 	s := NewWorktreeSection(model.WorktreeConfig{Repo: "Nutiliti/nutiliti", Path: "~/c/nu"}, deps)
 	s.Update(loadedWorktrees("Nutiliti/nutiliti"))
 	_, content := s.ViewBorderless(120, 10, true)
-	for _, line := range strings.Split(strings.TrimSuffix(ansi.Strip(content), "\n"), "\n") {
+	for _, line := range strings.Split(strings.TrimSuffix(ansi.Strip(content), "\n"), "\n")[1:] {
 		assert.True(t, strings.HasPrefix(strings.TrimLeft(line, "▌ "), "🏠"), line)
 	}
 }
