@@ -227,7 +227,7 @@ func BenchmarkBuildItems(b *testing.B) {
 			b.Run(fmt.Sprintf("n=%d/%s", n, tc.name), func(b *testing.B) {
 				var resolveIcon IconFunc
 				if tc.icons {
-					resolveIcon = buildIconResolver(benchIconConfig(sessions), benchHome(b), nil)
+					resolveIcon = lister.IconResolver(benchIconConfig(sessions), benchHome(b), nil)
 					if resolveIcon == nil {
 						b.Fatal("expected an icon resolver for a config that declares icons")
 					}
@@ -300,7 +300,7 @@ func BenchmarkIconResolverWildcard(b *testing.B) {
 				config := model.Config{WildcardConfigs: wildcards}
 				h := benchHome(b)
 				finder := lister.NewLister(config, h, nil, nil, nil, nil)
-				resolveIcon := buildIconResolver(config, h, finder)
+				resolveIcon := lister.IconResolver(config, h, finder)
 				if resolveIcon == nil {
 					b.Fatal("expected an icon resolver for a config that declares wildcard icons")
 				}

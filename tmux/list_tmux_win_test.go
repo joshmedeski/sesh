@@ -3,6 +3,7 @@ package tmux
 import (
 	"testing"
 
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -89,4 +90,23 @@ func TestListAllWindowNames(t *testing.T) {
 			"work": {"make::build"},
 		}, windowNames)
 	})
+}
+
+func TestListAllWindows(t *testing.T) {
+	mockShell := &shell.MockShell{}
+	tmux := &RealTmux{shell: mockShell, bin: "tmux"}
+	mockShell.EXPECT().ListCmd("tmux", "list-windows", "-a", "-F",
+		"#{session_name}::#{window_index}::#{window_name}::#{pane_current_path}::#{window_active}").Return(
+		[]string{"sesh::1::editor::/c/sesh::1", "sesh::2::server::/c/sesh::0", "no-separator", "dotfiles::1::nvim::/c/dotfiles::1"},
+		nil,
+	)
+	windows, err := tmux.ListAllWindows()
+	assert.Nil(t, err)
+	assert.Equal(t, map[string][]model.TmuxWindow{
+		"sesh": {
+			{Name: "editor", Path: "/c/sesh", Index: 1, Active: true},
+			{Name: "server", Path: "/c/sesh", Index: 2},
+		},
+		"dotfiles": {{Name: "nvim", Path: "/c/dotfiles", Index: 1, Active: true}},
+	}, windows)
 }

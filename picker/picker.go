@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/previewer"
 	"github.com/joshmedeski/sesh/v2/tmux"
@@ -57,7 +58,7 @@ type RealPicker struct {
 	home home.Home
 	// wildcards matches a session path to a [[wildcard]] block, for icons
 	// declared on a pattern rather than a single session.
-	wildcards WildcardFinder
+	wildcards lister.WildcardFinder
 	// zoxide is the frecency backend, reached only to remove an entry the user
 	// confirmed removing from the picker.
 	zoxide zoxide.Zoxide
@@ -75,7 +76,7 @@ type RealPicker struct {
 // forgotten until the entry aged out on its own.
 type CacheRefreshFunc func()
 
-func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards WildcardFinder, zoxide zoxide.Zoxide, tmux tmux.Tmux, refreshCache CacheRefreshFunc) Picker {
+func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards lister.WildcardFinder, zoxide zoxide.Zoxide, tmux tmux.Tmux, refreshCache CacheRefreshFunc) Picker {
 	return &RealPicker{
 		config:       config,
 		previewer:    previewer,
@@ -266,7 +267,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		AliasFilterPrefix:       aliasFilterPrefix(p.config.TUI.AliasFilterPrefix),
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
 		DisableAliasAutoConnect: disableAliasAutoConnect,
-		Icon:                    buildIconResolver(p.config, p.home, p.wildcards),
+		Icon:                    lister.IconResolver(p.config, p.home, p.wildcards),
 		IconWidth:               iconColWidth(p.config),
 		Preview:                 preview,
 		PreviewWidth:            previewWidth(p.config.TUI.PreviewWidth),

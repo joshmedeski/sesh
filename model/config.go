@@ -142,8 +142,9 @@ type (
 		// since it is only desirable for sessions you jump to constantly.
 		AliasAutoConnect bool `toml:"alias_auto_connect"`
 		// Icon replaces the source glyph this session gets in the picker with
-		// any string — a nerd font glyph or an emoji. Picker-only: `sesh list`
-		// consumers trim a known-width glyph, so a custom one would break them.
+		// any string — a nerd font glyph or an emoji. `sesh list --icons` keeps
+		// the source glyph, since its consumers trim a known-width one; `sesh
+		// list --json` reports this as Icon instead.
 		Icon string `toml:"icon"`
 		DefaultSessionConfig
 	}

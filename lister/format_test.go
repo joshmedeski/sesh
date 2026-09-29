@@ -133,3 +133,82 @@ func TestFormatSessions(t *testing.T) {
 		mockTmux.AssertNotCalled(t, "ListAllWindowNames")
 	})
 }
+
+func TestFormatJsonResolvesSessions(t *testing.T) {
+	config := model.Config{
+		DefaultSessionConfig: model.DefaultSessionConfig{
+			StartupCommand: "default-start",
+			PreviewCommand: "default-preview {}",
+			Windows:        []string{"shell"},
+		},
+		SessionConfigs: []model.SessionConfig{
+			{Name: "notes", Path: "~/notes", Icon: "📓", Alias: "n", AliasAutoConnect: true,
+				DefaultSessionConfig: model.DefaultSessionConfig{Tmuxp: "notes", Windows: []string{"editor"}}},
+			{Name: "work", Path: "~/elsewhere", Alias: "w", AliasAutoConnect: true},
+		},
+		WindowConfigs: []model.WindowConfig{
+			{Name: "editor", StartupScript: "nvim"},
+			{Name: "shell", Path: "~/scratch"},
+		},
+		WildcardConfigs: []model.WildcardConfig{
+			{Pattern: "~/c/quiet*", DisableStartCommand: true},
+			{Pattern: "~/c/*", StartupCommand: "nvim", PreviewCommand: "glow {}", Windows: []string{"editor"}, Icon: "🏠"},
+		},
+	}
+	mockTmux := new(tmux.MockTmux)
+	mockTmux.On("ListAllWindows").Return(map[string][]model.TmuxWindow{
+		"work": {{Name: "nvim", Index: 1, Active: true}, {Name: "shell", Index: 2}},
+	}, nil).Once()
+	l := NewLister(config, iconTestHome(t), mockTmux, nil, nil, nil)
+	notes, _ := l.FindConfigSession("notes")
+	sessions := model.SeshSessions{
+		OrderedIndex: []string{"config:notes", "zoxide:app", "zoxide:quiet", "zoxide:other", "tmux:work"},
+		Directory: model.SeshSessionMap{
+			"config:notes": notes,
+			"zoxide:app":   {Src: "zoxide", Name: "~/c/app", Path: "/home/user/c/app"},
+			"zoxide:quiet": {Src: "zoxide", Name: "~/c/quiet", Path: "/home/user/c/quiet"},
+			"zoxide:other": {Src: "zoxide", Name: "~/other", Path: "/home/user/other"},
+			"tmux:work":    {Src: "tmux", Name: "work", Path: "/home/user/c/work"},
+		},
+	}
+
+	got, err := l.Format(sessions, ListOptions{Json: true})
+	require.NoError(t, err)
+
+	assert.Equal(t, model.SeshSession{
+		Src: "config", Name: "notes", Path: "/home/user/notes",
+		StartupCommand: "default-start", PreviewCommand: "default-preview {}",
+		WindowNames:   []string{"editor"},
+		WindowConfigs: []model.WindowConfig{{Name: "editor", StartupScript: "nvim", Path: "/home/user/notes"}},
+		Icon:          "📓", Alias: "n", AliasAutoConnect: true, Tmuxp: "notes",
+	}, got.Directory["config:notes"])
+
+	assert.Equal(t, model.SeshSession{
+		Src: "zoxide", Name: "~/c/app", Path: "/home/user/c/app",
+		StartupCommand: "nvim", PreviewCommand: "glow {}",
+		WindowNames:   []string{"editor"},
+		WindowConfigs: []model.WindowConfig{{Name: "editor", StartupScript: "nvim", Path: "/home/user/c/app"}},
+		Icon:          "🏠", Wildcard: "~/c/*",
+	}, got.Directory["zoxide:app"])
+
+	quiet := got.Directory["zoxide:quiet"]
+	assert.True(t, quiet.DisableStartupCommand)
+	assert.Empty(t, quiet.StartupCommand, "a wildcard that disables the startup command skips the default too")
+	assert.Equal(t, "~/c/quiet*", quiet.Wildcard)
+
+	other := got.Directory["zoxide:other"]
+	assert.Equal(t, "default-start", other.StartupCommand)
+	assert.Equal(t, []model.WindowConfig{{Name: "shell", Path: "/home/user/scratch"}}, other.WindowConfigs)
+	assert.Empty(t, other.Wildcard)
+
+	work := got.Directory["tmux:work"]
+	assert.Equal(t, []model.TmuxWindow{{Name: "nvim", Index: 1, Active: true}, {Name: "shell", Index: 2}}, work.TmuxWindows)
+	assert.Equal(t, "🏠", work.Icon)
+	assert.Empty(t, work.StartupCommand, "a running tmux session starts nothing on connect")
+	assert.Nil(t, work.WindowNames)
+	assert.Equal(t, "w", work.Alias, "a tmux session named after a [[session]] keeps its alias, even if --hide-duplicates drops the config entry")
+	assert.True(t, work.AliasAutoConnect)
+
+	assert.Empty(t, sessions.Directory["zoxide:app"].StartupCommand, "the input list is left untouched")
+	mockTmux.AssertExpectations(t)
+}
