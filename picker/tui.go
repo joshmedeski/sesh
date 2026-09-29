@@ -230,19 +230,7 @@ type Model struct {
 // carries a trailing space, so it is the whole icon cell for the single-width
 // glyphs it comes from; iconCell pads it when a wider icon is in play.
 func srcIcon(src string) (string, color.Color) {
-	if g, ok := icon.Glyphs[src]; ok {
-		var ansi int
-		switch {
-		case g.ColorCode >= 90 && g.ColorCode <= 97:
-			ansi = g.ColorCode - 82
-		case g.ColorCode >= 30 && g.ColorCode <= 37:
-			ansi = g.ColorCode - 30
-		default:
-			ansi = g.ColorCode
-		}
-		return g.Icon + " ", lipgloss.ANSIColor(ansi)
-	}
-	return "? ", lipgloss.ANSIColor(8)
+	return icon.SourceGlyph(src)
 }
 
 // iconCell renders the icon column for a row: the icon configured for the
@@ -261,17 +249,7 @@ func srcIcon(src string) (string, color.Color) {
 // space makes up the difference for that one icon without shifting any other
 // row.
 func (m Model) iconCell(item sessionItem) string {
-	if item.icon == "" {
-		glyph, clr := srcIcon(item.src)
-		return padIcon(lipgloss.NewStyle().Foreground(clr).Render(glyph), m.iconWidth+1)
-	}
-	override := strings.TrimRight(item.icon, " ")
-	return item.icon + " " + padding(m.iconWidth+1-lipgloss.Width(override+" "))
-}
-
-// padIcon right-pads an icon cell to width.
-func padIcon(cell string, width int) string {
-	return cell + padding(width-lipgloss.Width(cell))
+	return icon.Cell(item.icon, item.src, m.iconWidth)
 }
 
 func padding(n int) string {
