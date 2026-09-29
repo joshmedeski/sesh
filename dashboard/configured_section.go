@@ -108,7 +108,7 @@ func (s *ConfiguredSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		s.sessions = msg.sessions
 		s.running = msg.running
 		s.clampCursor()
-		return s, tea.Batch(s.fetchBranches(), s.fetchStatuses())
+		return s, tea.Batch(fetchBranches(s.deps.Git, s.sessions), fetchStatuses(s.deps.Git, s.sessions))
 
 	case branchLoadedMsg:
 		s.applyBranch(msg.path, msg.branch)
@@ -197,65 +197,13 @@ func (s *ConfiguredSection) selectItem() {
 	s.chosen = s.visible()[s.cursor].Name
 }
 
-// fetchBranches enriches configured sessions with their current git branch.
-func (s *ConfiguredSection) fetchBranches() tea.Cmd {
-	paths := make(map[string]bool)
-	for _, sess := range s.sessions {
-		if sess.Path != "" {
-			paths[sess.Path] = true
-		}
-	}
-	cmds := make([]tea.Cmd, 0, len(paths))
-	for p := range paths {
-		path := p
-		cmds = append(cmds, func() tea.Msg {
-			found, branch, err := s.deps.Git.CurrentBranch(path)
-			if err != nil || !found {
-				return branchLoadedMsg{path: path, branch: ""}
-			}
-			return branchLoadedMsg{path: path, branch: strings.TrimSpace(branch)}
-		})
-	}
-	return tea.Batch(cmds...)
-}
-
-// fetchStatuses enriches configured sessions with their current git status.
-func (s *ConfiguredSection) fetchStatuses() tea.Cmd {
-	paths := make(map[string]bool)
-	for _, sess := range s.sessions {
-		if sess.Path != "" {
-			paths[sess.Path] = true
-		}
-	}
-	cmds := make([]tea.Cmd, 0, len(paths))
-	for p := range paths {
-		path := p
-		cmds = append(cmds, func() tea.Msg {
-			status, err := s.deps.Git.StatusSummary(path)
-			if err != nil {
-				return statusLoadedMsg{path: path, status: ""}
-			}
-			return statusLoadedMsg{path: path, status: render.FormatGitStatus(status)}
-		})
-	}
-	return tea.Batch(cmds...)
-}
-
 func (s *ConfiguredSection) applyBranch(path, branch string) {
-	for i := range s.sessions {
-		if s.sessions[i].Path == path {
-			s.sessions[i].Branch = branch
-		}
-	}
+	applyBranch(s.sessions, path, branch)
 	s.applyFilter()
 }
 
 func (s *ConfiguredSection) applyStatus(path, status string) {
-	for i := range s.sessions {
-		if s.sessions[i].Path == path {
-			s.sessions[i].GitStatus = status
-		}
-	}
+	applyStatus(s.sessions, path, status)
 	s.applyFilter()
 }
 
