@@ -194,7 +194,7 @@ func TestBuildSections_SessionsEntryCarriesTitleNotGroups(t *testing.T) {
 // --- New ---
 
 func TestNewBuildsDefaultModel(t *testing.T) {
-	m := New(model.DashboardConfig{}, nil, nil, nil, nil, nil, nil, "/home/user")
+	m := New(model.DashboardConfig{}, nil, nil, nil, nil, nil, nil, nil, nil, "/home/user")
 	require.NotNil(t, m.sessions)
 	require.NotNil(t, m.configured)
 	assert.Equal(t, pageOpen, m.page)
@@ -853,7 +853,7 @@ func TestViewConfiguredPageSinglePaneFrame(t *testing.T) {
 	m.width = 50
 	m.height = 10
 	m = m.withLayout()
-	out := m.viewConfiguredPage()
+	out := m.viewListPage()
 	assert.Contains(t, out, "Configured")
 	assert.NotContains(t, out, "┬")
 	assert.NotContains(t, out, "┴")

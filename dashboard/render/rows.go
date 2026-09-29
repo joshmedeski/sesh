@@ -3,6 +3,7 @@ package render
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -175,7 +176,7 @@ func RenderOpenRowFocused(width, branchCol int, selected, current, focused bool,
 	flex := width - 2 - fixed - (numCols - 1)
 	branchWidth := 0
 	if includeBranch {
-		branchWidth = min(max(branchCol, 16), max(flex-16, 16))
+		branchWidth = branchColumn(flex, branchCol)
 	}
 	dirWidth := max(flex-branchWidth, 1)
 
@@ -289,6 +290,50 @@ func RenderConfiguredRowFocused(width int, selected, focused bool, name, startup
 		cols = append(cols, Col{Text: TruncateRight(Paren(branch), 16), Width: 16, Style: BranchStyle()})
 	}
 	cols = append(cols, Col{Text: TruncateRightANSI(status, 12), Width: 12})
+
+	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+}
+
+func branchColumn(flex, longest int) int {
+	return min(max(longest, 16), max(flex-16, 16))
+}
+
+// RenderWorktreeRowFocused renders a worktree tab row with columns:
+// marker(2) | number(7) | title(fill) | branch(longest) | status(12).
+// The branch drops below 70 cols. Closed issues render their title dimmed.
+func RenderWorktreeRowFocused(width, branchCol int, selected, focused bool, number int, title string, closed bool, branch, status string) string {
+	includeBranch := width >= 70
+
+	fixed := 7 + 12
+	numCols := 3
+	if includeBranch {
+		numCols++
+	}
+	flex := width - 2 - fixed - (numCols - 1)
+	branchWidth := 0
+	if includeBranch {
+		branchWidth = branchColumn(flex, branchCol)
+	}
+	titleWidth := max(flex-branchWidth, 1)
+
+	numberStyle := DimmedStyle()
+	titleStyle := TextStyle()
+	if closed {
+		titleStyle = DimmedStyle()
+	}
+	if selected {
+		numberStyle = TextStyle()
+		titleStyle = TextStyle()
+	}
+
+	cols := []Col{
+		{Text: "#" + strconv.Itoa(number), Width: 7, Style: numberStyle},
+		{Text: TruncateRight(title, titleWidth), Width: titleWidth, Style: titleStyle},
+	}
+	if includeBranch {
+		cols = append(cols, Col{Text: TruncateRight(Paren(branch), branchWidth), Width: branchWidth, Style: BranchStyle()})
+	}
+	cols = append(cols, Col{Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
 
 	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/worktree"
 )
 
 const (
@@ -22,16 +23,19 @@ const (
 )
 
 // Model is the dashboard TUI. It has two permanent tabs (page 0 "Open" and
-// page 1 "Configured"). Tab 1 lays panes out in two rows of shared frames:
-// row 1 is the sessions list, row 2 is the remaining widgets side by side.
-// Tab 2 is the single-pane configured list.
+// page 1 "Configured") followed by one tab per [[worktree]] config entry, in
+// config order. Tab 1 lays panes out in two rows of shared frames: row 1 is
+// the sessions list, row 2 is the remaining widgets side by side. Every other
+// tab is a single-pane list.
 type Model struct {
 	config     model.DashboardConfig
 	sessions   *SessionsSection
 	configured *ConfiguredSection
+	worktrees  []*WorktreeSection
 	widgets    []Section
 
-	// page is the active tab: pageOpen or pageConfigured.
+	// page is the active tab: pageOpen, pageConfigured, or pageConfigured+1+i
+	// for worktrees[i].
 	page int
 	// focus is the focused pane index on page 0, row-major over the flat pane
 	// list [row1..., row2...]. 0 = sessions list. Ignored on page 1.
@@ -43,6 +47,8 @@ type Model struct {
 	chosen   string
 	quit     bool
 
+	chosenWorktree *model.WorktreeConnectOpts
+
 	contentHeight int
 	row1Widths    []int
 	row2Widths    []int
@@ -52,7 +58,7 @@ type Model struct {
 	lastHoveredSession string
 }
 
-func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, sh shell.Shell, runner CommandRunner, homeDir string) Model {
+func New(config model.DashboardConfig, worktreeConfigs []model.WorktreeConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, wt worktree.Worktree, sh shell.Shell, runner CommandRunner, homeDir string) Model {
 	deps := SectionDeps{
 		Tmux:      tmux,
 		Lister:    lister,
@@ -60,15 +66,21 @@ func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git
 		Connector: connector,
 		Shell:     sh,
 		Runner:    runner,
+		Worktree:  wt,
 		HomeDir:   homeDir,
 	}
 
 	built := BuildSections(config, deps)
+	worktrees := make([]*WorktreeSection, 0, len(worktreeConfigs))
+	for _, wc := range worktreeConfigs {
+		worktrees = append(worktrees, NewWorktreeSection(wc, deps))
+	}
 
 	m := Model{
 		config:     config,
 		sessions:   built.Sessions,
 		configured: built.Configured,
+		worktrees:  worktrees,
 		widgets:    built.Widgets,
 		page:       pageOpen,
 		focus:      0,
@@ -79,8 +91,11 @@ func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git
 }
 
 func (m Model) Init() tea.Cmd {
-	cmds := make([]tea.Cmd, 0, len(m.widgets)+2)
+	cmds := make([]tea.Cmd, 0, len(m.widgets)+len(m.worktrees)+2)
 	cmds = append(cmds, m.sessions.Init(), m.configured.Init())
+	for _, w := range m.worktrees {
+		cmds = append(cmds, w.Init())
+	}
 	for _, w := range m.widgets {
 		cmds = append(cmds, w.Init())
 	}
@@ -140,11 +155,11 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 func (m Model) hitTest(x, y int) (idx int, sec Section, row int, ok bool) {
 	// Content begins below the two-row header.
 	cy := y - 2
-	if m.page == pageConfigured {
+	if m.page != pageOpen {
 		if cy < 0 || cy >= m.contentHeight || x < 1 || x >= m.width {
 			return 0, nil, 0, false
 		}
-		return 0, m.configured, cy - 1, true
+		return 0, m.pageSection(), cy - 1, true
 	}
 
 	panes, widths, base, top := m.rowAt(cy)
@@ -203,6 +218,15 @@ func (m Model) broadcast(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, c)
 	}
 
+	for i := range m.worktrees {
+		var w Section
+		w, c = m.worktrees[i].Update(msg)
+		m.worktrees[i] = w.(*WorktreeSection)
+		if c != nil {
+			cmds = append(cmds, c)
+		}
+	}
+
 	for i := range m.widgets {
 		var w Section
 		w, c = m.widgets[i].Update(msg)
@@ -235,8 +259,12 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.quit = true
 		return m, tea.Quit
 
-	case "tab", "shift+tab":
-		m.page = 1 - m.page
+	case "tab":
+		m.page = (m.page + 1) % m.pageCount()
+		m.focus = 0
+		return m, nil
+	case "shift+tab":
+		m.page = (m.page - 1 + m.pageCount()) % m.pageCount()
 		m.focus = 0
 		return m, nil
 	}
@@ -270,8 +298,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 // focusedSection returns the currently focused pane (sessions list, configured
 // list, or a widget).
 func (m Model) focusedSection() Section {
-	if m.page == pageConfigured {
-		return m.configured
+	if m.page != pageOpen {
+		return m.pageSection()
 	}
 	wi := m.flatWidgetIndex(m.focus)
 	if wi < 0 {
@@ -338,10 +366,14 @@ func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var updated Section
 
-	if m.page == pageConfigured {
+	switch {
+	case m.page == pageConfigured:
 		updated, cmd = m.configured.Update(msg)
 		m.configured = updated.(*ConfiguredSection)
-	} else {
+	case m.page > pageConfigured:
+		updated, cmd = m.worktrees[m.page-pageConfigured-1].Update(msg)
+		m.worktrees[m.page-pageConfigured-1] = updated.(*WorktreeSection)
+	default:
 		wi := m.flatWidgetIndex(m.focus)
 		if wi < 0 {
 			updated, cmd = m.sessions.Update(msg)
@@ -356,6 +388,12 @@ func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if chosen := updated.Chosen(); chosen != "" {
 			m.chosen = chosen
 			return m, tea.Quit
+		}
+		if ws, ok := updated.(*WorktreeSection); ok {
+			if opts, ok := ws.ChosenWorktree(); ok {
+				m.chosenWorktree = &opts
+				return m, tea.Quit
+			}
 		}
 	}
 
@@ -629,7 +667,7 @@ func (m Model) View() tea.View {
 		return tea.NewView("Terminal too small for dashboard")
 	}
 
-	header := render.RenderHeader(m.page, m.sessions.totalSessions, m.width)
+	header := render.RenderHeader(m.page, m.sessions.totalSessions, m.width, m.worktreeTabTitles()...)
 	filtering, query := m.focusedFilterState()
 	footer := render.RenderFooter(m.page, m.width, m.sortLabel(), filtering, query)
 
@@ -637,7 +675,7 @@ func (m Model) View() tea.View {
 	if m.page == pageOpen {
 		content = m.viewOpenPage()
 	} else {
-		content = m.viewConfiguredPage()
+		content = m.viewListPage()
 	}
 
 	ui := lipgloss.JoinVertical(lipgloss.Top, header, content, footer)
@@ -683,12 +721,12 @@ func (m Model) renderRow(panes []Section, widths []int, height int, flatOffset i
 	return render.RenderFrame(fp, height)
 }
 
-func (m Model) viewConfiguredPage() string {
+func (m Model) viewListPage() string {
 	innerHeight := m.contentHeight - 2
 	// The single pane sits between the frame's two corner columns, so reserve
 	// them to keep the frame exactly m.width wide.
 	paneWidth := max(m.width-2, 1)
-	title, content := m.configured.ViewBorderless(paneWidth, innerHeight, true)
+	title, content := m.pageSection().ViewBorderless(paneWidth, innerHeight, true)
 	return render.RenderFrame([]render.FramePane{
 		{Title: title, Content: content, Width: paneWidth, Focused: true},
 	}, m.contentHeight)
@@ -696,6 +734,31 @@ func (m Model) viewConfiguredPage() string {
 
 func (m Model) Chosen() string {
 	return m.chosen
+}
+
+// ChosenWorktree returns the worktree selected on a worktree tab, or nil.
+func (m Model) ChosenWorktree() *model.WorktreeConnectOpts {
+	return m.chosenWorktree
+}
+
+func (m Model) pageCount() int {
+	return pageConfigured + 1 + len(m.worktrees)
+}
+
+// pageSection returns the single pane of a list page (any page but Open).
+func (m Model) pageSection() Section {
+	if m.page == pageConfigured {
+		return m.configured
+	}
+	return m.worktrees[m.page-pageConfigured-1]
+}
+
+func (m Model) worktreeTabTitles() []string {
+	titles := make([]string, len(m.worktrees))
+	for i, w := range m.worktrees {
+		titles[i] = w.TabTitle()
+	}
+	return titles
 }
 
 func (m Model) Quit() bool {

@@ -33,7 +33,7 @@ func NewDashboardCommand(base *BaseDeps) *cobra.Command {
 				return fmt.Errorf("couldn't get home directory: %w", err)
 			}
 
-			m := dashboard.New(deps.Config.Dashboard, deps.Tmux, deps.Lister, deps.Git, deps.Connector, deps.Shell, dashboard.NewCommandRunner(deps.Exec), homeDir)
+			m := dashboard.New(deps.Config.Dashboard, deps.Config.WorktreeConfigs, deps.Tmux, deps.Lister, deps.Git, deps.Connector, deps.Worktree, deps.Shell, dashboard.NewCommandRunner(deps.Exec), homeDir)
 			prog := tea.NewProgram(m)
 			result, err := prog.Run()
 			if err != nil {
@@ -46,6 +46,13 @@ func NewDashboardCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			if dashModel.Quit() {
+				return nil
+			}
+
+			if opts := dashModel.ChosenWorktree(); opts != nil {
+				if _, err := deps.Worktree.Connect(*opts); err != nil {
+					return err
+				}
 				return nil
 			}
 

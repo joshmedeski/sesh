@@ -8,6 +8,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/worktree"
 )
 
 // Section is the contract every dashboard pane implements: the two permanent
@@ -53,5 +54,6 @@ type SectionDeps struct {
 	Connector connector.Connector
 	Shell     shell.Shell
 	Runner    CommandRunner
+	Worktree  worktree.Worktree
 	HomeDir   string
 }

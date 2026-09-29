@@ -279,3 +279,10 @@ func TestRenderOpenRow_WideRowShowsFullBranch(t *testing.T) {
 	assert.Contains(t, ansi.Strip(row), "(claude/telemetry-dashboard)")
 	assert.Equal(t, 200, lipgloss.Width(row))
 }
+
+func TestRenderWorktreeRow_SelectedNumberUsesTextColor(t *testing.T) {
+	row := RenderWorktreeRowFocused(120, 16, true, true, 7503, "closed issue", true, "main", "")
+	selected := TextStyle().Inherit(cursorStyle(true))
+	assert.Contains(t, row, selected.Width(7).Render("#7503"))
+	assert.NotContains(t, row, DimmedStyle().Inherit(cursorStyle(true)).Width(7).Render("#7503"))
+}

@@ -2,6 +2,7 @@
 package render
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -14,9 +15,9 @@ var tabTitles = []string{"Open", "Configured"}
 // RenderHeader renders the two-row header: a tab line (with an optional
 // right-pinned "N active" count on wide terminals) followed by a full-width
 // rule in the border color.
-func RenderHeader(activePage int, activeCount int, width int) string {
+func RenderHeader(activePage int, activeCount int, width int, extraTabs ...string) string {
 	var parts []string
-	for i, t := range tabTitles {
+	for i, t := range slices.Concat(tabTitles, extraTabs) {
 		if i == activePage {
 			parts = append(parts, accentStyle().Render(t))
 		} else {
