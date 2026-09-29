@@ -1,0 +1,192 @@
+package sections
+
+import (
+	"strings"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+
+	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
+	"github.com/joshmedeski/sesh/v2/model"
+)
+
+type dockerContainersLoadedMsg struct {
+	containers []dockerContainer
+}
+
+type dockerContainer struct {
+	ID     string
+	Name   string
+	Image  string
+	Status string
+	State  string
+}
+
+type DockerSection struct {
+	config     model.DashboardSectionConfig
+	deps       core.SectionDeps
+	containers []dockerContainer
+	cursor     int
+	chosen     string
+	loading    bool
+}
+
+func NewDockerSection(cfg model.DashboardSectionConfig, deps core.SectionDeps) core.Section {
+	return &DockerSection{
+		config:  cfg,
+		deps:    deps,
+		loading: true,
+	}
+}
+
+func (s *DockerSection) Name() string    { return s.config.Title }
+func (s *DockerSection) TotalItems() int { return len(s.containers) }
+func (s *DockerSection) Width() float64  { return s.config.Width }
+func (s *DockerSection) Chosen() string  { return s.chosen }
+
+func (s *DockerSection) Init() tea.Cmd {
+	return s.fetchContainers
+}
+
+func (s *DockerSection) fetchContainers() tea.Msg {
+	args := []string{"ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.State}}"}
+	if s.config.Docker.All {
+		args = append(args, "-a")
+	}
+	for _, f := range s.config.Docker.Filters {
+		args = append(args, "--filter", f)
+	}
+
+	out, err := s.deps.Runner.Run("docker", args...)
+	if err != nil {
+		return dockerContainersLoadedMsg{containers: nil}
+	}
+
+	var containers []dockerContainer
+	for line := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "\t", 5)
+		if len(parts) < 5 {
+			continue
+		}
+		containers = append(containers, dockerContainer{
+			ID:     parts[0],
+			Name:   parts[1],
+			Image:  parts[2],
+			Status: parts[3],
+			State:  parts[4],
+		})
+	}
+
+	return dockerContainersLoadedMsg{containers: containers}
+}
+
+// ClickAt moves the cursor to the clicked row.
+func (s *DockerSection) ClickAt(row int) {
+	if len(s.containers) == 0 {
+		return
+	}
+	s.cursor = min(max(row, 0), len(s.containers)-1)
+}
+
+func (s *DockerSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
+	switch msg := msg.(type) {
+	case dockerContainersLoadedMsg:
+		s.loading = false
+		s.containers = msg.containers
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "j", "down":
+			if s.cursor < len(s.containers)-1 {
+				s.cursor++
+			}
+		case "k", "up":
+			if s.cursor > 0 {
+				s.cursor--
+			}
+		case "enter":
+			if len(s.containers) > 0 {
+				s.chosen = s.containers[s.cursor].Name
+			}
+		case "r":
+			s.loading = true
+			return s, s.fetchContainers
+		}
+	}
+	return s, nil
+}
+
+func (s *DockerSection) ViewBorderless(width, height int, focused bool) (string, string) {
+	title := s.config.Title
+	if title == "" {
+		title = "Docker"
+	}
+
+	const minWidth = 24
+	if width < minWidth {
+		return title, "  Docker"
+	}
+
+	available := max(height, 1)
+
+	var b strings.Builder
+
+	if s.loading {
+		return title, "  Loading..."
+	}
+
+	if len(s.containers) == 0 {
+		return title, "  No containers found"
+	}
+
+	runningStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
+	exitedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(15)).Bold(true)
+	statusStyle := lipgloss.NewStyle().Faint(true)
+
+	end := min(s.cursor+1, len(s.containers))
+	start := max(end-available, 0)
+	if len(s.containers) <= available {
+		start = 0
+		end = len(s.containers)
+	}
+
+	for i := start; i < end; i++ {
+		c := s.containers[i]
+		selected := i == s.cursor
+
+		stateStyle := runningStyle
+		if c.State != "running" {
+			stateStyle = exitedStyle
+		}
+
+		nameWidth := max(max(width-30, 10), 20)
+
+		cells := []render.Col{
+			{Text: " "},
+			{Text: "●", Style: stateStyle},
+			{Text: " "},
+			{Text: truncateString(c.Name, nameWidth), Style: nameStyle},
+			{Text: " "},
+			{Text: truncateString(c.Status, width-nameWidth-10), Style: statusStyle},
+		}
+
+		b.WriteString(render.RenderSimpleRow(cells, selected, focused))
+		b.WriteString("\n")
+	}
+
+	return title, b.String()
+}
+
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	if maxLen <= 3 {
+		return s[:maxLen]
+	}
+	return s[:maxLen-3] + "..."
+}

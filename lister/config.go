@@ -29,6 +29,7 @@ func listConfig(l *RealLister) (model.SeshSessions, error) {
 			directory[key] = model.SeshSession{
 				Src:                   "config",
 				Name:                  session.Name,
+				Alias:                 session.Alias,
 				Path:                  path,
 				StartupCommand:        session.StartupCommand,
 				PreviewCommand:        session.PreviewCommand,

@@ -3,6 +3,7 @@ package lister
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -11,25 +12,59 @@ func tmuxKey(name string) string {
 	return fmt.Sprintf("tmux:%s", name)
 }
 
+// aliasesByName builds a map from configured session name to its alias.
+func aliasesByName(config model.Config) map[string]string {
+	aliases := make(map[string]string)
+	for _, session := range config.SessionConfigs {
+		if session.Alias != "" && session.Name != "" {
+			aliases[session.Name] = session.Alias
+		}
+	}
+	return aliases
+}
+
+// tmuxToSesh maps a tmux session onto a SeshSession, copying the time fields
+// nil-safely so the two models never alias mutable pointers. If the tmux
+// session shares a name with a configured session that has an alias, the alias
+// is copied over so the dashboard can display and filter by it.
+func tmuxToSesh(session *model.TmuxSession, aliases map[string]string) model.SeshSession {
+	return model.SeshSession{
+		Src:          "tmux",
+		Name:         session.Name,
+		Alias:        aliases[session.Name],
+		Path:         session.Path,
+		Attached:     session.Attached,
+		Windows:      session.Windows,
+		Created:      cloneTime(session.Created),
+		LastAttached: cloneTime(session.LastAttached),
+		Activity:     cloneTime(session.Activity),
+		Alerts:       session.Alerts,
+	}
+}
+
+// cloneTime returns a fresh copy of t, or nil when t is nil.
+func cloneTime(t *time.Time) *time.Time {
+	if t == nil {
+		return nil
+	}
+	c := *t
+	return &c
+}
+
 func listTmux(l *RealLister) (model.SeshSessions, error) {
 	tmuxSessions, err := l.tmux.ListSessions()
 	if err != nil {
 		return model.SeshSessions{}, fmt.Errorf("couldn't list tmux sessions: %q", err)
 	}
 
+	aliases := aliasesByName(l.config)
 	directory := make(map[string]model.SeshSession)
 	orderedIndex := []string{}
 
 	for _, session := range tmuxSessions {
 		key := tmuxKey(session.Name)
 		orderedIndex = append(orderedIndex, key)
-		directory[key] = model.SeshSession{
-			Src:      "tmux",
-			Name:     session.Name,
-			Path:     session.Path,
-			Attached: session.Attached,
-			Windows:  session.Windows,
-		}
+		directory[key] = tmuxToSesh(session, aliases)
 	}
 
 	return model.SeshSessions{
@@ -137,15 +172,10 @@ func GetAttachedTmuxSession(l *RealLister) (model.SeshSession, bool) {
 	if err != nil {
 		return model.SeshSession{}, false
 	}
+	aliases := aliasesByName(l.config)
 	for _, session := range tmuxSessions {
 		if session.Attached != 0 {
-			return model.SeshSession{
-				Src:      "tmux",
-				Name:     session.Name,
-				Path:     session.Path,
-				Attached: session.Attached,
-				Windows:  session.Windows,
-			}, true
+			return tmuxToSesh(session, aliases), true
 		}
 	}
 	return model.SeshSession{}, false

@@ -33,7 +33,7 @@ func TestListTmuxSessions(t *testing.T) {
 			GroupList:         []string{""},
 			GroupAttachedList: []string{""},
 			Stack:             []int{2, 1},
-			Alerts:            []int{},
+			Alerts:            []string{},
 			GroupSize:         0,
 			GroupAttached:     0,
 			Attached:          0,
@@ -60,7 +60,7 @@ func TestListTmuxSessions(t *testing.T) {
 			GroupList:         []string{""},
 			GroupAttachedList: []string{""},
 			Stack:             []int{2, 1},
-			Alerts:            []int{},
+			Alerts:            []string{},
 			GroupSize:         0,
 			GroupAttached:     0,
 			Attached:          0,
@@ -200,6 +200,34 @@ func TestListTmuxSessionsError(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), "couldn't list tmux sessions")
 	})
+}
+
+func TestListTmuxInheritsAliasFromConfig(t *testing.T) {
+	mockTmux := new(tmux.MockTmux)
+	mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+		makeTmuxSession("wallpaper", "/home/user/wallpaper"),
+		makeTmuxSession("dotfiles", "/home/user/dotfiles"),
+		makeTmuxSession("notes", "/home/user/notes"),
+	}, nil)
+
+	config := model.Config{
+		SessionConfigs: []model.SessionConfig{
+			{Name: "wallpaper", Alias: "wp"},
+			{Name: "dotfiles", Alias: "DOT"},
+		},
+	}
+	lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator), nil)
+
+	realLister, ok := lister.(*RealLister)
+	if !ok {
+		log.Fatal("Cannot convert lister to *RealLister")
+	}
+
+	sessions, err := listTmux(realLister)
+	assert.Nil(t, err)
+	assert.Equal(t, "wp", sessions.Directory["tmux:wallpaper"].Alias)
+	assert.Equal(t, "DOT", sessions.Directory["tmux:dotfiles"].Alias)
+	assert.Equal(t, "", sessions.Directory["tmux:notes"].Alias)
 }
 
 func TestAttachWindowNames(t *testing.T) {

@@ -14,7 +14,7 @@ type TmuxSession struct {
 	GroupList         []string
 	GroupAttachedList []string
 	Stack             []int
-	Alerts            []int
+	Alerts            []string
 	GroupSize         int
 	GroupAttached     int
 	Attached          int
