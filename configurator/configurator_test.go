@@ -515,3 +515,10 @@ func TestGetConfig_GroupSeparator(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, config.TUI.GroupSeparator)
 }
+
+func TestGetConfig_DashboardSortOrderNestedGroup(t *testing.T) {
+	config, err := configFromTOML(t, "[dashboard]\nsort_order = [\"tmux\", [\"config\", \"zoxide\"]]\n")
+	assert.NoError(t, err)
+	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, config.Dashboard.SortOrder.SortGroups())
+	assert.Empty(t, config.SortOrder)
+}

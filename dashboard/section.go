@@ -95,6 +95,8 @@ func BuildSections(cfg model.DashboardConfig, deps SectionDeps) BuiltSections {
 	}
 
 	sessions := NewSessionsSection(sessionsCfg, deps).(*SessionsSection)
+	sessions.sortOrder = cfg.SortOrder
+	sessions.sortMode = sessions.sortModes()[0]
 	configured := NewConfiguredSection(
 		model.DashboardSectionConfig{Type: "configured", Title: "Configured"},
 		deps,

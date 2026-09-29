@@ -20,8 +20,9 @@ type branchLoadedMsg struct {
 // statusLoadedMsg carries the formatted git status for a session path, fetched
 // asynchronously by every list section.
 type statusLoadedMsg struct {
-	path   string
-	status string
+	path    string
+	status  string
+	changes int
 }
 
 func uniquePaths(sessions []model.SeshSession) map[string]bool {
@@ -58,7 +59,8 @@ func fetchStatuses(g git.Git, sessions []model.SeshSession) tea.Cmd {
 			if err != nil {
 				return statusLoadedMsg{path: path, status: ""}
 			}
-			return statusLoadedMsg{path: path, status: render.FormatGitStatus(status)}
+			changes := status.Staged + status.Unstaged + status.Deleted + status.Untracked
+			return statusLoadedMsg{path: path, status: render.FormatGitStatus(status), changes: changes}
 		})
 	}
 	return tea.Batch(cmds...)

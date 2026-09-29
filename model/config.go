@@ -198,8 +198,9 @@ type (
 	}
 
 	DashboardConfig struct {
-		Title    string                   `toml:"title"`
-		Sections []DashboardSectionConfig `toml:"sections"`
+		Title     string                   `toml:"title"`
+		Sections  []DashboardSectionConfig `toml:"sections"`
+		SortOrder SortOrder                `toml:"sort_order"`
 	}
 
 	DashboardSectionConfig struct {

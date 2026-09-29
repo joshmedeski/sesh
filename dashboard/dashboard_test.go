@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	uv "github.com/charmbracelet/ultraviolet"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -588,7 +589,7 @@ func TestViewTooSmallReturnsMessage(t *testing.T) {
 func TestViewRendersTabs(t *testing.T) {
 	m := testModel()
 	v := m.View()
-	assert.Contains(t, v.Content, "Open")
+	assert.Contains(t, v.Content, "Dashboard")
 	assert.Contains(t, v.Content, "Configured")
 }
 
@@ -887,4 +888,45 @@ func TestViewConfiguredPageWidthMatchesModel(t *testing.T) {
 	for i, l := range lines {
 		assert.Equalf(t, 120, lipgloss.Width(l), "line %d width", i)
 	}
+}
+
+func TestHelpToggles(t *testing.T) {
+	m := testModel()
+	m = updateModel(m, pressKey("?"))
+	require.True(t, m.showHelp)
+	assert.Contains(t, ansi.Strip(m.View().Content), "Keybindings")
+	assert.Contains(t, ansi.Strip(m.View().Content), "kill tmux session")
+
+	m = updateModel(m, pressKey("tab"))
+	assert.Equal(t, pageOpen, m.page, "keys other than close are ignored while help is open")
+
+	m = updateModel(m, pressKey("q"))
+	assert.False(t, m.showHelp)
+	assert.False(t, m.quit, "q closes help instead of quitting")
+
+	m = updateModel(m, pressKey("?"))
+	m = updateModel(m, pressKey("esc"))
+	assert.False(t, m.showHelp)
+	assert.False(t, m.quit)
+
+	m = updateModel(m, pressKey("?"))
+	m = updateModel(m, pressKey("?"))
+	assert.False(t, m.showHelp)
+	assert.NotContains(t, ansi.Strip(m.View().Content), "Keybindings")
+}
+
+func TestHelpOnConfiguredPageOmitsDashboardOnlyBinds(t *testing.T) {
+	m := testModel()
+	m = updateModel(m, pressKey("tab"))
+	m = updateModel(m, pressKey("?"))
+	content := ansi.Strip(m.View().Content)
+	assert.Contains(t, content, "Keybindings")
+	assert.NotContains(t, content, "kill tmux session")
+	assert.NotContains(t, content, "cycle sort")
+}
+
+func TestSessionsRefreshKeyReloads(t *testing.T) {
+	s := NewSessionsSection(model.DashboardSectionConfig{}, SectionDeps{}).(*SessionsSection)
+	_, cmd := s.Update(pressKey("r"))
+	assert.NotNil(t, cmd)
 }

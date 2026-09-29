@@ -56,7 +56,15 @@ type listFixture struct {
 	gh       *github.MockGithub
 	os       *oswrap.MockOs
 	issues   *cache.Namespace[github.Issue]
+	created  map[string]time.Time
 }
+
+type fakeFileInfo struct {
+	os.FileInfo
+	modTime time.Time
+}
+
+func (f fakeFileInfo) ModTime() time.Time { return f.modTime }
 
 func newListFixture(t *testing.T, issues *cache.Namespace[github.Issue]) listFixture {
 	t.Helper()
@@ -67,12 +75,19 @@ func newListFixture(t *testing.T, issues *cache.Namespace[github.Issue]) listFix
 	// None of the paths under test contain ~ or $VARs, so expansion is identity.
 	mOs.EXPECT().ExpandEnv(mock.Anything).
 		RunAndReturn(func(s string) string { return s }).Maybe()
+	created := map[string]time.Time{}
+	mOs.EXPECT().Stat(mock.Anything).RunAndReturn(func(name string) (os.FileInfo, error) {
+		if t, ok := created[name]; ok {
+			return fakeFileInfo{modTime: t}, nil
+		}
+		return nil, os.ErrNotExist
+	}).Maybe()
 
 	w := NewWorktree(
 		nuConfig(), git.NewMockGit(t), mGh, connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), issues,
 	)
-	return listFixture{worktree: w, gh: mGh, os: mOs, issues: issues}
+	return listFixture{worktree: w, gh: mGh, os: mOs, issues: issues, created: created}
 }
 
 func TestList_FetchesTitlesOnColdCache(t *testing.T) {
@@ -366,6 +381,13 @@ func TestList_MissingRepoKeyErrors(t *testing.T) {
 	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
 	mOs.EXPECT().ExpandEnv(mock.Anything).
 		RunAndReturn(func(s string) string { return s }).Maybe()
+	created := map[string]time.Time{}
+	mOs.EXPECT().Stat(mock.Anything).RunAndReturn(func(name string) (os.FileInfo, error) {
+		if t, ok := created[name]; ok {
+			return fakeFileInfo{modTime: t}, nil
+		}
+		return nil, os.ErrNotExist
+	}).Maybe()
 	w := NewWorktree(
 		config, git.NewMockGit(t), github.NewMockGithub(t), connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), testIssueCache(t),
@@ -402,4 +424,18 @@ func TestList_KeysAreScopedByRepo(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "right repo", got[0].Title)
+}
+
+func TestList_CreatedFromDotGitModTime(t *testing.T) {
+	f := newListFixture(t, testIssueCache(t))
+	added := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
+	f.created["/repo/w/409/.git"] = added
+	f.os.EXPECT().ReadDir("/repo/w").Return(dirs("409", "426"), nil)
+	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409, 426}).Return(map[int]github.Issue{}, nil, nil)
+
+	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+	assert.Equal(t, added, got[0].Created)
+	assert.True(t, got[1].Created.IsZero())
 }

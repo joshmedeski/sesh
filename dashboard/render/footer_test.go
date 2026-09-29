@@ -10,7 +10,7 @@ import (
 
 func TestRenderHeaderContainsTabsAndCount(t *testing.T) {
 	h := RenderHeader(0, 3, 80)
-	assert.Contains(t, h, "Open")
+	assert.Contains(t, h, "Dashboard")
 	assert.Contains(t, h, "Configured")
 	assert.Contains(t, h, "3 active")
 }

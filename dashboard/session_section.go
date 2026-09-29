@@ -33,8 +33,10 @@ type SessionsSection struct {
 	loading       bool
 	chosen        string
 	totalSessions int
-	sortMode      string // "name" | "recent" | "created"
+	sortMode      string
 	currentName   string
+	sortOrder     model.SortOrder
+	rank          map[string]int
 }
 
 func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -77,10 +79,45 @@ func (s *SessionsSection) FilterQuery() string {
 
 // fetch tmux sessions
 func (s *SessionsSection) Init() tea.Cmd {
+	opts := s.listOptions()
 	return func() tea.Msg {
-		sessions, err := s.deps.Lister.List(lister.ListOptions{Tmux: true})
+		sessions, err := s.deps.Lister.List(opts)
 		return sessionsLoadedMsg{sessions: sessions, err: err}
 	}
+}
+
+func (s *SessionsSection) listOptions() lister.ListOptions {
+	groups := s.sortOrder.SortGroups()
+	if len(groups) == 0 {
+		return lister.ListOptions{Tmux: true}
+	}
+	opts := lister.ListOptions{SortOrder: s.sortOrder, HideDuplicates: true}
+	for _, group := range groups {
+		for _, src := range group {
+			switch strings.ToLower(src) {
+			case "tmux":
+				opts.Tmux = true
+			case "config":
+				opts.Config = true
+			case "tmuxinator":
+				opts.Tmuxinator = true
+			case "zoxide":
+				opts.Zoxide = true
+			}
+		}
+	}
+	return opts
+}
+
+func (s *SessionsSection) sortModes() []string {
+	if len(s.sortOrder.SortGroups()) > 0 {
+		return []string{"order", "name", "recent", "created"}
+	}
+	return []string{"name", "recent", "created"}
+}
+
+func rankKey(sess model.SeshSession) string {
+	return sess.Src + "\x00" + sess.Name
 }
 
 func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
@@ -91,6 +128,10 @@ func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		}
 		s.loading = false
 		s.sessions = flattenSessions(msg.sessions)
+		s.rank = make(map[string]int, len(s.sessions))
+		for i, sess := range s.sessions {
+			s.rank[rankKey(sess)] = i
+		}
 		s.totalSessions = len(msg.sessions.OrderedIndex)
 		s.applySort()
 		s.applyFilter()
@@ -132,6 +173,8 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 		s.selectItem()
 	case "ctrl+d":
 		return s, s.killSession()
+	case "r":
+		return s, s.Init()
 	case "s":
 		s.cycleSortMode()
 	case "/":
@@ -152,16 +195,17 @@ func (s *SessionsSection) handleFilterKey(msg tea.KeyPressMsg) (*SessionsSection
 	return s, nil
 }
 
-// cycleSortMode advances sortMode name → recent → created → name and re-sorts.
+// cycleSortMode advances to the next sort mode (order, when a dashboard
+// sort_order is set, then name → recent → created) and re-sorts.
 func (s *SessionsSection) cycleSortMode() {
-	switch s.sortMode {
-	case "name":
-		s.sortMode = "recent"
-	case "recent":
-		s.sortMode = "created"
-	default:
-		s.sortMode = "name"
+	modes := s.sortModes()
+	next := 0
+	for i, mode := range modes {
+		if mode == s.sortMode {
+			next = (i + 1) % len(modes)
+		}
 	}
+	s.sortMode = modes[next]
 	s.applySort()
 	s.applyFilter()
 }
@@ -170,6 +214,8 @@ func (s *SessionsSection) cycleSortMode() {
 func (s *SessionsSection) applySort() {
 	sort.SliceStable(s.sessions, func(i, j int) bool {
 		switch s.sortMode {
+		case "order":
+			return s.rank[rankKey(s.sessions[i])] < s.rank[rankKey(s.sessions[j])]
 		case "recent":
 			ti := timeOrZero(s.sessions[i].LastAttached)
 			tj := timeOrZero(s.sessions[j].LastAttached)
@@ -215,14 +261,13 @@ func timeOrZero(t *time.Time) time.Time {
 	return *t
 }
 
-// flattenSessions returns every tmux session as a flat list, sorted
-// alphabetically by name (stable order).
+// flattenSessions returns every listed session as a flat list, in the order
+// the lister returned them.
 func flattenSessions(sessions model.SeshSessions) []model.SeshSession {
 	out := make([]model.SeshSession, 0, len(sessions.OrderedIndex))
 	for _, key := range sessions.OrderedIndex {
 		out = append(out, sessions.Directory[key])
 	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
 }
 
@@ -268,6 +313,9 @@ func (s *SessionsSection) killSession() tea.Cmd {
 		return nil
 	}
 	sess := s.visible()[s.cursor]
+	if sess.Src != "tmux" {
+		return nil
+	}
 	if _, err := s.deps.Tmux.KillSession(sess.Name); err != nil {
 		slog.Error("failed to kill session", "name", sess.Name, "error", err)
 	}

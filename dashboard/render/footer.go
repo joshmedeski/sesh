@@ -10,7 +10,7 @@ import (
 )
 
 // tabTitles are the two permanent tab labels.
-var tabTitles = []string{"Open", "Configured"}
+var tabTitles = []string{"Dashboard", "Configured"}
 
 // RenderHeader renders the two-row header: a tab line (with an optional
 // right-pinned "N active" count on wide terminals) followed by a full-width
@@ -47,7 +47,7 @@ type keybind struct {
 
 // footerBinds returns the keybinds (with their right-pinned help bind) for a
 // given active page. sortLabel is the current sort mode's display label, shown
-// only on page 0.
+// when non-empty.
 func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
 	right := keybind{"?", "help"}
 	if page == 0 {
@@ -63,14 +63,19 @@ func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
 			{"q", "quit"},
 		}, right
 	}
-	return []keybind{
+	binds := []keybind{
 		{"tab", "page"},
 		{"j/k", "move"},
 		{"enter", "open"},
-		{"/", "filter"},
-		{"r", "refresh"},
-		{"q", "quit"},
-	}, right
+	}
+	if sortLabel != "" {
+		binds = append(binds, keybind{"s", "sort:" + sortLabel})
+	}
+	return append(binds,
+		keybind{"/", "filter"},
+		keybind{"r", "refresh"},
+		keybind{"q", "quit"},
+	), right
 }
 
 // RenderFooter renders the one-row footer for the active page. While the

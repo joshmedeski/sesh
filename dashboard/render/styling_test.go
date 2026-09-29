@@ -264,7 +264,7 @@ func TestRenderOpenRow_WideRowShowsFullBranch(t *testing.T) {
 }
 
 func TestRenderWorktreeRow_SelectedNumberUsesTextColor(t *testing.T) {
-	row := RenderWorktreeRowFocused(120, 16, IconCol("", "config", 1, true), true, true, 7503, "closed issue", true, "main", "")
+	row := RenderWorktreeRowFocused(120, 16, IconCol("", "config", 1, true), true, true, 7503, "closed issue", "CLOSED", "main", "", nil)
 	selected := TextStyle().Inherit(cursorStyle(true))
 	assert.Contains(t, row, selected.Width(7).Render("#7503"))
 	assert.NotContains(t, row, DimmedStyle().Inherit(cursorStyle(true)).Width(7).Render("#7503"))
@@ -299,6 +299,7 @@ func assertTitlesAlign(t *testing.T, header, row string, titles map[string]strin
 }
 
 func TestColumnTitlesAlignWithRows(t *testing.T) {
+	threeDaysAgo := time.Now().Add(-72 * time.Hour)
 	icon := Col{Text: "x", Width: 1}
 	alias := AliasColumn("ms")
 	wide := map[string]string{"NAME": "mysession", "ALIAS": pillLeftGlyph, "DIRECTORY": "~/some/dir", "BRANCH": "main", "STATUS": "+1"}
@@ -320,6 +321,15 @@ func TestColumnTitlesAlignWithRows(t *testing.T) {
 
 	assertTitlesAlign(t,
 		RenderWorktreeHeader(100, 10, 1),
-		RenderWorktreeRowFocused(100, 10, icon, false, true, 358, "tmux command updates", false, "jam/358", "+1"),
-		map[string]string{"ISSUE": "#358", "TITLE": "tmux command updates", "BRANCH": "jam/358", "STATUS": "+1"})
+		RenderWorktreeRowFocused(100, 10, icon, false, true, 358, "tmux command updates", "MERGED", "jam/358", "+1", &threeDaysAgo),
+		map[string]string{"AGE": "3d", "ISSUE": "#358", "STATE": "merged", "TITLE": "tmux command updates", "BRANCH": "jam/358", "STATUS": "+1"})
+}
+
+func TestRenderWorktreeRowState(t *testing.T) {
+	for state, want := range map[string]string{"OPEN": "38;5;2mopen", "MERGED": "38;5;5mmerged", "CLOSED": "38;5;1mclosed"} {
+		row := RenderWorktreeRowFocused(100, 10, Col{Width: 1}, false, true, 1, "t", state, "", "", nil)
+		assert.Contains(t, row, want, state)
+	}
+	unknown := ansi.Strip(RenderWorktreeRowFocused(100, 10, Col{Width: 1}, false, true, 1, "t", "", "", "", nil))
+	assert.Equal(t, cellIndex(unknown, "#1")+7+1+6+1, cellIndex(unknown, "t "))
 }

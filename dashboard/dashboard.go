@@ -16,7 +16,7 @@ const (
 	pageConfigured = 1
 )
 
-// Model is the dashboard TUI. It has two permanent tabs (page 0 "Open" and
+// Model is the dashboard TUI. It has two permanent tabs (page 0 "Dashboard" and
 // page 1 "Configured") followed by one tab per [[worktree]] config entry, in
 // config order. Tab 1 lays panes out in two rows of shared frames: row 1 is
 // the sessions list, row 2 is the remaining widgets side by side. Every other
@@ -50,6 +50,8 @@ type Model struct {
 	row2Height    int
 
 	lastHoveredSession string
+
+	showHelp bool
 }
 
 func New(config model.Config, deps SectionDeps) Model {
@@ -115,7 +117,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // Clicks outside any pane are ignored.
 func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	e := msg.Mouse()
-	if e.Button != tea.MouseLeft {
+	if m.showHelp || e.Button != tea.MouseLeft {
 		return m, nil
 	}
 	idx, sec, row, ok := m.hitTest(e.X, e.Y)
@@ -237,7 +239,21 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m.routeKey(msg)
 	}
 
+	if m.showHelp {
+		switch msg.String() {
+		case "ctrl+c":
+			m.quit = true
+			return m, tea.Quit
+		case "?", "esc", "q":
+			m.showHelp = false
+		}
+		return m, nil
+	}
+
 	switch msg.String() {
+	case "?":
+		m.showHelp = true
+		return m, nil
 	case "q", "esc", "ctrl+c":
 		m.quit = true
 		return m, tea.Quit
@@ -307,9 +323,16 @@ func (m Model) focusedFilterState() (filtering bool, query string) {
 	return false, ""
 }
 
-// sortLabel returns the sessions list's current sort mode label (the sessions
-// list is always a Sorter on page 0). Defaults to "name".
+// sortLabel returns the current sort mode label: the sessions list's on page
+// 0 (defaulting to "name"), otherwise the page section's when it is a Sorter,
+// else "".
 func (m Model) sortLabel() string {
+	if m.page != pageOpen {
+		if sorter, ok := m.pageSection().(Sorter); ok {
+			return sorter.SortLabel()
+		}
+		return ""
+	}
 	if m.sessions == nil {
 		return "name"
 	}
@@ -655,9 +678,12 @@ func (m Model) View() tea.View {
 	footer := render.RenderFooter(m.page, m.width, m.sortLabel(), filtering, query)
 
 	var content string
-	if m.page == pageOpen {
+	switch {
+	case m.showHelp:
+		content = render.RenderHelp(m.page, m.width, m.contentHeight, m.sortLabel() != "")
+	case m.page == pageOpen:
 		content = m.viewOpenPage()
-	} else {
+	default:
 		content = m.viewListPage()
 	}
 

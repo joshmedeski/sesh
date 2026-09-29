@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -39,18 +40,17 @@ func apSessionsSection() *SessionsSection {
 
 // --- Sessions section (flat list) ---
 
-func TestFlattenSessionsSortedAlphabetically(t *testing.T) {
-	sessions := model.SeshSessions{
+func TestLoadedSessionsSortedAlphabeticallyByDefault(t *testing.T) {
+	s := NewSessionsSection(model.DashboardSectionConfig{}, SectionDeps{}).(*SessionsSection)
+	s.Update(sessionsLoadedMsg{sessions: model.SeshSessions{
 		OrderedIndex: []string{"z", "a", "m"},
 		Directory: model.SeshSessionMap{
 			"z": {Name: "z"},
 			"a": {Name: "a"},
 			"m": {Name: "m"},
 		},
-	}
-	flat := flattenSessions(sessions)
-	require.Len(t, flat, 3)
-	assert.Equal(t, []string{"a", "m", "z"}, []string{flat[0].Name, flat[1].Name, flat[2].Name})
+	}})
+	assert.Equal(t, []string{"a", "m", "z"}, sessionNames(s.visible()))
 }
 
 func TestSessionsSectionTKeyIsNoop(t *testing.T) {
@@ -288,4 +288,50 @@ func TestSessionsClickAtSkipsHeaderRow(t *testing.T) {
 	assert.Equal(t, 2, s.cursor)
 	s.ClickAt(1)
 	assert.Equal(t, 0, s.cursor)
+}
+
+func TestDashboardSortOrderListOptions(t *testing.T) {
+	built := BuildSections(model.DashboardConfig{}, SectionDeps{})
+	assert.Equal(t, lister.ListOptions{Tmux: true}, built.Sessions.listOptions())
+	assert.Equal(t, "name", built.Sessions.SortLabel())
+
+	sortOrder := model.SortOrder{"tmux", []any{"config", "zoxide"}}
+	built = BuildSections(model.DashboardConfig{SortOrder: sortOrder}, SectionDeps{})
+	assert.Equal(t, lister.ListOptions{
+		Tmux: true, Config: true, Zoxide: true,
+		HideDuplicates: true,
+		SortOrder:      sortOrder,
+	}, built.Sessions.listOptions())
+	assert.Equal(t, "order", built.Sessions.SortLabel())
+}
+
+func TestDashboardSortOrderKeepsListerOrder(t *testing.T) {
+	built := BuildSections(model.DashboardConfig{SortOrder: model.SortOrder{"tmux", []any{"config", "zoxide"}}}, SectionDeps{})
+	s := built.Sessions
+	s.Update(sessionsLoadedMsg{sessions: model.SeshSessions{
+		OrderedIndex: []string{"t", "z1", "c", "z2"},
+		Directory: model.SeshSessionMap{
+			"t":  {Src: "tmux", Name: "zeta", Group: 0},
+			"z1": {Src: "zoxide", Name: "~/hot", Group: 1},
+			"c":  {Src: "config", Name: "alpha", Group: 1},
+			"z2": {Src: "zoxide", Name: "~/cold", Group: 1},
+		},
+	}})
+	order := []string{"zeta", "~/hot", "alpha", "~/cold"}
+	assert.Equal(t, order, sessionNames(s.visible()))
+
+	s.Update(pressKey("s"))
+	assert.Equal(t, "name", s.SortLabel())
+	assert.Equal(t, []string{"alpha", "zeta", "~/cold", "~/hot"}, sessionNames(s.visible()))
+
+	for range 3 {
+		s.Update(pressKey("s"))
+	}
+	assert.Equal(t, "order", s.SortLabel())
+	assert.Equal(t, order, sessionNames(s.visible()))
+}
+
+func TestKillSkipsNonTmuxSessions(t *testing.T) {
+	s := &SessionsSection{sessions: []model.SeshSession{{Src: "zoxide", Name: "~/hot"}}}
+	assert.Nil(t, s.killSession())
 }

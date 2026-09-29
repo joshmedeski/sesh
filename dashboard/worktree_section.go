@@ -1,8 +1,10 @@
 package dashboard
 
 import (
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -16,6 +18,10 @@ type worktreesLoadedMsg struct {
 	err     error
 }
 
+var worktreeSortModes = []string{"issue", "age", "state", "status"}
+
+var issueStateOrder = map[string]int{"OPEN": 0, "MERGED": 1, "CLOSED": 2}
+
 // WorktreeSection lists the worktrees of one [[worktree]] config entry on its
 // own tab. Selecting a row sets ChosenWorktree.
 type WorktreeSection struct {
@@ -24,14 +30,25 @@ type WorktreeSection struct {
 	sessions []model.SeshSession
 	entries  map[string]model.WorktreeEntry
 	ListState
-	loading bool
-	err     error
-	chosen  int
+	loading  bool
+	err      error
+	chosen   int
+	sortMode string
+	changes  map[string]int
 }
 
 func NewWorktreeSection(cfg model.WorktreeConfig, deps SectionDeps) *WorktreeSection {
-	return &WorktreeSection{config: cfg, deps: deps, loading: true}
+	return &WorktreeSection{
+		config:   cfg,
+		deps:     deps,
+		loading:  true,
+		sortMode: worktreeSortModes[0],
+		changes:  map[string]int{},
+	}
 }
+
+// SortLabel implements Sorter.
+func (s *WorktreeSection) SortLabel() string { return s.sortMode }
 
 // TabTitle is the repo name without its owner, e.g. "sesh" for
 // "joshmedeski/sesh".
@@ -90,7 +107,7 @@ func (s *WorktreeSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 			s.sessions = append(s.sessions, model.SeshSession{Src: "worktree", Name: e.Title, Path: e.Path})
 			s.entries[e.Path] = e
 		}
-		s.applyFilter()
+		s.applySort()
 		return s, tea.Batch(fetchBranches(s.deps.Git, s.sessions), fetchStatuses(s.deps.Git, s.sessions))
 
 	case branchLoadedMsg:
@@ -100,7 +117,14 @@ func (s *WorktreeSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 
 	case statusLoadedMsg:
 		applyStatus(s.sessions, msg.path, msg.status)
-		s.applyFilter()
+		if _, ok := s.entries[msg.path]; ok {
+			s.changes[msg.path] = msg.changes
+		}
+		if s.sortMode == "status" {
+			s.applySort()
+		} else {
+			s.applyFilter()
+		}
 		return s, nil
 
 	case tea.KeyPressMsg:
@@ -121,6 +145,8 @@ func (s *WorktreeSection) handleKey(msg tea.KeyPressMsg) (Section, tea.Cmd) {
 		s.ListState.cursorUp(1)
 	case "enter":
 		s.selectItem()
+	case "s":
+		s.cycleSortMode()
 	case "r":
 		s.loading = true
 		return s, s.fetch()
@@ -135,6 +161,47 @@ func (s *WorktreeSection) handleKey(msg tea.KeyPressMsg) (Section, tea.Cmd) {
 func (s *WorktreeSection) match(sess model.SeshSession, q string) bool {
 	number := strconv.Itoa(s.entries[sess.Path].Number)
 	return strings.Contains(number, q) || strings.Contains(strings.ToLower(sess.Name), q)
+}
+
+func (s *WorktreeSection) cycleSortMode() {
+	i := 0
+	for j, mode := range worktreeSortModes {
+		if mode == s.sortMode {
+			i = j
+		}
+	}
+	s.sortMode = worktreeSortModes[(i+1)%len(worktreeSortModes)]
+	s.applySort()
+}
+
+func (s *WorktreeSection) applySort() {
+	number := func(i int) int { return s.entries[s.sessions[i].Path].Number }
+	sort.SliceStable(s.sessions, func(i, j int) bool {
+		pi, pj := s.sessions[i].Path, s.sessions[j].Path
+		switch s.sortMode {
+		case "age":
+			if ti, tj := s.entries[pi].Created, s.entries[pj].Created; !ti.Equal(tj) {
+				return ti.After(tj)
+			}
+		case "state":
+			if oi, oj := stateRank(s.entries[pi].State), stateRank(s.entries[pj].State); oi != oj {
+				return oi < oj
+			}
+		case "status":
+			if ci, cj := s.changes[pi], s.changes[pj]; ci != cj {
+				return ci > cj
+			}
+		}
+		return number(i) < number(j)
+	})
+	s.applyFilter()
+}
+
+func stateRank(state string) int {
+	if rank, ok := issueStateOrder[state]; ok {
+		return rank
+	}
+	return len(issueStateOrder)
 }
 
 func (s *WorktreeSection) applyFilter() {
@@ -196,7 +263,11 @@ func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (strin
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
 		e := s.entries[sess.Path]
-		b.WriteString(render.RenderWorktreeRowFocused(width, branchCol, s.iconCol(sess, i == s.cursor), i == s.cursor, focused, e.Number, sess.Name, e.State == "CLOSED", sess.Branch, sess.GitStatus))
+		var created *time.Time
+		if !e.Created.IsZero() {
+			created = &e.Created
+		}
+		b.WriteString(render.RenderWorktreeRowFocused(width, branchCol, s.iconCol(sess, i == s.cursor), i == s.cursor, focused, e.Number, sess.Name, e.State, sess.Branch, sess.GitStatus, created))
 		b.WriteString("\n")
 	}
 	return title, b.String()

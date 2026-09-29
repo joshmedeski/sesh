@@ -278,23 +278,30 @@ func branchColumn(flex, longest int) int {
 }
 
 // RenderWorktreeRowFocused renders a worktree tab row with columns:
-// marker(2) | icon | number(7) | title(fill) | branch(longest) | status(12).
-// The branch drops below 70 cols. Closed issues render their title dimmed.
-func RenderWorktreeRowFocused(width, branchCol int, iconCol Col, selected, focused bool, number int, title string, closed bool, branch, status string) string {
-	cols := worktreeCols(width, branchCol, iconCol, selected, "#"+strconv.Itoa(number), title, closed, branch, status)
+// marker(2) | icon | number(7) | state(6) | title(fill) | branch(longest) |
+// status(12) | age(5, since created). The branch drops below 70 cols. Closed
+// issues render their title dimmed.
+func RenderWorktreeRowFocused(width, branchCol int, iconCol Col, selected, focused bool, number int, title, state, branch, status string, created *time.Time) string {
+	cols := worktreeCols(width, branchCol, iconCol, selected, "#"+strconv.Itoa(number), title, state, branch, status, created)
 	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
 }
 
 // RenderWorktreeHeader renders the worktree tab column titles.
 func RenderWorktreeHeader(width, branchCol, iconWidth int) string {
-	return RenderColumnTitles(worktreeCols(width, branchCol, Col{Width: iconWidth}, false, "", "", false, "", ""))
+	return RenderColumnTitles(worktreeCols(width, branchCol, Col{Width: iconWidth}, false, "", "", "", "", "", nil))
 }
 
-func worktreeCols(width, branchCol int, iconCol Col, selected bool, number, title string, closed bool, branch, status string) []Col {
+var issueStateColors = map[string]lipgloss.ANSIColor{
+	"OPEN":   lipgloss.ANSIColor(2),
+	"MERGED": lipgloss.ANSIColor(5),
+	"CLOSED": lipgloss.ANSIColor(1),
+}
+
+func worktreeCols(width, branchCol int, iconCol Col, selected bool, number, title, state, branch, status string, created *time.Time) []Col {
 	includeBranch := width >= 70
 
-	fixed := iconCol.Width + 7 + 12
-	numCols := 4
+	fixed := iconCol.Width + 7 + 6 + 12 + 5
+	numCols := 6
 	if includeBranch {
 		numCols++
 	}
@@ -307,7 +314,7 @@ func worktreeCols(width, branchCol int, iconCol Col, selected bool, number, titl
 
 	numberStyle := DimmedStyle()
 	titleStyle := TextStyle()
-	if closed {
+	if state == "CLOSED" {
 		titleStyle = DimmedStyle()
 	}
 	if selected {
@@ -318,12 +325,14 @@ func worktreeCols(width, branchCol int, iconCol Col, selected bool, number, titl
 	cols := []Col{
 		iconCol,
 		{Title: "ISSUE", Text: number, Width: 7, Style: numberStyle},
+		{Title: "STATE", Text: strings.ToLower(state), Width: 6, Style: lipgloss.NewStyle().Foreground(issueStateColors[state])},
 		{Title: "TITLE", Text: TruncateRight(title, titleWidth), Width: titleWidth, Style: titleStyle},
 	}
 	if includeBranch {
 		cols = append(cols, Col{Title: "BRANCH", Text: TruncateRight(branch, branchWidth), Width: branchWidth, Style: BranchStyle()})
 	}
 	cols = append(cols, Col{Title: "STATUS", Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
+	cols = append(cols, Col{Title: "AGE", Text: formatAge(created), Width: 5, Style: ageStyle()})
 	return cols
 }
 
