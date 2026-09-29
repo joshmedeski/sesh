@@ -2,6 +2,9 @@
 package core
 
 import (
+	"errors"
+	"fmt"
+	"os/exec"
 	"runtime"
 	"strings"
 
@@ -40,10 +43,17 @@ func (r *execCommandRunner) Run(name string, args ...string) (string, error) {
 }
 
 // RunShell executes cmd through the platform shell (sh -c on Unix, cmd /c on
-// Windows), returning combined output.
+// Windows), returning stdout. stderr is only surfaced in the error when the
+// command fails.
 func (r *execCommandRunner) RunShell(cmd string) ([]byte, error) {
+	name, flag := "sh", "-c"
 	if runtime.GOOS == "windows" {
-		return r.exec.Command("cmd", "/c", cmd).CombinedOutput()
+		name, flag = "cmd", "/c"
 	}
-	return r.exec.Command("sh", "-c", cmd).CombinedOutput()
+	out, err := r.exec.Command(name, flag, cmd).Output()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && len(exitErr.Stderr) > 0 {
+		return out, fmt.Errorf("%w: %s", err, strings.TrimSpace(string(exitErr.Stderr)))
+	}
+	return out, err
 }

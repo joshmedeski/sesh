@@ -48,7 +48,17 @@ func (s *CustomSection) fetchOutput() tea.Msg {
 	if err != nil {
 		return customOutputMsg{err: err}
 	}
-	return customOutputMsg{output: string(out)}
+	return customOutputMsg{output: collapseCarriageReturns(string(out))}
+}
+
+func collapseCarriageReturns(s string) string {
+	lines := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
+	for i, line := range lines {
+		if j := strings.LastIndex(line, "\r"); j >= 0 {
+			lines[i] = line[j+1:]
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (s *CustomSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
