@@ -1,9 +1,11 @@
 package dashboard
 
 import (
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -199,6 +201,21 @@ func TestSessionsSectionRenderItemNonCurrentNotAccent(t *testing.T) {
 	}
 	row := s.renderItem(0, 100)
 	assert.NotContains(t, row, "\x1b[38;5;14m")
+}
+
+func TestSessionsSectionRenderItemLongBranchFullAndAligned(t *testing.T) {
+	long := "claude/telemetry-worker/parse-bill-empty-attachments"
+	s := &SessionsSection{
+		sessions: []model.SeshSession{
+			{Name: "nu/w/1", Path: "/home/u/nu/w/1", Branch: long, GitStatus: "~2"},
+			{Name: "nu/w/2", Path: "/home/u/nu/w/2", Branch: "main", GitStatus: "!1"},
+		},
+		ListState: ListState{cursor: 2},
+	}
+	first := ansi.Strip(s.renderItem(0, 160))
+	second := ansi.Strip(s.renderItem(1, 160))
+	assert.Contains(t, first, "("+long+")")
+	assert.Equal(t, strings.Index(first, "~2"), strings.Index(second, "!1"))
 }
 
 // --- Alias support (Open sessions) ---

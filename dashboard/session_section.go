@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/lister"
@@ -391,8 +392,17 @@ func (s *SessionsSection) renderItem(i, width int) string {
 // renderItemFocused is renderItem with an explicit focused flag, so unfocused
 // panes render a dimmed selection highlight.
 func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
-	sess := s.visible()[i]
+	visible := s.visible()
+	sess := visible[i]
 	dir := render.CollapseHome(sess.Path, s.deps.HomeDir)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return render.RenderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
+	return render.RenderOpenRowFocused(width, branchColumnWidth(visible), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
+}
+
+func branchColumnWidth(sessions []model.SeshSession) int {
+	w := 0
+	for _, sess := range sessions {
+		w = max(w, lipgloss.Width(render.Paren(sess.Branch)))
+	}
+	return w
 }

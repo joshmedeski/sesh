@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // RowMarker returns the 2-column marker for a row: "▌ " (accent bold on the
@@ -45,7 +46,7 @@ func RenderRow(marker string, cols []Col, selected, focused bool) string {
 		if c.Align != 0 {
 			st = st.Align(c.Align)
 		}
-		rendered[i] = st.Render(c.Text)
+		rendered[i] = st.Render(ansi.Truncate(c.Text, c.Width, "…"))
 	}
 	if selected {
 		return marker + strings.Join(rendered, bg.Render(" "))
@@ -124,33 +125,25 @@ func namePrefix(current bool) string {
 }
 
 // renderOpenRow renders a Tab 1 (Open) session row with columns:
-// marker(2) | alias+name(22) | att(2) | windows(5) | dir(fill) | branch(16) |
+// marker(2) | att(2) | alias+name(18) | dir(fill) | branch(longest) |
 // status(12) | age(5, last attached) | alerts(2).
-// Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att,
-// <50 drop windows.
+// Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att.
 func renderOpenRow(width int, selected, current bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
-	return RenderOpenRowFocused(width, selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
+	return RenderOpenRowFocused(width, lipgloss.Width(Paren(branch)), selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
 }
 
 // RenderOpenRowFocused is renderOpenRow with an explicit focused flag, so
 // unfocused panes render a dimmed selection highlight.
-func RenderOpenRowFocused(width int, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
-	includeWindows := width >= 50
+func RenderOpenRowFocused(width, branchCol int, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
 	includeBranch := width >= 70
 	includeAtt := width >= 70
 	includeStatus := width >= 90
 	includeAge := width >= 90
 	includeAlerts := width >= 90
 
-	fixed := 22
+	fixed := 18
 	if includeAtt {
 		fixed += 2
-	}
-	if includeWindows {
-		fixed += 5
-	}
-	if includeBranch {
-		fixed += 16
 	}
 	if includeStatus {
 		fixed += 12
@@ -166,9 +159,6 @@ func RenderOpenRowFocused(width int, selected, current, focused bool, name, alia
 	if includeAtt {
 		numCols++
 	}
-	if includeWindows {
-		numCols++
-	}
 	if includeBranch {
 		numCols++
 	}
@@ -182,7 +172,12 @@ func RenderOpenRowFocused(width int, selected, current, focused bool, name, alia
 		numCols++
 	}
 
-	dirWidth := max(width-2-fixed-(numCols-1), 1)
+	flex := width - 2 - fixed - (numCols - 1)
+	branchWidth := 0
+	if includeBranch {
+		branchWidth = min(max(branchCol, 16), max(flex-16, 16))
+	}
+	dirWidth := max(flex-branchWidth, 1)
 
 	nameStyle := TextStyle()
 	if current {
@@ -200,7 +195,7 @@ func RenderOpenRowFocused(width int, selected, current, focused bool, name, alia
 	}
 
 	chip := aliasChip(alias)
-	nameBudget := 22
+	nameBudget := 18
 	if chip != "" {
 		nameBudget -= lipgloss.Width(chip)
 		if nameBudget < 1 {
@@ -224,12 +219,9 @@ func RenderOpenRowFocused(width int, selected, current, focused bool, name, alia
 	}
 	cols = append(cols, Col{Text: nameText, Width: 18})
 
-	// if includeWindows {
-	// 	cols = append(cols, Col{Text: fmt.Sprintf("%2dw", windows), Width: 7, Style: TextStyle(), Align: lipgloss.Left})
-	// }
 	cols = append(cols, Col{Text: truncateDirLeft(dir, dirWidth), Width: dirWidth, Style: TextStyle()})
 	if includeBranch {
-		cols = append(cols, Col{Text: TruncateRight(Paren(branch), 16), Width: 14, Style: BranchStyle(), Align: lipgloss.Left})
+		cols = append(cols, Col{Text: TruncateRight(Paren(branch), branchWidth), Width: branchWidth, Style: BranchStyle(), Align: lipgloss.Left})
 	}
 	if includeStatus {
 		cols = append(cols, Col{Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})

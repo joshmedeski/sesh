@@ -265,3 +265,17 @@ func TestRenderOpenRow_NameColumnSlim(t *testing.T) {
 	require.GreaterOrEqual(t, dirIdx, 0)
 	assert.Equal(t, 24, dirIdx)
 }
+
+func TestRenderOpenRow_LongCellsDoNotWrap(t *testing.T) {
+	for _, selected := range []bool{false, true} {
+		row := renderOpenRow(120, selected, false, "re/sesh/extensions/sesh-worktree-cleanup", "sc", 1, 1, "~/c/re/sesh/extensions/sesh", "claude/telemetry-dashboard", "+1 ~113 -62 !4", nil, nil)
+		assert.NotContains(t, row, "\n")
+		assert.Equal(t, 120, lipgloss.Width(row))
+	}
+}
+
+func TestRenderOpenRow_WideRowShowsFullBranch(t *testing.T) {
+	row := renderOpenRow(200, false, false, "nu/w/10290", "", 1, 1, "~/c/nu/w/10290", "claude/telemetry-dashboard", "~2", nil, nil)
+	assert.Contains(t, ansi.Strip(row), "(claude/telemetry-dashboard)")
+	assert.Equal(t, 200, lipgloss.Width(row))
+}
