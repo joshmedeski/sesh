@@ -6,15 +6,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/dashboard/core"
 	"github.com/joshmedeski/sesh/v2/dashboard/render"
-	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
-	"github.com/joshmedeski/sesh/v2/shell"
-	"github.com/joshmedeski/sesh/v2/tmux"
-	"github.com/joshmedeski/sesh/v2/worktree"
 )
 
 const (
@@ -58,26 +52,15 @@ type Model struct {
 	lastHoveredSession string
 }
 
-func New(config model.DashboardConfig, worktreeConfigs []model.WorktreeConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, wt worktree.Worktree, sh shell.Shell, runner CommandRunner, homeDir string) Model {
-	deps := SectionDeps{
-		Tmux:      tmux,
-		Lister:    lister,
-		Git:       git,
-		Connector: connector,
-		Shell:     sh,
-		Runner:    runner,
-		Worktree:  wt,
-		HomeDir:   homeDir,
-	}
-
-	built := BuildSections(config, deps)
-	worktrees := make([]*WorktreeSection, 0, len(worktreeConfigs))
-	for _, wc := range worktreeConfigs {
+func New(config model.Config, deps SectionDeps) Model {
+	built := BuildSections(config.Dashboard, deps)
+	worktrees := make([]*WorktreeSection, 0, len(config.WorktreeConfigs))
+	for _, wc := range config.WorktreeConfigs {
 		worktrees = append(worktrees, NewWorktreeSection(wc, deps))
 	}
 
 	m := Model{
-		config:     config,
+		config:     config.Dashboard,
 		sessions:   built.Sessions,
 		configured: built.Configured,
 		worktrees:  worktrees,

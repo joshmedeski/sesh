@@ -9,6 +9,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/joshmedeski/sesh/v2/icon"
 )
 
 // RowMarker returns the 2-column marker for a row: "▌ " (accent bold on the
@@ -126,23 +128,23 @@ func namePrefix(current bool) string {
 }
 
 // renderOpenRow renders a Tab 1 (Open) session row with columns:
-// marker(2) | att(2) | alias+name(18) | dir(fill) | branch(longest) |
+// marker(2) | icon | att(2) | alias+name(18) | dir(fill) | branch(longest) |
 // status(12) | age(5, last attached) | alerts(2).
 // Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att.
 func renderOpenRow(width int, selected, current bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
-	return RenderOpenRowFocused(width, lipgloss.Width(Paren(branch)), selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
+	return RenderOpenRowFocused(width, lipgloss.Width(Paren(branch)), IconCol("", "tmux", 1, selected), selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
 }
 
 // RenderOpenRowFocused is renderOpenRow with an explicit focused flag, so
 // unfocused panes render a dimmed selection highlight.
-func RenderOpenRowFocused(width, branchCol int, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
+func RenderOpenRowFocused(width, branchCol int, iconCol Col, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
 	includeBranch := width >= 70
 	includeAtt := width >= 70
 	includeStatus := width >= 90
 	includeAge := width >= 90
 	includeAlerts := width >= 90
 
-	fixed := 18
+	fixed := 18 + iconCol.Width
 	if includeAtt {
 		fixed += 2
 	}
@@ -156,7 +158,7 @@ func RenderOpenRowFocused(width, branchCol int, selected, current, focused bool,
 		fixed += 2
 	}
 
-	numCols := 2 // name + dir
+	numCols := 3 // icon + name + dir
 	if includeAtt {
 		numCols++
 	}
@@ -185,7 +187,7 @@ func RenderOpenRowFocused(width, branchCol int, selected, current, focused bool,
 		nameStyle = accentStyle()
 	}
 
-	cols := []Col{}
+	cols := []Col{iconCol}
 
 	if includeAtt {
 		attText := ""
@@ -245,12 +247,12 @@ func RenderOpenRowFocused(width, branchCol int, selected, current, focused bool,
 // marker(2) | cmd(2) | name(24) | state(2) | path(fill) | branch(16) |
 // status(12). The cmd column ("*") and branch drop together below 70 cols.
 func renderConfiguredRow(width int, selected bool, name, startupCommand string, running bool, path, branch, status string) string {
-	return RenderConfiguredRowFocused(width, selected, true, name, startupCommand, running, path, branch, status)
+	return RenderConfiguredRowFocused(width, IconCol("", "config", 1, selected), selected, true, name, startupCommand, running, path, branch, status)
 }
 
 // RenderConfiguredRowFocused is renderConfiguredRow with an explicit focused
 // flag, so unfocused panes render a dimmed selection highlight.
-func RenderConfiguredRowFocused(width int, selected, focused bool, name, startupCommand string, running bool, path, branch, status string) string {
+func RenderConfiguredRowFocused(width int, iconCol Col, selected, focused bool, name, startupCommand string, running bool, path, branch, status string) string {
 	includeBranch := width >= 70
 
 	stateText := "○"
@@ -264,8 +266,8 @@ func RenderConfiguredRowFocused(width int, selected, focused bool, name, startup
 		path = "-"
 	}
 
-	fixed := 24 + 2 + 12 // name + state + status
-	numCols := 4         // name + state + path + status
+	fixed := iconCol.Width + 24 + 2 + 12
+	numCols := 5
 	if includeBranch {
 		fixed += 2 + 16 // cmd + branch
 		numCols += 2
@@ -276,6 +278,7 @@ func RenderConfiguredRowFocused(width int, selected, focused bool, name, startup
 	}
 
 	cols := make([]Col, 0, numCols)
+	cols = append(cols, iconCol)
 	if includeBranch {
 		cmdText := ""
 		// if startupCommand != "" {
@@ -299,13 +302,13 @@ func branchColumn(flex, longest int) int {
 }
 
 // RenderWorktreeRowFocused renders a worktree tab row with columns:
-// marker(2) | number(7) | title(fill) | branch(longest) | status(12).
+// marker(2) | icon | number(7) | title(fill) | branch(longest) | status(12).
 // The branch drops below 70 cols. Closed issues render their title dimmed.
-func RenderWorktreeRowFocused(width, branchCol int, selected, focused bool, number int, title string, closed bool, branch, status string) string {
+func RenderWorktreeRowFocused(width, branchCol int, iconCol Col, selected, focused bool, number int, title string, closed bool, branch, status string) string {
 	includeBranch := width >= 70
 
-	fixed := 7 + 12
-	numCols := 3
+	fixed := iconCol.Width + 7 + 12
+	numCols := 4
 	if includeBranch {
 		numCols++
 	}
@@ -327,6 +330,7 @@ func RenderWorktreeRowFocused(width, branchCol int, selected, focused bool, numb
 	}
 
 	cols := []Col{
+		iconCol,
 		{Text: "#" + strconv.Itoa(number), Width: 7, Style: numberStyle},
 		{Text: TruncateRight(title, titleWidth), Width: titleWidth, Style: titleStyle},
 	}
@@ -336,4 +340,17 @@ func RenderWorktreeRowFocused(width, branchCol int, selected, focused bool, numb
 	cols = append(cols, Col{Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
 
 	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+}
+
+// IconCol is the leading icon column of a list row: the configured icon, or
+// the source glyph in its color when there is none.
+func IconCol(custom, src string, width int, selected bool) Col {
+	if custom != "" {
+		return Col{Text: custom, Width: width}
+	}
+	glyph, clr := icon.SourceGlyph(src)
+	if selected && clr == colorDimmed {
+		clr = colorText
+	}
+	return Col{Text: strings.TrimRight(glyph, " "), Width: width, Style: lipgloss.NewStyle().Foreground(clr)}
 }

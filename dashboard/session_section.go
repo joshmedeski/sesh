@@ -347,7 +347,7 @@ func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	sess := visible[i]
 	dir := render.CollapseHome(sess.Path, s.deps.HomeDir)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return render.RenderOpenRowFocused(width, branchColumnWidth(visible), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
+	return render.RenderOpenRowFocused(width, branchColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
 }
 
 func branchColumnWidth(sessions []model.SeshSession) int {

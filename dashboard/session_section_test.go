@@ -264,3 +264,17 @@ func TestSelectByAliasReturnsSessionName(t *testing.T) {
 	s.selectItem()
 	assert.Equal(t, "wallpaper", s.chosen)
 }
+
+func TestSessionsSectionRenderItemShowsResolvedIcon(t *testing.T) {
+	s := &SessionsSection{
+		sessions: []model.SeshSession{{Src: "tmux", Name: "nutiliti", Path: "/home/u/c/nu"}},
+		deps: SectionDeps{IconWidth: 2, Icon: func(sess model.SeshSession) string {
+			if sess.Name == "nutiliti" {
+				return "🏠"
+			}
+			return ""
+		}},
+		ListState: ListState{cursor: 1},
+	}
+	assert.True(t, strings.HasPrefix(ansi.Strip(s.renderItem(0, 100)), "  🏠"))
+}

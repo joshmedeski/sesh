@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/icon"
 )
 
 func firstResetIndex(s string) int {
@@ -258,12 +259,13 @@ func TestAliasRowHoverBackgroundCoversPillAndName(t *testing.T) {
 
 // TestRenderOpenRow_NameColumnSlim locks in the slimmer Open-session name
 // column: the name cell is 18 visible cells wide (was 20), so the directory
-// column starts at marker(2) + att(2) + sep(1) + name(18) + sep(1) = 24.
+// column starts at marker(2) + icon(1) + sep(1) + att(2) + sep(1) + name(18)
+// + sep(1) = 26.
 func TestRenderOpenRow_NameColumnSlim(t *testing.T) {
-	row := renderOpenRow(100, false, false, "short", "", 0, 1, "~/d", "", "", nil, nil)
-	dirIdx := strings.Index(ansi.Strip(row), "~/d")
+	row := ansi.Strip(renderOpenRow(100, false, false, "short", "", 0, 1, "~/d", "", "", nil, nil))
+	dirIdx := strings.Index(row, "~/d")
 	require.GreaterOrEqual(t, dirIdx, 0)
-	assert.Equal(t, 24, dirIdx)
+	assert.Equal(t, 26, lipgloss.Width(row[:dirIdx]))
 }
 
 func TestRenderOpenRow_LongCellsDoNotWrap(t *testing.T) {
@@ -281,8 +283,27 @@ func TestRenderOpenRow_WideRowShowsFullBranch(t *testing.T) {
 }
 
 func TestRenderWorktreeRow_SelectedNumberUsesTextColor(t *testing.T) {
-	row := RenderWorktreeRowFocused(120, 16, true, true, 7503, "closed issue", true, "main", "")
+	row := RenderWorktreeRowFocused(120, 16, IconCol("", "config", 1, true), true, true, 7503, "closed issue", true, "main", "")
 	selected := TextStyle().Inherit(cursorStyle(true))
 	assert.Contains(t, row, selected.Width(7).Render("#7503"))
 	assert.NotContains(t, row, DimmedStyle().Inherit(cursorStyle(true)).Width(7).Render("#7503"))
+}
+
+func TestIconCol_CustomIconElseSourceGlyph(t *testing.T) {
+	assert.Equal(t, "🏠", IconCol("🏠", "tmux", 2, false).Text)
+
+	glyph, clr := icon.SourceGlyph("tmux")
+	col := IconCol("", "tmux", 2, false)
+	assert.Equal(t, strings.TrimSpace(glyph), col.Text)
+	assert.Equal(t, clr, col.Style.GetForeground())
+}
+
+func TestIconCol_SelectedDimmedGlyphUsesTextColor(t *testing.T) {
+	assert.Equal(t, colorDimmed, IconCol("", "config", 1, false).Style.GetForeground())
+	assert.Equal(t, colorText, IconCol("", "config", 1, true).Style.GetForeground())
+}
+
+func TestRenderOpenRow_IconIsFirstColumn(t *testing.T) {
+	row := ansi.Strip(RenderOpenRowFocused(100, 0, IconCol("🏠", "tmux", 2, false), false, false, true, "nutiliti", "", 1, 1, "~/c/nu", "main", "", nil, nil))
+	assert.True(t, strings.HasPrefix(row, "  🏠"), row)
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/joshmedeski/sesh/v2/dashboard"
+	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -33,7 +35,18 @@ func NewDashboardCommand(base *BaseDeps) *cobra.Command {
 				return fmt.Errorf("couldn't get home directory: %w", err)
 			}
 
-			m := dashboard.New(deps.Config.Dashboard, deps.Config.WorktreeConfigs, deps.Tmux, deps.Lister, deps.Git, deps.Connector, deps.Worktree, deps.Shell, dashboard.NewCommandRunner(deps.Exec), homeDir)
+			m := dashboard.New(deps.Config, dashboard.SectionDeps{
+				Tmux:      deps.Tmux,
+				Lister:    deps.Lister,
+				Git:       deps.Git,
+				Connector: deps.Connector,
+				Shell:     deps.Shell,
+				Runner:    dashboard.NewCommandRunner(deps.Exec),
+				Worktree:  deps.Worktree,
+				HomeDir:   homeDir,
+				Icon:      lister.IconResolver(deps.Config, deps.Home, deps.Lister),
+				IconWidth: icon.ColumnWidth(deps.Config),
+			})
 			prog := tea.NewProgram(m)
 			result, err := prog.Run()
 			if err != nil {

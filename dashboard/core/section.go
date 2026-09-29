@@ -6,6 +6,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/worktree"
@@ -56,4 +57,7 @@ type SectionDeps struct {
 	Runner    CommandRunner
 	Worktree  worktree.Worktree
 	HomeDir   string
+	// Icon resolves a session's configured icon; nil when none are configured.
+	Icon      func(model.SeshSession) string
+	IconWidth int
 }

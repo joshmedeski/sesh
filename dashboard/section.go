@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/joshmedeski/sesh/v2/dashboard/core"
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/dashboard/sections"
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -16,6 +17,18 @@ type Sorter = core.Sorter
 type Filterer = core.Filterer
 type Clicker = core.Clicker
 type SectionDeps = core.SectionDeps
+
+func iconCol(deps SectionDeps, sess model.SeshSession, fallbackSrc string, selected bool) render.Col {
+	custom := ""
+	if deps.Icon != nil {
+		custom = deps.Icon(sess)
+	}
+	src := sess.Src
+	if fallbackSrc != "" {
+		src = fallbackSrc
+	}
+	return render.IconCol(custom, src, max(deps.IconWidth, 1), selected)
+}
 
 type SectionFactory func(cfg model.DashboardSectionConfig, deps SectionDeps) Section
 

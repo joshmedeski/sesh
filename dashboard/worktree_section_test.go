@@ -1,12 +1,14 @@
 package dashboard
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/worktree"
 )
@@ -96,4 +98,24 @@ func TestWorktreeRowShowsNumberTitleAndBranch(t *testing.T) {
 	_, content := s.ViewBorderless(120, 10, true)
 	assert.Contains(t, ansi.Strip(content), "#358    tmux command updates")
 	assert.Contains(t, ansi.Strip(content), "(jam/358-tmux-command-updates)")
+}
+
+func TestWorktreeIconFallsBackToRepoRootIcon(t *testing.T) {
+	deps := SectionDeps{HomeDir: "/home/u", IconWidth: 2, Icon: func(sess model.SeshSession) string {
+		if sess.Path == "/home/u/c/nu" {
+			return "🏠"
+		}
+		return ""
+	}}
+	s := NewWorktreeSection(model.WorktreeConfig{Repo: "Nutiliti/nutiliti", Path: "~/c/nu"}, deps)
+	s.Update(loadedWorktrees("Nutiliti/nutiliti"))
+	_, content := s.ViewBorderless(120, 10, true)
+	for _, line := range strings.Split(strings.TrimSuffix(ansi.Strip(content), "\n"), "\n") {
+		assert.True(t, strings.HasPrefix(strings.TrimLeft(line, "▌ "), "🏠"), line)
+	}
+}
+
+func TestWorktreeIconWithoutMatchUsesConfigGlyph(t *testing.T) {
+	s := NewWorktreeSection(model.WorktreeConfig{Repo: "joshmedeski/sesh"}, SectionDeps{})
+	assert.Equal(t, render.IconCol("", "config", 1, false), s.iconCol(model.SeshSession{Src: "worktree", Path: "/r/w/358"}, false))
 }

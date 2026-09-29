@@ -157,6 +157,22 @@ func (s *WorktreeSection) selectItem() {
 	s.chosen = s.entries[visible[s.cursor].Path].Number
 }
 
+// iconCol uses the worktree's own icon, else the icon of its repo root, else
+// the config glyph.
+func (s *WorktreeSection) iconCol(sess model.SeshSession, selected bool) render.Col {
+	if s.deps.Icon != nil && s.deps.Icon(sess) == "" {
+		sess = model.SeshSession{Path: expandHome(s.config.Path, s.deps.HomeDir)}
+	}
+	return iconCol(s.deps, sess, "config", selected)
+}
+
+func expandHome(path, homeDir string) string {
+	if path == "~" || strings.HasPrefix(path, "~/") {
+		return homeDir + path[1:]
+	}
+	return path
+}
+
 func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (string, string) {
 	s.viewHeight = height
 	title := s.Name()
@@ -178,7 +194,7 @@ func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (strin
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
 		e := s.entries[sess.Path]
-		b.WriteString(render.RenderWorktreeRowFocused(width, branchCol, i == s.cursor, focused, e.Number, sess.Name, e.State == "CLOSED", sess.Branch, sess.GitStatus))
+		b.WriteString(render.RenderWorktreeRowFocused(width, branchCol, s.iconCol(sess, i == s.cursor), i == s.cursor, focused, e.Number, sess.Name, e.State == "CLOSED", sess.Branch, sess.GitStatus))
 		b.WriteString("\n")
 	}
 	return title, b.String()

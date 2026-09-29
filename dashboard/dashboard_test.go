@@ -194,7 +194,7 @@ func TestBuildSections_SessionsEntryCarriesTitleNotGroups(t *testing.T) {
 // --- New ---
 
 func TestNewBuildsDefaultModel(t *testing.T) {
-	m := New(model.DashboardConfig{}, nil, nil, nil, nil, nil, nil, nil, nil, "/home/user")
+	m := New(model.Config{}, SectionDeps{HomeDir: "/home/user"})
 	require.NotNil(t, m.sessions)
 	require.NotNil(t, m.configured)
 	assert.Equal(t, pageOpen, m.page)
