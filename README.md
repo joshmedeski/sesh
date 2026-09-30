@@ -33,6 +33,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - **Mkdir and connect** - create a new directory (relative or absolute path) and start a session in one step
 - **Last session switching** - seamlessly bounce between your two most recent sessions
 - **Root session navigation** - jump to the root of a git worktree or repository
+- **Dashboard** - full-screen tabs of sessions, worktrees, git status, and command output
 - **Nerd Font icons** - display session type icons in your picker
 - **Shell completions** - tab completion for Bash, Zsh, Fish, and PowerShell
 
@@ -1424,6 +1425,99 @@ drawn, which is the slower way to get the same titles.
 
 Connecting goes through `sesh worktree connect`, so a picked worktree lands in
 exactly the session that command would have created, `startup_command` included.
+
+### Dashboard
+
+`sesh dashboard` (aliases `dash`, `d`) opens a full-screen dashboard inside tmux.
+Its tabs are the pages you configure. Each page is a grid of panes ("sections"):
+session lists, your `[[session]]` entries, worktrees, git status, docker
+containers, SSH hosts, system metrics, or the output of any shell command.
+Pressing `enter` on a session or worktree connects to it.
+
+Each `[[dashboard.page]]` is one tab. Its `sections` is a list of rows, from top to
+bottom, and each row is a list of sections placed side by side from left to right.
+The rows share the height evenly.
+
+```toml
+[[dashboard.page]]
+title = "Home"
+sections = [
+  [
+    { type = "sources", title = "Sessions", sources = ["tmux"] },
+    { type = "custom", title = "Weather", custom = { command = "curl -s 'wttr.in?format=3'" } },
+  ],
+  [
+    { type = "sources", title = "Projects", sources = [["config", "zoxide"]] },
+    { type = "worktree", repo = "joshmedeski/sesh" },
+  ],
+]
+
+[[dashboard.page]]
+title = "Ops"
+sections = [
+  [{ type = "git", git = { paths = ["~/c/*"] } }, { type = "system" }],
+  [{ type = "docker", docker = { all = true } }],
+]
+```
+
+A page without a `title` is named "Dashboard" (or "Dashboard N" after the first).
+Rows or pages with no valid sections are skipped. If no pages are configured, the
+dashboard shows a single page with your tmux sessions.
+
+#### Section types
+
+Every section accepts an optional `title`.
+
+| `type`     | Shows                                                          | Keys                                                                             |
+| ---------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `sources`  | Sessions from the given sources                                | `sources` (same format as [`sort_order`](#sorting); default `["tmux"]`), `columns` |
+| `worktree` | Worktrees for the [`[[worktree]]`](#worktrees) block whose `repo` matches | `repo` (case-insensitive), `columns`                                    |
+| `custom`   | Standard output of a shell command                             | `custom = { command = "..." }`                                                   |
+| `git`      | Branch and uncommitted changes for each repo                   | `git = { paths = ["~/c/sesh", "~/c/*"] }` (globs supported)                      |
+| `docker`   | Docker containers                                              | `docker = { all = true, filters = ["status=running"] }`                          |
+| `ssh`      | Whether each SSH host can be reached                           | `ssh = [{ name = "nas", host = "10.0.0.2", port = 22, username = "me" }]`        |
+| `system`   | CPU and memory usage                                           |                                                                                  |
+| `workmux`  | [workmux](https://github.com/raine/workmux) agents             |                                                                                  |
+| `configured` | Your `[[session]]` entries, with alias, startup command and running state |                                                                    |
+
+In `sources`, nested groups are merged into one list, just like the top-level
+`sort_order`: `sources = ["tmux", ["config", "zoxide"]]` shows tmux sessions
+first, followed by config and zoxide results together.
+
+Worktrees only appear on the dashboard when you add a `worktree` section; a
+`[[worktree]]` block by itself adds nothing to it.
+
+#### Columns
+
+`columns` sets which columns a `sources` or `worktree` section shows, and in what
+order. Unknown columns are ignored.
+
+- `sources`: `icon`, `attached`, `title`, `alias`, `directory`, `git_branch`,
+  `git_status`, `age`, `alerts`, plus `ghi_number`, `ghi_state` and `ghi_title`
+  for sessions inside a `[[worktree]]` checkout
+- `worktree`: `icon`, `ghi_number`, `ghi_state`, `ghi_title`, `git_branch`,
+  `git_status`, `age`
+
+```toml
+{ type = "sources", sources = ["tmux"], columns = ["icon", "title", "ghi_title", "git_status"] }
+```
+
+#### Keybindings
+
+| Key                  | Action                                   |
+| -------------------- | ---------------------------------------- |
+| `tab` / `shift+tab`  | Next / previous tab                      |
+| `j`/`k`, `↑`/`↓`     | Move                                     |
+| `enter`              | Connect                                  |
+| `/`                  | Filter                                   |
+| `r`                  | Refresh                                  |
+| `s`                  | Cycle sort (sortable panes)              |
+| `ctrl+h` / `ctrl+l`  | Focus pane left / right                  |
+| `ctrl+j` / `ctrl+k`  | Focus pane below / above                 |
+| `1`-`9`              | Focus pane by number                     |
+| `ctrl+d`             | Kill tmux session                        |
+| `?`                  | Help                                     |
+| `q` / `esc`          | Quit                                     |
 
 ### Listing Configurations
 

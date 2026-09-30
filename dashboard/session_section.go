@@ -3,11 +3,14 @@ package dashboard
 import (
 	"fmt"
 	"log/slog"
+	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/joshmedeski/sesh/v2/dashboard/render"
 	"github.com/joshmedeski/sesh/v2/lister"
@@ -15,12 +18,18 @@ import (
 )
 
 type sessionsLoadedMsg struct {
+	section  *SessionsSection
 	sessions model.SeshSessions
 	err      error
 }
 
 type currentSessionMsg struct {
 	name string
+}
+
+type sessionIssuesLoadedMsg struct {
+	section *SessionsSection
+	entries map[string]model.WorktreeEntry
 }
 
 type SessionsSection struct {
@@ -31,8 +40,13 @@ type SessionsSection struct {
 	loading       bool
 	chosen        string
 	totalSessions int
-	sortMode      string // "name" | "recent" | "created"
+	sortMode      string
 	currentName   string
+	sortOrder     model.SortOrder
+	rank          map[string]int
+	columns       []string
+	worktrees     []model.WorktreeConfig
+	issues        map[string]model.WorktreeEntry
 }
 
 func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -42,6 +56,14 @@ func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Sect
 		loading:  true,
 		sortMode: "name",
 	}
+}
+
+func NewSourcesSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
+	s := NewSessionsSection(cfg, deps).(*SessionsSection)
+	s.sortOrder = cfg.Sources
+	s.columns = resolveColumns(cfg.Columns, slices.Concat(render.OpenColumns, render.IssueColumns), cfg.Type)
+	s.sortMode = s.sortModes()[0]
+	return s
 }
 
 func (s *SessionsSection) Width() float64 {
@@ -56,6 +78,16 @@ func (s *SessionsSection) Name() string {
 // number of items in the section
 func (s *SessionsSection) TotalItems() int {
 	return s.totalSessions
+}
+
+func (s *SessionsSection) TmuxCount() int {
+	n := 0
+	for _, sess := range s.sessions {
+		if sess.Src == "tmux" {
+			n++
+		}
+	}
+	return n
 }
 
 // SortLabel implements Sorter.
@@ -75,24 +107,106 @@ func (s *SessionsSection) FilterQuery() string {
 
 // fetch tmux sessions
 func (s *SessionsSection) Init() tea.Cmd {
-	return func() tea.Msg {
-		sessions, err := s.deps.Lister.List(lister.ListOptions{Tmux: true})
-		return sessionsLoadedMsg{sessions: sessions, err: err}
+	opts := s.listOptions()
+	list := func() tea.Msg {
+		sessions, err := s.deps.Lister.List(opts)
+		return sessionsLoadedMsg{section: s, sessions: sessions, err: err}
 	}
+	if !s.showsIssues() {
+		return list
+	}
+	return tea.Batch(list, s.fetchIssues())
+}
+
+func (s *SessionsSection) showsIssues() bool {
+	return slices.ContainsFunc(s.columns, func(id string) bool { return slices.Contains(render.IssueColumns, id) })
+}
+
+func (s *SessionsSection) fetchIssues() tea.Cmd {
+	worktrees, svc := s.worktrees, s.deps.Worktree
+	return func() tea.Msg {
+		entries := map[string]model.WorktreeEntry{}
+		if svc == nil {
+			return sessionIssuesLoadedMsg{section: s, entries: entries}
+		}
+		for _, wc := range worktrees {
+			list, err := svc.List(model.WorktreeListOpts{Repo: wc.Repo})
+			if err != nil {
+				slog.Warn("dashboard: listing worktrees for issue columns", "repo", wc.Repo, "error", err)
+				continue
+			}
+			for _, e := range list {
+				entries[filepath.Clean(e.Path)] = e
+			}
+		}
+		return sessionIssuesLoadedMsg{section: s, entries: entries}
+	}
+}
+
+func (s *SessionsSection) issueFor(path string) render.Issue {
+	if path == "" || len(s.issues) == 0 {
+		return render.Issue{}
+	}
+	for p := filepath.Clean(path); ; p = filepath.Dir(p) {
+		if e, ok := s.issues[p]; ok {
+			return render.Issue{Number: e.Number, Title: e.Title, State: e.State}
+		}
+		if filepath.Dir(p) == p {
+			return render.Issue{}
+		}
+	}
+}
+
+func (s *SessionsSection) listOptions() lister.ListOptions {
+	groups := s.sortOrder.SortGroups()
+	if len(groups) == 0 {
+		return lister.ListOptions{Tmux: true}
+	}
+	opts := lister.ListOptions{SortOrder: s.sortOrder, HideDuplicates: true}
+	for _, group := range groups {
+		for _, src := range group {
+			switch strings.ToLower(src) {
+			case "tmux":
+				opts.Tmux = true
+			case "config":
+				opts.Config = true
+			case "tmuxinator":
+				opts.Tmuxinator = true
+			case "zoxide":
+				opts.Zoxide = true
+			}
+		}
+	}
+	return opts
+}
+
+func (s *SessionsSection) sortModes() []string {
+	if len(s.sortOrder.SortGroups()) > 0 {
+		return []string{"order", "name", "recent", "created"}
+	}
+	return []string{"name", "recent", "created"}
+}
+
+func rankKey(sess model.SeshSession) string {
+	return sess.Src + "\x00" + sess.Name
 }
 
 func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case sessionsLoadedMsg:
-		if msg.err != nil {
+		if msg.section != s || msg.err != nil {
 			return s, nil
 		}
 		s.loading = false
 		s.sessions = flattenSessions(msg.sessions)
+		s.rank = make(map[string]int, len(s.sessions))
+		for i, sess := range s.sessions {
+			s.rank[rankKey(sess)] = i
+		}
 		s.totalSessions = len(msg.sessions.OrderedIndex)
 		s.applySort()
 		s.applyFilter()
-		return s, tea.Batch(s.fetchBranches(), s.fetchStatuses(), s.fetchCurrentSession())
+		return s, tea.Batch(fetchBranches(s.deps.Git, s.sessions), fetchStatuses(s.deps.Git, s.sessions), s.fetchCurrentSession())
 
 	case branchLoadedMsg:
 		s.applyBranch(msg.path, msg.branch)
@@ -100,6 +214,13 @@ func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 
 	case statusLoadedMsg:
 		s.applyStatus(msg.path, msg.status)
+		return s, nil
+
+	case sessionIssuesLoadedMsg:
+		if msg.section == s {
+			s.issues = msg.entries
+			s.applyFilter()
+		}
 		return s, nil
 
 	case currentSessionMsg:
@@ -130,6 +251,8 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 		s.selectItem()
 	case "ctrl+d":
 		return s, s.killSession()
+	case "r":
+		return s, s.Init()
 	case "s":
 		s.cycleSortMode()
 	case "/":
@@ -146,20 +269,21 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 // through the filtered results, enter selects the highlighted filtered item
 // and exits filtering, and esc cancels filtering without selecting.
 func (s *SessionsSection) handleFilterKey(msg tea.KeyPressMsg) (*SessionsSection, tea.Cmd) {
-	s.ListState.handleFilterKey(msg, s.sessions, sessionsMatch, s.selectItem)
+	s.ListState.handleFilterKey(msg, s.sessions, s.match, s.selectItem)
 	return s, nil
 }
 
-// cycleSortMode advances sortMode name → recent → created → name and re-sorts.
+// cycleSortMode advances to the next sort mode (order, when a dashboard
+// sort_order is set, then name → recent → created) and re-sorts.
 func (s *SessionsSection) cycleSortMode() {
-	switch s.sortMode {
-	case "name":
-		s.sortMode = "recent"
-	case "recent":
-		s.sortMode = "created"
-	default:
-		s.sortMode = "name"
+	modes := s.sortModes()
+	next := 0
+	for i, mode := range modes {
+		if mode == s.sortMode {
+			next = (i + 1) % len(modes)
+		}
 	}
+	s.sortMode = modes[next]
 	s.applySort()
 	s.applyFilter()
 }
@@ -168,6 +292,8 @@ func (s *SessionsSection) cycleSortMode() {
 func (s *SessionsSection) applySort() {
 	sort.SliceStable(s.sessions, func(i, j int) bool {
 		switch s.sortMode {
+		case "order":
+			return s.rank[rankKey(s.sessions[i])] < s.rank[rankKey(s.sessions[j])]
 		case "recent":
 			ti := timeOrZero(s.sessions[i].LastAttached)
 			tj := timeOrZero(s.sessions[j].LastAttached)
@@ -190,7 +316,11 @@ func (s *SessionsSection) applySort() {
 // applyFilter rebuilds the filtered view from the master list and clamps the
 // cursor.
 func (s *SessionsSection) applyFilter() {
-	s.ListState.applyFilter(s.sessions, sessionsMatch)
+	s.ListState.applyFilter(s.sessions, s.match)
+}
+
+func (s *SessionsSection) match(sess model.SeshSession, q string) bool {
+	return sessionsMatch(sess, q) || strings.Contains(strings.ToLower(s.issueFor(sess.Path).Title), q)
 }
 
 // sessionsMatch reports whether a session matches the query by name or alias.
@@ -213,14 +343,13 @@ func timeOrZero(t *time.Time) time.Time {
 	return *t
 }
 
-// flattenSessions returns every tmux session as a flat list, sorted
-// alphabetically by name (stable order).
+// flattenSessions returns every listed session as a flat list, in the order
+// the lister returned them.
 func flattenSessions(sessions model.SeshSessions) []model.SeshSession {
 	out := make([]model.SeshSession, 0, len(sessions.OrderedIndex))
 	for _, key := range sessions.OrderedIndex {
 		out = append(out, sessions.Directory[key])
 	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
 }
 
@@ -234,62 +363,13 @@ func (s *SessionsSection) fetchCurrentSession() tea.Cmd {
 	}
 }
 
-func (s *SessionsSection) fetchBranches() tea.Cmd {
-	paths := make(map[string]bool)
-	for _, sess := range s.sessions {
-		if sess.Path != "" {
-			paths[sess.Path] = true
-		}
-	}
-	cmds := make([]tea.Cmd, 0, len(paths))
-	for path := range paths {
-		cmds = append(cmds, func() tea.Msg {
-			found, branch, err := s.deps.Git.CurrentBranch(path)
-			if err != nil || !found {
-				return branchLoadedMsg{path: path, branch: ""}
-			}
-			return branchLoadedMsg{path: path, branch: strings.TrimSpace(branch)}
-		})
-	}
-	return tea.Batch(cmds...)
-}
-
 func (s *SessionsSection) applyBranch(path, branch string) {
-	for i := range s.sessions {
-		if s.sessions[i].Path == path {
-			s.sessions[i].Branch = branch
-		}
-	}
+	applyBranch(s.sessions, path, branch)
 	s.applyFilter()
 }
 
-func (s *SessionsSection) fetchStatuses() tea.Cmd {
-	paths := make(map[string]bool)
-	for _, sess := range s.sessions {
-		if sess.Path != "" {
-			paths[sess.Path] = true
-		}
-	}
-	cmds := make([]tea.Cmd, 0, len(paths))
-	for p := range paths {
-		path := p
-		cmds = append(cmds, func() tea.Msg {
-			status, err := s.deps.Git.StatusSummary(path)
-			if err != nil {
-				return statusLoadedMsg{path: path, status: ""}
-			}
-			return statusLoadedMsg{path: path, status: render.FormatGitStatus(status)}
-		})
-	}
-	return tea.Batch(cmds...)
-}
-
 func (s *SessionsSection) applyStatus(path, status string) {
-	for i := range s.sessions {
-		if s.sessions[i].Path == path {
-			s.sessions[i].GitStatus = status
-		}
-	}
+	applyStatus(s.sessions, path, status)
 	s.applyFilter()
 }
 
@@ -315,6 +395,9 @@ func (s *SessionsSection) killSession() tea.Cmd {
 		return nil
 	}
 	sess := s.visible()[s.cursor]
+	if sess.Src != "tmux" {
+		return nil
+	}
 	if _, err := s.deps.Tmux.KillSession(sess.Name); err != nil {
 		slog.Error("failed to kill session", "name", sess.Name, "error", err)
 	}
@@ -345,7 +428,7 @@ func (s *SessionsSection) HoveredSession() (name, path string, windows int) {
 }
 
 func (s *SessionsSection) ViewBorderless(width, height int, focused bool) (string, string) {
-	s.viewHeight = height
+	s.viewHeight = max(height-1, 1)
 
 	title := s.config.Title
 	if title == "" {
@@ -370,10 +453,11 @@ func (s *SessionsSection) ViewBorderless(width, height int, focused bool) (strin
 	// Calculate active available viewing rows (the pane content area, already
 	// reduced by the shared frame's top/bottom borders).
 	visible := s.visible()
-	available := max(height, 1)
-	end := min(s.offset+available, len(visible))
+	end := min(s.offset+s.viewHeight, len(visible))
 
 	var b strings.Builder
+	b.WriteString(render.RenderOpenHeader(width, s.columns, branchColumnWidth(visible), aliasColumnWidth(visible), max(s.deps.IconWidth, 1)))
+	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		b.WriteString(s.renderItemFocused(i, width, focused))
 		b.WriteString("\n")
@@ -390,11 +474,25 @@ func (s *SessionsSection) renderItem(i, width int) string {
 // renderItemFocused is renderItem with an explicit focused flag, so unfocused
 // panes render a dimmed selection highlight.
 func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
-	sess := s.visible()[i]
-	dir := sess.Path
-	if shortened, err := s.deps.Home.ShortenHome(dir); err == nil {
-		dir = shortened
-	}
+	visible := s.visible()
+	sess := visible[i]
+	dir := shortenHome(s.deps, sess.Path)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return render.RenderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
+	return render.RenderOpenRowFocused(width, s.columns, branchColumnWidth(visible), aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts, s.issueFor(sess.Path))
+}
+
+func branchColumnWidth(sessions []model.SeshSession) int {
+	w := 0
+	for _, sess := range sessions {
+		w = max(w, lipgloss.Width(sess.Branch))
+	}
+	return w
+}
+
+func aliasColumnWidth(sessions []model.SeshSession) int {
+	aliases := make([]string, len(sessions))
+	for i, sess := range sessions {
+		aliases[i] = sess.Alias
+	}
+	return render.AliasColumn(aliases...)
 }

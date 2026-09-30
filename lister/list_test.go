@@ -385,6 +385,43 @@ func TestMergedSortOrderGroup(t *testing.T) {
 	assert.Equal(t, []int{0, 1, 1, 1, 1, 1}, groups)
 }
 
+func TestListOptionsSortOrderOverridesConfig(t *testing.T) {
+	mockTmux := new(tmux.MockTmux)
+	mockZoxide := new(zoxide.MockZoxide)
+	mockHome := new(home.MockHome)
+	mockTmuxinator := new(tmuxinator.MockTmuxinator)
+
+	mockTmux.On("ListSessions").Return([]*model.TmuxSession{{Name: "live", Path: "/live"}}, nil)
+	mockZoxide.On("ListResults").Return([]*model.ZoxideResult{
+		{Path: "/hot", Score: 90},
+		{Path: "/cold", Score: 1},
+	}, nil)
+	mockHome.On("ShortenHome", "/hot").Return("hot", nil)
+	mockHome.On("ShortenHome", "/cold").Return("cold", nil)
+	mockHome.On("ExpandPath", "/hot").Return("/hot", nil)
+
+	config := model.Config{
+		SessionConfigs: []model.SessionConfig{{Name: "notes-cfg", Path: "/hot"}},
+		SortOrder:      model.SortOrder{"zoxide", "config", "tmux"},
+	}
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+
+	result, err := l.List(ListOptions{
+		Tmux: true, Config: true, Zoxide: true,
+		SortOrder: model.SortOrder{"tmux", []any{"config", "zoxide"}},
+	})
+	assert.NoError(t, err)
+
+	names := make([]string, 0, len(result.OrderedIndex))
+	groups := make([]int, 0, len(result.OrderedIndex))
+	for _, key := range result.OrderedIndex {
+		names = append(names, result.Directory[key].Name)
+		groups = append(groups, result.Directory[key].Group)
+	}
+	assert.Equal(t, []string{"live", "notes-cfg", "hot", "cold"}, names)
+	assert.Equal(t, []int{0, 1, 1, 1}, groups)
+}
+
 func TestFlatSortOrderKeepsSourceBlocks(t *testing.T) {
 	mockTmux := new(tmux.MockTmux)
 	mockZoxide := new(zoxide.MockZoxide)

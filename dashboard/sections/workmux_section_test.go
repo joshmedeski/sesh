@@ -110,7 +110,7 @@ func TestWorkmuxRowFullColumns(t *testing.T) {
 	}
 	row := renderWorkmuxRow(100, false, a)
 	assert.Contains(t, row, "coding")
-	assert.Contains(t, row, "(main)")
+	assert.Contains(t, row, "main")
 	assert.Contains(t, row, "2m")
 	assert.Contains(t, row, "🤖")
 }
@@ -127,19 +127,19 @@ func TestWorkmuxRowProgressiveDrops(t *testing.T) {
 	}
 
 	wide := renderWorkmuxRow(60, false, a)
-	assert.Contains(t, wide, "(main)")
+	assert.Contains(t, wide, "main")
 	assert.Contains(t, wide, "2m")
 
 	medium := renderWorkmuxRow(45, false, a)
-	assert.Contains(t, medium, "(main)")
+	assert.Contains(t, medium, "main")
 	assert.Contains(t, medium, "2m")
 
 	narrow := renderWorkmuxRow(30, false, a) // branch+elapsed survive, kind shrinks
-	assert.Contains(t, narrow, "(main)")
+	assert.Contains(t, narrow, "main")
 	assert.Contains(t, narrow, "2m")
 
 	tiny := renderWorkmuxRow(25, false, a) // <27 drops branch+elapsed
-	assert.NotContains(t, tiny, "(main)")
+	assert.NotContains(t, tiny, "main")
 	assert.NotContains(t, tiny, "2m")
 	assert.Contains(t, tiny, "coding")
 }

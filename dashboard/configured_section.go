@@ -20,7 +20,7 @@ type configuredLoadedMsg struct {
 	err      error
 }
 
-// ConfiguredSection lists pre-configured sessions from the sesh config (Tab 2).
+// ConfiguredSection lists pre-configured sessions from the sesh config.
 // Selecting a session sets Chosen() to the session name; the CLI connector
 // opens it.
 type ConfiguredSection struct {
@@ -108,7 +108,7 @@ func (s *ConfiguredSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 		s.sessions = msg.sessions
 		s.running = msg.running
 		s.clampCursor()
-		return s, tea.Batch(s.fetchBranches(), s.fetchStatuses())
+		return s, tea.Batch(fetchBranches(s.deps.Git, s.sessions), fetchStatuses(s.deps.Git, s.sessions))
 
 	case branchLoadedMsg:
 		s.applyBranch(msg.path, msg.branch)
@@ -197,72 +197,20 @@ func (s *ConfiguredSection) selectItem() {
 	s.chosen = s.visible()[s.cursor].Name
 }
 
-// fetchBranches enriches configured sessions with their current git branch.
-func (s *ConfiguredSection) fetchBranches() tea.Cmd {
-	paths := make(map[string]bool)
-	for _, sess := range s.sessions {
-		if sess.Path != "" {
-			paths[sess.Path] = true
-		}
-	}
-	cmds := make([]tea.Cmd, 0, len(paths))
-	for p := range paths {
-		path := p
-		cmds = append(cmds, func() tea.Msg {
-			found, branch, err := s.deps.Git.CurrentBranch(path)
-			if err != nil || !found {
-				return branchLoadedMsg{path: path, branch: ""}
-			}
-			return branchLoadedMsg{path: path, branch: strings.TrimSpace(branch)}
-		})
-	}
-	return tea.Batch(cmds...)
-}
-
-// fetchStatuses enriches configured sessions with their current git status.
-func (s *ConfiguredSection) fetchStatuses() tea.Cmd {
-	paths := make(map[string]bool)
-	for _, sess := range s.sessions {
-		if sess.Path != "" {
-			paths[sess.Path] = true
-		}
-	}
-	cmds := make([]tea.Cmd, 0, len(paths))
-	for p := range paths {
-		path := p
-		cmds = append(cmds, func() tea.Msg {
-			status, err := s.deps.Git.StatusSummary(path)
-			if err != nil {
-				return statusLoadedMsg{path: path, status: ""}
-			}
-			return statusLoadedMsg{path: path, status: render.FormatGitStatus(status)}
-		})
-	}
-	return tea.Batch(cmds...)
-}
-
 func (s *ConfiguredSection) applyBranch(path, branch string) {
-	for i := range s.sessions {
-		if s.sessions[i].Path == path {
-			s.sessions[i].Branch = branch
-		}
-	}
+	applyBranch(s.sessions, path, branch)
 	s.applyFilter()
 }
 
 func (s *ConfiguredSection) applyStatus(path, status string) {
-	for i := range s.sessions {
-		if s.sessions[i].Path == path {
-			s.sessions[i].GitStatus = status
-		}
-	}
+	applyStatus(s.sessions, path, status)
 	s.applyFilter()
 }
 
 // ViewBorderless renders the configured list with columns:
-// marker(2) | name(24) | state(2) | path(fill) | branch(16) | status(12).
+// marker(2) | state(2) | name(24) | alias(longest) | path(fill) | branch(16) | status(12).
 func (s *ConfiguredSection) ViewBorderless(width, height int, focused bool) (string, string) {
-	s.viewHeight = height
+	s.viewHeight = max(height-1, 1)
 
 	title := s.config.Title
 	if title == "" {
@@ -282,18 +230,16 @@ func (s *ConfiguredSection) ViewBorderless(width, height int, focused bool) (str
 		return title, "  No sessions configured"
 	}
 
-	available := max(height, 1)
 	visible := s.visible()
-	end := min(s.offset+available, len(visible))
+	end := min(s.offset+s.viewHeight, len(visible))
 
 	var b strings.Builder
+	b.WriteString(render.RenderConfiguredHeader(width, aliasColumnWidth(visible), max(s.deps.IconWidth, 1)))
+	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
-		path := sess.Path
-		if shortened, err := s.deps.Home.ShortenHome(path); err == nil {
-			path = shortened
-		}
-		b.WriteString(render.RenderConfiguredRowFocused(width, i == s.cursor, focused, sess.Name, sess.StartupCommand, s.running[sess.Name], path, sess.Branch, sess.GitStatus))
+		path := shortenHome(s.deps, sess.Path)
+		b.WriteString(render.RenderConfiguredRowFocused(width, aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, focused, sess.Name, sess.Alias, sess.StartupCommand, s.running[sess.Name], path, sess.Branch, sess.GitStatus))
 		b.WriteString("\n")
 	}
 

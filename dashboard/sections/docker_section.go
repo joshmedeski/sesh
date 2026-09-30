@@ -12,6 +12,7 @@ import (
 )
 
 type dockerContainersLoadedMsg struct {
+	section    *DockerSection
 	containers []dockerContainer
 }
 
@@ -60,7 +61,7 @@ func (s *DockerSection) fetchContainers() tea.Msg {
 
 	out, err := s.deps.Runner.Run("docker", args...)
 	if err != nil {
-		return dockerContainersLoadedMsg{containers: nil}
+		return dockerContainersLoadedMsg{section: s, containers: nil}
 	}
 
 	var containers []dockerContainer
@@ -81,7 +82,7 @@ func (s *DockerSection) fetchContainers() tea.Msg {
 		})
 	}
 
-	return dockerContainersLoadedMsg{containers: containers}
+	return dockerContainersLoadedMsg{section: s, containers: containers}
 }
 
 // ClickAt moves the cursor to the clicked row.
@@ -95,6 +96,9 @@ func (s *DockerSection) ClickAt(row int) {
 func (s *DockerSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case dockerContainersLoadedMsg:
+		if msg.section != s {
+			return s, nil
+		}
 		s.loading = false
 		s.containers = msg.containers
 	case tea.KeyPressMsg:

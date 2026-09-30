@@ -7,10 +7,12 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	uv "github.com/charmbracelet/ultraviolet"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/dashboard/sections"
+	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -56,17 +58,20 @@ func (s *clickStub) ClickAt(row int) {
 	s.clicks = append(s.clicks, row)
 }
 
-// testModel builds a Model with stub widgets and default dimensions.
+// testModel builds a Model with one dashboard page: a sessions list on the
+// first row and the given widgets side by side on the second.
 func testModel(widgets ...Section) Model {
+	rows := [][]Section{{&SessionsSection{}}}
+	if len(widgets) > 0 {
+		rows = append(rows, widgets)
+	}
 	m := Model{
-		config:     model.DashboardConfig{},
-		sessions:   &SessionsSection{},
-		configured: &ConfiguredSection{},
-		widgets:    widgets,
-		page:       pageOpen,
-		focus:      0,
-		width:      80,
-		height:     24,
+		config: model.DashboardConfig{},
+		pages:  []dashPage{{title: "Dashboard", rows: rows}},
+		page:   0,
+		focus:  0,
+		width:  80,
+		height: 24,
 	}
 	return m.withLayout()
 }
@@ -115,114 +120,193 @@ func pressKey(key string) tea.KeyPressMsg {
 
 // --- BuildSections tests ---
 
-func TestBuildSections_AlwaysBuildsLists(t *testing.T) {
-	built := BuildSections(model.DashboardConfig{}, SectionDeps{})
-	require.NotNil(t, built.Sessions)
-	require.NotNil(t, built.Configured)
-	assert.Empty(t, built.Widgets)
+func TestBuildSections_DefaultsToTmuxSessionsList(t *testing.T) {
+	built := BuildPages(model.DashboardConfig{}, nil, SectionDeps{})
+	require.Len(t, built.widgets(), 1)
+	sessions, ok := built.widgets()[0].(*SessionsSection)
+	require.True(t, ok)
+	assert.Equal(t, "Sessions", sessions.Name())
+	assert.Equal(t, lister.ListOptions{Tmux: true}, sessions.listOptions())
 }
 
-func TestBuildSections_WidgetsFromConfig(t *testing.T) {
-	cfg := model.DashboardConfig{
-		Sections: []model.DashboardSectionConfig{
-			{Type: "ssh", Title: "SSH"},
-			{Type: "docker", Title: "Docker"},
-		},
-	}
-	built := BuildSections(cfg, SectionDeps{})
-	require.NotNil(t, built.Sessions)
-	require.NotNil(t, built.Configured)
-	require.Len(t, built.Widgets, 2)
-	assert.Equal(t, "SSH", built.Widgets[0].Name())
-	assert.Equal(t, "Docker", built.Widgets[1].Name())
+func TestBuildSections_ConfiguredIsASectionType(t *testing.T) {
+	built := BuildPages(onePage([]model.DashboardSectionConfig{{Type: "configured", Title: "Mine"}}), nil, SectionDeps{})
+	require.Len(t, built.widgets(), 1)
+	cs, ok := built.widgets()[0].(*ConfiguredSection)
+	require.True(t, ok)
+	assert.Equal(t, "Mine", cs.Name())
 }
 
-func TestBuildSections_SkipsSessionsAndUnknown(t *testing.T) {
-	cfg := model.DashboardConfig{
-		Sections: []model.DashboardSectionConfig{
-			{Type: "sessions", Title: "Sesh"},
-			{Type: "bogus"},
-			{Type: "details", Title: "Details"},
-		},
-	}
-	built := BuildSections(cfg, SectionDeps{})
-	// "sessions" is implicit, "bogus" is unknown, and "details" is no longer
-	// in the registry, so no widgets are built.
-	assert.Empty(t, built.Widgets)
+func TestBuildSections_FirstPageIsOnlyConfiguredSections(t *testing.T) {
+	cfg := onePage([]model.DashboardSectionConfig{
+		{Type: "ssh", Title: "SSH"},
+		{Type: "docker", Title: "Docker"},
+	})
+	built := BuildPages(cfg, nil, SectionDeps{})
+	require.Len(t, built.widgets(), 2)
+	assert.Equal(t, "SSH", built.widgets()[0].Name())
+	assert.Equal(t, "Docker", built.widgets()[1].Name())
+}
+
+func TestBuildSections_SkipsUnknown(t *testing.T) {
+	cfg := onePage([]model.DashboardSectionConfig{
+		{Type: "bogus"},
+		{Type: "details", Title: "Details"},
+		{Type: "ssh", Title: "SSH"},
+	})
+	built := BuildPages(cfg, nil, SectionDeps{})
+	require.Len(t, built.widgets(), 1)
+	assert.Equal(t, "SSH", built.widgets()[0].Name())
 }
 
 func TestBuildSections_WorkmuxWidget(t *testing.T) {
-	cfg := model.DashboardConfig{
-		Sections: []model.DashboardSectionConfig{{Type: "workmux", Title: "Agents"}},
-	}
-	built := BuildSections(cfg, SectionDeps{})
-	require.Len(t, built.Widgets, 1)
-	assert.Equal(t, "Agents", built.Widgets[0].Name())
+	cfg := onePage([]model.DashboardSectionConfig{{Type: "workmux", Title: "Agents"}})
+	built := BuildPages(cfg, nil, SectionDeps{})
+	require.Len(t, built.widgets(), 1)
+	assert.Equal(t, "Agents", built.widgets()[0].Name())
 }
 
 func TestBuildSections_AIAgentSkipped(t *testing.T) {
 	// "aiagent" was removed from the registry; it now hits the unknown-type
 	// skip path (and is therefore absent from the built widgets).
-	cfg := model.DashboardConfig{
-		Sections: []model.DashboardSectionConfig{
-			{Type: "aiagent", Title: "AI"},
-			{Type: "workmux", Title: "Agents"},
-		},
-	}
-	built := BuildSections(cfg, SectionDeps{})
-	require.Len(t, built.Widgets, 1)
-	assert.Equal(t, "Agents", built.Widgets[0].Name())
+	cfg := onePage([]model.DashboardSectionConfig{
+		{Type: "aiagent", Title: "AI"},
+		{Type: "workmux", Title: "Agents"},
+	})
+	built := BuildPages(cfg, nil, SectionDeps{})
+	require.Len(t, built.widgets(), 1)
+	assert.Equal(t, "Agents", built.widgets()[0].Name())
 }
 
-func TestBuildSections_SessionsEntryCarriesTitleNotGroups(t *testing.T) {
-	cfg := model.DashboardConfig{
-		Sections: []model.DashboardSectionConfig{
-			{
-				Type:   "sessions",
-				Title:  "Open Sessions",
-				Groups: []model.DashboardGroup{{Name: "dev", Patterns: []string{"~/dev/*"}}},
-			},
+func TestBuildSections_SessionsTypeIsTmuxSessionsList(t *testing.T) {
+	cfg := onePage([]model.DashboardSectionConfig{
+		{Type: "ssh", Title: "SSH"},
+		{
+			Type:   "sessions",
+			Title:  "Open Sessions",
+			Groups: []model.DashboardGroup{{Name: "dev", Patterns: []string{"~/dev/*"}}},
 		},
+	})
+	built := BuildPages(cfg, nil, SectionDeps{})
+	require.Len(t, built.widgets(), 2)
+	sessions, ok := built.widgets()[1].(*SessionsSection)
+	require.True(t, ok)
+	assert.Equal(t, "Open Sessions", sessions.Name())
+	assert.Equal(t, lister.ListOptions{Tmux: true}, sessions.listOptions())
+}
+
+func TestBuildPagesLaysOutRowsFromConfig(t *testing.T) {
+	built := BuildPages(model.DashboardConfig{Pages: []model.DashboardPageConfig{
+		{Title: "Home", Sections: [][]model.DashboardSectionConfig{
+			{{Type: "sources", Title: "Sessions"}, {Type: "system", Title: "System"}},
+			{{Type: "bogus"}},
+			{{Type: "sources", Title: "Mixed", Sources: model.SortOrder{[]any{"config", "zoxide"}}}, {Type: "ssh", Title: "SSH"}, {Type: "custom", Title: "Weather"}},
+		}},
+		{Sections: [][]model.DashboardSectionConfig{{{Type: "bogus"}}}},
+		{Sections: [][]model.DashboardSectionConfig{{{Type: "system", Title: "System 2"}}}},
+	}}, nil, SectionDeps{})
+
+	require.Len(t, built.Pages, 2, "a page with no usable sections is skipped")
+	home := built.Pages[0]
+	assert.Equal(t, "Home", home.Title)
+	require.Len(t, home.Rows, 2, "a row with no usable sections is skipped")
+	assert.Equal(t, []string{"Sessions", "System"}, sectionNames(home.Rows[0]))
+	assert.Equal(t, []string{"Mixed", "SSH", "Weather"}, sectionNames(home.Rows[1]))
+	assert.Equal(t, "Dashboard 2", built.Pages[1].Title)
+
+	m := Model{pages: built.pages(), width: 120, height: 30}.withLayout()
+	assert.Equal(t, []string{"Home", "Dashboard 2"}, m.tabTitles())
+	assert.Equal(t, 0, m.activeCount())
+
+	systemOnly := Model{pages: []dashPage{{rows: [][]Section{{sections.NewSystemSection(model.DashboardSectionConfig{Type: "system"}, SectionDeps{})}}}}}
+	assert.Equal(t, -1, systemOnly.activeCount())
+}
+
+func sectionNames(row []Section) []string {
+	names := make([]string, len(row))
+	for i, sec := range row {
+		names[i] = sec.Name()
 	}
-	built := BuildSections(cfg, SectionDeps{})
-	assert.Empty(t, built.Widgets)
-	assert.Equal(t, "Open Sessions", built.Sessions.Name())
-	// Groups are parsed for backward compatibility but no longer applied.
-	assert.Empty(t, built.Sessions.config.Groups)
+	return names
+}
+
+func pageModel(rows ...[]Section) Model {
+	return Model{
+		pages:  []dashPage{{title: "Dashboard", rows: rows}},
+		width:  80,
+		height: 24,
+	}.withLayout()
+}
+
+func TestTabSwitchRecomputesLayoutPerPage(t *testing.T) {
+	m := Model{
+		pages: []dashPage{
+			{title: "One", rows: [][]Section{{&stubSection{name: "a"}}}},
+			{title: "Two", rows: [][]Section{{&stubSection{name: "b"}, &stubSection{name: "c"}}, {&stubSection{name: "d"}}}},
+		},
+		width:  80,
+		height: 24,
+	}.withLayout()
+	require.Len(t, m.rowHeights, 1)
+
+	m = updateModel(m, pressKey("tab"))
+	assert.Equal(t, 1, m.page)
+	require.Len(t, m.rowHeights, 2)
+	require.Len(t, m.rowWidths[0], 2)
+	assert.Equal(t, "b", m.focusedSection().Name())
+	m = updateModel(m, pressKey("ctrl+j"))
+	assert.Equal(t, "d", m.focusedSection().Name())
+
+	m = updateModel(m, pressKey("tab"))
+	assert.Equal(t, 0, m.page)
+	require.Len(t, m.rowHeights, 1)
 }
 
 // --- New ---
 
 func TestNewBuildsDefaultModel(t *testing.T) {
-	m := New(model.DashboardConfig{}, nil, nil, nil, nil, nil, nil, nil)
-	require.NotNil(t, m.sessions)
-	require.NotNil(t, m.configured)
-	assert.Equal(t, pageOpen, m.page)
+	m := New(model.Config{}, SectionDeps{})
+	require.Len(t, m.pages, 1)
+	assert.Equal(t, "Dashboard", m.pages[0].title)
+	assert.Equal(t, 0, m.page)
 	assert.Equal(t, 0, m.focus)
 	assert.Equal(t, 21, m.contentHeight) // default height 24 - 3
 }
 
 // --- Model: tab switching ---
 
+// withSecondPage appends a one-pane page, so tab has somewhere to go.
+func withSecondPage(m Model) Model {
+	m.pages = append(m.pages, dashPage{title: "Two", rows: [][]Section{{&stubSection{name: "two"}}}})
+	return m
+}
+
 func TestTabSwitchesPage(t *testing.T) {
+	m := withSecondPage(testModel())
+	m = updateModel(m, pressKey("tab"))
+	assert.Equal(t, 1, m.page)
+	m = updateModel(m, pressKey("tab"))
+	assert.Equal(t, 0, m.page)
+}
+
+func TestTabWithOnePageStaysPut(t *testing.T) {
 	m := testModel()
 	m = updateModel(m, pressKey("tab"))
-	assert.Equal(t, pageConfigured, m.page)
-	m = updateModel(m, pressKey("tab"))
-	assert.Equal(t, pageOpen, m.page)
+	assert.Equal(t, 0, m.page)
+	assert.Equal(t, []string{"Dashboard"}, m.tabTitles())
 }
 
 func TestShiftTabSwitchesPageBackward(t *testing.T) {
-	m := testModel()
+	m := withSecondPage(testModel())
 	m = updateModel(m, pressKey("shift+tab"))
-	assert.Equal(t, pageConfigured, m.page)
+	assert.Equal(t, 1, m.page)
 }
 
 func TestTabResetsFocus(t *testing.T) {
-	m := testModel(&stubSection{name: "a"}, &stubSection{name: "b"})
+	m := withSecondPage(testModel(&stubSection{name: "a"}, &stubSection{name: "b"}))
 	m.focus = 2
 	m = updateModel(m, pressKey("tab"))
-	assert.Equal(t, pageConfigured, m.page)
+	assert.Equal(t, 1, m.page)
 	assert.Equal(t, 0, m.focus)
 }
 
@@ -258,7 +342,7 @@ func TestCtrlJKMoveBetweenRows(t *testing.T) {
 	// Row 1 = [sessions, details], row 2 = [a, b].
 	// Flat: [sessions(0), details(1), a(2), b(3)].
 	details := sections.NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
-	m := testModel(details, &stubSection{name: "a"}, &stubSection{name: "b"})
+	m := pageModel([]Section{&SessionsSection{}, details}, []Section{&stubSection{name: "a"}, &stubSection{name: "b"}})
 
 	m.focus = 0
 	m = updateModel(m, pressKey("ctrl+j")) // down: sessions → row2 col 0 (a)
@@ -270,7 +354,7 @@ func TestCtrlJKMoveBetweenRows(t *testing.T) {
 func TestCtrlJKDownClampsColumn(t *testing.T) {
 	// Row 1 = [sessions, details], row 2 = [a] (only one column).
 	details := sections.NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
-	m := testModel(details, &stubSection{name: "a"})
+	m := pageModel([]Section{&SessionsSection{}, details}, []Section{&stubSection{name: "a"}})
 	m.focus = 1 // details (row1 col 1)
 	m = updateModel(m, pressKey("ctrl+j"))
 	// down → row2 col min(1, 0) = 0 (a)
@@ -282,22 +366,6 @@ func TestCtrlJKNoopWithoutSecondRow(t *testing.T) {
 	m = updateModel(m, pressKey("ctrl+j"))
 	assert.Equal(t, 0, m.focus)
 	m = updateModel(m, pressKey("ctrl+k"))
-	assert.Equal(t, 0, m.focus)
-}
-
-func TestCtrlJKNoopOnConfiguredPage(t *testing.T) {
-	m := testModel(&stubSection{name: "a"})
-	m.page = pageConfigured
-	m = updateModel(m, pressKey("ctrl+j"))
-	assert.Equal(t, 0, m.focus)
-	m = updateModel(m, pressKey("ctrl+k"))
-	assert.Equal(t, 0, m.focus)
-}
-
-func TestPaneNavigationNoopOnConfiguredPage(t *testing.T) {
-	m := testModel(&stubSection{name: "a"})
-	m.page = pageConfigured
-	m = updateModel(m, pressKey("ctrl+l"))
 	assert.Equal(t, 0, m.focus)
 }
 
@@ -321,13 +389,6 @@ func TestJumpFocus(t *testing.T) {
 
 	m = updateModel(m, pressKey("1"))
 	assert.Equal(t, 0, m.focus) // sessions
-
-	// Configured page: digits are a no-op.
-	m = updateModel(m, pressKey("tab"))
-	assert.Equal(t, pageConfigured, m.page)
-	m = updateModel(m, pressKey("2"))
-	assert.Equal(t, pageConfigured, m.page)
-	assert.Equal(t, 0, m.focus)
 }
 
 func TestJumpFocusWithDetailsPane(t *testing.T) {
@@ -411,43 +472,22 @@ func TestRealDecodeCtrlNavKeys(t *testing.T) {
 
 // --- Model: pane order / row separation ---
 
-func TestRowSeparation_WithDetails(t *testing.T) {
+func TestRowsKeepConfigOrder(t *testing.T) {
 	details := sections.NewDetailsSection(model.DashboardSectionConfig{Type: "details", Title: "Details"}, SectionDeps{})
 	ssh := sections.NewSSHSection(model.DashboardSectionConfig{Type: "ssh", Title: "SSH"}, SectionDeps{})
 	git := sections.NewGitSection(model.DashboardSectionConfig{Type: "git", Title: "Git"}, SectionDeps{})
-	m := testModel(ssh, git, details) // config order: ssh, git, details
+	m := testModel(ssh, git, details)
 
-	row1 := m.row1Panes()
-	row2 := m.row2Panes()
-	require.Len(t, row1, 2)
-	assert.Same(t, m.sessions, row1[0])
-	assert.Same(t, details, row1[1]) // details pulled into row 1
-	require.Len(t, row2, 2)
-	assert.Same(t, ssh, row2[0])
-	assert.Same(t, git, row2[1])
-}
-
-func TestRowSeparation_NoDetails(t *testing.T) {
-	ssh := sections.NewSSHSection(model.DashboardSectionConfig{Type: "ssh", Title: "SSH"}, SectionDeps{})
-	m := testModel(ssh)
-
-	row1 := m.row1Panes()
-	row2 := m.row2Panes()
-	require.Len(t, row1, 1)
-	assert.Same(t, m.sessions, row1[0])
-	require.Len(t, row2, 1)
-	assert.Same(t, ssh, row2[0])
-}
-
-func TestRowSeparation_NoWidgets(t *testing.T) {
-	m := testModel()
-	assert.Len(t, m.row1Panes(), 1)
-	assert.Empty(t, m.row2Panes())
+	rows := m.rows()
+	require.Len(t, rows, 2)
+	require.Len(t, rows[0], 1)
+	assert.Equal(t, []Section{ssh, git, details}, rows[1], "details is no longer pulled into row 1")
+	assert.Len(t, testModel().rows(), 1)
 }
 
 func TestSessionsPaneIsFlexByDefault(t *testing.T) {
 	m := testModel(&stubSection{name: "a", width: 0.5})
-	assert.Equal(t, float64(0), m.sessions.Width())
+	assert.Equal(t, float64(0), m.pages[0].rows[0][0].(*SessionsSection).Width())
 }
 
 // --- Model: quit ---
@@ -499,74 +539,66 @@ func TestKeysForwardedToFocusedWidget(t *testing.T) {
 func TestKeysForwardedToSessionsList(t *testing.T) {
 	m := testModel(&stubSection{name: "w"})
 	m.focus = 0
-	m.sessions = &SessionsSection{
+	m.pages[0].rows[0][0] = &SessionsSection{
 		sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}},
 	}
 	m = updateModel(m, pressKey("j"))
-	assert.Equal(t, 1, m.sessions.cursor)
+	assert.Equal(t, 1, m.pages[0].rows[0][0].(*SessionsSection).cursor)
 }
 
-// --- Model: configured page ---
+// --- Model: configured section ---
+
+func configuredPane(m Model) *ConfiguredSection {
+	return m.pages[0].rows[0][0].(*ConfiguredSection)
+}
 
 func TestConfiguredNavigationAndSelect(t *testing.T) {
-	m := testModel()
-	m.configured = &ConfiguredSection{
+	m := pageModel([]Section{&ConfiguredSection{
 		sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}},
 		running:  map[string]bool{},
-	}
-	m.page = pageConfigured
+	}})
 	m = updateModel(m, pressKey("j"))
-	assert.Equal(t, 1, m.configured.cursor)
+	assert.Equal(t, 1, configuredPane(m).cursor)
 	m = updateModel(m, pressKey("enter"))
 	assert.Equal(t, "b", m.Chosen())
 }
 
 func TestConfiguredFiltering(t *testing.T) {
-	m := testModel()
-	m.configured = &ConfiguredSection{
+	m := pageModel([]Section{&ConfiguredSection{
 		sessions: []model.SeshSession{{Name: "alpha"}, {Name: "beta"}},
 		running:  map[string]bool{},
-	}
-	m.page = pageConfigured
+	}})
 
-	// "/" activates type-to-filter on the configured page.
+	// "/" activates type-to-filter on the configured pane.
 	m = updateModel(m, pressKey("/"))
-	assert.True(t, m.configured.Filtering())
+	assert.True(t, configuredPane(m).Filtering())
 	assert.True(t, m.focusedPaneFiltering()) // model routes keys to the pane
 
 	// Printable keys append to the query while filtering.
 	m = updateModel(m, pressKey("a"))
-	assert.Equal(t, "a", m.configured.FilterQuery())
+	assert.Equal(t, "a", configuredPane(m).FilterQuery())
 
 	// Digits are query text while filtering, not pane-jump keys.
 	m = updateModel(m, pressKey("2"))
-	assert.Equal(t, "a2", m.configured.FilterQuery())
+	assert.Equal(t, "a2", configuredPane(m).FilterQuery())
 	assert.Equal(t, 0, m.focus)
 
 	// Backspace deletes the last rune.
 	m = updateModel(m, pressKey("backspace"))
-	assert.Equal(t, "a", m.configured.FilterQuery())
+	assert.Equal(t, "a", configuredPane(m).FilterQuery())
 
 	// ctrl+backspace (decoder's modified-backspace form) also deletes.
 	m = updateModel(m, pressKey("z"))
-	assert.Equal(t, "az", m.configured.FilterQuery())
+	assert.Equal(t, "az", configuredPane(m).FilterQuery())
 	m = updateModel(m, pressKey("ctrl+backspace"))
-	assert.Equal(t, "a", m.configured.FilterQuery())
+	assert.Equal(t, "a", configuredPane(m).FilterQuery())
 
 	// enter selects the highlighted filtered item, exits filtering, and
 	// clears the query.
 	m = updateModel(m, pressKey("enter"))
-	assert.False(t, m.configured.Filtering())
-	assert.Equal(t, "", m.configured.FilterQuery())
+	assert.False(t, configuredPane(m).Filtering())
+	assert.Equal(t, "", configuredPane(m).FilterQuery())
 	assert.Equal(t, "alpha", m.Chosen())
-}
-
-func TestSyncHoveredSessionSkippedOnConfiguredPage(t *testing.T) {
-	ds := sections.NewDetailsSection(model.DashboardSectionConfig{Title: "Details"}, SectionDeps{})
-	m := testModel(ds)
-	m.page = pageConfigured
-	_, cmd := m.syncHoveredSession()
-	assert.Nil(t, cmd)
 }
 
 // --- Model: View ---
@@ -588,8 +620,8 @@ func TestViewTooSmallReturnsMessage(t *testing.T) {
 func TestViewRendersTabs(t *testing.T) {
 	m := testModel()
 	v := m.View()
-	assert.Contains(t, v.Content, "Open")
-	assert.Contains(t, v.Content, "Configured")
+	assert.Contains(t, v.Content, "Dashboard")
+	assert.NotContains(t, v.Content, "Configured")
 }
 
 // --- WindowSizeMsg ---
@@ -655,8 +687,7 @@ func TestRowHeights_NoWidgets(t *testing.T) {
 	m.height = 30
 	m = m.withLayout()
 	assert.Equal(t, 27, m.contentHeight)
-	assert.Equal(t, 27, m.row1Height) // row 1 takes full height
-	assert.Equal(t, 0, m.row2Height)
+	assert.Equal(t, []int{27}, m.rowHeights)
 }
 
 func TestRowHeights_WithWidgets(t *testing.T) {
@@ -664,24 +695,26 @@ func TestRowHeights_WithWidgets(t *testing.T) {
 	m.height = 30
 	m = m.withLayout()
 	assert.Equal(t, 27, m.contentHeight)
-	assert.Equal(t, 16, m.row1Height) // 27 * 3/5 = 16
-	assert.Equal(t, 11, m.row2Height) // 27 - 16
+	assert.Equal(t, []int{14, 13}, m.rowHeights, "rows split evenly, remainder to the first")
+
+	three := pageModel([]Section{&stubSection{}}, []Section{&stubSection{}}, []Section{&stubSection{}})
+	three.height = 30
+	three = three.withLayout()
+	assert.Equal(t, []int{9, 9, 9}, three.rowHeights)
 }
 
 func TestRowHeights_DegenerateTiny(t *testing.T) {
 	m := testModel(&stubSection{name: "a"})
 	m.height = 10 // contentHeight = 7
 	m = m.withLayout()
-	// row1 = 4, row2 = 3 (< 4) → clamp: row1 = 7-4 = 3, row2 = 4
-	assert.Equal(t, 3, m.row1Height)
-	assert.Equal(t, 4, m.row2Height)
+	assert.Equal(t, []int{4, 3}, m.rowHeights)
 }
 
 // --- Type-to-filter routing through the Model ---
 
 func TestFilterRoutingWhileTyping(t *testing.T) {
 	m := testModel()
-	m.sessions = &SessionsSection{
+	m.pages[0].rows[0][0] = &SessionsSection{
 		sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}},
 		ListState: ListState{
 			filtering: true,
@@ -691,68 +724,68 @@ func TestFilterRoutingWhileTyping(t *testing.T) {
 	// Printable keys append to the query (q doesn't quit).
 	m = updateModel(m, pressKey("q"))
 	assert.False(t, m.quit)
-	assert.Equal(t, "q", m.sessions.filterQuery)
+	assert.Equal(t, "q", m.pages[0].rows[0][0].(*SessionsSection).filterQuery)
 
 	// tab does not switch page while filtering.
 	m = updateModel(m, pressKey("tab"))
-	assert.Equal(t, pageOpen, m.page)
-	assert.True(t, m.sessions.filtering)
+	assert.Equal(t, 0, m.page)
+	assert.True(t, m.pages[0].rows[0][0].(*SessionsSection).filtering)
 
 	// ctrl+h does not move focus while filtering (deletes last rune instead).
 	m = updateModel(m, pressKey("ctrl+h"))
 	assert.Equal(t, 0, m.focus)
-	assert.Equal(t, "", m.sessions.filterQuery)
+	assert.Equal(t, "", m.pages[0].rows[0][0].(*SessionsSection).filterQuery)
 
 	// ctrl+backspace deletes the last rune (decoder reports the combo as a
 	// modified backspace; String() would be "ctrl+backspace").
 	m = updateModel(m, pressKey("x"))
 	m = updateModel(m, pressKey("y"))
 	m = updateModel(m, pressKey("ctrl+backspace"))
-	assert.Equal(t, "x", m.sessions.filterQuery)
+	assert.Equal(t, "x", m.pages[0].rows[0][0].(*SessionsSection).filterQuery)
 	m = updateModel(m, pressKey("backspace"))
-	assert.Equal(t, "", m.sessions.filterQuery)
+	assert.Equal(t, "", m.pages[0].rows[0][0].(*SessionsSection).filterQuery)
 
 	// Digits type into the query while filtering, never jump panes.
 	m = updateModel(m, pressKey("2"))
-	assert.Equal(t, "2", m.sessions.filterQuery)
+	assert.Equal(t, "2", m.pages[0].rows[0][0].(*SessionsSection).filterQuery)
 	assert.Equal(t, 0, m.focus)
 	m = updateModel(m, pressKey("esc"))
-	assert.False(t, m.sessions.filtering)
+	assert.False(t, m.pages[0].rows[0][0].(*SessionsSection).filtering)
 
 	// esc exits and clears.
 	m = updateModel(m, pressKey("esc"))
-	assert.False(t, m.sessions.filtering)
-	assert.Equal(t, "", m.sessions.filterQuery)
+	assert.False(t, m.pages[0].rows[0][0].(*SessionsSection).filtering)
+	assert.Equal(t, "", m.pages[0].rows[0][0].(*SessionsSection).filterQuery)
 
 	// ctrl+c always quits even while filtering.
-	m.sessions.filtering = true
+	m.pages[0].rows[0][0].(*SessionsSection).filtering = true
 	m = updateModel(m, pressKey("ctrl+c"))
 	assert.True(t, m.quit)
 }
 
 func TestFilterEnterSelectsHighlightedAndExits(t *testing.T) {
 	m := testModel()
-	m.sessions = &SessionsSection{
+	m.pages[0].rows[0][0] = &SessionsSection{
 		sessions: []model.SeshSession{{Name: "a"}, {Name: "b"}},
 		ListState: ListState{
 			filtering:   true,
 			filterQuery: "a",
 		},
 	}
-	m.sessions.applyFilter()
+	m.pages[0].rows[0][0].(*SessionsSection).applyFilter()
 	result, cmd := m.Update(pressKey("enter"))
 	rm := result.(Model)
-	assert.False(t, rm.sessions.filtering)
-	assert.Equal(t, "", rm.sessions.filterQuery)
+	assert.False(t, rm.pages[0].rows[0][0].(*SessionsSection).filtering)
+	assert.Equal(t, "", rm.pages[0].rows[0][0].(*SessionsSection).filterQuery)
 	assert.Equal(t, "a", rm.Chosen()) // enter selects the highlighted item
 	assert.NotNil(t, cmd)
 }
 
 func TestFilterSlashToggles(t *testing.T) {
 	m := testModel()
-	m.sessions = &SessionsSection{sessions: []model.SeshSession{{Name: "a"}}}
+	m.pages[0].rows[0][0] = &SessionsSection{sessions: []model.SeshSession{{Name: "a"}}}
 	m = updateModel(m, pressKey("/"))
-	assert.True(t, m.sessions.filtering)
+	assert.True(t, m.pages[0].rows[0][0].(*SessionsSection).filtering)
 }
 
 // --- Mouse hit-testing ---
@@ -765,15 +798,15 @@ func TestHitTestPageOpen(t *testing.T) {
 	m.height = 30
 	m = m.withLayout()
 
-	// Sessions pane: row 1, x 1..98, content y 2..2+row1Height-1.
+	// Sessions pane: row 1, x 1..98, content y 2..2+rowHeights[0]-1.
 	idx, sec, row, ok := m.hitTest(10, 3)
 	require.True(t, ok)
 	assert.Equal(t, 0, idx)
-	assert.Equal(t, m.sessions, sec)
+	assert.Equal(t, m.pages[0].rows[0][0], sec)
 	assert.Equal(t, 0, row)
 
 	// Row 2: workmux is pane 0, click its second row.
-	row2Top := 2 + m.row1Height
+	row2Top := 2 + m.rowHeights[0]
 	idx, sec, row, ok = m.hitTest(10, row2Top+2)
 	require.True(t, ok)
 	assert.Equal(t, 1, idx)
@@ -793,24 +826,6 @@ func TestHitTestPageOpen(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestHitTestPageConfigured(t *testing.T) {
-	m := testModel()
-	m.page = pageConfigured
-	m.width = 100
-	m.height = 30
-	m = m.withLayout()
-
-	idx, sec, row, ok := m.hitTest(50, 3)
-	require.True(t, ok)
-	assert.Equal(t, 0, idx)
-	assert.Equal(t, m.configured, sec)
-	assert.Equal(t, 0, row)
-
-	// Left corner chrome → miss.
-	_, _, _, ok = m.hitTest(0, 3)
-	assert.False(t, ok)
-}
-
 func TestMouseClickFocusesPaneAndSelectsRow(t *testing.T) {
 	w := &clickStub{stubSection: stubSection{name: "w"}}
 	m := testModel(w)
@@ -818,7 +833,7 @@ func TestMouseClickFocusesPaneAndSelectsRow(t *testing.T) {
 	m.height = 30
 	m = m.withLayout()
 
-	row2Top := 2 + m.row1Height
+	row2Top := 2 + m.rowHeights[0]
 	updated := updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 2, Button: tea.MouseLeft})
 	assert.Equal(t, 1, updated.focus)
 	assert.Equal(t, []int{1}, w.clicks) // clicked view row 1 → ClickAt(1)
@@ -839,24 +854,9 @@ func TestMouseClickScrollsSectionIntoView(t *testing.T) {
 	m.height = 30
 	m = m.withLayout()
 
-	row2Top := 2 + m.row1Height
+	row2Top := 2 + m.rowHeights[0]
 	updateModel(m, tea.MouseClickMsg{X: 10, Y: row2Top + 5, Button: tea.MouseLeft})
 	assert.Equal(t, []int{4}, w.clicks)
-}
-
-// --- Configured page frame (Model-level View) ---
-
-func TestViewConfiguredPageSinglePaneFrame(t *testing.T) {
-	m := testModel()
-	m.configured = &ConfiguredSection{config: model.DashboardSectionConfig{Title: "Configured"}}
-	m.page = pageConfigured
-	m.width = 50
-	m.height = 10
-	m = m.withLayout()
-	out := m.viewConfiguredPage()
-	assert.Contains(t, out, "Configured")
-	assert.NotContains(t, out, "┬")
-	assert.NotContains(t, out, "┴")
 }
 
 func TestViewFrameWidthMatchesModel(t *testing.T) {
@@ -875,16 +875,54 @@ func TestViewFrameWidthMatchesModel(t *testing.T) {
 	}
 }
 
-func TestViewConfiguredPageWidthMatchesModel(t *testing.T) {
+func TestHelpToggles(t *testing.T) {
 	m := testModel()
-	m.page = pageConfigured
-	m.width = 120
-	m.height = 30
-	m = m.withLayout()
-	v := m.View()
-	lines := strings.Split(v.Content, "\n")
-	assert.Len(t, lines, 30)
-	for i, l := range lines {
-		assert.Equalf(t, 120, lipgloss.Width(l), "line %d width", i)
+	m = updateModel(m, pressKey("?"))
+	require.True(t, m.showHelp)
+	assert.Contains(t, ansi.Strip(m.View().Content), "Keybindings")
+	assert.Contains(t, ansi.Strip(m.View().Content), "kill tmux session")
+
+	m = updateModel(m, pressKey("tab"))
+	assert.Equal(t, 0, m.page, "keys other than close are ignored while help is open")
+
+	m = updateModel(m, pressKey("q"))
+	assert.False(t, m.showHelp)
+	assert.False(t, m.quit, "q closes help instead of quitting")
+
+	m = updateModel(m, pressKey("?"))
+	m = updateModel(m, pressKey("esc"))
+	assert.False(t, m.showHelp)
+	assert.False(t, m.quit)
+
+	m = updateModel(m, pressKey("?"))
+	m = updateModel(m, pressKey("?"))
+	assert.False(t, m.showHelp)
+	assert.NotContains(t, ansi.Strip(m.View().Content), "Keybindings")
+}
+
+func TestSessionsRefreshKeyReloads(t *testing.T) {
+	s := NewSessionsSection(model.DashboardSectionConfig{}, SectionDeps{}).(*SessionsSection)
+	_, cmd := s.Update(pressKey("r"))
+	assert.NotNil(t, cmd)
+}
+
+func onePage(sections []model.DashboardSectionConfig) model.DashboardConfig {
+	if len(sections) == 0 {
+		return model.DashboardConfig{}
 	}
+	rows := [][]model.DashboardSectionConfig{sections[:1]}
+	if len(sections) > 1 {
+		rows = append(rows, sections[1:])
+	}
+	return model.DashboardConfig{Pages: []model.DashboardPageConfig{{Sections: rows}}}
+}
+
+func (b Built) widgets() []Section {
+	var out []Section
+	for _, p := range b.Pages {
+		for _, row := range p.Rows {
+			out = append(out, row...)
+		}
+	}
+	return out
 }

@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type ConnectOpts struct {
 	Command    string
 	Switch     bool
@@ -31,7 +33,9 @@ type WorktreeEntry struct {
 	Number int    // issue/PR number, taken from the directory name
 	Path   string // absolute path to the worktree
 	Title  string // issue title; empty when unknown or not yet fetched
-	State  string // "OPEN" | "CLOSED"; empty when unknown
+	State  string // "OPEN" | "CLOSED" | "MERGED"; empty when unknown
+	// Created is when the worktree was added; zero when unknown.
+	Created time.Time
 }
 
 // WindowConnectOpts identifies a window to connect to and what to run in it.

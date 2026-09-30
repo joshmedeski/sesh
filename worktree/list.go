@@ -70,6 +70,9 @@ func (w *RealWorktree) List(opts model.WorktreeListOpts) ([]model.WorktreeEntry,
 			entry.Title = issue.Title
 			entry.State = issue.State
 		}
+		if info, err := w.os.Stat(w.path.Join(entry.Path, ".git")); err == nil {
+			entry.Created = info.ModTime()
+		}
 		entries = append(entries, entry)
 	}
 	return entries, nil

@@ -7,12 +7,13 @@ import (
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
+	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
+	"github.com/joshmedeski/sesh/v2/worktree"
 )
 
-// Section is the contract every dashboard pane implements: the two permanent
-// lists (sessions, configured) and the optional widget sections.
+// Section is the contract every dashboard pane implements.
 type Section interface {
 	Name() string
 	Init() tea.Cmd
@@ -55,4 +56,8 @@ type SectionDeps struct {
 	Shell     shell.Shell
 	Home      home.Home
 	Runner    CommandRunner
+	Worktree  worktree.Worktree
+	// Icon resolves a session's configured icon; nil when none are configured.
+	Icon      func(model.SeshSession) string
+	IconWidth int
 }

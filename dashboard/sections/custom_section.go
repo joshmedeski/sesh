@@ -11,8 +11,9 @@ import (
 )
 
 type customOutputMsg struct {
-	output string
-	err    error
+	section *CustomSection
+	output  string
+	err     error
 }
 
 type CustomSection struct {
@@ -42,18 +43,31 @@ func (s *CustomSection) Init() tea.Cmd {
 func (s *CustomSection) fetchOutput() tea.Msg {
 	cmd := s.config.Custom.Command
 	if cmd == "" {
-		return customOutputMsg{output: "No command configured"}
+		return customOutputMsg{section: s, output: "No command configured"}
 	}
 	out, err := s.deps.Runner.RunShell(cmd)
 	if err != nil {
-		return customOutputMsg{err: err}
+		return customOutputMsg{section: s, err: err}
 	}
-	return customOutputMsg{output: string(out)}
+	return customOutputMsg{section: s, output: collapseCarriageReturns(string(out))}
+}
+
+func collapseCarriageReturns(s string) string {
+	lines := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
+	for i, line := range lines {
+		if j := strings.LastIndex(line, "\r"); j >= 0 {
+			lines[i] = line[j+1:]
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (s *CustomSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case customOutputMsg:
+		if msg.section != s {
+			return s, nil
+		}
 		s.loading = false
 		if msg.err != nil {
 			s.output = "Error: " + msg.err.Error()

@@ -198,8 +198,15 @@ type (
 	}
 
 	DashboardConfig struct {
-		Title    string                   `toml:"title"`
-		Sections []DashboardSectionConfig `toml:"sections"`
+		Title string                `toml:"title"`
+		Pages []DashboardPageConfig `toml:"page"`
+	}
+
+	// DashboardPageConfig is one dashboard tab. Sections is its rows, top to
+	// bottom; each row's sections sit side by side, left to right.
+	DashboardPageConfig struct {
+		Title    string                     `toml:"title"`
+		Sections [][]DashboardSectionConfig `toml:"sections"`
 	}
 
 	DashboardSectionConfig struct {
@@ -208,13 +215,16 @@ type (
 		// Width and Row are retained for backwards compatibility with older
 		// configs; they are parsed but ignored (the dashboard now uses a
 		// fixed two-tab layout with a vertical widget stack).
-		Width  float64          `toml:"width"`
-		Row    int              `toml:"row"`
-		Groups []DashboardGroup `toml:"groups,omitempty"`
-		SSH    []SSHHostConfig  `toml:"ssh,omitempty"`
-		Custom CustomConfig     `toml:"custom"`
-		Docker DockerConfig     `toml:"docker"`
-		Git    GitConfig        `toml:"git"`
+		Width   float64          `toml:"width"`
+		Row     int              `toml:"row"`
+		Groups  []DashboardGroup `toml:"groups,omitempty"`
+		SSH     []SSHHostConfig  `toml:"ssh,omitempty"`
+		Custom  CustomConfig     `toml:"custom"`
+		Docker  DockerConfig     `toml:"docker"`
+		Git     GitConfig        `toml:"git"`
+		Sources SortOrder        `toml:"sources"`
+		Repo    string           `toml:"repo"`
+		Columns []string         `toml:"columns"`
 	}
 
 	DashboardGroup struct {

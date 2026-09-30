@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/joshmedeski/sesh/v2/dashboard"
+	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -27,16 +29,18 @@ func NewDashboardCommand(base *BaseDeps) *cobra.Command {
 				return errors.New("dashboard requires being inside a tmux session")
 			}
 
-			m := dashboard.New(
-				deps.Config.Dashboard,
-				deps.Tmux,
-				deps.Lister,
-				deps.Git,
-				deps.Connector,
-				deps.Shell,
-				deps.Home,
-				dashboard.NewCommandRunner(deps.Exec),
-			)
+			m := dashboard.New(deps.Config, dashboard.SectionDeps{
+				Tmux:      deps.Tmux,
+				Lister:    deps.Lister,
+				Git:       deps.Git,
+				Connector: deps.Connector,
+				Shell:     deps.Shell,
+				Runner:    dashboard.NewCommandRunner(deps.Exec),
+				Worktree:  deps.Worktree,
+				Home:      deps.Home,
+				Icon:      lister.IconResolver(deps.Config, deps.Home, deps.Lister),
+				IconWidth: icon.ColumnWidth(deps.Config),
+			})
 			prog := tea.NewProgram(m)
 			result, err := prog.Run()
 			if err != nil {
@@ -49,6 +53,13 @@ func NewDashboardCommand(base *BaseDeps) *cobra.Command {
 			}
 
 			if dashModel.Quit() {
+				return nil
+			}
+
+			if opts := dashModel.ChosenWorktree(); opts != nil {
+				if _, err := deps.Worktree.Connect(*opts); err != nil {
+					return err
+				}
 				return nil
 			}
 

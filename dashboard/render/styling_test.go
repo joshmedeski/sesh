@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/icon"
 )
 
 func firstResetIndex(s string) int {
@@ -25,19 +26,19 @@ func firstResetIndex(s string) int {
 func TestRenderOpenRow_FullColumns(t *testing.T) {
 	row := renderOpenRow(100, true, false, "mysession", "", 0, 3, "~/code/proj", "main", "+1 ~2", nil, nil)
 	assert.Contains(t, row, "mysession")
-	assert.Contains(t, row, "(main)")
+	assert.Contains(t, row, "main")
 	assert.Contains(t, row, "+1 ~2")
 }
 
 func TestRenderOpenRow_DropsStatusUnder90(t *testing.T) {
 	row := renderOpenRow(80, false, false, "s", "", 0, 1, "~/d", "main", "+1", nil, nil)
-	assert.Contains(t, row, "(main)")
+	assert.Contains(t, row, "main")
 	assert.NotContains(t, row, "+1")
 }
 
 func TestRenderOpenRow_DropsBranchUnder70(t *testing.T) {
 	row := renderOpenRow(60, false, false, "foo", "", 0, 1, "~/d", "main", "+1", nil, nil)
-	assert.NotContains(t, row, "(main)")
+	assert.NotContains(t, row, "main")
 }
 
 func TestRenderOpenRow_DropsWindowsUnder50(t *testing.T) {
@@ -93,33 +94,33 @@ func TestRenderOpenRow_CurrentHighlight(t *testing.T) {
 }
 
 func TestRenderConfiguredRow(t *testing.T) {
-	row := renderConfiguredRow(100, false, "proj", "", true, "~/code/proj", "main", "+1")
+	row := renderConfiguredRow(100, false, "proj", "", "", true, "~/code/proj", "main", "+1")
 	assert.Contains(t, row, "proj")
 	assert.Contains(t, row, "●")
 	assert.Contains(t, row, "~/code/proj")
-	assert.Contains(t, row, "(main)")
+	assert.Contains(t, row, "main")
 }
 
 func TestRenderConfiguredRowNotRunning(t *testing.T) {
-	row := renderConfiguredRow(100, false, "proj", "", false, "", "main", "")
+	row := renderConfiguredRow(100, false, "proj", "", "", false, "", "main", "")
 	assert.Contains(t, row, "○")
 	assert.Contains(t, row, "-")
 }
 
 func TestRenderConfiguredRow_StartupCommandIndicator(t *testing.T) {
 	// The startup-command "*" indicator was removed; the column stays blank.
-	row := renderConfiguredRow(100, false, "proj", "make run", true, "~/code/proj", "", "")
+	row := renderConfiguredRow(100, false, "proj", "", "make run", true, "~/code/proj", "", "")
 	assert.NotContains(t, row, "*")
 	assert.NotContains(t, row, "\x1b[38;5;11m") // no yellow
 
-	row = renderConfiguredRow(100, false, "proj", "", true, "~/code/proj", "", "")
+	row = renderConfiguredRow(100, false, "proj", "", "", true, "~/code/proj", "", "")
 	assert.NotContains(t, row, "*")
 }
 
 func TestRenderConfiguredRow_DropsCmdAndBranchUnder70(t *testing.T) {
-	row := renderConfiguredRow(60, false, "proj", "make run", true, "~/code/proj", "main", "")
+	row := renderConfiguredRow(60, false, "proj", "", "make run", true, "~/code/proj", "main", "")
 	assert.NotContains(t, row, "*")
-	assert.NotContains(t, row, "(main)")
+	assert.NotContains(t, row, "main")
 }
 
 // --- Git status formatting ---
@@ -157,7 +158,7 @@ func TestRenderOpenRow_StyledStatusKeepsWidth(t *testing.T) {
 
 func TestRenderConfiguredRow_StyledStatusKeepsWidth(t *testing.T) {
 	styled := FormatGitStatus(git.StatusSummary{Deleted: 3, Untracked: 4})
-	row := renderConfiguredRow(100, false, "proj", "", false, "~/code/proj", "main", styled)
+	row := renderConfiguredRow(100, false, "proj", "", "", false, "~/code/proj", "main", styled)
 	assert.Contains(t, row, "\x1b[38;5;9m")
 	assert.Contains(t, row, "\x1b[38;5;5m")
 	assert.Equal(t, 100, lipgloss.Width(row))
@@ -195,73 +196,183 @@ func TestGitStatusHoverBackgroundCoversAllParts(t *testing.T) {
 	assert.Greater(t, resetIdx, lastTokenIdx)
 }
 
-// --- Alias-chip rendering ---
+// --- Alias column ---
 
-func TestRenderOpenRowWithAlias(t *testing.T) {
-	row := renderOpenRow(100, false, false, "wallpaper", "wp", 0, 1, "~/d", "", "", nil, nil)
-	assert.Contains(t, row, "wallpaper")
-	// The alias is rendered as a rounded pill using powerline half circles,
-	// matching the picker’s default alias chip style.
-	assert.Contains(t, ansi.Strip(row), "\ue0b6wp\ue0b4")
-	assert.NotContains(t, row, "[wp]")
-	// The pill uses reverse video over the dashboard accent color so the
-	// effective background is the theme accent (cyan 14).
-	assert.Contains(t, row, "38;5;14m")
-	assert.Contains(t, row, "\x1b[7")
-
-	// Without an alias the chip is absent.
-	noAlias := renderOpenRow(100, false, false, "wallpaper", "", 0, 1, "~/d", "", "", nil, nil)
-	assert.NotContains(t, noAlias, "\ue0b6")
-	assert.NotContains(t, noAlias, "[wp]")
+func cellIndex(s, sub string) int {
+	i := strings.Index(s, sub)
+	if i < 0 {
+		return -1
+	}
+	return lipgloss.Width(s[:i])
 }
 
-// TestAliasRowHoverBackgroundCoversPillAndName verifies that when a row with
-// an alias is selected, the alias pill keeps its own accent background while
-// the cursor highlight continues unbroken around it. The pill and name must be
-// emitted as one continuous ANSI run — no reset may interrupt the highlight
-// between the pill’s left glyph and the end of the name.
-func TestAliasRowHoverBackgroundCoversPillAndName(t *testing.T) {
+func TestRenderOpenRowAliasPillAfterName(t *testing.T) {
+	row := renderOpenRow(100, false, false, "wallpaper", "wp", 0, 1, "~/d", "", "", nil, nil)
+	plain := ansi.Strip(row)
+	assert.NotContains(t, row, "38;5;14m")
+	assert.Contains(t, row, "38;5;15m")
+	assert.Contains(t, plain, pillLeftGlyph+"wp"+pillRightGlyph)
+	nameIdx := cellIndex(plain, "wallpaper")
+	assert.Equal(t, nameIdx+18+1, cellIndex(plain, pillLeftGlyph))
+	assert.Greater(t, cellIndex(plain, "~/d"), cellIndex(plain, pillRightGlyph))
+
+	noAlias := ansi.Strip(renderOpenRow(100, false, false, "wallpaper", "", 0, 1, "~/d", "", "", nil, nil))
+	assert.NotContains(t, noAlias, pillLeftGlyph)
+	assert.Equal(t, nameIdx+18+1, cellIndex(noAlias, "~/d"))
+}
+
+func TestAliasPillSelectedKeepsRowHighlight(t *testing.T) {
 	row := renderOpenRow(100, true, false, "wallpaper", "wp", 0, 1, "~/d", "", "", nil, nil)
-
-	// The cursor background starts before the pill’s left glyph.
-	glyphIdx := strings.Index(row, chipLeftGlyph)
-	require.GreaterOrEqual(t, glyphIdx, 0)
-	assert.Contains(t, row[:glyphIdx], ";48;5;8m")
-
-	// The pill paints an explicit accent background around the alias text, so
-	// the pill keeps its own fill instead of taking the cursor highlight.
+	glyphIdx := strings.Index(row, pillLeftGlyph)
 	aliasIdx := strings.Index(row, "wp")
-	require.GreaterOrEqual(t, aliasIdx, 0)
-	assert.Contains(t, row[glyphIdx:aliasIdx], "\x1b[48;5;14m")
-	// The label text contrasts with the accent fill.
+	require.GreaterOrEqual(t, glyphIdx, 0)
+	assert.Contains(t, row[glyphIdx:aliasIdx], "\x1b[48;5;15m")
 	assert.Contains(t, row[glyphIdx:aliasIdx], "\x1b[38;5;0m")
-
-	// The cursor background is restored after the pill, so the name that
-	// follows stays on the row highlight.
 	assert.Contains(t, row[aliasIdx:], "\x1b[48;5;8m")
+}
 
-	// No reset appears between the pill’s left glyph and the end of the name,
-	// so the highlight stays active across the pill and the name.
-	afterGlyph := row[glyphIdx:]
-	nameEnd := strings.Index(afterGlyph, "wallpaper")
-	require.GreaterOrEqual(t, nameEnd, 0)
-	nameEnd += len("wallpaper")
-	resetIdx := firstResetIndex(afterGlyph)
-	require.GreaterOrEqual(t, resetIdx, 0)
-	assert.GreaterOrEqual(t, resetIdx, nameEnd)
-
-	// The rounded theme-aware pill is preserved: the alias reads as one shape
-	// between the half circles, painted with the accent foreground.
-	assert.Contains(t, ansi.Strip(row), "\ue0b6wp\ue0b4")
-	assert.Contains(t, row, "38;5;14m")
+func TestRenderConfiguredRowAliasPillAfterName(t *testing.T) {
+	plain := ansi.Strip(renderConfiguredRow(100, false, "proj", "p", "", false, "~/code/proj", "", ""))
+	nameIdx := cellIndex(plain, "proj")
+	assert.Equal(t, nameIdx+24+1, cellIndex(plain, pillLeftGlyph+"p"+pillRightGlyph))
+	assert.Greater(t, cellIndex(plain, "~/code/proj"), nameIdx+24+1)
 }
 
 // TestRenderOpenRow_NameColumnSlim locks in the slimmer Open-session name
 // column: the name cell is 18 visible cells wide (was 20), so the directory
-// column starts at marker(2) + att(2) + sep(1) + name(18) + sep(1) = 24.
+// column starts at marker(2) + icon(1) + sep(1) + att(2) + sep(1) + name(18)
+// + sep(1) = 26.
 func TestRenderOpenRow_NameColumnSlim(t *testing.T) {
-	row := renderOpenRow(100, false, false, "short", "", 0, 1, "~/d", "", "", nil, nil)
-	dirIdx := strings.Index(ansi.Strip(row), "~/d")
+	row := ansi.Strip(renderOpenRow(100, false, false, "short", "", 0, 1, "~/d", "", "", nil, nil))
+	dirIdx := strings.Index(row, "~/d")
 	require.GreaterOrEqual(t, dirIdx, 0)
-	assert.Equal(t, 24, dirIdx)
+	assert.Equal(t, 26, lipgloss.Width(row[:dirIdx]))
+}
+
+func TestRenderOpenRow_LongCellsDoNotWrap(t *testing.T) {
+	for _, selected := range []bool{false, true} {
+		row := renderOpenRow(120, selected, false, "re/sesh/extensions/sesh-worktree-cleanup", "sc", 1, 1, "~/c/re/sesh/extensions/sesh", "claude/telemetry-dashboard", "+1 ~113 -62 !4", nil, nil)
+		assert.NotContains(t, row, "\n")
+		assert.Equal(t, 120, lipgloss.Width(row))
+	}
+}
+
+func TestRenderOpenRow_WideRowShowsFullBranch(t *testing.T) {
+	row := renderOpenRow(200, false, false, "nu/w/10290", "", 1, 1, "~/c/nu/w/10290", "claude/telemetry-dashboard", "~2", nil, nil)
+	assert.Contains(t, ansi.Strip(row), "claude/telemetry-dashboard")
+	assert.Equal(t, 200, lipgloss.Width(row))
+}
+
+func TestRenderWorktreeRow_SelectedNumberUsesTextColor(t *testing.T) {
+	row := RenderWorktreeRowFocused(120, nil, 16, IconCol("", "config", 1, true), true, true, 7503, "closed issue", "CLOSED", "main", "", nil)
+	selected := TextStyle().Inherit(cursorStyle(true))
+	assert.Contains(t, row, selected.Width(7).Render("#7503"))
+	assert.NotContains(t, row, DimmedStyle().Inherit(cursorStyle(true)).Width(7).Render("#7503"))
+}
+
+func TestIconCol_CustomIconElseSourceGlyph(t *testing.T) {
+	assert.Equal(t, "🏠", IconCol("🏠", "tmux", 2, false).Text)
+
+	glyph, clr := icon.SourceGlyph("tmux")
+	col := IconCol("", "tmux", 2, false)
+	assert.Equal(t, strings.TrimSpace(glyph), col.Text)
+	assert.Equal(t, clr, col.Style.GetForeground())
+}
+
+func TestIconCol_SelectedDimmedGlyphUsesTextColor(t *testing.T) {
+	assert.Equal(t, colorDimmed, IconCol("", "config", 1, false).Style.GetForeground())
+	assert.Equal(t, colorText, IconCol("", "config", 1, true).Style.GetForeground())
+}
+
+func TestRenderOpenRow_IconIsFirstColumn(t *testing.T) {
+	row := ansi.Strip(RenderOpenRowFocused(100, nil, 0, 0, IconCol("🏠", "tmux", 2, false), false, false, true, "nutiliti", "", 1, 1, "~/c/nu", "main", "", nil, nil, Issue{}))
+	assert.True(t, strings.HasPrefix(row, "  🏠"), row)
+}
+
+func assertTitlesAlign(t *testing.T, header, row string, titles map[string]string) {
+	t.Helper()
+	header, row = ansi.Strip(header), ansi.Strip(row)
+	assert.Equal(t, lipgloss.Width(row), lipgloss.Width(header))
+	for title, cell := range titles {
+		assert.Equal(t, cellIndex(row, cell), cellIndex(header, title), title)
+	}
+}
+
+func TestColumnTitlesAlignWithRows(t *testing.T) {
+	threeDaysAgo := time.Now().Add(-72 * time.Hour)
+	icon := Col{Text: "x", Width: 1}
+	alias := AliasColumn("ms")
+	wide := map[string]string{"NAME": "mysession", "ALIAS": pillLeftGlyph, "DIRECTORY": "~/some/dir", "BRANCH": "main", "STATUS": "+1"}
+	narrow := map[string]string{"NAME": "mysession", "ALIAS": pillLeftGlyph, "DIRECTORY": "~/some/dir"}
+	for width, titles := range map[int]map[string]string{60: narrow, 80: wide, 120: wide} {
+		if width < 90 {
+			delete(titles, "STATUS")
+		}
+		assertTitlesAlign(t,
+			RenderOpenHeader(width, nil, 10, alias, 1),
+			RenderOpenRowFocused(width, nil, 10, alias, icon, false, false, true, "mysession", "ms", 0, 1, "~/some/dir", "main", "+1", nil, nil, Issue{}),
+			titles)
+	}
+
+	assertTitlesAlign(t,
+		RenderConfiguredHeader(100, alias, 1),
+		RenderConfiguredRowFocused(100, alias, icon, false, true, "mysession", "ms", "", true, "~/some/dir", "main", "+1"),
+		map[string]string{"NAME": "mysession", "ALIAS": pillLeftGlyph, "DIRECTORY": "~/some/dir", "BRANCH": "main", "STATUS": "+1"})
+
+	assertTitlesAlign(t,
+		RenderWorktreeHeader(100, nil, 10, 1),
+		RenderWorktreeRowFocused(100, nil, 10, icon, false, true, 358, "tmux command updates", "MERGED", "jam/358", "+1", &threeDaysAgo),
+		map[string]string{"AGE": "3d", "ISSUE": "#358", "STATE": "merged", "TITLE": "tmux command updates", "BRANCH": "jam/358", "STATUS": "+1"})
+}
+
+func TestRenderWorktreeRowState(t *testing.T) {
+	for state, want := range map[string]string{"OPEN": "38;5;2mopen", "MERGED": "38;5;5mmerged", "CLOSED": "38;5;1mclosed"} {
+		row := RenderWorktreeRowFocused(100, nil, 10, Col{Width: 1}, false, true, 1, "t", state, "", "", nil)
+		assert.Contains(t, row, want, state)
+	}
+	unknown := ansi.Strip(RenderWorktreeRowFocused(100, nil, 10, Col{Width: 1}, false, true, 1, "t", "", "", "", nil))
+	assert.Equal(t, cellIndex(unknown, "#1")+7+1+6+1, cellIndex(unknown, "t "))
+}
+
+func TestOpenRowFollowsColumnOrder(t *testing.T) {
+	columns := []string{"title", "git_status", "git_branch"}
+	header := ansi.Strip(RenderOpenHeader(120, columns, 10, 0, 1))
+	row := ansi.Strip(RenderOpenRowFocused(120, columns, 10, 0, Col{Text: "x", Width: 1}, false, false, true, "mysession", "", 1, 1, "~/some/dir", "main", "+1", nil, nil, Issue{}))
+
+	assert.Less(t, cellIndex(header, "NAME"), cellIndex(header, "STATUS"))
+	assert.Less(t, cellIndex(header, "STATUS"), cellIndex(header, "BRANCH"))
+	assert.NotContains(t, header, "DIRECTORY")
+	assert.NotContains(t, row, "~/some/dir")
+	assert.NotContains(t, row, "x ")
+	assert.Equal(t, cellIndex(header, "STATUS"), cellIndex(row, "+1"))
+	assert.Equal(t, cellIndex(header, "BRANCH"), cellIndex(row, "main"))
+}
+
+func TestWorktreeRowFollowsColumnOrder(t *testing.T) {
+	columns := []string{"ghi_title", "ghi_number", "bogus"}
+	header := ansi.Strip(RenderWorktreeHeader(100, columns, 10, 1))
+	row := ansi.Strip(RenderWorktreeRowFocused(100, columns, 10, Col{Text: "x", Width: 1}, false, true, 358, "tmux command updates", "OPEN", "jam/358", "+1", nil))
+
+	assert.Equal(t, []string{"TITLE", "ISSUE"}, strings.Fields(header))
+	assert.Equal(t, cellIndex(header, "ISSUE"), cellIndex(row, "#358"))
+	assert.Equal(t, 0+2, cellIndex(row, "tmux"))
+	assert.NotContains(t, row, "open")
+}
+
+func TestOpenRowIssueColumns(t *testing.T) {
+	columns := []string{"title", "ghi_number", "ghi_state", "directory", "ghi_title"}
+	issue := Issue{Number: 358, Title: "tmux command updates", State: "OPEN"}
+	header := ansi.Strip(RenderOpenHeader(120, columns, 0, 0, 1))
+	row := ansi.Strip(RenderOpenRowFocused(120, columns, 0, 0, Col{Width: 1}, false, false, true, "sesh/358", "", 0, 1, "~/c/sesh/w/358", "", "", nil, nil, issue))
+
+	assert.Equal(t, lipgloss.Width(header), lipgloss.Width(row))
+	assert.Equal(t, 120, lipgloss.Width(row))
+	assert.Equal(t, cellIndex(header, "ISSUE"), cellIndex(row, "#358"))
+	assert.Equal(t, cellIndex(header, "STATE"), cellIndex(row, "open"))
+	assert.Equal(t, cellIndex(header, "TITLE"), cellIndex(row, "tmux command updates"))
+	assert.Equal(t, cellIndex(header, "DIRECTORY"), cellIndex(row, "~/c/sesh/w/358"))
+
+	none := ansi.Strip(RenderOpenRowFocused(120, columns, 0, 0, Col{Width: 1}, false, false, true, "dotfiles", "", 0, 1, "~/c/dotfiles", "", "", nil, nil, Issue{}))
+	assert.NotContains(t, none, "#0")
+	assert.Equal(t, 120, lipgloss.Width(none))
 }

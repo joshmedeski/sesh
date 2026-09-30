@@ -24,6 +24,7 @@ type (
 		Format         string
 		FormatSet      bool
 		IconExcludes   []string
+		SortOrder      model.SortOrder
 	}
 	srcStrategy func(*RealLister) (model.SeshSessions, error)
 )
@@ -46,7 +47,11 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	fullDirectory := make(model.SeshSessionMap)
 	fullOrderedIndex := make([]string, 0)
 
-	srcGroups := groupSources(srcs(opts), l.config.SortOrder)
+	sortOrder := l.config.SortOrder
+	if opts.SortOrder != nil {
+		sortOrder = opts.SortOrder
+	}
+	srcGroups := groupSources(srcs(opts), sortOrder)
 	srcsOrderedIndex := slices.Concat(srcGroups...)
 
 	resultsChan := make(chan strategyResult, len(srcsOrderedIndex))

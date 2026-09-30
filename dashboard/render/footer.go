@@ -8,15 +8,12 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// tabTitles are the two permanent tab labels.
-var tabTitles = []string{"Open", "Configured"}
-
 // RenderHeader renders the two-row header: a tab line (with an optional
-// right-pinned "N active" count on wide terminals) followed by a full-width
-// rule in the border color.
-func RenderHeader(activePage int, activeCount int, width int) string {
+// right-pinned "N active" count on wide terminals, hidden when activeCount is
+// negative) followed by a full-width rule in the border color.
+func RenderHeader(activePage int, activeCount int, width int, tabs ...string) string {
 	var parts []string
-	for i, t := range tabTitles {
+	for i, t := range tabs {
 		if i == activePage {
 			parts = append(parts, accentStyle().Render(t))
 		} else {
@@ -27,7 +24,7 @@ func RenderHeader(activePage int, activeCount int, width int) string {
 	tabLine := strings.Join(parts, sep)
 
 	right := ""
-	if width >= 50 {
+	if width >= 50 && activeCount >= 0 {
 		right = DimmedStyle().Render(strconv.Itoa(activeCount) + " active")
 	}
 
@@ -44,45 +41,38 @@ type keybind struct {
 	label string
 }
 
-// footerBinds returns the keybinds (with their right-pinned help bind) for a
-// given active page. sortLabel is the current sort mode's display label, shown
-// only on page 0.
-func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
+// footerBinds returns the keybinds (with their right-pinned help bind).
+// sortLabel is the current sort mode's display label, shown when non-empty.
+func footerBinds(sortLabel string) ([]keybind, keybind) {
 	right := keybind{"?", "help"}
-	if page == 0 {
-		return []keybind{
-			{"tab", "page"},
-			{"j/k", "move"},
-			{"enter", "open"},
-			{"s", "sort:" + sortLabel},
-			{"/", "filter"},
-			{"r", "refresh"},
-			{"1-9", "panes"},
-			{"ctrl+d", "kill"},
-			{"q", "quit"},
-		}, right
-	}
-	return []keybind{
+	binds := []keybind{
 		{"tab", "page"},
 		{"j/k", "move"},
 		{"enter", "open"},
-		{"/", "filter"},
-		{"r", "refresh"},
-		{"q", "quit"},
-	}, right
+	}
+	if sortLabel != "" {
+		binds = append(binds, keybind{"s", "sort:" + sortLabel})
+	}
+	return append(binds,
+		keybind{"/", "filter"},
+		keybind{"r", "refresh"},
+		keybind{"1-9", "panes"},
+		keybind{"ctrl+d", "kill"},
+		keybind{"q", "quit"},
+	), right
 }
 
-// RenderFooter renders the one-row footer for the active page. While the
+// RenderFooter renders the one-row footer. While the
 // focused pane is filtering, a filter line replaces the binds entirely. Small
 // terminals: <70 cols drop labels (keys only), <30 keep only tab j/k enter q ?.
 // If the fully-labeled footer would overflow the available width, labels are
 // dropped so the footer never wraps.
-func RenderFooter(page, width int, sortLabel string, filtering bool, query string) string {
+func RenderFooter(width int, sortLabel string, filtering bool, query string) string {
 	if filtering {
 		return renderFilterFooter(query, width)
 	}
 
-	binds, right := footerBinds(page, sortLabel)
+	binds, right := footerBinds(sortLabel)
 
 	if width < 30 {
 		binds = []keybind{{"tab", ""}, {"j/k", ""}, {"enter", ""}, {"q", ""}}
