@@ -8,13 +8,16 @@ import (
 	"github.com/joshmedeski/sesh/v2/shell"
 )
 
-// Browser reads the active tab URL from a browser's front window. Currently
-// macOS-only via osascript; a no-op elsewhere.
+// Browser reads the active tab URL from a browser's front window (macOS only)
+// and opens URLs, in the configured application when there is one.
 type Browser interface {
 	// ActiveTabURL returns the front window's active-tab URL.
 	// Returns ("", false, nil) when skipped: non-macOS or no application
 	// configured.
 	ActiveTabURL() (url string, ok bool, err error)
+	// Open opens url in [browser].application on macOS, otherwise in the
+	// system default browser.
+	Open(url string) error
 }
 
 // defaultURLCommand is the Chrome-family AppleScript fragment (Helium, Chrome,
@@ -48,4 +51,21 @@ func (b *RealBrowser) ActiveTabURL() (string, bool, error) {
 		return "", false, err
 	}
 	return url, true, nil
+}
+
+func (b *RealBrowser) Open(url string) error {
+	var err error
+	switch b.runtime.GOOS() {
+	case "darwin":
+		if b.config.Application != "" {
+			_, err = b.shell.Cmd("open", "-a", b.config.Application, url)
+		} else {
+			_, err = b.shell.Cmd("open", url)
+		}
+	case "windows":
+		_, err = b.shell.Cmd("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		_, err = b.shell.Cmd("xdg-open", url)
+	}
+	return err
 }
