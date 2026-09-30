@@ -3,7 +3,6 @@ package dashboard
 import (
 	"fmt"
 	"log/slog"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -338,8 +337,8 @@ func (s *SessionsSection) HoveredSession() (name, path string, windows int) {
 	sess := s.visible()[s.cursor]
 	name = sess.Name
 	path = sess.Path
-	if after, ok := strings.CutPrefix(path, s.deps.HomeDir); ok {
-		path = filepath.Join("~", after)
+	if shortened, err := s.deps.Home.ShortenHome(path); err == nil {
+		path = shortened
 	}
 	windows = sess.Windows
 	return name, path, windows
@@ -392,7 +391,10 @@ func (s *SessionsSection) renderItem(i, width int) string {
 // panes render a dimmed selection highlight.
 func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	sess := s.visible()[i]
-	dir := render.CollapseHome(sess.Path, s.deps.HomeDir)
+	dir := sess.Path
+	if shortened, err := s.deps.Home.ShortenHome(dir); err == nil {
+		dir = shortened
+	}
 	current := sess.Name == s.currentName && s.currentName != ""
 	return render.RenderOpenRowFocused(width, i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
 }

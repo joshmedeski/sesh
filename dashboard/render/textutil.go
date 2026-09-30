@@ -3,7 +3,6 @@ package render
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -35,20 +34,6 @@ func formatAge(lastAttached *time.Time) string {
 	default:
 		return fmt.Sprintf("%dmo", int(since.Hours()/(24*30)))
 	}
-}
-
-// CollapseHome replaces the home directory prefix of path with "~".
-func CollapseHome(path, homeDir string) string {
-	if homeDir == "" {
-		return path
-	}
-	if path == homeDir {
-		return "~"
-	}
-	if strings.HasPrefix(path, homeDir+string(filepath.Separator)) {
-		return "~" + path[len(homeDir):]
-	}
-	return path
 }
 
 // Paren wraps s in parentheses when non-empty, otherwise returns "".
