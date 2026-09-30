@@ -26,7 +26,7 @@ func aliasesByName(config model.Config) map[string]string {
 // tmuxToSesh maps a tmux session onto a SeshSession, copying the time fields
 // nil-safely so the two models never alias mutable pointers. If the tmux
 // session shares a name with a configured session that has an alias, the alias
-// is copied over so the dashboard can display and filter by it.
+// is copied over.
 func tmuxToSesh(session *model.TmuxSession, aliases map[string]string) model.SeshSession {
 	return model.SeshSession{
 		Src:          "tmux",

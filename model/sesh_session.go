@@ -40,8 +40,6 @@ type (
 		// `sesh list --json`: it describes the list, not the session.
 		Group int `json:"-"`
 
-		Branch       string     // Current git branch (populated by dashboard)
-		GitStatus    string     // Current git status (populated by dashboard)
 		Created      *time.Time // Session creation time
 		LastAttached *time.Time // Last attach time
 		Activity     *time.Time // Last activity time
