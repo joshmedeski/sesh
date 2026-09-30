@@ -1,7 +1,9 @@
 package dashboard
 
 import (
+	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/dashboard/core"
@@ -49,52 +51,65 @@ var registry = Registry{
 	"sessions": NewSourcesSection,
 }
 
-// BuiltSections is the result of BuildSections: the Configured tab's list plus
-// the first page's sections.
-type BuiltSections struct {
-	Configured *ConfiguredSection
-	Widgets    []Section
+// BuiltPage is one dashboard page: its tab title and rows of panes.
+type BuiltPage struct {
+	Title string
+	Rows  [][]Section
 }
 
-// BuildSections builds the Configured list and the first page from the
-// `[[dashboard.section]]` entries, in config order. A "worktree" entry lists
-// the [[worktree]] block whose repo matches its own. Unknown types and
-// unmatched repos are logged and skipped. With no usable entries the first
-// page is a single tmux sessions list.
-func BuildSections(cfg model.DashboardConfig, worktrees []model.WorktreeConfig, deps SectionDeps) BuiltSections {
-	var widgets []Section
-	for _, sc := range cfg.Sections {
-		if sc.Type == "" {
-			slog.Warn("unknown dashboard section type")
-			continue
-		}
-		if sc.Type == "worktree" {
-			wc, ok := findWorktreeConfig(worktrees, sc.Repo)
-			if !ok {
-				slog.Warn("dashboard worktree section has no matching [[worktree]] block", "repo", sc.Repo)
-				continue
-			}
-			ws := NewWorktreeSection(wc, deps)
-			ws.title = sc.Title
-			widgets = append(widgets, ws)
-			continue
-		}
-		factory, ok := registry[sc.Type]
-		if !ok {
-			if sc.Type == "aiagent" {
-				slog.Warn("unknown dashboard section type", "type", sc.Type, "hint", "aiagent is deprecated; use workmux")
-			} else {
-				slog.Warn("unknown dashboard section type", "type", sc.Type)
-			}
-			continue
-		}
-		if sc.Groups != nil {
-			slog.Warn("dashboard section groups are no longer applied", "type", sc.Type)
-		}
-		widgets = append(widgets, factory(sc, deps))
+// Built is the result of BuildPages: the Configured tab's list plus the
+// dashboard pages.
+type Built struct {
+	Configured *ConfiguredSection
+	Pages      []BuiltPage
+}
+
+func (b Built) pages() []dashPage {
+	pages := make([]dashPage, len(b.Pages))
+	for i, p := range b.Pages {
+		pages[i] = dashPage{title: p.Title, rows: p.Rows}
 	}
-	if len(widgets) == 0 {
-		widgets = []Section{NewSourcesSection(model.DashboardSectionConfig{Type: "sources", Title: "Sessions"}, deps)}
+	return pages
+}
+
+// BuildPages builds the Configured list and one dashboard page per
+// `[[dashboard.page]]`, each from its rows of section tables. Unknown section
+// types and unmatched worktree repos are logged and skipped, and so are rows
+// and pages left empty. With no usable page there is a single "Dashboard"
+// page holding a tmux sessions list.
+func BuildPages(cfg model.DashboardConfig, worktrees []model.WorktreeConfig, deps SectionDeps) Built {
+	var pages []BuiltPage
+	for _, pc := range cfg.Pages {
+		var rows [][]Section
+		for _, rowCfg := range pc.Sections {
+			var row []Section
+			for _, sc := range rowCfg {
+				if sec, ok := buildSection(sc, worktrees, deps); ok {
+					row = append(row, sec)
+				}
+			}
+			if len(row) > 0 {
+				rows = append(rows, row)
+			}
+		}
+		if len(rows) == 0 {
+			slog.Warn("dashboard page has no usable sections", "title", pc.Title)
+			continue
+		}
+		pages = append(pages, BuiltPage{Title: pc.Title, Rows: rows})
+	}
+	if len(pages) == 0 {
+		sessions, _ := buildSection(model.DashboardSectionConfig{Type: "sources", Title: "Sessions"}, worktrees, deps)
+		pages = []BuiltPage{{Rows: [][]Section{{sessions}}}}
+	}
+	for i := range pages {
+		if pages[i].Title != "" {
+			continue
+		}
+		pages[i].Title = "Dashboard"
+		if i > 0 {
+			pages[i].Title = fmt.Sprintf("Dashboard %d", i+1)
+		}
 	}
 
 	configured := NewConfiguredSection(
@@ -102,10 +117,59 @@ func BuildSections(cfg model.DashboardConfig, worktrees []model.WorktreeConfig, 
 		deps,
 	).(*ConfiguredSection)
 
-	return BuiltSections{
-		Configured: configured,
-		Widgets:    widgets,
+	return Built{Configured: configured, Pages: pages}
+}
+
+func buildSection(sc model.DashboardSectionConfig, worktrees []model.WorktreeConfig, deps SectionDeps) (Section, bool) {
+	switch sc.Type {
+	case "":
+		slog.Warn("unknown dashboard section type")
+		return nil, false
+	case "worktree":
+		wc, ok := findWorktreeConfig(worktrees, sc.Repo)
+		if !ok {
+			slog.Warn("dashboard worktree section has no matching [[worktree]] block", "repo", sc.Repo)
+			return nil, false
+		}
+		ws := NewWorktreeSection(wc, deps)
+		ws.title = sc.Title
+		if len(sc.Columns) > 0 {
+			ws.columns = resolveColumns(sc.Columns, render.WorktreeColumns, "worktree")
+		}
+		return ws, true
 	}
+	factory, ok := registry[sc.Type]
+	if !ok {
+		if sc.Type == "aiagent" {
+			slog.Warn("unknown dashboard section type", "type", sc.Type, "hint", "aiagent is deprecated; use workmux")
+		} else {
+			slog.Warn("unknown dashboard section type", "type", sc.Type)
+		}
+		return nil, false
+	}
+	if sc.Groups != nil {
+		slog.Warn("dashboard section groups are no longer applied", "type", sc.Type)
+	}
+	sec := factory(sc, deps)
+	if s, ok := sec.(*SessionsSection); ok {
+		s.worktrees = worktrees
+	}
+	return sec, true
+}
+
+func resolveColumns(requested, supported []string, sectionType string) []string {
+	if len(requested) == 0 {
+		return nil
+	}
+	columns := make([]string, 0, len(requested))
+	for _, id := range requested {
+		if !slices.Contains(supported, id) {
+			slog.Warn("unknown dashboard column", "section", sectionType, "column", id, "supported", supported)
+			continue
+		}
+		columns = append(columns, id)
+	}
+	return columns
 }
 
 func findWorktreeConfig(worktrees []model.WorktreeConfig, repo string) (model.WorktreeConfig, bool) {

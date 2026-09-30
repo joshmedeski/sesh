@@ -516,26 +516,53 @@ func TestGetConfig_GroupSeparator(t *testing.T) {
 	assert.True(t, config.TUI.GroupSeparator)
 }
 
-func TestGetConfig_DashboardSourcesSection(t *testing.T) {
-	config, err := configFromTOML(t, "[[dashboard.section]]\ntype = \"sources\"\ntitle = \"Sources\"\nsources = [\"tmux\", [\"config\", \"zoxide\"]]\n")
-	assert.NoError(t, err)
-	require.Len(t, config.Dashboard.Sections, 1)
-	section := config.Dashboard.Sections[0]
-	assert.Equal(t, "sources", section.Type)
-	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, section.Sources.SortGroups())
-	assert.Empty(t, config.SortOrder)
+const dashboardPagesTOML = `
+[[dashboard.page]]
+title = "Home"
+sections = [
+  [
+    { type = "sources", title = "Sessions", sources = ["tmux"], columns = ["title", "ghi_title", "git_status"] },
+    { type = "custom", title = "Weather", custom = { command = "curl -s wttr.in?format=3", refresh = 300 } },
+  ],
+  [
+    { type = "sources", sources = [["config", "zoxide"]] },
+    { type = "worktree", repo = "joshmedeski/sesh" },
+  ],
+]
+
+[[dashboard.page]]
+sections = [[{ type = "system" }]]
+`
+
+func TestGetConfig_DashboardPages(t *testing.T) {
+	for _, strict := range []bool{false, true} {
+		toml := dashboardPagesTOML
+		if strict {
+			toml = "strict_mode = true\n" + toml
+		}
+		config, err := configFromTOML(t, toml)
+		require.NoError(t, err, "strict=%v", strict)
+		pages := config.Dashboard.Pages
+		require.Len(t, pages, 2)
+		assert.Equal(t, "Home", pages[0].Title)
+		require.Len(t, pages[0].Sections, 2)
+		require.Len(t, pages[0].Sections[0], 2)
+		require.Len(t, pages[0].Sections[1], 2)
+
+		sessions := pages[0].Sections[0][0]
+		assert.Equal(t, "sources", sessions.Type)
+		assert.Equal(t, []model.SortGroup{{"tmux"}}, sessions.Sources.SortGroups())
+		assert.Equal(t, []string{"title", "ghi_title", "git_status"}, sessions.Columns)
+		assert.Equal(t, 300, pages[0].Sections[0][1].Custom.Refresh)
+		assert.Equal(t, []model.SortGroup{{"config", "zoxide"}}, pages[0].Sections[1][0].Sources.SortGroups())
+		assert.Equal(t, "joshmedeski/sesh", pages[0].Sections[1][1].Repo)
+		assert.Equal(t, "system", pages[1].Sections[0][0].Type)
+	}
 }
 
-func TestGetConfig_DashboardSourcesSectionStrictMode(t *testing.T) {
-	config, err := configFromTOML(t, "strict_mode = true\n[[dashboard.section]]\ntype = \"sources\"\nsources = [\"tmux\", [\"config\", \"zoxide\"]]\n")
+func TestGetConfig_WorktreeColumnsStrictMode(t *testing.T) {
+	config, err := configFromTOML(t, "strict_mode = true\n[[worktree]]\nrepo = \"o/r\"\ncolumns = [\"ghi_number\", \"ghi_title\"]\n")
 	assert.NoError(t, err)
-	require.Len(t, config.Dashboard.Sections, 1)
-	assert.Equal(t, []model.SortGroup{{"tmux"}, {"config", "zoxide"}}, config.Dashboard.Sections[0].Sources.SortGroups())
-}
-
-func TestGetConfig_DashboardWorktreeSectionStrictMode(t *testing.T) {
-	config, err := configFromTOML(t, "strict_mode = true\n[[dashboard.section]]\ntype = \"worktree\"\nrepo = \"joshmedeski/sesh\"\n")
-	assert.NoError(t, err)
-	require.Len(t, config.Dashboard.Sections, 1)
-	assert.Equal(t, "joshmedeski/sesh", config.Dashboard.Sections[0].Repo)
+	require.Len(t, config.WorktreeConfigs, 1)
+	assert.Equal(t, []string{"ghi_number", "ghi_title"}, config.WorktreeConfigs[0].Columns)
 }

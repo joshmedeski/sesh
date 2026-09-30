@@ -2,22 +2,18 @@
 package render
 
 import (
-	"slices"
 	"strconv"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 )
 
-// tabTitles are the two permanent tab labels.
-var tabTitles = []string{"Dashboard", "Configured"}
-
 // RenderHeader renders the two-row header: a tab line (with an optional
 // right-pinned "N active" count on wide terminals, hidden when activeCount is
 // negative) followed by a full-width rule in the border color.
-func RenderHeader(activePage int, activeCount int, width int, extraTabs ...string) string {
+func RenderHeader(activePage int, activeCount int, width int, tabs ...string) string {
 	var parts []string
-	for i, t := range slices.Concat(tabTitles, extraTabs) {
+	for i, t := range tabs {
 		if i == activePage {
 			parts = append(parts, accentStyle().Render(t))
 		} else {
@@ -46,11 +42,11 @@ type keybind struct {
 }
 
 // footerBinds returns the keybinds (with their right-pinned help bind) for a
-// given active page. sortLabel is the current sort mode's display label, shown
-// when non-empty.
-func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
+// active page, dashboard or list. sortLabel is the current sort mode's display
+// label, shown when non-empty.
+func footerBinds(dashboard bool, sortLabel string) ([]keybind, keybind) {
 	right := keybind{"?", "help"}
-	if page == 0 {
+	if dashboard {
 		binds := []keybind{
 			{"tab", "page"},
 			{"j/k", "move"},
@@ -87,12 +83,12 @@ func footerBinds(page int, sortLabel string) ([]keybind, keybind) {
 // terminals: <70 cols drop labels (keys only), <30 keep only tab j/k enter q ?.
 // If the fully-labeled footer would overflow the available width, labels are
 // dropped so the footer never wraps.
-func RenderFooter(page, width int, sortLabel string, filtering bool, query string) string {
+func RenderFooter(dashboard bool, width int, sortLabel string, filtering bool, query string) string {
 	if filtering {
 		return renderFilterFooter(query, width)
 	}
 
-	binds, right := footerBinds(page, sortLabel)
+	binds, right := footerBinds(dashboard, sortLabel)
 
 	if width < 30 {
 		binds = []keybind{{"tab", ""}, {"j/k", ""}, {"enter", ""}, {"q", ""}}

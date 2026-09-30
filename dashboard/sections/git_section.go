@@ -14,7 +14,8 @@ import (
 )
 
 type gitReposLoadedMsg struct {
-	repos []gitRepo
+	section *GitSection
+	repos   []gitRepo
 }
 
 type gitRepo struct {
@@ -54,7 +55,7 @@ func (s *GitSection) Init() tea.Cmd {
 func (s *GitSection) fetchRepos() tea.Msg {
 	paths := s.config.Git.Paths
 	if len(paths) == 0 {
-		return gitReposLoadedMsg{repos: nil}
+		return gitReposLoadedMsg{section: s, repos: nil}
 	}
 
 	repos := make([]gitRepo, 0, len(paths))
@@ -134,7 +135,7 @@ func (s *GitSection) fetchRepos() tea.Msg {
 		})
 	}
 
-	return gitReposLoadedMsg{repos: repos}
+	return gitReposLoadedMsg{section: s, repos: repos}
 }
 
 // ClickAt moves the cursor to the clicked row.
@@ -148,6 +149,9 @@ func (s *GitSection) ClickAt(row int) {
 func (s *GitSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case gitReposLoadedMsg:
+		if msg.section != s {
+			return s, nil
+		}
 		s.loading = false
 		s.repos = msg.repos
 	case tea.KeyPressMsg:

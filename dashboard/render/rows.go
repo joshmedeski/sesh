@@ -125,93 +125,197 @@ func AliasColumn(aliases ...string) int {
 	return max(w+lipgloss.Width(pillLeftGlyph+pillRightGlyph), len("ALIAS"))
 }
 
-// renderOpenRow renders a Tab 1 (Open) session row with columns:
-// marker(2) | icon | att(2) | name(18) | alias(longest) | dir(fill) |
-// branch(longest) | status(12) | age(5, last attached) | alerts(2).
-// Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att.
-func renderOpenRow(width int, selected, current bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
-	return RenderOpenRowFocused(width, lipgloss.Width(branch), AliasColumn(alias), IconCol("", "tmux", 1, selected), selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts)
+type columnKind int
+
+const (
+	fixedColumn columnKind = iota
+	fillColumn
+	branchColumnKind
+)
+
+type columnDef struct {
+	kind     columnKind
+	width    int
+	minWidth int
+	build    func(width int) Col
 }
 
-// RenderOpenRowFocused is renderOpenRow with an explicit focused flag, so
-// unfocused panes render a dimmed selection highlight.
-func RenderOpenRowFocused(width, branchCol, aliasCol int, iconCol Col, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
-	cols := openCols(width, branchCol, aliasCol, iconCol, selected, current, focused, name, alias, attached, dir, branch, status, lastAttached, alerts)
-	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
-}
-
-// RenderOpenHeader renders the Open tab column titles.
-func RenderOpenHeader(width, branchCol, aliasCol, iconWidth int) string {
-	return RenderColumnTitles(openCols(width, branchCol, aliasCol, Col{Width: iconWidth}, false, false, true, "", "", 0, "", "", "", nil, nil))
-}
-
-func openCols(width, branchCol, aliasCol int, iconCol Col, selected, current, focused bool, name, alias string, attached int, dir, branch, status string, lastAttached *time.Time, alerts []string) []Col {
-	includeAtt := width >= 70
-	includeBranch := width >= 70
-	includeStatus := width >= 90
-	includeAge := width >= 90
-	includeAlerts := width >= 90
-
-	fixed := 18 + iconCol.Width
-	numCols := 3
-	for _, c := range []struct {
-		on    bool
-		width int
-	}{{includeAtt, 2}, {aliasCol > 0, aliasCol}, {includeBranch, 0}, {includeStatus, 12}, {includeAge, 5}, {includeAlerts, 2}} {
-		if c.on {
-			fixed += c.width
-			numCols++
+func layoutColumns(width int, order []string, defs map[string]columnDef, branchLongest int) []Col {
+	picked := make([]columnDef, 0, len(order))
+	fixed, fills := 0, 0
+	for _, id := range order {
+		def, ok := defs[id]
+		if !ok || width < def.minWidth {
+			continue
+		}
+		picked = append(picked, def)
+		switch def.kind {
+		case fixedColumn:
+			fixed += def.width
+		case fillColumn:
+			fills++
 		}
 	}
 
-	flex := width - 2 - fixed - (numCols - 1)
+	flex := width - 2 - fixed - max(len(picked)-1, 0)
 	branchWidth := 0
-	if includeBranch {
-		branchWidth = branchColumn(flex, branchCol)
-	}
-	dirWidth := max(flex-branchWidth, 1)
-
-	nameStyle := TextStyle()
-	if current {
-		nameStyle = accentStyle()
-	}
-
-	cols := []Col{iconCol}
-	if includeAtt {
-		attText := ""
-		if attached > 0 {
-			attText = SuccessStyle().Render("●")
+	for _, def := range picked {
+		if def.kind != branchColumnKind {
+			continue
 		}
-		cols = append(cols, Col{Text: attText, Width: 2})
-	}
-	cols = append(cols, Col{Title: "NAME", Text: TruncateRight(name, 18), Width: 18, Style: nameStyle})
-	if aliasCol > 0 {
-		cols = append(cols, Col{Title: "ALIAS", Text: aliasPill(alias, selected, focused), Width: aliasCol})
-	}
-	cols = append(cols, Col{Title: "DIRECTORY", Text: truncateDirLeft(dir, dirWidth), Width: dirWidth, Style: TextStyle()})
-	if includeBranch {
-		cols = append(cols, Col{Title: "BRANCH", Text: TruncateRight(branch, branchWidth), Width: branchWidth, Style: BranchStyle(), Align: lipgloss.Left})
-	}
-	if includeStatus {
-		cols = append(cols, Col{Title: "STATUS", Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
-	}
-	if includeAge {
-		cols = append(cols, Col{Title: "AGE", Text: formatAge(lastAttached), Width: 5, Style: ageStyle(), Align: lipgloss.Left})
-	}
-	if includeAlerts {
-		alertText := ""
-		if len(alerts) > 0 {
-			alertText = WarningStyle().Render("!")
+		if fills > 0 {
+			branchWidth = branchColumn(flex, branchLongest)
+		} else {
+			branchWidth = max(min(max(branchLongest, len("BRANCH")), flex), 1)
 		}
-		cols = append(cols, Col{Text: alertText, Width: 2})
+	}
+	fillSpace := max(flex-branchWidth, fills)
+	fillWidth, fillExtra := fillSpace/max(fills, 1), fillSpace%max(fills, 1)
+
+	cols := make([]Col, 0, len(picked))
+	for _, def := range picked {
+		w := def.width
+		switch def.kind {
+		case fillColumn:
+			w = fillWidth
+			if fills--; fills == 0 {
+				w += fillExtra
+			}
+		case branchColumnKind:
+			w = branchWidth
+		}
+		col := def.build(w)
+		col.Width = w
+		cols = append(cols, col)
 	}
 	return cols
 }
 
+// OpenColumns are the columns a sessions list supports, in their default
+// order.
+var OpenColumns = []string{"icon", "attached", "title", "alias", "directory", "git_branch", "git_status", "age", "alerts"}
+
+// WorktreeColumns are the columns a worktree list supports, in their default
+// order.
+var WorktreeColumns = []string{"icon", "ghi_number", "ghi_state", "ghi_title", "git_branch", "git_status", "age"}
+
+// IssueColumns are the GitHub issue columns a sessions list can add, for
+// sessions inside a [[worktree]] checkout.
+var IssueColumns = []string{"ghi_number", "ghi_state", "ghi_title"}
+
+// Issue is the GitHub issue a row's worktree maps to.
+type Issue struct {
+	Number int
+	Title  string
+	State  string
+}
+
+func issueColumnDefs(issue Issue, selected bool) map[string]columnDef {
+	number := ""
+	if issue.Number > 0 {
+		number = "#" + strconv.Itoa(issue.Number)
+	}
+	numberStyle := DimmedStyle()
+	titleStyle := TextStyle()
+	if issue.State == "CLOSED" {
+		titleStyle = DimmedStyle()
+	}
+	if selected {
+		numberStyle = TextStyle()
+		titleStyle = TextStyle()
+	}
+	return map[string]columnDef{
+		"ghi_number": {width: 7, build: func(int) Col {
+			return Col{Title: "ISSUE", Text: number, Style: numberStyle}
+		}},
+		"ghi_state": {width: 6, build: func(int) Col {
+			return Col{Title: "STATE", Text: strings.ToLower(issue.State), Style: lipgloss.NewStyle().Foreground(issueStateColors[issue.State])}
+		}},
+		"ghi_title": {kind: fillColumn, build: func(w int) Col {
+			return Col{Title: "TITLE", Text: TruncateRight(issue.Title, w), Style: titleStyle}
+		}},
+	}
+}
+
+var configuredColumns = []string{"icon", "running", "title", "alias", "directory", "git_branch", "git_status"}
+
+func orDefault(columns, defaults []string) []string {
+	if len(columns) == 0 {
+		return defaults
+	}
+	return columns
+}
+
+// renderOpenRow renders a sessions list row with the default columns:
+// marker(2) | icon | att(2) | name(18) | alias(longest) | dir(fill) |
+// branch(longest) | status(12) | age(5, last attached) | alerts(2).
+// Progressive drop: <90 cols drop status+age+alerts, <70 drop branch+att.
+func renderOpenRow(width int, selected, current bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string) string {
+	return RenderOpenRowFocused(width, nil, lipgloss.Width(branch), AliasColumn(alias), IconCol("", "tmux", 1, selected), selected, current, true, name, alias, attached, windows, dir, branch, status, lastAttached, alerts, Issue{})
+}
+
+// RenderOpenRowFocused is renderOpenRow with explicit columns (nil for the
+// defaults) and focused flag, so unfocused panes render a dimmed selection
+// highlight.
+func RenderOpenRowFocused(width int, columns []string, branchCol, aliasCol int, iconCol Col, selected, current, focused bool, name, alias string, attached, windows int, dir, branch, status string, lastAttached *time.Time, alerts []string, issue Issue) string {
+	cols := openCols(width, columns, branchCol, aliasCol, iconCol, selected, current, focused, name, alias, attached, dir, branch, status, lastAttached, alerts, issue)
+	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
+}
+
+// RenderOpenHeader renders a sessions list's column titles.
+func RenderOpenHeader(width int, columns []string, branchCol, aliasCol, iconWidth int) string {
+	return RenderColumnTitles(openCols(width, columns, branchCol, aliasCol, Col{Width: iconWidth}, false, false, true, "", "", 0, "", "", "", nil, nil, Issue{}))
+}
+
+func openCols(width int, columns []string, branchCol, aliasCol int, iconCol Col, selected, current, focused bool, name, alias string, attached int, dir, branch, status string, lastAttached *time.Time, alerts []string, issue Issue) []Col {
+	nameStyle := TextStyle()
+	if current {
+		nameStyle = accentStyle()
+	}
+	defs := issueColumnDefs(issue, selected)
+	for id, def := range map[string]columnDef{
+		"icon": {width: iconCol.Width, build: func(int) Col { return iconCol }},
+		"attached": {width: 2, minWidth: 70, build: func(int) Col {
+			if attached > 0 {
+				return Col{Text: SuccessStyle().Render("●")}
+			}
+			return Col{}
+		}},
+		"title": {width: 18, build: func(w int) Col {
+			return Col{Title: "NAME", Text: TruncateRight(name, w), Style: nameStyle}
+		}},
+		"directory": {kind: fillColumn, build: func(w int) Col {
+			return Col{Title: "DIRECTORY", Text: truncateDirLeft(dir, w), Style: TextStyle()}
+		}},
+		"git_branch": {kind: branchColumnKind, minWidth: 70, build: func(w int) Col {
+			return Col{Title: "BRANCH", Text: TruncateRight(branch, w), Style: BranchStyle(), Align: lipgloss.Left}
+		}},
+		"git_status": {width: 12, minWidth: 90, build: func(w int) Col {
+			return Col{Title: "STATUS", Text: TruncateRightANSI(status, w), Style: BranchStyle()}
+		}},
+		"age": {width: 5, minWidth: 90, build: func(int) Col {
+			return Col{Title: "AGE", Text: formatAge(lastAttached), Style: ageStyle(), Align: lipgloss.Left}
+		}},
+		"alerts": {width: 2, minWidth: 90, build: func(int) Col {
+			if len(alerts) > 0 {
+				return Col{Text: WarningStyle().Render("!")}
+			}
+			return Col{}
+		}},
+	} {
+		defs[id] = def
+	}
+	if aliasCol > 0 {
+		defs["alias"] = columnDef{width: aliasCol, build: func(int) Col {
+			return Col{Title: "ALIAS", Text: aliasPill(alias, selected, focused)}
+		}}
+	}
+	return layoutColumns(width, orDefault(columns, OpenColumns), defs, branchCol)
+}
+
 // renderConfiguredRow renders a Tab 2 (Configured) session row with columns:
-// marker(2) | icon | cmd(2) | state(2) | name(24) | alias(longest) |
-// path(fill) | branch(16) | status(12). The cmd column and branch drop
-// together below 70 cols.
+// marker(2) | icon | state(2) | name(24) | alias(longest) | path(fill) |
+// branch(16) | status(12). The branch drops below 70 cols.
 func renderConfiguredRow(width int, selected bool, name, alias, startupCommand string, running bool, path, branch, status string) string {
 	return RenderConfiguredRowFocused(width, AliasColumn(alias), IconCol("", "config", 1, selected), selected, true, name, alias, startupCommand, running, path, branch, status)
 }
@@ -225,70 +329,58 @@ func RenderConfiguredRowFocused(width, aliasCol int, iconCol Col, selected, focu
 
 // RenderConfiguredHeader renders the Configured tab column titles.
 func RenderConfiguredHeader(width, aliasCol, iconWidth int) string {
-	cols := configuredCols(width, aliasCol, Col{Width: iconWidth}, false, true, "", "", false, "", "", "")
-	return RenderColumnTitles(cols)
+	return RenderColumnTitles(configuredCols(width, aliasCol, Col{Width: iconWidth}, false, true, "", "", false, "", "", ""))
 }
 
 func configuredCols(width, aliasCol int, iconCol Col, selected, focused bool, name, alias string, running bool, path, branch, status string) []Col {
-	includeBranch := width >= 70
-
-	stateText := "○"
-	stateColStyle := DimmedStyle()
-	if running {
-		stateText = "●"
-		stateColStyle = SuccessStyle()
-	}
-
 	if path == "" {
 		path = "-"
 	}
-
-	fixed := iconCol.Width + 24 + 2 + 12
-	numCols := 5
+	defs := map[string]columnDef{
+		"icon": {width: iconCol.Width, build: func(int) Col { return iconCol }},
+		"running": {width: 2, build: func(int) Col {
+			if running {
+				return Col{Text: "●", Style: SuccessStyle()}
+			}
+			return Col{Text: "○", Style: DimmedStyle()}
+		}},
+		"title": {width: 24, build: func(w int) Col {
+			return Col{Title: "NAME", Text: TruncateRight(name, w), Style: TextStyle()}
+		}},
+		"directory": {kind: fillColumn, build: func(w int) Col {
+			return Col{Title: "DIRECTORY", Text: truncateDirLeft(path, w), Style: TextStyle()}
+		}},
+		"git_branch": {width: 16, minWidth: 70, build: func(w int) Col {
+			return Col{Title: "BRANCH", Text: TruncateRight(branch, w), Style: BranchStyle()}
+		}},
+		"git_status": {width: 12, build: func(w int) Col {
+			return Col{Title: "STATUS", Text: TruncateRightANSI(status, w)}
+		}},
+	}
 	if aliasCol > 0 {
-		fixed += aliasCol
-		numCols++
+		defs["alias"] = columnDef{width: aliasCol, build: func(int) Col {
+			return Col{Title: "ALIAS", Text: aliasPill(alias, selected, focused)}
+		}}
 	}
-	if includeBranch {
-		fixed += 2 + 16
-		numCols += 2
-	}
-	pathWidth := max(width-2-fixed-(numCols-1), 1)
-
-	cols := make([]Col, 0, numCols)
-	cols = append(cols, iconCol)
-	if includeBranch {
-		cols = append(cols, Col{Width: 2})
-	}
-	cols = append(cols, Col{Text: stateText, Width: 2, Style: stateColStyle})
-	cols = append(cols, Col{Title: "NAME", Text: TruncateRight(name, 24), Width: 24, Style: TextStyle()})
-	if aliasCol > 0 {
-		cols = append(cols, Col{Title: "ALIAS", Text: aliasPill(alias, selected, focused), Width: aliasCol})
-	}
-	cols = append(cols, Col{Title: "DIRECTORY", Text: truncateDirLeft(path, pathWidth), Width: pathWidth, Style: TextStyle()})
-	if includeBranch {
-		cols = append(cols, Col{Title: "BRANCH", Text: TruncateRight(branch, 16), Width: 16, Style: BranchStyle()})
-	}
-	cols = append(cols, Col{Title: "STATUS", Text: TruncateRightANSI(status, 12), Width: 12})
-	return cols
+	return layoutColumns(width, configuredColumns, defs, 16)
 }
 
 func branchColumn(flex, longest int) int {
 	return min(max(longest, 16), max(flex-16, 16))
 }
 
-// RenderWorktreeRowFocused renders a worktree tab row with columns:
+// RenderWorktreeRowFocused renders a worktree row. The default columns are:
 // marker(2) | icon | number(7) | state(6) | title(fill) | branch(longest) |
 // status(12) | age(5, since created). The branch drops below 70 cols. Closed
 // issues render their title dimmed.
-func RenderWorktreeRowFocused(width, branchCol int, iconCol Col, selected, focused bool, number int, title, state, branch, status string, created *time.Time) string {
-	cols := worktreeCols(width, branchCol, iconCol, selected, "#"+strconv.Itoa(number), title, state, branch, status, created)
+func RenderWorktreeRowFocused(width int, columns []string, branchCol int, iconCol Col, selected, focused bool, number int, title, state, branch, status string, created *time.Time) string {
+	cols := worktreeCols(width, columns, branchCol, iconCol, selected, Issue{Number: number, Title: title, State: state}, branch, status, created)
 	return RenderRow(RowMarker(selected, focused), cols, selected, focused)
 }
 
-// RenderWorktreeHeader renders the worktree tab column titles.
-func RenderWorktreeHeader(width, branchCol, iconWidth int) string {
-	return RenderColumnTitles(worktreeCols(width, branchCol, Col{Width: iconWidth}, false, "", "", "", "", "", nil))
+// RenderWorktreeHeader renders a worktree list's column titles.
+func RenderWorktreeHeader(width int, columns []string, branchCol, iconWidth int) string {
+	return RenderColumnTitles(worktreeCols(width, columns, branchCol, Col{Width: iconWidth}, false, Issue{}, "", "", nil))
 }
 
 var issueStateColors = map[string]lipgloss.ANSIColor{
@@ -297,43 +389,19 @@ var issueStateColors = map[string]lipgloss.ANSIColor{
 	"CLOSED": lipgloss.ANSIColor(1),
 }
 
-func worktreeCols(width, branchCol int, iconCol Col, selected bool, number, title, state, branch, status string, created *time.Time) []Col {
-	includeBranch := width >= 70
-
-	fixed := iconCol.Width + 7 + 6 + 12 + 5
-	numCols := 6
-	if includeBranch {
-		numCols++
-	}
-	flex := width - 2 - fixed - (numCols - 1)
-	branchWidth := 0
-	if includeBranch {
-		branchWidth = branchColumn(flex, branchCol)
-	}
-	titleWidth := max(flex-branchWidth, 1)
-
-	numberStyle := DimmedStyle()
-	titleStyle := TextStyle()
-	if state == "CLOSED" {
-		titleStyle = DimmedStyle()
-	}
-	if selected {
-		numberStyle = TextStyle()
-		titleStyle = TextStyle()
-	}
-
-	cols := []Col{
-		iconCol,
-		{Title: "ISSUE", Text: number, Width: 7, Style: numberStyle},
-		{Title: "STATE", Text: strings.ToLower(state), Width: 6, Style: lipgloss.NewStyle().Foreground(issueStateColors[state])},
-		{Title: "TITLE", Text: TruncateRight(title, titleWidth), Width: titleWidth, Style: titleStyle},
-	}
-	if includeBranch {
-		cols = append(cols, Col{Title: "BRANCH", Text: TruncateRight(branch, branchWidth), Width: branchWidth, Style: BranchStyle()})
-	}
-	cols = append(cols, Col{Title: "STATUS", Text: TruncateRightANSI(status, 12), Width: 12, Style: BranchStyle()})
-	cols = append(cols, Col{Title: "AGE", Text: formatAge(created), Width: 5, Style: ageStyle()})
-	return cols
+func worktreeCols(width int, columns []string, branchCol int, iconCol Col, selected bool, issue Issue, branch, status string, created *time.Time) []Col {
+	defs := issueColumnDefs(issue, selected)
+	defs["icon"] = columnDef{width: iconCol.Width, build: func(int) Col { return iconCol }}
+	defs["git_branch"] = columnDef{kind: branchColumnKind, minWidth: 70, build: func(w int) Col {
+		return Col{Title: "BRANCH", Text: TruncateRight(branch, w), Style: BranchStyle()}
+	}}
+	defs["git_status"] = columnDef{width: 12, build: func(w int) Col {
+		return Col{Title: "STATUS", Text: TruncateRightANSI(status, w), Style: BranchStyle()}
+	}}
+	defs["age"] = columnDef{width: 5, build: func(int) Col {
+		return Col{Title: "AGE", Text: formatAge(created), Style: ageStyle()}
+	}}
+	return layoutColumns(width, orDefault(columns, WorktreeColumns), defs, branchCol)
 }
 
 // IconCol is the leading icon column of a list row: the configured icon, or

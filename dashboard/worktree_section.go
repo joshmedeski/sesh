@@ -36,6 +36,7 @@ type WorktreeSection struct {
 	sortMode string
 	changes  map[string]int
 	title    string
+	columns  []string
 }
 
 func NewWorktreeSection(cfg model.WorktreeConfig, deps SectionDeps) *WorktreeSection {
@@ -45,6 +46,7 @@ func NewWorktreeSection(cfg model.WorktreeConfig, deps SectionDeps) *WorktreeSec
 		loading:  true,
 		sortMode: worktreeSortModes[0],
 		changes:  map[string]int{},
+		columns:  resolveColumns(cfg.Columns, render.WorktreeColumns, "worktree"),
 	}
 }
 
@@ -264,7 +266,7 @@ func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (strin
 	branchCol := branchColumnWidth(visible)
 
 	var b strings.Builder
-	b.WriteString(render.RenderWorktreeHeader(width, branchCol, max(s.deps.IconWidth, 1)))
+	b.WriteString(render.RenderWorktreeHeader(width, s.columns, branchCol, max(s.deps.IconWidth, 1)))
 	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
@@ -273,7 +275,7 @@ func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (strin
 		if !e.Created.IsZero() {
 			created = &e.Created
 		}
-		b.WriteString(render.RenderWorktreeRowFocused(width, branchCol, s.iconCol(sess, i == s.cursor), i == s.cursor, focused, e.Number, sess.Name, e.State, sess.Branch, sess.GitStatus, created))
+		b.WriteString(render.RenderWorktreeRowFocused(width, s.columns, branchCol, s.iconCol(sess, i == s.cursor), i == s.cursor, focused, e.Number, sess.Name, e.State, sess.Branch, sess.GitStatus, created))
 		b.WriteString("\n")
 	}
 	return title, b.String()

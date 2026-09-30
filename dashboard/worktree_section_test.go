@@ -34,12 +34,12 @@ func TestTabCyclesThroughWorktreeTabsInConfigOrder(t *testing.T) {
 	var pages []string
 	for range m.pageCount() {
 		m = updateModel(m, pressKey("tab"))
-		if m.page > pageConfigured {
+		if m.page > m.configuredPage() {
 			pages = append(pages, m.pageSection().Name())
 		}
 	}
 	assert.Equal(t, []string{"joshmedeski/sesh", "Nutiliti/nutiliti"}, pages)
-	assert.Equal(t, pageOpen, m.page)
+	assert.Equal(t, 0, m.page)
 
 	m = updateModel(m, pressKey("shift+tab"))
 	assert.Equal(t, "Nutiliti/nutiliti", m.pageSection().Name())
@@ -71,7 +71,7 @@ func TestWorktreeSectionFetchListsItsRepo(t *testing.T) {
 
 func TestEnterOnWorktreeTabChoosesWorktree(t *testing.T) {
 	m := worktreeTestModel("joshmedeski/sesh")
-	m.page = pageConfigured + 1
+	m.page = m.configuredPage() + 1
 	m.worktrees[0].Update(loadedWorktrees("joshmedeski/sesh"))
 	m = updateModel(m, pressKey("j"))
 	m = updateModel(m, pressKey("enter"))
@@ -175,25 +175,25 @@ func TestBuildSectionsWorktreeMatchesRepo(t *testing.T) {
 		{Repo: "Nutiliti/nutiliti", Path: "~/c/nu"},
 		{Repo: "joshmedeski/sesh", Path: "~/c/sesh"},
 	}
-	built := BuildSections(model.DashboardConfig{Sections: []model.DashboardSectionConfig{
+	built := BuildPages(onePage([]model.DashboardSectionConfig{
 		{Type: "worktree", Repo: "JoshMedeski/Sesh"},
 		{Type: "worktree", Repo: "nobody/missing"},
 		{Type: "worktree", Repo: "nutiliti/nutiliti", Title: "Nutiliti"},
-	}}, worktrees, SectionDeps{})
+	}), worktrees, SectionDeps{})
 
-	require.Len(t, built.Widgets, 2)
-	sesh := built.Widgets[0].(*WorktreeSection)
+	require.Len(t, built.widgets(), 2)
+	sesh := built.widgets()[0].(*WorktreeSection)
 	assert.Equal(t, worktrees[1], sesh.config)
 	assert.Equal(t, "joshmedeski/sesh", sesh.Name())
-	assert.Equal(t, "Nutiliti", built.Widgets[1].Name())
+	assert.Equal(t, "Nutiliti", built.widgets()[1].Name())
 }
 
 func TestDashboardWorktreePaneConnects(t *testing.T) {
 	cfg := model.Config{
 		WorktreeConfigs: []model.WorktreeConfig{{Repo: "joshmedeski/sesh", Path: "~/c/sesh"}},
-		Dashboard: model.DashboardConfig{Sections: []model.DashboardSectionConfig{
+		Dashboard: onePage([]model.DashboardSectionConfig{
 			{Type: "worktree", Repo: "joshmedeski/sesh"},
-		}},
+		}),
 	}
 	m := New(cfg, SectionDeps{})
 	m = updateModel(m, loadedWorktrees("joshmedeski/sesh"))
@@ -202,4 +202,17 @@ func TestDashboardWorktreePaneConnects(t *testing.T) {
 	m = updateModel(m, pressKey("enter"))
 	require.NotNil(t, m.ChosenWorktree())
 	assert.Equal(t, model.WorktreeConnectOpts{Number: 358, Repo: "joshmedeski/sesh"}, *m.ChosenWorktree())
+}
+
+func TestWorktreeColumnsFromConfig(t *testing.T) {
+	worktrees := []model.WorktreeConfig{{Repo: "joshmedeski/sesh", Columns: []string{"ghi_number", "ghi_title"}}}
+	built := BuildPages(onePage([]model.DashboardSectionConfig{
+		{Type: "worktree", Repo: "joshmedeski/sesh"},
+		{Type: "worktree", Repo: "joshmedeski/sesh", Columns: []string{"ghi_title", "title", "age"}},
+	}), worktrees, SectionDeps{})
+
+	require.Len(t, built.widgets(), 2)
+	assert.Equal(t, []string{"ghi_number", "ghi_title"}, built.widgets()[0].(*WorktreeSection).columns)
+	assert.Equal(t, []string{"ghi_title", "age"}, built.widgets()[1].(*WorktreeSection).columns)
+	assert.Nil(t, NewWorktreeSection(model.WorktreeConfig{Repo: "o/r"}, SectionDeps{}).columns)
 }

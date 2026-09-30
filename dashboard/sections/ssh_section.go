@@ -14,8 +14,9 @@ import (
 )
 
 type sshStatusMsg struct {
-	index  int
-	status string
+	section *SSHSection
+	index   int
+	status  string
 }
 
 type SSHHost struct {
@@ -94,7 +95,7 @@ func (s *SSHSection) checkHost(index int, host SSHHost) tea.Cmd {
 		if err != nil {
 			status = "offline"
 		}
-		return sshStatusMsg{index: index, status: status}
+		return sshStatusMsg{section: s, index: index, status: status}
 	}
 }
 
@@ -109,6 +110,9 @@ func (s *SSHSection) ClickAt(row int) {
 func (s *SSHSection) Update(msg tea.Msg) (core.Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case sshStatusMsg:
+		if msg.section != s {
+			return s, nil
+		}
 		if msg.index >= 0 && msg.index < len(s.hosts) {
 			s.hosts[msg.index].Status = msg.status
 		}

@@ -198,8 +198,15 @@ type (
 	}
 
 	DashboardConfig struct {
-		Title    string                   `toml:"title"`
-		Sections []DashboardSectionConfig `toml:"section"`
+		Title string                `toml:"title"`
+		Pages []DashboardPageConfig `toml:"page"`
+	}
+
+	// DashboardPageConfig is one dashboard tab. Sections is its rows, top to
+	// bottom; each row's sections sit side by side, left to right.
+	DashboardPageConfig struct {
+		Title    string                     `toml:"title"`
+		Sections [][]DashboardSectionConfig `toml:"sections"`
 	}
 
 	DashboardSectionConfig struct {
@@ -217,6 +224,7 @@ type (
 		Git     GitConfig        `toml:"git"`
 		Sources SortOrder        `toml:"sources"`
 		Repo    string           `toml:"repo"`
+		Columns []string         `toml:"columns"`
 	}
 
 	DashboardGroup struct {
@@ -261,14 +269,15 @@ type (
 	// `sesh worktree connect <number>` knows where to add worktrees, how to
 	// name their branches, and what to run on connect.
 	WorktreeConfig struct {
-		Repo           string `toml:"repo"`            // GitHub "org/repo"
-		Path           string `toml:"path"`            // local repo root (supports ~)
-		WorktreeDir    string `toml:"worktree_dir"`    // default ".wk"; relative to Path or absolute
-		BranchTemplate string `toml:"branch_template"` // default "{number}"
-		BaseBranch     string `toml:"base_branch"`     // default "origin/main"
-		Fetch          *bool  `toml:"fetch"`           // default true (nil => true)
-		StartupCommand string `toml:"startup_command"` // runs when connecting to a worktree that already existed
-		CreateCommand  string `toml:"create_command"`  // runs instead, on the connect that creates the worktree
+		Repo           string   `toml:"repo"`            // GitHub "org/repo"
+		Path           string   `toml:"path"`            // local repo root (supports ~)
+		WorktreeDir    string   `toml:"worktree_dir"`    // default ".wk"; relative to Path or absolute
+		BranchTemplate string   `toml:"branch_template"` // default "{number}"
+		BaseBranch     string   `toml:"base_branch"`     // default "origin/main"
+		Fetch          *bool    `toml:"fetch"`           // default true (nil => true)
+		StartupCommand string   `toml:"startup_command"` // runs when connecting to a worktree that already existed
+		CreateCommand  string   `toml:"create_command"`  // runs instead, on the connect that creates the worktree
+		Columns        []string `toml:"columns"`         // worktree tab columns and their order; default all
 	}
 
 	// BrowserConfig configures reading the active browser tab's URL so

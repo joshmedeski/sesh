@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -17,12 +18,18 @@ import (
 )
 
 type sessionsLoadedMsg struct {
+	section  *SessionsSection
 	sessions model.SeshSessions
 	err      error
 }
 
 type currentSessionMsg struct {
 	name string
+}
+
+type sessionIssuesLoadedMsg struct {
+	section *SessionsSection
+	entries map[string]model.WorktreeEntry
 }
 
 type SessionsSection struct {
@@ -37,6 +44,9 @@ type SessionsSection struct {
 	currentName   string
 	sortOrder     model.SortOrder
 	rank          map[string]int
+	columns       []string
+	worktrees     []model.WorktreeConfig
+	issues        map[string]model.WorktreeEntry
 }
 
 func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
@@ -51,6 +61,7 @@ func NewSessionsSection(cfg model.DashboardSectionConfig, deps SectionDeps) Sect
 func NewSourcesSection(cfg model.DashboardSectionConfig, deps SectionDeps) Section {
 	s := NewSessionsSection(cfg, deps).(*SessionsSection)
 	s.sortOrder = cfg.Sources
+	s.columns = resolveColumns(cfg.Columns, slices.Concat(render.OpenColumns, render.IssueColumns), cfg.Type)
 	s.sortMode = s.sortModes()[0]
 	return s
 }
@@ -97,9 +108,52 @@ func (s *SessionsSection) FilterQuery() string {
 // fetch tmux sessions
 func (s *SessionsSection) Init() tea.Cmd {
 	opts := s.listOptions()
-	return func() tea.Msg {
+	list := func() tea.Msg {
 		sessions, err := s.deps.Lister.List(opts)
-		return sessionsLoadedMsg{sessions: sessions, err: err}
+		return sessionsLoadedMsg{section: s, sessions: sessions, err: err}
+	}
+	if !s.showsIssues() {
+		return list
+	}
+	return tea.Batch(list, s.fetchIssues())
+}
+
+func (s *SessionsSection) showsIssues() bool {
+	return slices.ContainsFunc(s.columns, func(id string) bool { return slices.Contains(render.IssueColumns, id) })
+}
+
+func (s *SessionsSection) fetchIssues() tea.Cmd {
+	worktrees, svc := s.worktrees, s.deps.Worktree
+	return func() tea.Msg {
+		entries := map[string]model.WorktreeEntry{}
+		if svc == nil {
+			return sessionIssuesLoadedMsg{section: s, entries: entries}
+		}
+		for _, wc := range worktrees {
+			list, err := svc.List(model.WorktreeListOpts{Repo: wc.Repo})
+			if err != nil {
+				slog.Warn("dashboard: listing worktrees for issue columns", "repo", wc.Repo, "error", err)
+				continue
+			}
+			for _, e := range list {
+				entries[filepath.Clean(e.Path)] = e
+			}
+		}
+		return sessionIssuesLoadedMsg{section: s, entries: entries}
+	}
+}
+
+func (s *SessionsSection) issueFor(path string) render.Issue {
+	if path == "" || len(s.issues) == 0 {
+		return render.Issue{}
+	}
+	for p := filepath.Clean(path); ; p = filepath.Dir(p) {
+		if e, ok := s.issues[p]; ok {
+			return render.Issue{Number: e.Number, Title: e.Title, State: e.State}
+		}
+		if filepath.Dir(p) == p {
+			return render.Issue{}
+		}
 	}
 }
 
@@ -140,7 +194,7 @@ func rankKey(sess model.SeshSession) string {
 func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 	switch msg := msg.(type) {
 	case sessionsLoadedMsg:
-		if msg.err != nil {
+		if msg.section != s || msg.err != nil {
 			return s, nil
 		}
 		s.loading = false
@@ -160,6 +214,13 @@ func (s *SessionsSection) Update(msg tea.Msg) (Section, tea.Cmd) {
 
 	case statusLoadedMsg:
 		s.applyStatus(msg.path, msg.status)
+		return s, nil
+
+	case sessionIssuesLoadedMsg:
+		if msg.section == s {
+			s.issues = msg.entries
+			s.applyFilter()
+		}
 		return s, nil
 
 	case currentSessionMsg:
@@ -208,7 +269,7 @@ func (s *SessionsSection) handleKey(msg tea.KeyPressMsg) (*SessionsSection, tea.
 // through the filtered results, enter selects the highlighted filtered item
 // and exits filtering, and esc cancels filtering without selecting.
 func (s *SessionsSection) handleFilterKey(msg tea.KeyPressMsg) (*SessionsSection, tea.Cmd) {
-	s.ListState.handleFilterKey(msg, s.sessions, sessionsMatch, s.selectItem)
+	s.ListState.handleFilterKey(msg, s.sessions, s.match, s.selectItem)
 	return s, nil
 }
 
@@ -255,7 +316,11 @@ func (s *SessionsSection) applySort() {
 // applyFilter rebuilds the filtered view from the master list and clamps the
 // cursor.
 func (s *SessionsSection) applyFilter() {
-	s.ListState.applyFilter(s.sessions, sessionsMatch)
+	s.ListState.applyFilter(s.sessions, s.match)
+}
+
+func (s *SessionsSection) match(sess model.SeshSession, q string) bool {
+	return sessionsMatch(sess, q) || strings.Contains(strings.ToLower(s.issueFor(sess.Path).Title), q)
 }
 
 // sessionsMatch reports whether a session matches the query by name or alias.
@@ -391,7 +456,7 @@ func (s *SessionsSection) ViewBorderless(width, height int, focused bool) (strin
 	end := min(s.offset+s.viewHeight, len(visible))
 
 	var b strings.Builder
-	b.WriteString(render.RenderOpenHeader(width, branchColumnWidth(visible), aliasColumnWidth(visible), max(s.deps.IconWidth, 1)))
+	b.WriteString(render.RenderOpenHeader(width, s.columns, branchColumnWidth(visible), aliasColumnWidth(visible), max(s.deps.IconWidth, 1)))
 	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		b.WriteString(s.renderItemFocused(i, width, focused))
@@ -413,7 +478,7 @@ func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	sess := visible[i]
 	dir := render.CollapseHome(sess.Path, s.deps.HomeDir)
 	current := sess.Name == s.currentName && s.currentName != ""
-	return render.RenderOpenRowFocused(width, branchColumnWidth(visible), aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts)
+	return render.RenderOpenRowFocused(width, s.columns, branchColumnWidth(visible), aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts, s.issueFor(sess.Path))
 }
 
 func branchColumnWidth(sessions []model.SeshSession) int {

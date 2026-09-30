@@ -12,6 +12,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/dashboard/sections"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/worktree"
 )
 
 // sessionNames returns the names of ss in order.
@@ -43,7 +44,7 @@ func apSessionsSection() *SessionsSection {
 
 func TestLoadedSessionsSortedAlphabeticallyByDefault(t *testing.T) {
 	s := NewSessionsSection(model.DashboardSectionConfig{}, SectionDeps{}).(*SessionsSection)
-	s.Update(sessionsLoadedMsg{sessions: model.SeshSessions{
+	s.Update(sessionsLoadedMsg{section: s, sessions: model.SeshSessions{
 		OrderedIndex: []string{"z", "a", "m"},
 		Directory: model.SeshSessionMap{
 			"z": {Name: "z"},
@@ -292,16 +293,16 @@ func TestSessionsClickAtSkipsHeaderRow(t *testing.T) {
 }
 
 func sourcesSection(sources model.SortOrder) *SessionsSection {
-	built := BuildSections(model.DashboardConfig{Sections: []model.DashboardSectionConfig{
+	built := BuildPages(onePage([]model.DashboardSectionConfig{
 		{Type: "sources", Title: "Sources", Sources: sources},
-	}}, nil, SectionDeps{})
-	return built.Widgets[0].(*SessionsSection)
+	}), nil, SectionDeps{})
+	return built.widgets()[0].(*SessionsSection)
 }
 
 func TestSourcesSectionListOptions(t *testing.T) {
-	built := BuildSections(model.DashboardConfig{}, nil, SectionDeps{})
-	assert.Equal(t, lister.ListOptions{Tmux: true}, built.Widgets[0].(*SessionsSection).listOptions())
-	assert.Equal(t, "name", built.Widgets[0].(*SessionsSection).SortLabel())
+	built := BuildPages(model.DashboardConfig{}, nil, SectionDeps{})
+	assert.Equal(t, lister.ListOptions{Tmux: true}, built.widgets()[0].(*SessionsSection).listOptions())
+	assert.Equal(t, "name", built.widgets()[0].(*SessionsSection).SortLabel())
 
 	sources := model.SortOrder{"tmux", []any{"config", "zoxide"}}
 	s := sourcesSection(sources)
@@ -316,7 +317,7 @@ func TestSourcesSectionListOptions(t *testing.T) {
 
 func TestSourcesSectionKeepsListerOrder(t *testing.T) {
 	s := sourcesSection(model.SortOrder{"tmux", []any{"config", "zoxide"}})
-	s.Update(sessionsLoadedMsg{sessions: model.SeshSessions{
+	s.Update(sessionsLoadedMsg{section: s, sessions: model.SeshSessions{
 		OrderedIndex: []string{"t", "z1", "c", "z2"},
 		Directory: model.SeshSessionMap{
 			"t":  {Src: "tmux", Name: "zeta", Group: 0},
@@ -343,7 +344,7 @@ func TestFooterSortFollowsFocusedPane(t *testing.T) {
 	sources := sourcesSection(model.SortOrder{"tmux", []any{"config", "zoxide"}})
 	m := testModel(sources, sections.NewSystemSection(model.DashboardSectionConfig{Type: "system"}, SectionDeps{}))
 	m.width = 140
-	m.widgets[0].(*SessionsSection).sortMode = "name"
+	m.pages[0].rows[0][0].(*SessionsSection).sortMode = "name"
 	assert.Contains(t, ansi.Strip(m.View().Content), "sort:name")
 
 	m.focus = 1
@@ -356,4 +357,83 @@ func TestFooterSortFollowsFocusedPane(t *testing.T) {
 func TestKillSkipsNonTmuxSessions(t *testing.T) {
 	s := &SessionsSection{sessions: []model.SeshSession{{Src: "zoxide", Name: "~/hot"}}}
 	assert.Nil(t, s.killSession())
+}
+
+func TestSourcesSectionColumns(t *testing.T) {
+	s := NewSourcesSection(model.DashboardSectionConfig{Type: "sources", Columns: []string{"title", "git_status", "issue", "git_branch"}}, SectionDeps{}).(*SessionsSection)
+	assert.Equal(t, []string{"title", "git_status", "git_branch"}, s.columns)
+
+	s.Update(sessionsLoadedMsg{section: s, sessions: model.SeshSessions{
+		OrderedIndex: []string{"a"},
+		Directory:    model.SeshSessionMap{"a": {Src: "tmux", Name: "alpha", Path: "/p", Branch: "main"}},
+	}})
+	_, content := s.ViewBorderless(120, 5, true)
+	assert.Equal(t, []string{"NAME", "STATUS", "BRANCH"}, strings.Fields(strings.Split(ansi.Strip(content), "\n")[0]))
+}
+
+func TestSourcesSectionMatchesWorktreeIssues(t *testing.T) {
+	wt := worktree.NewMockWorktree(t)
+	wt.EXPECT().List(model.WorktreeListOpts{Repo: "joshmedeski/sesh"}).Return([]model.WorktreeEntry{
+		{Number: 358, Path: "/home/u/c/sesh/w/358/", Title: "tmux command updates", State: "OPEN"},
+	}, nil).Once()
+	built := BuildPages(onePage([]model.DashboardSectionConfig{
+		{Type: "sources", Columns: []string{"title", "ghi_title"}},
+		{Type: "sources", Columns: []string{"title"}},
+	}), []model.WorktreeConfig{{Repo: "joshmedeski/sesh"}}, SectionDeps{Worktree: wt})
+	s := built.widgets()[0].(*SessionsSection)
+	plain := built.widgets()[1].(*SessionsSection)
+	require.False(t, plain.showsIssues())
+
+	msg := s.fetchIssues()()
+	s.Update(msg)
+	plain.Update(msg)
+	assert.Nil(t, plain.issues, "issues are only stored by the section that asked for them")
+
+	assert.Equal(t, 358, s.issueFor("/home/u/c/sesh/w/358").Number)
+	assert.Equal(t, "tmux command updates", s.issueFor("/home/u/c/sesh/w/358/packages/app").Title)
+	assert.Zero(t, s.issueFor("/home/u/c/sesh").Number)
+	assert.Zero(t, s.issueFor("").Number)
+}
+
+func TestSourcesFilterMatchesIssueTitle(t *testing.T) {
+	s := sourcesSection(model.SortOrder{"tmux"})
+	s.Update(sessionsLoadedMsg{section: s, sessions: model.SeshSessions{
+		OrderedIndex: []string{"a", "b"},
+		Directory: model.SeshSessionMap{
+			"a": {Src: "tmux", Name: "sesh/358", Path: "/w/358"},
+			"b": {Src: "tmux", Name: "dotfiles", Path: "/c/dotfiles"},
+		},
+	}})
+	s.Update(pressKey("/"))
+	for _, r := range "tmux" {
+		s.Update(pressKey(string(r)))
+	}
+	assert.Empty(t, sessionNames(s.visible()), "no issues loaded yet")
+
+	s.Update(sessionIssuesLoadedMsg{section: s, entries: map[string]model.WorktreeEntry{
+		"/w/358": {Number: 358, Path: "/w/358", Title: "Tmux command updates"},
+	}})
+	assert.Equal(t, []string{"sesh/358"}, sessionNames(s.visible()), "filter re-applies when issues arrive, case-insensitively")
+}
+
+func TestSourcesSectionsIgnoreEachOthersResults(t *testing.T) {
+	built := BuildPages(onePage([]model.DashboardSectionConfig{
+		{Type: "sources", Sources: model.SortOrder{"tmux"}},
+		{Type: "sources", Sources: model.SortOrder{[]any{"config", "zoxide"}}},
+	}), nil, SectionDeps{})
+	m := Model{configured: built.Configured, pages: built.pages(), width: 120, height: 30}.withLayout()
+	tmux := m.pages[0].rows[0][0].(*SessionsSection)
+	others := m.pages[0].rows[1][0].(*SessionsSection)
+
+	m, _ = m.broadcast(sessionsLoadedMsg{section: tmux, sessions: model.SeshSessions{
+		OrderedIndex: []string{"t"},
+		Directory:    model.SeshSessionMap{"t": {Src: "tmux", Name: "live"}},
+	}})
+	m, _ = m.broadcast(sessionsLoadedMsg{section: others, sessions: model.SeshSessions{
+		OrderedIndex: []string{"z"},
+		Directory:    model.SeshSessionMap{"z": {Src: "zoxide", Name: "~/c/dotfiles"}},
+	}})
+
+	assert.Equal(t, []string{"live"}, sessionNames(tmux.visible()))
+	assert.Equal(t, []string{"~/c/dotfiles"}, sessionNames(others.visible()))
 }

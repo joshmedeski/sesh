@@ -264,7 +264,7 @@ func TestRenderOpenRow_WideRowShowsFullBranch(t *testing.T) {
 }
 
 func TestRenderWorktreeRow_SelectedNumberUsesTextColor(t *testing.T) {
-	row := RenderWorktreeRowFocused(120, 16, IconCol("", "config", 1, true), true, true, 7503, "closed issue", "CLOSED", "main", "", nil)
+	row := RenderWorktreeRowFocused(120, nil, 16, IconCol("", "config", 1, true), true, true, 7503, "closed issue", "CLOSED", "main", "", nil)
 	selected := TextStyle().Inherit(cursorStyle(true))
 	assert.Contains(t, row, selected.Width(7).Render("#7503"))
 	assert.NotContains(t, row, DimmedStyle().Inherit(cursorStyle(true)).Width(7).Render("#7503"))
@@ -285,7 +285,7 @@ func TestIconCol_SelectedDimmedGlyphUsesTextColor(t *testing.T) {
 }
 
 func TestRenderOpenRow_IconIsFirstColumn(t *testing.T) {
-	row := ansi.Strip(RenderOpenRowFocused(100, 0, 0, IconCol("🏠", "tmux", 2, false), false, false, true, "nutiliti", "", 1, 1, "~/c/nu", "main", "", nil, nil))
+	row := ansi.Strip(RenderOpenRowFocused(100, nil, 0, 0, IconCol("🏠", "tmux", 2, false), false, false, true, "nutiliti", "", 1, 1, "~/c/nu", "main", "", nil, nil, Issue{}))
 	assert.True(t, strings.HasPrefix(row, "  🏠"), row)
 }
 
@@ -309,8 +309,8 @@ func TestColumnTitlesAlignWithRows(t *testing.T) {
 			delete(titles, "STATUS")
 		}
 		assertTitlesAlign(t,
-			RenderOpenHeader(width, 10, alias, 1),
-			RenderOpenRowFocused(width, 10, alias, icon, false, false, true, "mysession", "ms", 0, 1, "~/some/dir", "main", "+1", nil, nil),
+			RenderOpenHeader(width, nil, 10, alias, 1),
+			RenderOpenRowFocused(width, nil, 10, alias, icon, false, false, true, "mysession", "ms", 0, 1, "~/some/dir", "main", "+1", nil, nil, Issue{}),
 			titles)
 	}
 
@@ -320,16 +320,59 @@ func TestColumnTitlesAlignWithRows(t *testing.T) {
 		map[string]string{"NAME": "mysession", "ALIAS": pillLeftGlyph, "DIRECTORY": "~/some/dir", "BRANCH": "main", "STATUS": "+1"})
 
 	assertTitlesAlign(t,
-		RenderWorktreeHeader(100, 10, 1),
-		RenderWorktreeRowFocused(100, 10, icon, false, true, 358, "tmux command updates", "MERGED", "jam/358", "+1", &threeDaysAgo),
+		RenderWorktreeHeader(100, nil, 10, 1),
+		RenderWorktreeRowFocused(100, nil, 10, icon, false, true, 358, "tmux command updates", "MERGED", "jam/358", "+1", &threeDaysAgo),
 		map[string]string{"AGE": "3d", "ISSUE": "#358", "STATE": "merged", "TITLE": "tmux command updates", "BRANCH": "jam/358", "STATUS": "+1"})
 }
 
 func TestRenderWorktreeRowState(t *testing.T) {
 	for state, want := range map[string]string{"OPEN": "38;5;2mopen", "MERGED": "38;5;5mmerged", "CLOSED": "38;5;1mclosed"} {
-		row := RenderWorktreeRowFocused(100, 10, Col{Width: 1}, false, true, 1, "t", state, "", "", nil)
+		row := RenderWorktreeRowFocused(100, nil, 10, Col{Width: 1}, false, true, 1, "t", state, "", "", nil)
 		assert.Contains(t, row, want, state)
 	}
-	unknown := ansi.Strip(RenderWorktreeRowFocused(100, 10, Col{Width: 1}, false, true, 1, "t", "", "", "", nil))
+	unknown := ansi.Strip(RenderWorktreeRowFocused(100, nil, 10, Col{Width: 1}, false, true, 1, "t", "", "", "", nil))
 	assert.Equal(t, cellIndex(unknown, "#1")+7+1+6+1, cellIndex(unknown, "t "))
+}
+
+func TestOpenRowFollowsColumnOrder(t *testing.T) {
+	columns := []string{"title", "git_status", "git_branch"}
+	header := ansi.Strip(RenderOpenHeader(120, columns, 10, 0, 1))
+	row := ansi.Strip(RenderOpenRowFocused(120, columns, 10, 0, Col{Text: "x", Width: 1}, false, false, true, "mysession", "", 1, 1, "~/some/dir", "main", "+1", nil, nil, Issue{}))
+
+	assert.Less(t, cellIndex(header, "NAME"), cellIndex(header, "STATUS"))
+	assert.Less(t, cellIndex(header, "STATUS"), cellIndex(header, "BRANCH"))
+	assert.NotContains(t, header, "DIRECTORY")
+	assert.NotContains(t, row, "~/some/dir")
+	assert.NotContains(t, row, "x ")
+	assert.Equal(t, cellIndex(header, "STATUS"), cellIndex(row, "+1"))
+	assert.Equal(t, cellIndex(header, "BRANCH"), cellIndex(row, "main"))
+}
+
+func TestWorktreeRowFollowsColumnOrder(t *testing.T) {
+	columns := []string{"ghi_title", "ghi_number", "bogus"}
+	header := ansi.Strip(RenderWorktreeHeader(100, columns, 10, 1))
+	row := ansi.Strip(RenderWorktreeRowFocused(100, columns, 10, Col{Text: "x", Width: 1}, false, true, 358, "tmux command updates", "OPEN", "jam/358", "+1", nil))
+
+	assert.Equal(t, []string{"TITLE", "ISSUE"}, strings.Fields(header))
+	assert.Equal(t, cellIndex(header, "ISSUE"), cellIndex(row, "#358"))
+	assert.Equal(t, 0+2, cellIndex(row, "tmux"))
+	assert.NotContains(t, row, "open")
+}
+
+func TestOpenRowIssueColumns(t *testing.T) {
+	columns := []string{"title", "ghi_number", "ghi_state", "directory", "ghi_title"}
+	issue := Issue{Number: 358, Title: "tmux command updates", State: "OPEN"}
+	header := ansi.Strip(RenderOpenHeader(120, columns, 0, 0, 1))
+	row := ansi.Strip(RenderOpenRowFocused(120, columns, 0, 0, Col{Width: 1}, false, false, true, "sesh/358", "", 0, 1, "~/c/sesh/w/358", "", "", nil, nil, issue))
+
+	assert.Equal(t, lipgloss.Width(header), lipgloss.Width(row))
+	assert.Equal(t, 120, lipgloss.Width(row))
+	assert.Equal(t, cellIndex(header, "ISSUE"), cellIndex(row, "#358"))
+	assert.Equal(t, cellIndex(header, "STATE"), cellIndex(row, "open"))
+	assert.Equal(t, cellIndex(header, "TITLE"), cellIndex(row, "tmux command updates"))
+	assert.Equal(t, cellIndex(header, "DIRECTORY"), cellIndex(row, "~/c/sesh/w/358"))
+
+	none := ansi.Strip(RenderOpenRowFocused(120, columns, 0, 0, Col{Width: 1}, false, false, true, "dotfiles", "", 0, 1, "~/c/dotfiles", "", "", nil, nil, Issue{}))
+	assert.NotContains(t, none, "#0")
+	assert.Equal(t, 120, lipgloss.Width(none))
 }

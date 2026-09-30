@@ -7,9 +7,9 @@ import (
 )
 
 // RenderHelp renders the keybinding reference for the active page, padded to
-// width x height. sortable adds the sort bind for pages whose list can be
-// re-sorted.
-func RenderHelp(page, width, height int, sortable bool) string {
+// width x height. dashboard adds the pane binds of dashboard pages; sortable
+// adds the sort bind for panes whose list can be re-sorted.
+func RenderHelp(dashboard bool, width, height int, sortable bool) string {
 	binds := []keybind{
 		{"tab / shift+tab", "next / previous tab"},
 		{"j/k ↑/↓", "move"},
@@ -20,7 +20,7 @@ func RenderHelp(page, width, height int, sortable bool) string {
 	if sortable {
 		binds = append(binds, keybind{"s", "cycle sort"})
 	}
-	if page == 0 {
+	if dashboard {
 		binds = append(binds,
 			keybind{"ctrl+h / ctrl+l", "focus pane left / right"},
 			keybind{"ctrl+j / ctrl+k", "focus pane below / above"},

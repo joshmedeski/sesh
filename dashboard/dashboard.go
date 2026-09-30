@@ -11,27 +11,27 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
-const (
-	pageOpen       = 0
-	pageConfigured = 1
-)
+// dashPage is one dashboard tab: rows of panes, each row laid out side by side.
+type dashPage struct {
+	title string
+	rows  [][]Section
+}
 
-// Model is the dashboard TUI. It has two permanent tabs (page 0 "Dashboard" and
-// page 1 "Configured") followed by one tab per [[worktree]] config entry, in
-// config order. Tab 1 is built from the [[dashboard.section]] entries and lays
-// them out in two rows of shared frames: row 1 is the first section, row 2 is
-// the rest side by side. Every other tab is a single-pane list.
+// Model is the dashboard TUI. Its tabs are one per [[dashboard.page]], then
+// "Configured", then one per [[worktree]] config entry, in config order. A
+// dashboard page stacks its rows of shared frames vertically; every other tab
+// is a single-pane list.
 type Model struct {
 	config     model.DashboardConfig
+	pages      []dashPage
 	configured *ConfiguredSection
 	worktrees  []*WorktreeSection
-	widgets    []Section
 
-	// page is the active tab: pageOpen, pageConfigured, or pageConfigured+1+i
-	// for worktrees[i].
+	// page is the active tab: a dashboard page index, configuredPage(), or
+	// configuredPage()+1+i for worktrees[i].
 	page int
-	// focus is the focused pane index on page 0, row-major over the flat pane
-	// list [row1..., row2...]. Ignored on other pages.
+	// focus is the focused pane index on a dashboard page, row-major over its
+	// rows. Ignored on other pages.
 	focus int
 
 	width    int
@@ -43,10 +43,8 @@ type Model struct {
 	chosenWorktree *model.WorktreeConnectOpts
 
 	contentHeight int
-	row1Widths    []int
-	row2Widths    []int
-	row1Height    int
-	row2Height    int
+	rowWidths     [][]int
+	rowHeights    []int
 
 	lastHoveredSession string
 
@@ -54,7 +52,7 @@ type Model struct {
 }
 
 func New(config model.Config, deps SectionDeps) Model {
-	built := BuildSections(config.Dashboard, config.WorktreeConfigs, deps)
+	built := BuildPages(config.Dashboard, config.WorktreeConfigs, deps)
 	worktrees := make([]*WorktreeSection, 0, len(config.WorktreeConfigs))
 	for _, wc := range config.WorktreeConfigs {
 		worktrees = append(worktrees, NewWorktreeSection(wc, deps))
@@ -62,11 +60,9 @@ func New(config model.Config, deps SectionDeps) Model {
 
 	m := Model{
 		config:     config.Dashboard,
+		pages:      built.pages(),
 		configured: built.Configured,
 		worktrees:  worktrees,
-		widgets:    built.Widgets,
-		page:       pageOpen,
-		focus:      0,
 		width:      80,
 		height:     24,
 	}
@@ -74,13 +70,12 @@ func New(config model.Config, deps SectionDeps) Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	cmds := make([]tea.Cmd, 0, len(m.widgets)+len(m.worktrees)+1)
-	cmds = append(cmds, m.configured.Init())
+	cmds := []tea.Cmd{m.configured.Init()}
 	for _, w := range m.worktrees {
 		cmds = append(cmds, w.Init())
 	}
-	for _, w := range m.widgets {
-		cmds = append(cmds, w.Init())
+	for _, sec := range m.dashboardSections() {
+		cmds = append(cmds, sec.Init())
 	}
 	return tea.Batch(cmds...)
 }
@@ -111,8 +106,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // handleMouseClick maps a left click to the pane under the cursor: the pane is
-// focused (page 0) and list sections move their selection to the clicked row.
-// Clicks outside any pane are ignored.
+// focused (dashboard pages) and list sections move their selection to the
+// clicked row. Clicks outside any pane are ignored.
 func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	e := msg.Mouse()
 	if m.showHelp || e.Button != tea.MouseLeft {
@@ -122,7 +117,7 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
-	if m.page == pageOpen {
+	if m.onDashboardPage() {
 		m.focus = idx
 	}
 	if c, ok := sec.(Clicker); ok {
@@ -138,35 +133,29 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 func (m Model) hitTest(x, y int) (idx int, sec Section, row int, ok bool) {
 	// Content begins below the two-row header.
 	cy := y - 2
-	if m.page != pageOpen {
+	if !m.onDashboardPage() {
 		if cy < 0 || cy >= m.contentHeight || x < 1 || x >= m.width {
 			return 0, nil, 0, false
 		}
 		return 0, m.pageSection(), cy - 1, true
 	}
 
-	panes, widths, base, top := m.rowAt(cy)
-	if panes == nil {
-		return 0, nil, 0, false
+	top, base := 0, 0
+	for r, panes := range m.rows() {
+		if r >= len(m.rowHeights) {
+			break
+		}
+		if cy >= top && cy < top+m.rowHeights[r] {
+			col := paneCol(x, m.rowWidths[r])
+			if col < 0 {
+				return 0, nil, 0, false
+			}
+			return base + col, panes[col], cy - top - 1, true
+		}
+		top += m.rowHeights[r]
+		base += len(panes)
 	}
-	col := paneCol(x, widths)
-	if col < 0 {
-		return 0, nil, 0, false
-	}
-	return base + col, panes[col], cy - top - 1, true
-}
-
-// rowAt returns the panes, widths, flat base index, and top offset of the row
-// containing content y (row 1 or row 2 on page 0), or nil when y is outside
-// both rows.
-func (m Model) rowAt(cy int) (panes []Section, widths []int, base, top int) {
-	if cy >= 0 && cy < m.row1Height {
-		return m.row1Panes(), m.row1Widths, 0, 0
-	}
-	if m.row2Height > 0 && cy >= m.row1Height && cy < m.row1Height+m.row2Height {
-		return m.row2Panes(), m.row2Widths, len(m.row1Panes()), m.row1Height
-	}
-	return nil, nil, 0, 0
+	return 0, nil, 0, false
 }
 
 // paneCol returns the index of the pane containing column x, accounting for
@@ -204,12 +193,16 @@ func (m Model) broadcast(msg tea.Msg) (Model, tea.Cmd) {
 		}
 	}
 
-	for i := range m.widgets {
-		var w Section
-		w, c = m.widgets[i].Update(msg)
-		m.widgets[i] = w
-		if c != nil {
-			cmds = append(cmds, c)
+	for p := range m.pages {
+		for r := range m.pages[p].rows {
+			for i := range m.pages[p].rows[r] {
+				var w Section
+				w, c = m.pages[p].rows[r][i].Update(msg)
+				m.pages[p].rows[r][i] = w
+				if c != nil {
+					cmds = append(cmds, c)
+				}
+			}
 		}
 	}
 
@@ -253,11 +246,11 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "tab":
 		m.page = (m.page + 1) % m.pageCount()
 		m.focus = 0
-		return m, nil
+		return m.withLayout(), nil
 	case "shift+tab":
 		m.page = (m.page - 1 + m.pageCount()) % m.pageCount()
 		m.focus = 0
-		return m, nil
+		return m.withLayout(), nil
 	}
 
 	// Pane navigation (ctrl+h/l/j/k and the backspace alias). Matched by both
@@ -287,16 +280,16 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 // focusedSection returns the currently focused pane: the page's list, or the
-// focused section on page 0 (nil when there is none).
+// focused pane on a dashboard page (nil when there is none).
 func (m Model) focusedSection() Section {
-	if m.page != pageOpen {
+	if !m.onDashboardPage() {
 		return m.pageSection()
 	}
-	wi := m.flatWidgetIndex(m.focus)
-	if wi < 0 {
+	r, c, ok := m.paneAt(m.focus)
+	if !ok {
 		return nil
 	}
-	return m.widgets[wi]
+	return m.rows()[r][c]
 }
 
 // focusedPaneFiltering reports whether the focused pane is in filter mode.
@@ -355,19 +348,20 @@ func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	var updated Section
 
 	switch {
-	case m.page == pageConfigured:
+	case m.page == m.configuredPage():
 		updated, cmd = m.configured.Update(msg)
 		m.configured = updated.(*ConfiguredSection)
-	case m.page > pageConfigured:
-		updated, cmd = m.worktrees[m.page-pageConfigured-1].Update(msg)
-		m.worktrees[m.page-pageConfigured-1] = updated.(*WorktreeSection)
+	case m.page > m.configuredPage():
+		i := m.page - m.configuredPage() - 1
+		updated, cmd = m.worktrees[i].Update(msg)
+		m.worktrees[i] = updated.(*WorktreeSection)
 	default:
-		wi := m.flatWidgetIndex(m.focus)
-		if wi < 0 {
+		r, c, ok := m.paneAt(m.focus)
+		if !ok {
 			return m, nil
 		}
-		updated, cmd = m.widgets[wi].Update(msg)
-		m.widgets[wi] = updated
+		updated, cmd = m.pages[m.page].rows[r][c].Update(msg)
+		m.pages[m.page].rows[r][c] = updated
 	}
 
 	if msg.String() == "enter" {
@@ -388,188 +382,150 @@ func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 // moveFocus shifts the focused pane by delta across the flat row-major pane
-// list (wrapping) on page 0. No-op on page 1 or with a single pane.
+// list (wrapping) on a dashboard page. No-op elsewhere or with a single pane.
 func (m Model) moveFocus(delta int) Model {
-	if m.page != pageOpen {
+	if !m.onDashboardPage() {
 		return m
 	}
-	n := len(m.row1Panes()) + len(m.row2Panes())
+	n := m.paneCount()
 	if n <= 1 {
 		m.focus = 0
 		return m
 	}
-	m.focus += delta
-	m.focus %= n
-	if m.focus < 0 {
-		m.focus += n
-	}
+	m.focus = ((m.focus+delta)%n + n) % n
 	return m
 }
 
-// moveFocusRow moves focus between rows on page 0, keeping the column index
-// (clamped to the target row's length). dir > 0 moves down (row 1 → row 2),
-// dir < 0 moves up. No-op on page 1, when there is no second row, or when the
-// target row does not exist.
+// moveFocusRow moves focus to the row above (dir < 0) or below (dir > 0) on a
+// dashboard page, keeping the column index clamped to the target row's
+// length. No-op when there is no such row.
 func (m Model) moveFocusRow(dir int) Model {
-	if m.page != pageOpen {
+	if !m.onDashboardPage() {
 		return m
 	}
-	row1Len := len(m.row1Panes())
-	row2Len := len(m.row2Panes())
-	if row2Len == 0 {
+	r, c, ok := m.paneAt(m.focus)
+	if !ok {
 		return m
 	}
-
-	if m.focus < row1Len {
-		// Currently in row 1.
-		if dir <= 0 {
-			return m // no row above
-		}
-		m.focus = row1Len + min(m.focus, row2Len-1)
-	} else {
-		// Currently in row 2.
-		if dir >= 0 {
-			return m // no row below
-		}
-		m.focus = min(m.focus-row1Len, row1Len-1)
+	rows := m.rows()
+	target := r + dir
+	if dir == 0 || target < 0 || target >= len(rows) {
+		return m
 	}
+	m.focus = m.flatIndex(target, min(c, len(rows[target])-1))
 	return m
 }
 
-// jumpFocus sets focus to the pane at the given 1-based flat position on page 0, lazygit-style. Out-of-range digits and the configured
-// page are a no-op.
+// jumpFocus sets focus to the pane at the given 1-based flat position on a
+// dashboard page, lazygit-style. Out-of-range digits and list pages are a
+// no-op.
 func (m Model) jumpFocus(digit int) Model {
-	if m.page != pageOpen {
+	if !m.onDashboardPage() {
 		return m
 	}
-	n := len(m.row1Panes()) + len(m.row2Panes())
-	idx := digit - 1
-	if idx >= 0 && idx < n {
+	if idx := digit - 1; idx >= 0 && idx < m.paneCount() {
 		m.focus = idx
 	}
 	return m
 }
 
-// detailsIndex returns the index of the details widget in m.widgets, or -1.
-// The details widget is detected through its LayoutRow marker (row 1) so the
-// root package never needs to import the concrete widget type.
-func (m Model) detailsIndex() int {
-	for i, w := range m.widgets {
-		if _, ok := w.(interface{ LayoutRow() int }); ok {
-			return i
-		}
-	}
-	return -1
+func (m Model) onDashboardPage() bool {
+	return m.page < len(m.pages)
 }
 
-// paneOrder returns the indices of every non-details widget, in config order.
-func (m Model) paneOrder() []int {
-	order := make([]int, 0, len(m.widgets))
-	for i, w := range m.widgets {
-		if _, ok := w.(interface{ LayoutRow() int }); ok {
-			continue
-		}
-		order = append(order, i)
-	}
-	return order
+func (m Model) configuredPage() int {
+	return len(m.pages)
 }
 
-// row1Panes returns row 1: the first section, followed by the details widget
-// (if configured).
-func (m Model) row1Panes() []Section {
-	var panes []Section
-	if order := m.paneOrder(); len(order) > 0 {
-		panes = append(panes, m.widgets[order[0]])
-	}
-	if di := m.detailsIndex(); di >= 0 {
-		panes = append(panes, m.widgets[di])
-	}
-	return panes
-}
-
-// row2Order returns the widget indices for row 2: every non-details widget
-// after the first, in config order.
-func (m Model) row2Order() []int {
-	order := m.paneOrder()
-	if len(order) == 0 {
+// rows returns the active dashboard page's rows, or nil on a list page.
+func (m Model) rows() [][]Section {
+	if !m.onDashboardPage() {
 		return nil
 	}
-	return order[1:]
+	return m.pages[m.page].rows
 }
 
-// row2Panes returns row 2: every non-details widget after the first.
-func (m Model) row2Panes() []Section {
-	order := m.row2Order()
-	panes := make([]Section, 0, len(order))
-	for _, wi := range order {
-		panes = append(panes, m.widgets[wi])
+func (m Model) paneCount() int {
+	n := 0
+	for _, row := range m.rows() {
+		n += len(row)
 	}
-	return panes
+	return n
 }
 
-// flatWidgetIndex maps a flat row-major focus index on page 0 to a widget
-// index, or -1 when no pane sits there.
-func (m Model) flatWidgetIndex(idx int) int {
-	order := m.paneOrder()
+// paneAt maps a flat focus index to its row and column on the active page.
+func (m Model) paneAt(idx int) (row, col int, ok bool) {
 	if idx < 0 {
-		return -1
+		return 0, 0, false
 	}
-	if idx == 0 {
-		if len(order) > 0 {
-			return order[0]
+	for r, panes := range m.rows() {
+		if idx < len(panes) {
+			return r, idx, true
 		}
-		return m.detailsIndex()
+		idx -= len(panes)
 	}
-	row1Len := len(m.row1Panes())
-	if idx < row1Len {
-		return m.detailsIndex()
-	}
-	row2 := m.row2Order()
-	i := idx - row1Len
-	if i < 0 || i >= len(row2) {
-		return -1
-	}
-	return row2[i]
+	return 0, 0, false
 }
 
-// syncHoveredSession keeps the Details widget in sync with the hovered session
-// in the first sessions list. It only runs on page 0 (avoids background tmux
-// queries from tab 2).
-func (m Model) syncHoveredSession() (Model, tea.Cmd) {
-	if m.page != pageOpen {
-		return m, nil
+func (m Model) flatIndex(row, col int) int {
+	idx := col
+	for _, panes := range m.rows()[:row] {
+		idx += len(panes)
 	}
+	return idx
+}
 
-	dsIdx := -1
-	for i, w := range m.widgets {
-		if _, ok := w.(interface{ LayoutRow() int }); ok {
-			dsIdx = i
-			break
+// dashboardSections returns every pane on every dashboard page.
+func (m Model) dashboardSections() []Section {
+	var out []Section
+	for _, p := range m.pages {
+		for _, row := range p.rows {
+			out = append(out, row...)
 		}
 	}
-	if dsIdx < 0 {
+	return out
+}
+
+func (m Model) pageSections() []Section {
+	var out []Section
+	for _, row := range m.rows() {
+		out = append(out, row...)
+	}
+	return out
+}
+
+// syncHoveredSession keeps a Details widget in sync with the hovered session
+// in the first sessions list on the active dashboard page. It only runs on
+// dashboard pages (avoids background tmux queries from list tabs).
+func (m Model) syncHoveredSession() (Model, tea.Cmd) {
+	if !m.onDashboardPage() {
 		return m, nil
 	}
-
-	sessions := m.firstSessions()
+	sessions := firstSessions(m.pageSections())
 	if sessions == nil {
 		return m, nil
 	}
-	name, path, windows := sessions.HoveredSession()
-	if name == m.lastHoveredSession {
-		return m, nil
+	for r, row := range m.rows() {
+		for c, sec := range row {
+			if _, ok := sec.(interface{ LayoutRow() int }); !ok {
+				continue
+			}
+			name, path, windows := sessions.HoveredSession()
+			if name == m.lastHoveredSession {
+				return m, nil
+			}
+			m.lastHoveredSession = name
+			updated, cmd := sec.Update(core.HoveredSessionMsg{Name: name, Path: path, Windows: windows})
+			m.pages[m.page].rows[r][c] = updated
+			return m, cmd
+		}
 	}
-	m.lastHoveredSession = name
-
-	updated, cmd := m.widgets[dsIdx].Update(core.HoveredSessionMsg{Name: name, Path: path, Windows: windows})
-	m.widgets[dsIdx] = updated
-	return m, cmd
+	return m, nil
 }
 
-// firstSessions returns the first sessions list on page 0, or nil.
-func (m Model) firstSessions() *SessionsSection {
-	for _, w := range m.widgets {
-		if s, ok := w.(*SessionsSection); ok {
+func firstSessions(sections []Section) *SessionsSection {
+	for _, sec := range sections {
+		if s, ok := sec.(*SessionsSection); ok {
 			return s
 		}
 	}
@@ -577,45 +533,39 @@ func (m Model) firstSessions() *SessionsSection {
 }
 
 // activeCount is the tmux session count shown in the header, or -1 to hide it
-// when page 0 has no sessions list.
+// when no dashboard page has a sessions list.
 func (m Model) activeCount() int {
-	s := m.firstSessions()
+	s := firstSessions(m.dashboardSections())
 	if s == nil {
 		return -1
 	}
 	return s.TmuxCount()
 }
 
-// withLayout recomputes the layout: content height (header 2 + footer 1), the
-// per-row widths, and the row heights.
+// withLayout recomputes the layout for the active page: content height
+// (header 2 + footer 1), the per-row widths, and the row heights.
 func (m Model) withLayout() Model {
 	m.contentHeight = max(m.height-3, 1)
-	m.row1Widths = m.computePaneWidths(m.row1Panes())
-	m.row2Widths = m.computePaneWidths(m.row2Panes())
-	m.row1Height, m.row2Height = m.computeRowHeights()
+	rows := m.rows()
+	m.rowWidths = make([][]int, len(rows))
+	for r, panes := range rows {
+		m.rowWidths[r] = m.computePaneWidths(panes)
+	}
+	m.rowHeights = splitHeights(m.contentHeight, len(rows))
 	return m
 }
 
-// computeRowHeights splits contentHeight between the two rows. Row 1 gets 3/5
-// when a second row exists; otherwise row 1 takes the full height. Degenerate
-// tiny terminals are clamped so both rows stay usable.
-func (m Model) computeRowHeights() (int, int) {
-	if len(m.row2Panes()) == 0 {
-		return m.contentHeight, 0
+// splitHeights divides total evenly between n rows, giving any remainder to
+// the first rows. Every row gets at least one line.
+func splitHeights(total, n int) []int {
+	heights := make([]int, n)
+	for i := range heights {
+		heights[i] = max(total/n, 1)
+		if i < total%n {
+			heights[i]++
+		}
 	}
-	row1 := m.contentHeight * 3 / 5
-	row2 := m.contentHeight - row1
-	if row2 < 4 {
-		row1 = m.contentHeight - 4
-		row2 = 4
-	}
-	if row1 < 1 {
-		row1 = 1
-	}
-	if row2 < 1 {
-		row2 = 1
-	}
-	return row1, row2
+	return heights
 }
 
 // computePaneWidths allocates column widths to a single row of panes. Panes
@@ -695,16 +645,16 @@ func (m Model) View() tea.View {
 		return tea.NewView("Terminal too small for dashboard")
 	}
 
-	header := render.RenderHeader(m.page, m.activeCount(), m.width, m.worktreeTabTitles()...)
+	header := render.RenderHeader(m.page, m.activeCount(), m.width, m.tabTitles()...)
 	filtering, query := m.focusedFilterState()
-	footer := render.RenderFooter(m.page, m.width, m.sortLabel(), filtering, query)
+	footer := render.RenderFooter(m.onDashboardPage(), m.width, m.sortLabel(), filtering, query)
 
 	var content string
 	switch {
 	case m.showHelp:
-		content = render.RenderHelp(m.page, m.width, m.contentHeight, m.sortLabel() != "")
-	case m.page == pageOpen:
-		content = m.viewOpenPage()
+		content = render.RenderHelp(m.onDashboardPage(), m.width, m.contentHeight, m.sortLabel() != "")
+	case m.onDashboardPage():
+		content = m.viewDashboardPage()
 	default:
 		content = m.viewListPage()
 	}
@@ -721,17 +671,14 @@ func (m Model) View() tea.View {
 	return v
 }
 
-func (m Model) viewOpenPage() string {
-	row1 := m.row1Panes()
-	row2 := m.row2Panes()
-
-	row1Frame := m.renderRow(row1, m.row1Widths, m.row1Height, 0)
-	if len(row2) == 0 {
-		return row1Frame
+func (m Model) viewDashboardPage() string {
+	frames := make([]string, 0, len(m.rows()))
+	base := 0
+	for r, panes := range m.rows() {
+		frames = append(frames, m.renderRow(panes, m.rowWidths[r], m.rowHeights[r], base))
+		base += len(panes)
 	}
-
-	row2Frame := m.renderRow(row2, m.row2Widths, m.row2Height, len(row1))
-	return lipgloss.JoinVertical(lipgloss.Top, row1Frame, row2Frame)
+	return lipgloss.JoinVertical(lipgloss.Top, frames...)
 }
 
 // renderRow builds the shared frame for one row of panes. flatOffset is the
@@ -773,21 +720,26 @@ func (m Model) ChosenWorktree() *model.WorktreeConnectOpts {
 }
 
 func (m Model) pageCount() int {
-	return pageConfigured + 1 + len(m.worktrees)
+	return len(m.pages) + 1 + len(m.worktrees)
 }
 
-// pageSection returns the single pane of a list page (any page but Open).
+// pageSection returns the single pane of a list page (Configured or a
+// worktree tab).
 func (m Model) pageSection() Section {
-	if m.page == pageConfigured {
+	if m.page == m.configuredPage() {
 		return m.configured
 	}
-	return m.worktrees[m.page-pageConfigured-1]
+	return m.worktrees[m.page-m.configuredPage()-1]
 }
 
-func (m Model) worktreeTabTitles() []string {
-	titles := make([]string, len(m.worktrees))
-	for i, w := range m.worktrees {
-		titles[i] = w.TabTitle()
+func (m Model) tabTitles() []string {
+	titles := make([]string, 0, m.pageCount())
+	for _, p := range m.pages {
+		titles = append(titles, p.title)
+	}
+	titles = append(titles, "Configured")
+	for _, w := range m.worktrees {
+		titles = append(titles, w.TabTitle())
 	}
 	return titles
 }
