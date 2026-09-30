@@ -41,14 +41,15 @@ type Registry map[string]SectionFactory
 // kept as an alias of an unconfigured "sources" section (tmux sessions only).
 var registry = Registry{
 	// "details": sections.NewDetailsSection,
-	"system":   sections.NewSystemSection,
-	"ssh":      sections.NewSSHSection,
-	"git":      sections.NewGitSection,
-	"custom":   sections.NewCustomSection,
-	"docker":   sections.NewDockerSection,
-	"workmux":  sections.NewWorkmuxSection,
-	"sources":  NewSourcesSection,
-	"sessions": NewSourcesSection,
+	"system":     sections.NewSystemSection,
+	"ssh":        sections.NewSSHSection,
+	"git":        sections.NewGitSection,
+	"custom":     sections.NewCustomSection,
+	"docker":     sections.NewDockerSection,
+	"workmux":    sections.NewWorkmuxSection,
+	"sources":    NewSourcesSection,
+	"sessions":   NewSourcesSection,
+	"configured": NewConfiguredSection,
 }
 
 // BuiltPage is one dashboard page: its tab title and rows of panes.
@@ -57,11 +58,9 @@ type BuiltPage struct {
 	Rows  [][]Section
 }
 
-// Built is the result of BuildPages: the Configured tab's list plus the
-// dashboard pages.
+// Built is the result of BuildPages: the dashboard pages.
 type Built struct {
-	Configured *ConfiguredSection
-	Pages      []BuiltPage
+	Pages []BuiltPage
 }
 
 func (b Built) pages() []dashPage {
@@ -72,7 +71,7 @@ func (b Built) pages() []dashPage {
 	return pages
 }
 
-// BuildPages builds the Configured list and one dashboard page per
+// BuildPages builds one dashboard page per
 // `[[dashboard.page]]`, each from its rows of section tables. Unknown section
 // types and unmatched worktree repos are logged and skipped, and so are rows
 // and pages left empty. With no usable page there is a single "Dashboard"
@@ -112,12 +111,7 @@ func BuildPages(cfg model.DashboardConfig, worktrees []model.WorktreeConfig, dep
 		}
 	}
 
-	configured := NewConfiguredSection(
-		model.DashboardSectionConfig{Type: "configured", Title: "Configured"},
-		deps,
-	).(*ConfiguredSection)
-
-	return Built{Configured: configured, Pages: pages}
+	return Built{Pages: pages}
 }
 
 func buildSection(sc model.DashboardSectionConfig, worktrees []model.WorktreeConfig, deps SectionDeps) (Section, bool) {

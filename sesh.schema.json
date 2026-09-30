@@ -10,7 +10,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "description": "Section type: 'sources', 'worktree', 'system', 'ssh', 'git', 'custom', 'docker', or 'workmux'"
+          "description": "Section type: 'sources', 'worktree', 'system', 'ssh', 'git', 'custom', 'docker', 'workmux', or 'configured'"
         },
         "title": {
           "type": "string",

@@ -6,10 +6,9 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// RenderHelp renders the keybinding reference for the active page, padded to
-// width x height. dashboard adds the pane binds of dashboard pages; sortable
-// adds the sort bind for panes whose list can be re-sorted.
-func RenderHelp(dashboard bool, width, height int, sortable bool) string {
+// RenderHelp renders the keybinding reference, padded to width x height.
+// sortable adds the sort bind for panes whose list can be re-sorted.
+func RenderHelp(width, height int, sortable bool) string {
 	binds := []keybind{
 		{"tab / shift+tab", "next / previous tab"},
 		{"j/k ↑/↓", "move"},
@@ -20,16 +19,12 @@ func RenderHelp(dashboard bool, width, height int, sortable bool) string {
 	if sortable {
 		binds = append(binds, keybind{"s", "cycle sort"})
 	}
-	if dashboard {
-		binds = append(binds,
-			keybind{"ctrl+h / ctrl+l", "focus pane left / right"},
-			keybind{"ctrl+j / ctrl+k", "focus pane below / above"},
-			keybind{"1-9", "focus pane"},
-			keybind{"ctrl+d", "kill tmux session"},
-			keybind{"click", "focus pane and select row"},
-		)
-	}
 	binds = append(binds,
+		keybind{"ctrl+h / ctrl+l", "focus pane left / right"},
+		keybind{"ctrl+j / ctrl+k", "focus pane below / above"},
+		keybind{"1-9", "focus pane"},
+		keybind{"ctrl+d", "kill tmux session"},
+		keybind{"click", "focus pane and select row"},
 		keybind{"?", "close help"},
 		keybind{"q / esc", "quit"},
 	)

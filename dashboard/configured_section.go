@@ -20,7 +20,7 @@ type configuredLoadedMsg struct {
 	err      error
 }
 
-// ConfiguredSection lists pre-configured sessions from the sesh config (Tab 2).
+// ConfiguredSection lists pre-configured sessions from the sesh config.
 // Selecting a session sets Chosen() to the session name; the CLI connector
 // opens it.
 type ConfiguredSection struct {

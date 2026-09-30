@@ -421,7 +421,7 @@ func TestSourcesSectionsIgnoreEachOthersResults(t *testing.T) {
 		{Type: "sources", Sources: model.SortOrder{"tmux"}},
 		{Type: "sources", Sources: model.SortOrder{[]any{"config", "zoxide"}}},
 	}), nil, SectionDeps{})
-	m := Model{configured: built.Configured, pages: built.pages(), width: 120, height: 30}.withLayout()
+	m := Model{pages: built.pages(), width: 120, height: 30}.withLayout()
 	tmux := m.pages[0].rows[0][0].(*SessionsSection)
 	others := m.pages[0].rows[1][0].(*SessionsSection)
 

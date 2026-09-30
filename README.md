@@ -1412,11 +1412,10 @@ exactly the session that command would have created, `startup_command` included.
 ### Dashboard
 
 `sesh dashboard` (aliases `dash`, `d`) opens a full-screen dashboard inside tmux.
-Its tabs are the pages you configure, followed by a **Configured** tab that lists
-your `[[session]]` entries. Each page is a grid of panes ("sections"): session
-lists, worktrees, git status, docker containers, SSH hosts, system metrics, or the
-output of any shell command. Pressing `enter` on a session or worktree connects to
-it.
+Its tabs are the pages you configure. Each page is a grid of panes ("sections"):
+session lists, your `[[session]]` entries, worktrees, git status, docker
+containers, SSH hosts, system metrics, or the output of any shell command.
+Pressing `enter` on a session or worktree connects to it.
 
 Each `[[dashboard.page]]` is one tab. Its `sections` is a list of rows, from top to
 bottom, and each row is a list of sections placed side by side from left to right.
@@ -1462,6 +1461,7 @@ Every section accepts an optional `title`.
 | `ssh`      | Whether each SSH host can be reached                           | `ssh = [{ name = "nas", host = "10.0.0.2", port = 22, username = "me" }]`        |
 | `system`   | CPU and memory usage                                           |                                                                                  |
 | `workmux`  | [workmux](https://github.com/raine/workmux) agents             |                                                                                  |
+| `configured` | Your `[[session]]` entries, with alias, startup command and running state |                                                                    |
 
 In `sources`, nested groups are merged into one list, just like the top-level
 `sort_order`: `sources = ["tmux", ["config", "zoxide"]]` shows tmux sessions

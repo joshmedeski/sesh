@@ -20,8 +20,8 @@ func TestRenderHeaderSmallDropsCount(t *testing.T) {
 	assert.NotContains(t, h, "active")
 }
 
-func TestRenderFooterPage0(t *testing.T) {
-	f := RenderFooter(true, 120, "name", false, "")
+func TestRenderFooter(t *testing.T) {
+	f := RenderFooter(120, "name", false, "")
 	assert.Contains(t, f, "ctrl+d")
 	assert.Contains(t, f, "1-9")
 	assert.Contains(t, f, "panes")
@@ -29,29 +29,22 @@ func TestRenderFooterPage0(t *testing.T) {
 	assert.NotContains(t, f, "widgets")
 }
 
-func TestRenderFooterPage0DropsLabelsWhenOverflow(t *testing.T) {
+func TestRenderFooterDropsLabelsWhenOverflow(t *testing.T) {
 	// The labeled tab-1 footer (after dropping the `t group` bind) is 94 cols,
 	// so at 90 cols labels are dropped (keys only) rather than wrapping.
-	f := RenderFooter(true, 90, "name", false, "")
+	f := RenderFooter(90, "name", false, "")
 	assert.Contains(t, f, "1-9")
 	assert.NotContains(t, f, "panes")
 }
 
-func TestRenderFooterPage1(t *testing.T) {
-	f := RenderFooter(false, 100, "name", false, "")
-	assert.NotContains(t, f, "ctrl+d")
-	assert.Contains(t, f, "filter")
-	assert.Contains(t, f, "refresh")
-}
-
 func TestRenderFooterNarrowKeysOnly(t *testing.T) {
-	f := RenderFooter(true, 50, "name", false, "")
+	f := RenderFooter(50, "name", false, "")
 	assert.Contains(t, f, "ctrl+d")
 	assert.NotContains(t, f, "kill")
 }
 
 func TestRenderFooterTiny(t *testing.T) {
-	f := RenderFooter(true, 20, "name", false, "")
+	f := RenderFooter(20, "name", false, "")
 	assert.Contains(t, f, "tab")
 	assert.Contains(t, f, "j/k")
 	assert.Contains(t, f, "enter")
@@ -59,7 +52,7 @@ func TestRenderFooterTiny(t *testing.T) {
 }
 
 func TestRenderFooterFiltering(t *testing.T) {
-	f := RenderFooter(true, 120, "name", true, "foo")
+	f := RenderFooter(120, "name", true, "foo")
 	assert.Contains(t, f, "filter:")
 	assert.Contains(t, f, "foo")
 	assert.Contains(t, f, "esc")

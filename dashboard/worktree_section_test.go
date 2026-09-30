@@ -135,7 +135,7 @@ func TestFooterShowsWorktreeSortLabel(t *testing.T) {
 
 func TestWorktreeConfigsAddNoTabs(t *testing.T) {
 	m := New(model.Config{WorktreeConfigs: []model.WorktreeConfig{{Repo: "joshmedeski/sesh"}}}, SectionDeps{})
-	assert.Equal(t, []string{"Dashboard", "Configured"}, m.tabTitles())
+	assert.Equal(t, []string{"Dashboard"}, m.tabTitles())
 }
 
 func TestBuildSectionsWorktreeMatchesRepo(t *testing.T) {

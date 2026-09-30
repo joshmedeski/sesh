@@ -41,28 +41,10 @@ type keybind struct {
 	label string
 }
 
-// footerBinds returns the keybinds (with their right-pinned help bind) for a
-// active page, dashboard or list. sortLabel is the current sort mode's display
-// label, shown when non-empty.
-func footerBinds(dashboard bool, sortLabel string) ([]keybind, keybind) {
+// footerBinds returns the keybinds (with their right-pinned help bind).
+// sortLabel is the current sort mode's display label, shown when non-empty.
+func footerBinds(sortLabel string) ([]keybind, keybind) {
 	right := keybind{"?", "help"}
-	if dashboard {
-		binds := []keybind{
-			{"tab", "page"},
-			{"j/k", "move"},
-			{"enter", "open"},
-		}
-		if sortLabel != "" {
-			binds = append(binds, keybind{"s", "sort:" + sortLabel})
-		}
-		return append(binds,
-			keybind{"/", "filter"},
-			keybind{"r", "refresh"},
-			keybind{"1-9", "panes"},
-			keybind{"ctrl+d", "kill"},
-			keybind{"q", "quit"},
-		), right
-	}
 	binds := []keybind{
 		{"tab", "page"},
 		{"j/k", "move"},
@@ -74,21 +56,23 @@ func footerBinds(dashboard bool, sortLabel string) ([]keybind, keybind) {
 	return append(binds,
 		keybind{"/", "filter"},
 		keybind{"r", "refresh"},
+		keybind{"1-9", "panes"},
+		keybind{"ctrl+d", "kill"},
 		keybind{"q", "quit"},
 	), right
 }
 
-// RenderFooter renders the one-row footer for the active page. While the
+// RenderFooter renders the one-row footer. While the
 // focused pane is filtering, a filter line replaces the binds entirely. Small
 // terminals: <70 cols drop labels (keys only), <30 keep only tab j/k enter q ?.
 // If the fully-labeled footer would overflow the available width, labels are
 // dropped so the footer never wraps.
-func RenderFooter(dashboard bool, width int, sortLabel string, filtering bool, query string) string {
+func RenderFooter(width int, sortLabel string, filtering bool, query string) string {
 	if filtering {
 		return renderFilterFooter(query, width)
 	}
 
-	binds, right := footerBinds(dashboard, sortLabel)
+	binds, right := footerBinds(sortLabel)
 
 	if width < 30 {
 		binds = []keybind{{"tab", ""}, {"j/k", ""}, {"enter", ""}, {"q", ""}}
