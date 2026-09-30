@@ -238,7 +238,7 @@ func (s *ConfiguredSection) ViewBorderless(width, height int, focused bool) (str
 	b.WriteString("\n")
 	for i := s.offset; i < end; i++ {
 		sess := visible[i]
-		path := render.CollapseHome(sess.Path, s.deps.HomeDir)
+		path := shortenHome(s.deps, sess.Path)
 		b.WriteString(render.RenderConfiguredRowFocused(width, aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, focused, sess.Name, sess.Alias, sess.StartupCommand, s.running[sess.Name], path, sess.Branch, sess.GitStatus))
 		b.WriteString("\n")
 	}

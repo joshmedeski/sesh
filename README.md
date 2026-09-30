@@ -1326,6 +1326,23 @@ sesh worktree connect --browser   # or: sesh wt c -b
 The URL's `org/repo` is matched against your `[[worktree]]` entries by `repo`. Both
 `/issues/N` and `/pull/N` URLs are supported. macOS only.
 
+#### Opening a worktree's issue or PR in the browser
+
+`sesh worktree browse` goes the other way: from the tmux session you're focused on,
+it opens the issue the worktree belongs to. Inside tmux it uses the calling session;
+from outside (a Leader Key or Raycast binding) it uses the session on the client sesh
+resolves.
+
+```bash
+sesh worktree browse           # open https://github.com/<repo>/issues/<n>
+sesh worktree browse --pr      # open the PR for the worktree's branch (via gh)
+sesh worktree browse --print   # print the URL instead of opening it
+```
+
+The URL opens in `[browser].application` when set (macOS), otherwise in the system
+default browser. GitHub redirects `/issues/<n>` to `/pull/<n>` when the number is a
+PR, so foreign PR checkouts work without `--pr`.
+
 #### Listing worktrees with their issue titles
 
 `sesh worktree list` shows every worktree for a repo with the issue title beside

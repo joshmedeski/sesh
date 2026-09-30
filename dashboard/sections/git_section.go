@@ -57,25 +57,30 @@ func (s *GitSection) fetchRepos() tea.Msg {
 	if len(paths) == 0 {
 		return gitReposLoadedMsg{section: s, repos: nil}
 	}
-
-	repos := make([]gitRepo, 0, len(paths))
+	var matchingPaths []string
 	for _, p := range paths {
-		expanded := p
-		if strings.HasPrefix(p, "~/") {
-			expanded = filepath.Join(s.deps.HomeDir, p[2:])
+		if expanded, err := s.deps.Home.ExpandPath(p); err == nil {
+			p = expanded
 		}
-
-		branch, err := s.deps.Runner.Run("git", "-C", expanded, "rev-parse", "--abbrev-ref", "HEAD")
+		matches, err := filepath.Glob(p)
+		if err != nil || len(matches) == 0 {
+			matches = []string{p}
+		}
+		matchingPaths = append(matchingPaths, matches...)
+	}
+	repos := make([]gitRepo, 0, len(matchingPaths))
+	for _, p := range matchingPaths {
+		branch, err := s.deps.Runner.Run("git", "-C", p, "rev-parse", "--abbrev-ref", "HEAD")
 		if err != nil || strings.TrimSpace(branch) == "" {
 			repos = append(repos, gitRepo{
 				Path:   p,
-				Name:   filepath.Base(expanded),
+				Name:   filepath.Base(p),
 				IsRepo: false,
 			})
 			continue
 		}
 
-		statusOut, err := s.deps.Runner.Run("git", "-C", expanded, "status", "--porcelain")
+		statusOut, err := s.deps.Runner.Run("git", "-C", p, "status", "--porcelain")
 		status := ""
 		if err == nil {
 			lines := strings.Split(strings.TrimRight(statusOut, "\n"), "\n")
@@ -128,7 +133,7 @@ func (s *GitSection) fetchRepos() tea.Msg {
 
 		repos = append(repos, gitRepo{
 			Path:   p,
-			Name:   filepath.Base(expanded),
+			Name:   filepath.Base(p),
 			Branch: strings.TrimSpace(branch),
 			Status: status,
 			IsRepo: true,

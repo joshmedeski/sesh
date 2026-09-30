@@ -420,8 +420,8 @@ func (s *SessionsSection) HoveredSession() (name, path string, windows int) {
 	sess := s.visible()[s.cursor]
 	name = sess.Name
 	path = sess.Path
-	if after, ok := strings.CutPrefix(path, s.deps.HomeDir); ok {
-		path = filepath.Join("~", after)
+	if shortened, err := s.deps.Home.ShortenHome(path); err == nil {
+		path = shortened
 	}
 	windows = sess.Windows
 	return name, path, windows
@@ -476,7 +476,7 @@ func (s *SessionsSection) renderItem(i, width int) string {
 func (s *SessionsSection) renderItemFocused(i, width int, focused bool) string {
 	visible := s.visible()
 	sess := visible[i]
-	dir := render.CollapseHome(sess.Path, s.deps.HomeDir)
+	dir := shortenHome(s.deps, sess.Path)
 	current := sess.Name == s.currentName && s.currentName != ""
 	return render.RenderOpenRowFocused(width, s.columns, branchColumnWidth(visible), aliasColumnWidth(visible), iconCol(s.deps, sess, "", i == s.cursor), i == s.cursor, current, focused, sess.Name, sess.Alias, sess.Attached, sess.Windows, dir, sess.Branch, sess.GitStatus, sess.LastAttached, sess.Alerts, s.issueFor(sess.Path))
 }

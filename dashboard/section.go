@@ -33,6 +33,26 @@ func iconCol(deps SectionDeps, sess model.SeshSession, fallbackSrc string, selec
 	return render.IconCol(custom, src, max(deps.IconWidth, 1), selected)
 }
 
+func shortenHome(deps SectionDeps, path string) string {
+	if deps.Home == nil {
+		return path
+	}
+	if shortened, err := deps.Home.ShortenHome(path); err == nil {
+		return shortened
+	}
+	return path
+}
+
+func expandHome(deps SectionDeps, path string) string {
+	if deps.Home == nil {
+		return path
+	}
+	if expanded, err := deps.Home.ExpandPath(path); err == nil {
+		return expanded
+	}
+	return path
+}
+
 type SectionFactory func(cfg model.DashboardSectionConfig, deps SectionDeps) Section
 
 type Registry map[string]SectionFactory

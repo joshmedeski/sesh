@@ -20,6 +20,50 @@ func NewWorktreeCommand(base *BaseDeps) *cobra.Command {
 	cmd.AddCommand(newWorktreeConnectCommand(base))
 	cmd.AddCommand(newWorktreeListCommand(base))
 	cmd.AddCommand(newWorktreePickerCommand(base))
+	cmd.AddCommand(newWorktreeBrowseCommand(base))
+	return cmd
+}
+
+func newWorktreeBrowseCommand(base *BaseDeps) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "browse",
+		Aliases: []string{"b"},
+		Short:   "Open the focused worktree session's issue/PR in the browser",
+		Long: `Open the GitHub issue for the worktree session you're focused on.
+
+The worktree is found from the focused tmux session's path: the calling session
+inside tmux, or the resolved client's session outside it. --pr opens the pull
+request for the worktree's branch instead. The URL opens in [browser].application
+when set, otherwise in the system default browser.`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			deps, err := buildDeps(cmd, base)
+			if err != nil {
+				return err
+			}
+
+			pr, _ := cmd.Flags().GetBool("pr")
+			printOnly, _ := cmd.Flags().GetBool("print")
+
+			sessionPath, err := deps.Tmux.FocusedSessionPath()
+			if err != nil {
+				return fmt.Errorf("couldn't find the focused tmux session: %w", err)
+			}
+			url, err := deps.Worktree.BrowseURL(sessionPath, pr)
+			if err != nil {
+				return err
+			}
+			if printOnly {
+				fmt.Println(url)
+				return nil
+			}
+			return deps.Browser.Open(url)
+		},
+	}
+
+	cmd.Flags().BoolP("pr", "p", false, "Open the pull request for the worktree's branch")
+	cmd.Flags().Bool("print", false, "Print the URL instead of opening it")
+
 	return cmd
 }
 

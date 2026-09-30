@@ -157,3 +157,36 @@ func TestSwitchOrAttachNamesTheResolvedClient(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "switching to tmux session: dotfiles", response)
 }
+
+func TestFocusedSessionPathFromPaneLeavesTargetToTmux(t *testing.T) {
+	mockOs := oswrap.NewMockOs(t)
+	mockShell := shell.NewMockShell(t)
+	mockOs.EXPECT().Getenv("SESH_CLIENT").Return("")
+	mockOs.EXPECT().Getenv("TMUX").Return("/tmp/default,3746,1")
+	mockOs.EXPECT().Getenv("TMUX_PANE").Return("%3")
+	mockShell.EXPECT().Cmd("tmux", "display-message", "-p", "#{session_path}").
+		Return("/repo/.wk/409", nil)
+
+	path, err := NewTmux(mockOs, mockShell, "").FocusedSessionPath()
+	require.NoError(t, err)
+	assert.Equal(t, "/repo/.wk/409", path)
+}
+
+func TestFocusedSessionPathOutsideTmuxTargetsResolvedClientSession(t *testing.T) {
+	mockOs := oswrap.NewMockOs(t)
+	mockShell := shell.NewMockShell(t)
+	mockOs.EXPECT().Getenv("SESH_CLIENT").Return("")
+	mockOs.EXPECT().Getenv("TMUX").Return("")
+	mockOs.EXPECT().Getenv("TMUX_PANE").Return("")
+	mockShell.EXPECT().ListCmd("tmux", "list-clients", "-F", clientFormat).
+		Return([]string{
+			"/dev/ttys001::/dev/ttys001::$1::100",
+			"/dev/ttys002::/dev/ttys002::$2::200",
+		}, nil)
+	mockShell.EXPECT().Cmd("tmux", "display-message", "-p", "-t", "$2", "#{session_path}").
+		Return("/repo/.wk/409", nil)
+
+	path, err := NewTmux(mockOs, mockShell, "").FocusedSessionPath()
+	require.NoError(t, err)
+	assert.Equal(t, "/repo/.wk/409", path)
+}

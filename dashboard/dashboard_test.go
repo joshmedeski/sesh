@@ -265,7 +265,7 @@ func TestTabSwitchRecomputesLayoutPerPage(t *testing.T) {
 // --- New ---
 
 func TestNewBuildsDefaultModel(t *testing.T) {
-	m := New(model.Config{}, SectionDeps{HomeDir: "/home/user"})
+	m := New(model.Config{}, SectionDeps{})
 	require.Len(t, m.pages, 1)
 	assert.Equal(t, "Dashboard", m.pages[0].title)
 	assert.Equal(t, 0, m.page)

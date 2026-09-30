@@ -5,6 +5,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/shell"
@@ -12,8 +13,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/worktree"
 )
 
-// Section is the contract every dashboard pane implements: the two permanent
-// lists (sessions, configured) and the optional widget sections.
+// Section is the contract every dashboard pane implements.
 type Section interface {
 	Name() string
 	Init() tea.Cmd
@@ -54,9 +54,9 @@ type SectionDeps struct {
 	Git       git.Git
 	Connector connector.Connector
 	Shell     shell.Shell
+	Home      home.Home
 	Runner    CommandRunner
 	Worktree  worktree.Worktree
-	HomeDir   string
 	// Icon resolves a session's configured icon; nil when none are configured.
 	Icon      func(model.SeshSession) string
 	IconWidth int

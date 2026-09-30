@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/dashboard/render"
+	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/worktree"
 )
@@ -60,7 +61,9 @@ func TestWorktreeRowShowsNumberTitleAndBranch(t *testing.T) {
 }
 
 func TestWorktreeIconFallsBackToRepoRootIcon(t *testing.T) {
-	deps := SectionDeps{HomeDir: "/home/u", IconWidth: 2, Icon: func(sess model.SeshSession) string {
+	mockHome := new(home.MockHome)
+	mockHome.On("ExpandPath", "~/c/nu").Return("/home/u/c/nu", nil)
+	deps := SectionDeps{Home: mockHome, IconWidth: 2, Icon: func(sess model.SeshSession) string {
 		if sess.Path == "/home/u/c/nu" {
 			return "🏠"
 		}

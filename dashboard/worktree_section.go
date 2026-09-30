@@ -225,16 +225,9 @@ func (s *WorktreeSection) selectItem() {
 // the config glyph.
 func (s *WorktreeSection) iconCol(sess model.SeshSession, selected bool) render.Col {
 	if s.deps.Icon != nil && s.deps.Icon(sess) == "" {
-		sess = model.SeshSession{Path: expandHome(s.config.Path, s.deps.HomeDir)}
+		sess = model.SeshSession{Path: expandHome(s.deps, s.config.Path)}
 	}
 	return iconCol(s.deps, sess, "config", selected)
-}
-
-func expandHome(path, homeDir string) string {
-	if path == "~" || strings.HasPrefix(path, "~/") {
-		return homeDir + path[1:]
-	}
-	return path
 }
 
 func (s *WorktreeSection) ViewBorderless(width, height int, focused bool) (string, string) {

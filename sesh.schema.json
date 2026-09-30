@@ -268,7 +268,7 @@
     },
     "browser": {
       "type": "object",
-      "description": "Read the active browser tab URL (macOS only) for `sesh worktree connect --browser`.",
+      "description": "Browser for `sesh worktree connect --browser` (reads the active tab, macOS only) and `sesh worktree browse` (opens URLs in it).",
       "additionalProperties": false,
       "properties": {
         "application": {

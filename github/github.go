@@ -30,6 +30,9 @@ type Github interface {
 	PrView(repo string, number int) (PullRequest, bool, error)
 	// CurrentUser returns the authenticated gh user's login.
 	CurrentUser() (string, error)
+	// PrURL returns the URL of the pull request for the branch checked out in
+	// dir. found is false (with nil error) when the branch has no PR.
+	PrURL(dir string) (url string, found bool, err error)
 	// PrCheckout runs `gh pr checkout` inside dir (a worktree).
 	PrCheckout(dir string, repo string, number int) (string, error)
 	// Issue returns the GitHub issue for the branch checked out at path.
@@ -91,6 +94,14 @@ func (g *RealGithub) CurrentUser() (string, error) {
 
 func (g *RealGithub) PrCheckout(dir string, repo string, number int) (string, error) {
 	return g.shell.CmdInDir(dir, "gh", "pr", "checkout", strconv.Itoa(number), "--repo", repo)
+}
+
+func (g *RealGithub) PrURL(dir string) (string, bool, error) {
+	out, err := g.shell.CmdInDir(dir, "gh", "pr", "view", "--json", "url", "--jq", ".url")
+	if err != nil || out == "" {
+		return "", false, nil
+	}
+	return out, true, nil
 }
 
 var issueNumberRe = regexp.MustCompile(`\d+`)

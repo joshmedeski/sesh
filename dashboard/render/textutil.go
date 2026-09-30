@@ -3,7 +3,6 @@ package render
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -37,18 +36,12 @@ func formatAge(lastAttached *time.Time) string {
 	}
 }
 
-// CollapseHome replaces the home directory prefix of path with "~".
-func CollapseHome(path, homeDir string) string {
-	if homeDir == "" {
-		return path
+// Paren wraps s in parentheses when non-empty, otherwise returns "".
+func Paren(s string) string {
+	if s == "" {
+		return ""
 	}
-	if path == homeDir {
-		return "~"
-	}
-	if strings.HasPrefix(path, homeDir+string(filepath.Separator)) {
-		return "~" + path[len(homeDir):]
-	}
-	return path
+	return "(" + s + ")"
 }
 
 // TruncateRight truncates s to maxRunes runes, appending "…" when truncated.
