@@ -14,42 +14,11 @@ import (
 	"github.com/joshmedeski/sesh/v2/worktree"
 )
 
-func worktreeTestModel(repos ...string) Model {
-	m := testModel()
-	for _, repo := range repos {
-		m.worktrees = append(m.worktrees, NewWorktreeSection(model.WorktreeConfig{Repo: repo}, SectionDeps{}))
-	}
-	return m.withLayout()
-}
-
 func loadedWorktrees(repo string) worktreesLoadedMsg {
 	return worktreesLoadedMsg{repo: repo, entries: []model.WorktreeEntry{
 		{Number: 358, Path: "/r/w/358", Title: "tmux command updates", State: "OPEN"},
 		{Number: 411, Path: "/r/w/411", Title: "configurable dashboard", State: "CLOSED"},
 	}}
-}
-
-func TestTabCyclesThroughWorktreeTabsInConfigOrder(t *testing.T) {
-	m := worktreeTestModel("joshmedeski/sesh", "Nutiliti/nutiliti")
-	var pages []string
-	for range m.pageCount() {
-		m = updateModel(m, pressKey("tab"))
-		if m.page > m.configuredPage() {
-			pages = append(pages, m.pageSection().Name())
-		}
-	}
-	assert.Equal(t, []string{"joshmedeski/sesh", "Nutiliti/nutiliti"}, pages)
-	assert.Equal(t, 0, m.page)
-
-	m = updateModel(m, pressKey("shift+tab"))
-	assert.Equal(t, "Nutiliti/nutiliti", m.pageSection().Name())
-}
-
-func TestHeaderListsWorktreeTabsByRepoName(t *testing.T) {
-	m := worktreeTestModel("joshmedeski/sesh", "Nutiliti/nutiliti")
-	m.width = 120
-	header := ansi.Strip(m.View().Content)
-	assert.Contains(t, header, "Dashboard │ Configured │ sesh │ nutiliti")
 }
 
 func TestWorktreeSectionIgnoresOtherReposEntries(t *testing.T) {
@@ -67,17 +36,6 @@ func TestWorktreeSectionFetchListsItsRepo(t *testing.T) {
 	s := NewWorktreeSection(model.WorktreeConfig{Repo: "joshmedeski/sesh"}, SectionDeps{Worktree: wt})
 	msg := s.Init()()
 	assert.Equal(t, loadedWorktrees("joshmedeski/sesh"), msg)
-}
-
-func TestEnterOnWorktreeTabChoosesWorktree(t *testing.T) {
-	m := worktreeTestModel("joshmedeski/sesh")
-	m.page = m.configuredPage() + 1
-	m.worktrees[0].Update(loadedWorktrees("joshmedeski/sesh"))
-	m = updateModel(m, pressKey("j"))
-	m = updateModel(m, pressKey("enter"))
-	require.NotNil(t, m.ChosenWorktree())
-	assert.Equal(t, model.WorktreeConnectOpts{Number: 411, Repo: "joshmedeski/sesh"}, *m.ChosenWorktree())
-	assert.Equal(t, "", m.Chosen())
 }
 
 func TestWorktreeFilterMatchesNumberAndTitle(t *testing.T) {
@@ -161,13 +119,23 @@ func TestWorktreeSortModes(t *testing.T) {
 }
 
 func TestFooterShowsWorktreeSortLabel(t *testing.T) {
-	m := worktreeTestModel("o/r")
+	m := New(model.Config{
+		WorktreeConfigs: []model.WorktreeConfig{{Repo: "o/r"}},
+		Dashboard: onePage([]model.DashboardSectionConfig{
+			{Type: "custom"},
+			{Type: "worktree", Repo: "o/r"},
+		}),
+	}, SectionDeps{})
 	m.width = 120
-	m = updateModel(m, pressKey("tab"))
 	assert.NotContains(t, ansi.Strip(m.View().Content), "sort:")
-	m = updateModel(m, pressKey("tab"))
+	m = updateModel(m, pressKey("ctrl+l"))
 	m = updateModel(m, pressKey("s"))
 	assert.Contains(t, ansi.Strip(m.View().Content), "sort:age")
+}
+
+func TestWorktreeConfigsAddNoTabs(t *testing.T) {
+	m := New(model.Config{WorktreeConfigs: []model.WorktreeConfig{{Repo: "joshmedeski/sesh"}}}, SectionDeps{})
+	assert.Equal(t, []string{"Dashboard", "Configured"}, m.tabTitles())
 }
 
 func TestBuildSectionsWorktreeMatchesRepo(t *testing.T) {
@@ -205,14 +173,13 @@ func TestDashboardWorktreePaneConnects(t *testing.T) {
 }
 
 func TestWorktreeColumnsFromConfig(t *testing.T) {
-	worktrees := []model.WorktreeConfig{{Repo: "joshmedeski/sesh", Columns: []string{"ghi_number", "ghi_title"}}}
+	worktrees := []model.WorktreeConfig{{Repo: "joshmedeski/sesh"}}
 	built := BuildPages(onePage([]model.DashboardSectionConfig{
 		{Type: "worktree", Repo: "joshmedeski/sesh"},
 		{Type: "worktree", Repo: "joshmedeski/sesh", Columns: []string{"ghi_title", "title", "age"}},
 	}), worktrees, SectionDeps{})
 
 	require.Len(t, built.widgets(), 2)
-	assert.Equal(t, []string{"ghi_number", "ghi_title"}, built.widgets()[0].(*WorktreeSection).columns)
+	assert.Nil(t, built.widgets()[0].(*WorktreeSection).columns)
 	assert.Equal(t, []string{"ghi_title", "age"}, built.widgets()[1].(*WorktreeSection).columns)
-	assert.Nil(t, NewWorktreeSection(model.WorktreeConfig{Repo: "o/r"}, SectionDeps{}).columns)
 }

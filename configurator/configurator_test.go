@@ -559,10 +559,3 @@ func TestGetConfig_DashboardPages(t *testing.T) {
 		assert.Equal(t, "system", pages[1].Sections[0][0].Type)
 	}
 }
-
-func TestGetConfig_WorktreeColumnsStrictMode(t *testing.T) {
-	config, err := configFromTOML(t, "strict_mode = true\n[[worktree]]\nrepo = \"o/r\"\ncolumns = [\"ghi_number\", \"ghi_title\"]\n")
-	assert.NoError(t, err)
-	require.Len(t, config.WorktreeConfigs, 1)
-	assert.Equal(t, []string{"ghi_number", "ghi_title"}, config.WorktreeConfigs[0].Columns)
-}

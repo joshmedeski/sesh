@@ -566,14 +566,6 @@
           "create_command": {
             "type": "string",
             "description": "Shell command to run instead of startup_command on the connect that creates the worktree"
-          },
-          "columns": {
-            "type": "array",
-            "description": "Columns the worktree tab shows, in order. Defaults to all of them.",
-            "items": {
-              "type": "string",
-              "enum": ["icon", "ghi_number", "ghi_state", "ghi_title", "git_branch", "git_status", "age"]
-            }
           }
         },
         "additionalProperties": false

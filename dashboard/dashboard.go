@@ -18,17 +18,14 @@ type dashPage struct {
 }
 
 // Model is the dashboard TUI. Its tabs are one per [[dashboard.page]], then
-// "Configured", then one per [[worktree]] config entry, in config order. A
-// dashboard page stacks its rows of shared frames vertically; every other tab
-// is a single-pane list.
+// "Configured". A dashboard page stacks its rows of shared frames vertically;
+// the Configured tab is a single-pane list.
 type Model struct {
 	config     model.DashboardConfig
 	pages      []dashPage
 	configured *ConfiguredSection
-	worktrees  []*WorktreeSection
 
-	// page is the active tab: a dashboard page index, configuredPage(), or
-	// configuredPage()+1+i for worktrees[i].
+	// page is the active tab: a dashboard page index or configuredPage().
 	page int
 	// focus is the focused pane index on a dashboard page, row-major over its
 	// rows. Ignored on other pages.
@@ -53,16 +50,11 @@ type Model struct {
 
 func New(config model.Config, deps SectionDeps) Model {
 	built := BuildPages(config.Dashboard, config.WorktreeConfigs, deps)
-	worktrees := make([]*WorktreeSection, 0, len(config.WorktreeConfigs))
-	for _, wc := range config.WorktreeConfigs {
-		worktrees = append(worktrees, NewWorktreeSection(wc, deps))
-	}
 
 	m := Model{
 		config:     config.Dashboard,
 		pages:      built.pages(),
 		configured: built.Configured,
-		worktrees:  worktrees,
 		width:      80,
 		height:     24,
 	}
@@ -71,9 +63,6 @@ func New(config model.Config, deps SectionDeps) Model {
 
 func (m Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{m.configured.Init()}
-	for _, w := range m.worktrees {
-		cmds = append(cmds, w.Init())
-	}
 	for _, sec := range m.dashboardSections() {
 		cmds = append(cmds, sec.Init())
 	}
@@ -182,15 +171,6 @@ func (m Model) broadcast(msg tea.Msg) (Model, tea.Cmd) {
 	m.configured = cfg.(*ConfiguredSection)
 	if c != nil {
 		cmds = append(cmds, c)
-	}
-
-	for i := range m.worktrees {
-		var w Section
-		w, c = m.worktrees[i].Update(msg)
-		m.worktrees[i] = w.(*WorktreeSection)
-		if c != nil {
-			cmds = append(cmds, c)
-		}
 	}
 
 	for p := range m.pages {
@@ -347,15 +327,10 @@ func (m Model) routeKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var updated Section
 
-	switch {
-	case m.page == m.configuredPage():
+	if m.page == m.configuredPage() {
 		updated, cmd = m.configured.Update(msg)
 		m.configured = updated.(*ConfiguredSection)
-	case m.page > m.configuredPage():
-		i := m.page - m.configuredPage() - 1
-		updated, cmd = m.worktrees[i].Update(msg)
-		m.worktrees[i] = updated.(*WorktreeSection)
-	default:
+	} else {
 		r, c, ok := m.paneAt(m.focus)
 		if !ok {
 			return m, nil
@@ -714,22 +689,18 @@ func (m Model) Chosen() string {
 	return m.chosen
 }
 
-// ChosenWorktree returns the worktree selected on a worktree tab, or nil.
+// ChosenWorktree returns the worktree selected in a worktree section, or nil.
 func (m Model) ChosenWorktree() *model.WorktreeConnectOpts {
 	return m.chosenWorktree
 }
 
 func (m Model) pageCount() int {
-	return len(m.pages) + 1 + len(m.worktrees)
+	return len(m.pages) + 1
 }
 
-// pageSection returns the single pane of a list page (Configured or a
-// worktree tab).
+// pageSection returns the single pane of the Configured list page.
 func (m Model) pageSection() Section {
-	if m.page == m.configuredPage() {
-		return m.configured
-	}
-	return m.worktrees[m.page-m.configuredPage()-1]
+	return m.configured
 }
 
 func (m Model) tabTitles() []string {
@@ -738,9 +709,6 @@ func (m Model) tabTitles() []string {
 		titles = append(titles, p.title)
 	}
 	titles = append(titles, "Configured")
-	for _, w := range m.worktrees {
-		titles = append(titles, w.TabTitle())
-	}
 	return titles
 }
 

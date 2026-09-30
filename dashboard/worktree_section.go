@@ -22,8 +22,8 @@ var worktreeSortModes = []string{"issue", "age", "state", "status"}
 
 var issueStateOrder = map[string]int{"OPEN": 0, "MERGED": 1, "CLOSED": 2}
 
-// WorktreeSection lists the worktrees of one [[worktree]] config entry on its
-// own tab. Selecting a row sets ChosenWorktree.
+// WorktreeSection lists the worktrees of one [[worktree]] config entry.
+// Selecting a row sets ChosenWorktree.
 type WorktreeSection struct {
 	config   model.WorktreeConfig
 	deps     SectionDeps
@@ -46,22 +46,11 @@ func NewWorktreeSection(cfg model.WorktreeConfig, deps SectionDeps) *WorktreeSec
 		loading:  true,
 		sortMode: worktreeSortModes[0],
 		changes:  map[string]int{},
-		columns:  resolveColumns(cfg.Columns, render.WorktreeColumns, "worktree"),
 	}
 }
 
 // SortLabel implements Sorter.
 func (s *WorktreeSection) SortLabel() string { return s.sortMode }
-
-// TabTitle is the repo name without its owner, e.g. "sesh" for
-// "joshmedeski/sesh".
-func (s *WorktreeSection) TabTitle() string {
-	repo := s.config.Repo
-	if repo == "" {
-		return s.config.Path
-	}
-	return repo[strings.LastIndex(repo, "/")+1:]
-}
 
 func (s *WorktreeSection) Width() float64 { return 0 }
 

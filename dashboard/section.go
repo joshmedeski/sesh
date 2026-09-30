@@ -133,9 +133,7 @@ func buildSection(sc model.DashboardSectionConfig, worktrees []model.WorktreeCon
 		}
 		ws := NewWorktreeSection(wc, deps)
 		ws.title = sc.Title
-		if len(sc.Columns) > 0 {
-			ws.columns = resolveColumns(sc.Columns, render.WorktreeColumns, "worktree")
-		}
+		ws.columns = resolveColumns(sc.Columns, render.WorktreeColumns, "worktree")
 		return ws, true
 	}
 	factory, ok := registry[sc.Type]
