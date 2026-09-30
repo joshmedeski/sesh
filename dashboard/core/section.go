@@ -5,6 +5,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/shell"
 	"github.com/joshmedeski/sesh/v2/tmux"
@@ -52,6 +53,6 @@ type SectionDeps struct {
 	Git       git.Git
 	Connector connector.Connector
 	Shell     shell.Shell
+	Home      home.Home
 	Runner    CommandRunner
-	HomeDir   string
 }

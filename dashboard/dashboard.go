@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/joshmedeski/sesh/v2/home"
 
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/dashboard/core"
@@ -52,15 +53,24 @@ type Model struct {
 	lastHoveredSession string
 }
 
-func New(config model.DashboardConfig, tmux tmux.Tmux, lister lister.Lister, git git.Git, connector connector.Connector, sh shell.Shell, runner CommandRunner, homeDir string) Model {
+func New(
+	config model.DashboardConfig,
+	tmux tmux.Tmux,
+	lister lister.Lister,
+	git git.Git,
+	connector connector.Connector,
+	sh shell.Shell,
+	h home.Home,
+	runner CommandRunner,
+) Model {
 	deps := SectionDeps{
 		Tmux:      tmux,
 		Lister:    lister,
 		Git:       git,
 		Connector: connector,
 		Shell:     sh,
+		Home:      h,
 		Runner:    runner,
-		HomeDir:   homeDir,
 	}
 
 	built := BuildSections(config, deps)

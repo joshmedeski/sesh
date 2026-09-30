@@ -104,15 +104,14 @@ func (s *DetailsSection) VenvCheck(path string) tea.Cmd {
 			return venvLoadedMsg{active: "no", name: "none"}
 		}
 
-		targetPath := path
-		if strings.HasPrefix(targetPath, "~") {
-			targetPath = filepath.Join(s.deps.HomeDir, targetPath[1:])
+		if expanded, err := s.deps.Home.ExpandPath(path); err == nil {
+			path = expanded
 		}
 
 		venvDirs := []string{".venv", "venv", "env"}
 
 		for _, dir := range venvDirs {
-			fullPath := filepath.Join(targetPath, dir)
+			fullPath := filepath.Join(path, dir)
 			info, err := filepath.Glob(fullPath)
 			if err == nil && len(info) > 0 {
 				return venvLoadedMsg{

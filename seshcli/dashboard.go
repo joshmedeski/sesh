@@ -27,13 +27,16 @@ func NewDashboardCommand(base *BaseDeps) *cobra.Command {
 				return errors.New("dashboard requires being inside a tmux session")
 			}
 
-			// check user home dir
-			homeDir, err := deps.Os.UserHomeDir()
-			if err != nil {
-				return fmt.Errorf("couldn't get home directory: %w", err)
-			}
-
-			m := dashboard.New(deps.Config.Dashboard, deps.Tmux, deps.Lister, deps.Git, deps.Connector, deps.Shell, dashboard.NewCommandRunner(deps.Exec), homeDir)
+			m := dashboard.New(
+				deps.Config.Dashboard,
+				deps.Tmux,
+				deps.Lister,
+				deps.Git,
+				deps.Connector,
+				deps.Shell,
+				deps.Home,
+				dashboard.NewCommandRunner(deps.Exec),
+			)
 			prog := tea.NewProgram(m)
 			result, err := prog.Run()
 			if err != nil {

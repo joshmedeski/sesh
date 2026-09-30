@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -178,7 +179,10 @@ func TestSessionsFilterEscCancelsWithoutSelecting(t *testing.T) {
 // --- Current-session highlight ---
 
 func TestSessionsSectionRenderItemCurrentHighlight(t *testing.T) {
+	mockHome := new(home.MockHome)
+	mockHome.On("ShortenHome", "/home/u/active").Return("~/active", nil)
 	s := &SessionsSection{
+		deps:        SectionDeps{Home: mockHome},
 		sessions:    []model.SeshSession{{Name: "active", Path: "/home/u/active"}},
 		currentName: "active",
 		ListState: ListState{
@@ -190,7 +194,10 @@ func TestSessionsSectionRenderItemCurrentHighlight(t *testing.T) {
 }
 
 func TestSessionsSectionRenderItemNonCurrentNotAccent(t *testing.T) {
+	mockHome := new(home.MockHome)
+	mockHome.On("ShortenHome", "/home/u/active").Return("~/active", nil)
 	s := &SessionsSection{
+		deps:        SectionDeps{Home: mockHome},
 		sessions:    []model.SeshSession{{Name: "active", Path: "/home/u/active"}},
 		currentName: "other",
 		ListState: ListState{
