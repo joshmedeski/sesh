@@ -123,6 +123,34 @@ func (t *RealTmux) ResolveClient() string {
 	return client
 }
 
+// FocusedSessionPath returns the path of the session the user is looking at:
+// the calling pane's session inside tmux, or the resolved client's session
+// from outside it.
+func (t *RealTmux) FocusedSessionPath() (string, error) {
+	args := []string{"display-message", "-p"}
+	if session := t.resolvedClientSession(); session != "" {
+		args = append(args, "-t", session)
+	}
+	return t.shell.Cmd(t.bin, append(args, "#{session_path}")...)
+}
+
+func (t *RealTmux) resolvedClientSession() string {
+	client := t.ResolveClient()
+	if client == "" {
+		return ""
+	}
+	clients, err := t.ListClients()
+	if err != nil {
+		return ""
+	}
+	for _, c := range clients {
+		if c.Name == client {
+			return c.SessionID
+		}
+	}
+	return ""
+}
+
 // switchClient moves the resolved client, falling back to letting tmux pick
 // one when sesh cannot name it.
 func (t *RealTmux) switchClient(targetSession string) (string, error) {

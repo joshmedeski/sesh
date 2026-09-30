@@ -2,6 +2,7 @@ package worktree
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,6 +23,9 @@ type Worktree interface {
 	Connect(opts model.WorktreeConnectOpts) (string, error)
 	// List returns the worktrees for a repo, each paired with its issue title.
 	List(opts model.WorktreeListOpts) ([]model.WorktreeEntry, error)
+	// BrowseURL returns the GitHub URL for the worktree containing
+	// sessionPath: its issue, or with pr the pull request for its branch.
+	BrowseURL(sessionPath string, pr bool) (string, error)
 }
 
 type RealWorktree struct {
@@ -255,6 +259,62 @@ func (w *RealWorktree) worktreeRoot(cfg model.WorktreeConfig, repoPath string) s
 		return dir
 	}
 	return w.path.Join(repoPath, dir)
+}
+
+func (w *RealWorktree) BrowseURL(sessionPath string, pr bool) (string, error) {
+	if sessionPath == "" {
+		return "", fmt.Errorf("no focused tmux session")
+	}
+	cfg, number, dir, ok := w.worktreeAt(sessionPath)
+	if !ok {
+		return "", fmt.Errorf("%s is not a worktree (no [[worktree]] root contains it)", sessionPath)
+	}
+	if !pr {
+		if cfg.Repo == "" {
+			return "", fmt.Errorf(
+				"the [[worktree]] block for path %q is missing `repo = \"org/repo\"`", cfg.Path)
+		}
+		return fmt.Sprintf("https://github.com/%s/issues/%d", cfg.Repo, number), nil
+	}
+	url, found, err := w.github.PrURL(dir)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("no pull request found for worktree %d", number)
+	}
+	return url, nil
+}
+
+// worktreeAt finds the [[worktree]] block whose root contains path, and the
+// numbered worktree directory under that root.
+func (w *RealWorktree) worktreeAt(path string) (model.WorktreeConfig, int, string, bool) {
+	path = w.resolveSymlinks(path)
+	for _, cfg := range w.config.WorktreeConfigs {
+		repoPath, err := w.home.ExpandPath(cfg.Path)
+		if err != nil {
+			continue
+		}
+		root := w.resolveSymlinks(w.worktreeRoot(cfg, repoPath))
+		rel, err := filepath.Rel(root, path)
+		if err != nil || rel == "." || strings.HasPrefix(rel, "..") {
+			continue
+		}
+		key := strings.Split(filepath.ToSlash(rel), "/")[0]
+		number, err := strconv.Atoi(key)
+		if err != nil {
+			continue
+		}
+		return cfg, number, w.path.Join(root, key), true
+	}
+	return model.WorktreeConfig{}, 0, "", false
+}
+
+func (w *RealWorktree) resolveSymlinks(path string) string {
+	if resolved, err := w.path.EvalSymlinks(path); err == nil {
+		return resolved
+	}
+	return path
 }
 
 var issueRefRe = regexp.MustCompile(`#(\d+)`)

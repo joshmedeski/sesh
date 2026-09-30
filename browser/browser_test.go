@@ -78,3 +78,30 @@ func TestActiveTabURLPropagatesShellError(t *testing.T) {
 	require.Error(t, err)
 	assert.False(t, ok)
 }
+
+func TestOpen(t *testing.T) {
+	const url = "https://github.com/joshmedeski/sesh/issues/409"
+	tests := []struct {
+		name        string
+		goos        string
+		application string
+		bin         string
+		args        []any
+	}{
+		{"configured application on macOS", "darwin", "Helium", "open", []any{"-a", "Helium", url}},
+		{"default browser on macOS", "darwin", "", "open", []any{url}},
+		{"xdg-open on linux ignores application", "linux", "Helium", "xdg-open", []any{url}},
+		{"windows", "windows", "", "rundll32", []any{"url.dll,FileProtocolHandler", url}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := runtimewrap.NewMockRuntime(t)
+			rt.EXPECT().GOOS().Return(tt.goos)
+			s := shell.NewMockShell(t)
+			s.EXPECT().Cmd(tt.bin, tt.args...).Return("", nil)
+
+			b := NewBrowser(rt, s, model.BrowserConfig{Application: tt.application})
+			require.NoError(t, b.Open(url))
+		})
+	}
+}
