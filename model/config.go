@@ -208,7 +208,7 @@ type (
 		// pane: "line" (default), "thick", "double", or "none" for no divider.
 		// Empty means unset.
 		PreviewBorder string `toml:"preview_border"`
-		// GroupSeparator draws a faint rule between the sort_order groups in
+		// GroupSeparator draws a gray rule between the sort_order groups in
 		// the picker, so the boundary between live tmux sessions and everywhere
 		// else is visible once a merged group interleaves the sources. Opt-in:
 		// with a flat sort_order every source is its own group, and a rule

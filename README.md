@@ -902,7 +902,7 @@ exactly as it always has: merging is opt-in.
 
 Once sources are interleaved, the boundary between live tmux sessions and
 everywhere else stops being obvious from position alone. `group_separator` draws
-a faint rule between the `sort_order` groups in the picker:
+a gray rule between the `sort_order` groups in the picker:
 
 ```toml
 [tui]

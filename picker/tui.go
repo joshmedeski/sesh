@@ -150,7 +150,7 @@ type Options struct {
 	PreviewBorder string
 	// PreviewFunc renders previews. Nil disables the pane entirely.
 	PreviewFunc PreviewFunc
-	// GroupSeparator draws a faint rule between sort_order groups. It is
+	// GroupSeparator draws a gray rule between sort_order groups. It is
 	// suppressed while the list is filtered, where the groups no longer occupy
 	// contiguous ranges.
 	GroupSeparator bool
@@ -1222,7 +1222,7 @@ func (m Model) View() tea.View {
 
 const filterIndent = "  "
 
-// separatorRule draws the boundary between two sort_order groups: a faint rule
+// separatorRule draws the boundary between two sort_order groups: a gray rule
 // across the list column, so a glance says whether the row under the cursor is
 // a live tmux session or somewhere to go.
 func (m Model) separatorRule() string {
