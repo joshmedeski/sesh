@@ -405,6 +405,10 @@
           "create_command": {
             "type": "string",
             "description": "Shell command to run instead of startup_command on the connect that creates the worktree"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon shown for every session under this repo's worktree root, in the picker and `sesh list --json`/`sesh worktree list --json`. Any string: a nerd font glyph or an emoji."
           }
         },
         "additionalProperties": false

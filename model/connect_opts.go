@@ -34,6 +34,7 @@ type WorktreeEntry struct {
 	Path   string // absolute path to the worktree
 	Title  string // issue title; empty when unknown or not yet fetched
 	State  string // "OPEN" | "CLOSED" | "MERGED"; empty when unknown
+	Icon   string
 	// Created is when the worktree was added; zero when unknown.
 	Created time.Time
 }

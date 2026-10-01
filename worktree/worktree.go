@@ -251,14 +251,7 @@ func (w *RealWorktree) sameDir(a, b string) bool {
 }
 
 func (w *RealWorktree) worktreeRoot(cfg model.WorktreeConfig, repoPath string) string {
-	dir := cfg.WorktreeDir
-	if dir == "" {
-		dir = ".wk"
-	}
-	if strings.HasPrefix(dir, "/") {
-		return dir
-	}
-	return w.path.Join(repoPath, dir)
+	return cfg.Root(repoPath)
 }
 
 func (w *RealWorktree) BrowseURL(sessionPath string, pr bool) (string, error) {

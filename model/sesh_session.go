@@ -33,6 +33,7 @@ type (
 		Tmuxp                 string         // Name of the tmuxp config
 		Wildcard              string         // The [[wildcard]] pattern matching the session path
 		TmuxWindows           []TmuxWindow   // The live windows of a tmux session
+		Worktree              *WorktreeInfo  // The [[worktree]] issue the session path is under
 
 		// Group is the index of the sort_order block this session was listed
 		// under. Sessions sharing one are contiguous in OrderedIndex, which is
@@ -44,6 +45,13 @@ type (
 		LastAttached *time.Time // Last attach time
 		Activity     *time.Time // Last activity time
 		Alerts       []string   // Active alerts (e.g. bell, activity)
+	}
+
+	WorktreeInfo struct {
+		Repo   string
+		Number int
+		Title  string
+		State  string
 	}
 
 	SeshSrcs struct {

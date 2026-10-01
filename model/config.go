@@ -1,5 +1,10 @@
 package model
 
+import (
+	"cmp"
+	"path/filepath"
+)
+
 // DefaultAliasAutoConnectDelay is the grace period used when
 // [tui] alias_auto_connect_delay is not set.
 const DefaultAliasAutoConnectDelay = "150ms"
@@ -219,6 +224,7 @@ type (
 		Fetch          *bool  `toml:"fetch"`           // default true (nil => true)
 		StartupCommand string `toml:"startup_command"` // runs when connecting to a worktree that already existed
 		CreateCommand  string `toml:"create_command"`  // runs instead, on the connect that creates the worktree
+		Icon           string `toml:"icon"`
 	}
 
 	// BrowserConfig configures reading the active browser tab's URL so
@@ -256,4 +262,12 @@ func (s SortOrder) SortGroups() []SortGroup {
 		}
 	}
 	return groups
+}
+
+func (c WorktreeConfig) Root(repoPath string) string {
+	dir := cmp.Or(c.WorktreeDir, ".wk")
+	if filepath.IsAbs(dir) {
+		return filepath.Clean(dir)
+	}
+	return filepath.Join(repoPath, dir)
 }

@@ -24,7 +24,7 @@ func iconTestHome(t *testing.T) home.Home {
 // iconTestWildcards builds the real lister so wildcard icons are matched by the
 // same code that matches startup_command and preview_command.
 func iconTestWildcards(t *testing.T, config model.Config) WildcardFinder {
-	return NewLister(config, iconTestHome(t), nil, nil, nil, nil)
+	return NewLister(config, iconTestHome(t), nil, nil, nil, nil, nil)
 }
 
 func TestIconResolver_NilWithoutIcons(t *testing.T) {
@@ -126,4 +126,30 @@ func TestIconResolver_FirstWildcardMatchWithoutIconFallsBack(t *testing.T) {
 
 	assert.Equal(t, "", resolve(model.SeshSession{Src: "zoxide", Name: "nutiliti", Path: "/home/user/c/nutiliti"}),
 		"the first matching pattern still wins, so the row keeps its source glyph")
+}
+
+func TestIconResolver_Worktree(t *testing.T) {
+	config := model.Config{
+		SessionConfigs:  []model.SessionConfig{{Name: "nutiliti", Path: "~/c/nu", Icon: "🏠"}},
+		WorktreeConfigs: []model.WorktreeConfig{{Repo: "Nutiliti/nutiliti", Path: "~/c/nu", WorktreeDir: "w", Icon: "🌳"}},
+		WildcardConfigs: []model.WildcardConfig{{Pattern: "~/c/**", Icon: "🚀"}},
+	}
+	resolve := IconResolver(config, iconTestHome(t), iconTestWildcards(t, config))
+
+	assert.Equal(t, "🌳", resolve(model.SeshSession{Src: "tmux", Name: "nu/w/123", Path: "/home/user/c/nu/w/123"}),
+		"a worktree session gets its [[worktree]] icon over a matching wildcard")
+	assert.Equal(t, "🌳", resolve(model.SeshSession{Src: "zoxide", Name: "web", Path: "/home/user/c/nu/w/123/apps/web"}))
+	assert.Equal(t, "🏠", resolve(model.SeshSession{Src: "tmux", Name: "nu", Path: "/home/user/c/nu"}),
+		"the repo root itself is not a worktree")
+	assert.Equal(t, "🚀", resolve(model.SeshSession{Src: "zoxide", Name: "nu/wiki", Path: "/home/user/c/nu/wiki"}),
+		"a sibling sharing the root's prefix is not under it")
+}
+
+func TestIconResolver_WorktreeDefaultDir(t *testing.T) {
+	config := model.Config{
+		WorktreeConfigs: []model.WorktreeConfig{{Repo: "joshmedeski/sesh", Path: "~/c/sesh", Icon: "⚡"}},
+	}
+	resolve := IconResolver(config, iconTestHome(t), nil)
+
+	assert.Equal(t, "⚡", resolve(model.SeshSession{Src: "tmux", Name: "sesh/.wk/7", Path: "/home/user/c/sesh/.wk/7"}))
 }

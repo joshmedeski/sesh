@@ -2,6 +2,7 @@ package lister
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -20,7 +21,7 @@ type WildcardFinder interface {
 // the common case costs nothing per row.
 //
 // The most specific match wins: an exact [[session]] name, then a [[session]]
-// path, then a [[wildcard]] pattern. Sessions are indexed by path as well as by
+// path, then a path under a [[worktree]] root, then a [[wildcard]] pattern. Sessions are indexed by path as well as by
 // name because the same directory is often listed by another source under a
 // derived name — a zoxide entry for a configured session's path still gets its
 // icon.
@@ -44,6 +45,13 @@ func IconResolver(config model.Config, h home.Home, wildcards WildcardFinder) fu
 		}
 	}
 
+	var worktrees []worktreeRoot
+	for _, root := range worktreeRoots(config, h) {
+		if root.config.Icon != "" {
+			worktrees = append(worktrees, root)
+		}
+	}
+
 	hasWildcardIcon := false
 	for _, wildcard := range config.WildcardConfigs {
 		if wildcard.Icon != "" {
@@ -52,7 +60,7 @@ func IconResolver(config model.Config, h home.Home, wildcards WildcardFinder) fu
 		}
 	}
 
-	if len(byName) == 0 && len(byPath) == 0 && !hasWildcardIcon {
+	if len(byName) == 0 && len(byPath) == 0 && len(worktrees) == 0 && !hasWildcardIcon {
 		return nil
 	}
 
@@ -63,8 +71,14 @@ func IconResolver(config model.Config, h home.Home, wildcards WildcardFinder) fu
 		if session.Path == "" {
 			return ""
 		}
-		if icn, ok := byPath[filepath.Clean(session.Path)]; ok {
+		path := filepath.Clean(session.Path)
+		if icn, ok := byPath[path]; ok {
 			return icn
+		}
+		for _, worktree := range worktrees {
+			if strings.HasPrefix(path, worktree.prefix) {
+				return worktree.config.Icon
+			}
 		}
 		if !hasWildcardIcon || wildcards == nil {
 			return ""

@@ -35,7 +35,7 @@ func TestFindConfigWildcard(t *testing.T) {
 			},
 		},
 	}
-	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 	realLister, ok := lister.(*RealLister)
 	if !ok {
 		log.Fatal("Cannot convert lister to *RealLister")

@@ -26,7 +26,7 @@ func TestListConfigSessions(t *testing.T) {
 			},
 		},
 	}
-	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 	realLister, ok := lister.(*RealLister)
 	if !ok {
@@ -62,7 +62,7 @@ func TestListConfigIncludesAlias(t *testing.T) {
 			{Name: "notes", Path: "/home/user/notes"},
 		},
 	}
-	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+	lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 	realLister, ok := lister.(*RealLister)
 	if !ok {

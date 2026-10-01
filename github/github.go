@@ -24,6 +24,10 @@ type Issue struct {
 	State  string `json:"state"` // "OPEN" | "CLOSED"
 }
 
+func IssueKey(repo string, number int) string {
+	return repo + "#" + strconv.Itoa(number)
+}
+
 type Github interface {
 	// PrView returns PR metadata. found is false (with nil error) when the
 	// number is not a pull request (e.g. it is a plain issue).
