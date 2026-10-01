@@ -439,3 +439,15 @@ func TestList_CreatedFromDotGitModTime(t *testing.T) {
 	assert.Equal(t, added, got[0].Created)
 	assert.True(t, got[1].Created.IsZero())
 }
+
+func TestList_CarriesConfiguredIcon(t *testing.T) {
+	f := newListFixture(t, testIssueCache(t))
+	f.worktree.(*RealWorktree).config.WorktreeConfigs[0].Icon = "🏠"
+	f.os.EXPECT().ReadDir("/repo/w").Return(dirs("409"), nil)
+	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{}, nil, nil)
+
+	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	assert.Equal(t, "🏠", got[0].Icon)
+}

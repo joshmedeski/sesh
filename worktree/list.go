@@ -65,6 +65,7 @@ func (w *RealWorktree) List(opts model.WorktreeListOpts) ([]model.WorktreeEntry,
 		entry := model.WorktreeEntry{
 			Number: number,
 			Path:   w.path.Join(root, strconv.Itoa(number)),
+			Icon:   cfg.Icon,
 		}
 		if issue, ok := issues[number]; ok {
 			entry.Title = issue.Title
