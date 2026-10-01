@@ -153,7 +153,7 @@ func TestHideDuplicates(t *testing.T) {
 				SessionConfigs: tt.configSessions,
 			}
 
-			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 			// Call the actual List function with HideDuplicates
 			result, err := lister.List(ListOptions{
@@ -196,7 +196,7 @@ func TestHideAttachedBeforeHideDuplicates(t *testing.T) {
 	config := model.Config{
 		SessionConfigs: []model.SessionConfig{{Name: "project", Path: "/p"}},
 	}
-	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 	result, err := l.List(ListOptions{
 		Tmux:           true,
@@ -271,7 +271,7 @@ func TestBlacklistedFlag(t *testing.T) {
 			mockTmux.On("ListSessions").Return(tt.tmuxSessions, nil)
 
 			config := model.Config{Blacklist: tt.blacklist}
-			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+			lister := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 			result, err := lister.List(ListOptions{
 				Tmux:        true,
@@ -296,7 +296,7 @@ func TestList_ShowWindows(t *testing.T) {
 	newLister := func(showWindows bool, mockTmux *tmux.MockTmux) Lister {
 		config := model.Config{}
 		config.TUI.ShowWindows = showWindows
-		return NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator), nil)
+		return NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator), nil, nil)
 	}
 
 	t.Run("attaches window names when enabled", func(t *testing.T) {
@@ -367,7 +367,7 @@ func TestMergedSortOrderGroup(t *testing.T) {
 		},
 		SortOrder: model.SortOrder{"tmux", []string{"config", "zoxide"}},
 	}
-	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 	result, err := l.List(ListOptions{Tmux: true, Config: true, Zoxide: true})
 	assert.NoError(t, err)
@@ -404,7 +404,7 @@ func TestListOptionsSortOrderOverridesConfig(t *testing.T) {
 		SessionConfigs: []model.SessionConfig{{Name: "notes-cfg", Path: "/hot"}},
 		SortOrder:      model.SortOrder{"zoxide", "config", "tmux"},
 	}
-	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 	result, err := l.List(ListOptions{
 		Tmux: true, Config: true, Zoxide: true,
@@ -438,7 +438,7 @@ func TestFlatSortOrderKeepsSourceBlocks(t *testing.T) {
 		SessionConfigs: []model.SessionConfig{{Name: "never-cfg", Path: "/never"}},
 		SortOrder:      model.SortOrder{"config", "zoxide"},
 	}
-	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+	l := NewLister(config, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 	result, err := l.List(ListOptions{Config: true, Zoxide: true})
 	assert.NoError(t, err)

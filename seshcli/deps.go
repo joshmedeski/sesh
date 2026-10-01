@@ -130,7 +130,10 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	l := ls.NewLs(config, b.Shell)
 	ic := icon.NewIcon(config)
 	fm := formatter.NewFormatter(ic)
-	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator, fm)
+	issueCache := cache.NewNamespace[github.Issue](
+		worktree.IssueCacheName, worktree.IssueCacheVersion, worktree.IssueCacheTTL,
+	).WithMissingTTL(worktree.IssueCacheMissingTTL)
+	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator, fm, issueCache)
 
 	var usedLister lister.Lister = li
 	var cachedLi *lister.CachingLister
@@ -146,9 +149,6 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git)
 	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
-	issueCache := cache.NewNamespace[github.Issue](
-		worktree.IssueCacheName, worktree.IssueCacheVersion, worktree.IssueCacheTTL,
-	).WithMissingTTL(worktree.IssueCacheMissingTTL)
 	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
 	// Removing an entry from the picker has to be written through to the cache,
 	// or the next launch reads back the directory that was just removed. Nil

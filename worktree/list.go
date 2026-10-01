@@ -156,7 +156,7 @@ func (w *RealWorktree) resolveIssues(repo string, numbers []int, refresh bool) m
 	keys := make([]string, 0, len(numbers))
 	byKey := make(map[string]int, len(numbers))
 	for _, number := range numbers {
-		key := issueKey(repo, number)
+		key := github.IssueKey(repo, number)
 		keys = append(keys, key)
 		byKey[key] = number
 		// Stale values are used as-is here; the refetch below overwrites them
@@ -187,22 +187,16 @@ func (w *RealWorktree) resolveIssues(repo string, numbers []int, refresh bool) m
 
 	for number, issue := range found {
 		issues[number] = issue
-		entries.Put(issueKey(repo, number), issue)
+		entries.Put(github.IssueKey(repo, number), issue)
 	}
 	for _, number := range missing {
 		// Negatively cached so a worktree for a deleted issue stops being
 		// refetched on every listing.
-		entries.PutMissing(issueKey(repo, number))
+		entries.PutMissing(github.IssueKey(repo, number))
 	}
 
 	if err := w.issues.Save(entries); err != nil {
 		slog.Debug("worktree list: could not save issue cache", "error", err)
 	}
 	return issues
-}
-
-// issueKey namespaces cache keys by repo so worktrees for different repos with
-// overlapping numbers cannot collide.
-func issueKey(repo string, number int) string {
-	return repo + "#" + strconv.Itoa(number)
 }

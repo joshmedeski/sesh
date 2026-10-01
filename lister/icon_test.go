@@ -24,7 +24,7 @@ func iconTestHome(t *testing.T) home.Home {
 // iconTestWildcards builds the real lister so wildcard icons are matched by the
 // same code that matches startup_command and preview_command.
 func iconTestWildcards(t *testing.T, config model.Config) WildcardFinder {
-	return NewLister(config, iconTestHome(t), nil, nil, nil, nil)
+	return NewLister(config, iconTestHome(t), nil, nil, nil, nil, nil)
 }
 
 func TestIconResolver_NilWithoutIcons(t *testing.T) {

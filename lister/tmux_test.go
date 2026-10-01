@@ -77,7 +77,7 @@ func TestListTmuxSessions(t *testing.T) {
 		mockHome := new(home.MockHome)
 		mockZoxide := new(zoxide.MockZoxide)
 		mockTmuxinator := new(tmuxinator.MockTmuxinator)
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {
@@ -168,7 +168,7 @@ func TestGetLastTmuxSession(t *testing.T) {
 			mockTmux.On("ListSessions").Return(tt.sessions, nil)
 
 			config := model.Config{Blacklist: tt.blacklist}
-			lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator), nil)
+			lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator), nil, nil)
 
 			session, ok := lister.GetLastTmuxSession()
 			assert.Equal(t, tt.wantOk, ok)
@@ -188,7 +188,7 @@ func TestListTmuxSessionsError(t *testing.T) {
 		mockHome := new(home.MockHome)
 		mockZoxide := new(zoxide.MockZoxide)
 		mockTmuxinator := new(tmuxinator.MockTmuxinator)
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {
@@ -216,7 +216,7 @@ func TestListTmuxInheritsAliasFromConfig(t *testing.T) {
 			{Name: "dotfiles", Alias: "DOT"},
 		},
 	}
-	lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator), nil)
+	lister := NewLister(config, new(home.MockHome), mockTmux, new(zoxide.MockZoxide), new(tmuxinator.MockTmuxinator), nil, nil)
 
 	realLister, ok := lister.(*RealLister)
 	if !ok {

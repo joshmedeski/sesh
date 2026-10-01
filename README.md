@@ -421,7 +421,7 @@ Supported colors are `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan
 
 The active window names are fetched live in one tmux call and only when the format uses an active-window-name placeholder. A tmux lookup failure simply leaves the active-window-name placeholders empty. `--format` cannot be combined with `--json`.
 
-`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set.
+`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set. Sessions under a `[[worktree]]` root include `Worktree` (`Repo`, `Number`, `Title`, `State`), with `Title` and `State` read from the issue cache that `sesh worktree list` fills; it is `null` for every other session.
 
 Arbitrary formatted rows are display output and are not parsed back by `sesh connect`. When using fzf, keep the raw session name in a hidden field and show only the formatted field:
 

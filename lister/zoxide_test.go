@@ -32,7 +32,7 @@ func TestListZoxideSessions(t *testing.T) {
 			},
 		}, nil)
 
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {

@@ -132,7 +132,7 @@ func benchLister(n int, tweak func(*model.Config)) *RealLister {
 	if tweak != nil {
 		tweak(&config)
 	}
-	return NewLister(config, benchHome{}, mockTmux, mockZoxide, mockTmuxinator, nil).(*RealLister)
+	return NewLister(config, benchHome{}, mockTmux, mockZoxide, mockTmuxinator, nil, nil).(*RealLister)
 }
 
 // benchSessions is the merged, unfiltered list the post-merge stages operate

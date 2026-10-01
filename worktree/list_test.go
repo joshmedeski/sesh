@@ -133,7 +133,7 @@ func TestList_WarmCacheMakesNoRequest(t *testing.T) {
 func TestList_OnlyFetchesTheStaleNumbers(t *testing.T) {
 	issues := testIssueCache(t)
 	entries := cache.Entries[github.Issue]{}
-	entries.Put(issueKey("nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "cached", State: "OPEN"})
+	entries.Put(github.IssueKey("nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "cached", State: "OPEN"})
 	require.NoError(t, issues.Save(entries))
 
 	f := newListFixture(t, issues)
@@ -153,7 +153,7 @@ func TestList_OnlyFetchesTheStaleNumbers(t *testing.T) {
 func TestList_RefreshRefetchesEvenFreshEntries(t *testing.T) {
 	issues := testIssueCache(t)
 	cached := cache.Entries[github.Issue]{}
-	cached.Put(issueKey("nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "stale title", State: "OPEN"})
+	cached.Put(github.IssueKey("nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "stale title", State: "OPEN"})
 	require.NoError(t, issues.Save(cached))
 
 	f := newListFixture(t, issues)
@@ -180,7 +180,7 @@ func TestList_RefreshRefetchesEvenFreshEntries(t *testing.T) {
 func TestList_RefreshRefetchesNegativelyCachedNumbers(t *testing.T) {
 	issues := testIssueCache(t)
 	cached := cache.Entries[github.Issue]{}
-	cached.PutMissing(issueKey("nutiliti/nutiliti", 409))
+	cached.PutMissing(github.IssueKey("nutiliti/nutiliti", 409))
 	require.NoError(t, issues.Save(cached))
 
 	f := newListFixture(t, issues)
@@ -209,7 +209,7 @@ func TestList_ExpiredEntriesAreRefetched(t *testing.T) {
 	dir := t.TempDir()
 	issues := cache.NewNamespaceInDir[github.Issue](dir, IssueCacheName, IssueCacheVersion, time.Hour)
 	stored := cache.Entries[github.Issue]{
-		issueKey("nutiliti/nutiliti", 409): {
+		github.IssueKey("nutiliti/nutiliti", 409): {
 			Value:     github.Issue{Number: 409, Title: "old title", State: "OPEN"},
 			FetchedAt: time.Now().Add(-2 * time.Hour),
 		},
@@ -232,7 +232,7 @@ func TestList_ShowsStaleTitleWhenRefetchFails(t *testing.T) {
 	dir := t.TempDir()
 	issues := cache.NewNamespaceInDir[github.Issue](dir, IssueCacheName, IssueCacheVersion, time.Hour)
 	stored := cache.Entries[github.Issue]{
-		issueKey("nutiliti/nutiliti", 409): {
+		github.IssueKey("nutiliti/nutiliti", 409): {
 			Value:     github.Issue{Number: 409, Title: "stale but useful", State: "OPEN"},
 			FetchedAt: time.Now().Add(-2 * time.Hour),
 		},
@@ -411,7 +411,7 @@ func TestList_KeysAreScopedByRepo(t *testing.T) {
 	// A cached issue 409 belonging to a different repo must not be reused.
 	issues := testIssueCache(t)
 	entries := cache.Entries[github.Issue]{}
-	entries.Put(issueKey("other/repo", 409), github.Issue{Number: 409, Title: "wrong repo", State: "OPEN"})
+	entries.Put(github.IssueKey("other/repo", 409), github.Issue{Number: 409, Title: "wrong repo", State: "OPEN"})
 	require.NoError(t, issues.Save(entries))
 
 	f := newListFixture(t, issues)

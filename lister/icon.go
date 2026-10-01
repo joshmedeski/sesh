@@ -45,14 +45,10 @@ func IconResolver(config model.Config, h home.Home, wildcards WildcardFinder) fu
 		}
 	}
 
-	type worktreeIcon struct{ prefix, icon string }
-	var worktrees []worktreeIcon
-	for _, worktree := range config.WorktreeConfigs {
-		if worktree.Icon == "" || worktree.Path == "" {
-			continue
-		}
-		if repoPath, err := h.ExpandPath(worktree.Path); err == nil {
-			worktrees = append(worktrees, worktreeIcon{worktree.Root(repoPath) + string(filepath.Separator), worktree.Icon})
+	var worktrees []worktreeRoot
+	for _, root := range worktreeRoots(config, h) {
+		if root.config.Icon != "" {
+			worktrees = append(worktrees, root)
 		}
 	}
 
@@ -81,7 +77,7 @@ func IconResolver(config model.Config, h home.Home, wildcards WildcardFinder) fu
 		}
 		for _, worktree := range worktrees {
 			if strings.HasPrefix(path, worktree.prefix) {
-				return worktree.icon
+				return worktree.config.Icon
 			}
 		}
 		if !hasWildcardIcon || wildcards == nil {
