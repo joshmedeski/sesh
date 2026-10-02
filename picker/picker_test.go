@@ -1617,7 +1617,7 @@ func TestPreview_OffByDefault(t *testing.T) {
 	assert.False(t, m.previewOn)
 	assert.False(t, m.splitActive())
 	assert.Equal(t, 0, m.previewCols())
-	assert.Equal(t, 60, m.contentWidth(), "list width must be untouched when off")
+	assert.Equal(t, m.width, m.contentWidth(), "the list fills the terminal when off")
 }
 
 func TestPreview_NoFetchWhenDisabled(t *testing.T) {
@@ -1762,7 +1762,7 @@ func TestPreview_CtrlOToggles(t *testing.T) {
 	m = result.(Model)
 	assert.False(t, m.previewOn)
 	assert.False(t, m.splitActive())
-	assert.Equal(t, 60, m.contentWidth(), "the list reclaims the width")
+	assert.Equal(t, m.width, m.contentWidth(), "the list reclaims the width")
 
 	before := len(*asked)
 	result, cmd := m.Update(tea.KeyPressMsg{Code: 'o', Mod: tea.ModCtrl})
@@ -1791,7 +1791,7 @@ func TestPreview_NarrowTerminalFallsBackToListOnly(t *testing.T) {
 
 	assert.True(t, m.previewOn, "the setting stays on")
 	assert.False(t, m.splitActive(), "but the pane isn't rendered")
-	assert.Equal(t, 60, m.contentWidth())
+	assert.Equal(t, m.width, m.contentWidth())
 
 	out := fmt.Sprintf("%v", m.View())
 	assert.NotContains(t, out, "preview of", "no preview content on a narrow terminal")

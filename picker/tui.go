@@ -1070,7 +1070,7 @@ func (m Model) visibleCount() int {
 }
 
 const (
-	// maxListWidth is the widest the session list gets, split or not.
+	// maxListWidth is the widest the session list gets beside the preview.
 	maxListWidth = 60
 	// minListWidth is the narrowest list worth splitting off; the preview gives
 	// columns back to stay above it.
@@ -1134,11 +1134,12 @@ func (m Model) previewCols() int {
 }
 
 func (m Model) contentWidth() int {
-	w := m.width - m.previewCols()
+	cols := m.previewCols()
+	w := m.width - cols
 	if w < 30 {
 		w = minListWidth
 	}
-	if w > maxListWidth {
+	if cols > 0 && w > maxListWidth {
 		w = maxListWidth
 	}
 	return w
