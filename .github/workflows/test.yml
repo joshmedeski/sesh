@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -54,6 +54,7 @@ jobs:
       # status, not the report generator's, so a build failure is a failure
       # regardless of how the XML came out.
       - name: Run tests
+        shell: bash
         run: |
           go test -cover -race -v ./... 2>&1 | tee test.log
           status=${PIPESTATUS[0]}
