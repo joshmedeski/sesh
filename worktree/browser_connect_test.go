@@ -25,6 +25,9 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
 
+	wRoot := p.FromSlash("/repo/w")
+	wPath := p.FromSlash("/repo/w/2345")
+
 	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
 	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
 
@@ -35,11 +38,11 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 	// Not a PR => issue path.
 	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
 
-	mOs.EXPECT().Stat("/repo/w/2345").Return(nil, os.ErrNotExist)
-	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
-	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
+	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().
-		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_install"}).
+		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
@@ -56,6 +59,9 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
 
+	wRoot := p.FromSlash("/repo/w")
+	wPath := p.FromSlash("/repo/w/2345")
+
 	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
 	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
 
@@ -67,11 +73,11 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 	// ("someone/other"); only the number (2345) comes from the URL.
 	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
 
-	mOs.EXPECT().Stat("/repo/w/2345").Return(nil, os.ErrNotExist)
-	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
-	mGit.EXPECT().WorktreeAdd("/repo", "/repo/w/2345", "jam/2345-1", "origin/main").Return("", nil)
+	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().
-		Connect("/repo/w/2345", model.ConnectOpts{Switch: true, Command: "nu_install"}).
+		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
@@ -88,6 +94,9 @@ func TestConnectFromBrowserPR(t *testing.T) {
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
 
+	wRoot := p.FromSlash("/repo/w")
+	wPath := p.FromSlash("/repo/w/678")
+
 	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
 	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
 
@@ -101,11 +110,11 @@ func TestConnectFromBrowserPR(t *testing.T) {
 		Return(github.PullRequest{Author: "octocat"}, true, nil)
 	mGh.EXPECT().CurrentUser().Return("me", nil)
 
-	mOs.EXPECT().Stat("/repo/w/678").Return(nil, os.ErrNotExist)
-	mOs.EXPECT().MkdirAll("/repo/w", mock.Anything).Return(nil)
-	mGit.EXPECT().WorktreeAddDetached("/repo", "/repo/w/678", "origin/main").Return("", nil)
-	mGh.EXPECT().PrCheckout("/repo/w/678", "nutiliti/nutiliti", 678).Return("", nil)
-	mConn.EXPECT().Connect("/repo/w/678", model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
+	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAddDetached("/repo", wPath, "origin/main").Return("", nil)
+	mGh.EXPECT().PrCheckout(wPath, "nutiliti/nutiliti", 678).Return("", nil)
+	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
 	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})

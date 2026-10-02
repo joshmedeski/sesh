@@ -1,7 +1,6 @@
 package namer
 
 import (
-	"path/filepath"
 	"strings"
 )
 
@@ -98,7 +97,7 @@ func gitName(n *RealNamer, path string) (string, error) {
 	}
 	repoName := anchorRepoName(n, anchor)
 	// Use slash normalization for Windows compatibility (git paths always use forward slash).
-	relativePath := strings.TrimPrefix(filepath.ToSlash(path), anchor)
+	relativePath := strings.TrimPrefix(n.pathwrap.ToSlash(path), anchor)
 	return repoName + relativePath, nil
 }
 

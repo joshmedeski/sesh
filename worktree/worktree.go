@@ -2,7 +2,6 @@ package worktree
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -289,11 +288,11 @@ func (w *RealWorktree) worktreeAt(path string) (model.WorktreeConfig, int, strin
 			continue
 		}
 		root := w.resolveSymlinks(w.worktreeRoot(cfg, repoPath))
-		rel, err := filepath.Rel(root, path)
+		rel, err := w.path.Rel(root, path)
 		if err != nil || rel == "." || strings.HasPrefix(rel, "..") {
 			continue
 		}
-		key := strings.Split(filepath.ToSlash(rel), "/")[0]
+		key := strings.Split(w.path.ToSlash(rel), "/")[0]
 		number, err := strconv.Atoi(key)
 		if err != nil {
 			continue

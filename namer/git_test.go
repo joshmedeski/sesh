@@ -123,6 +123,7 @@ branch refs/heads/main
 `
 		mg.On("WorktreeList", path).Return(true, list, nil)
 		mp.On("Base", "/Users/hansolo/code/project/nu").Return("nu")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -138,6 +139,7 @@ branch refs/heads/main
 `
 		mg.On("WorktreeList", path).Return(true, list, nil)
 		mp.On("Base", "/Users/hansolo/code/project/nu").Return("nu")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -157,6 +159,7 @@ branch refs/heads/jam/5969-something
 `
 		mg.On("WorktreeList", path).Return(true, list, nil)
 		mp.On("Base", "/Users/hansolo/code/project/nu").Return("nu")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -175,6 +178,7 @@ branch refs/heads/main
 `
 		mg.On("WorktreeList", path).Return(true, list, nil)
 		mp.On("Base", "/Users/hansolo/code/project/sesh").Return("sesh")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -193,6 +197,7 @@ branch refs/heads/main
 `
 		mg.On("WorktreeList", path).Return(true, list, nil)
 		mp.On("Base", "/Users/hansolo/code/project/sesh").Return("sesh")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -208,6 +213,7 @@ branch refs/heads/main
 `
 		mg.On("WorktreeList", path).Return(true, list, nil)
 		mp.On("Base", "/Users/alice/My Projects/cool repo").Return("cool repo")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -370,6 +376,7 @@ branch refs/heads/dev
 		path := "/Users/semi/work/path/bernoulli/dev"
 		mg.On("WorktreeList", path).Return(true, siblingList, nil)
 		mp.On("Base", "/Users/semi/work/path/bernoulli/master").Return("master")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -383,6 +390,7 @@ branch refs/heads/dev
 		path := "/Users/semi/work/path/bernoulli/dev"
 		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/dev", nil)
 		mp.On("Base", "/Users/semi/work/path/bernoulli/dev").Return("dev")
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -391,9 +399,10 @@ branch refs/heads/dev
 
 	t.Run("git_namer_use_worktree_root + git_dir_length=2 produces parent/worktree", func(t *testing.T) {
 		cfg := model.Config{GitNamerUseWorktreeRoot: true, GitDirLength: 2}
-		n, _, mg := newSiblingWorktreeNamer(cfg)
+		n, mp, mg := newSiblingWorktreeNamer(cfg)
 		path := "/Users/semi/work/path/bernoulli/dev"
 		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/dev", nil)
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -402,9 +411,10 @@ branch refs/heads/dev
 
 	t.Run("git_namer_use_worktree_root + git_dir_length=2 on main worktree", func(t *testing.T) {
 		cfg := model.Config{GitNamerUseWorktreeRoot: true, GitDirLength: 2}
-		n, _, mg := newSiblingWorktreeNamer(cfg)
+		n, mp, mg := newSiblingWorktreeNamer(cfg)
 		path := "/Users/semi/work/path/bernoulli/master"
 		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/master", nil)
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -413,9 +423,10 @@ branch refs/heads/dev
 
 	t.Run("git_namer_use_worktree_root preserves subdirectory under worktree", func(t *testing.T) {
 		cfg := model.Config{GitNamerUseWorktreeRoot: true, GitDirLength: 2}
-		n, _, mg := newSiblingWorktreeNamer(cfg)
+		n, mp, mg := newSiblingWorktreeNamer(cfg)
 		path := "/Users/semi/work/path/bernoulli/dev/src/pkg"
 		mg.On("ShowTopLevel", path).Return(true, "/Users/semi/work/path/bernoulli/dev", nil)
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)
@@ -426,7 +437,7 @@ branch refs/heads/dev
 		// Nested .wk/ layout — main worktree path IS a prefix, so existing
 		// logic works; git_dir_length just expands the repo-name segment.
 		cfg := model.Config{GitDirLength: 2}
-		n, _, mg := newSiblingWorktreeNamer(cfg)
+		n, mp, mg := newSiblingWorktreeNamer(cfg)
 		path := "/Users/hansolo/code/project/nu/.wk/5969"
 		list := `worktree /Users/hansolo/code/project/nu
 HEAD bb976dcdc
@@ -437,6 +448,7 @@ HEAD f31c5985c
 branch refs/heads/jam/5969
 `
 		mg.On("WorktreeList", path).Return(true, list, nil)
+		mp.On("ToSlash", path).Return(path)
 
 		name, err := gitName(n, path)
 		assert.NoError(t, err)

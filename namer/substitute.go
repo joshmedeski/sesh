@@ -44,8 +44,9 @@ func nameSubstitution(n *RealNamer, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	name := applySubstitutions(shortened, n.config.NameSubstitutions)
-	if name == shortened || name == "" {
+	normalized := n.pathwrap.ToSlash(shortened)
+	name := applySubstitutions(normalized, n.config.NameSubstitutions)
+	if name == normalized || name == "" {
 		return "", nil
 	}
 	return name, nil
