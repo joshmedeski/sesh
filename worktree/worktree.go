@@ -251,7 +251,7 @@ func (w *RealWorktree) sameDir(a, b string) bool {
 }
 
 func (w *RealWorktree) worktreeRoot(cfg model.WorktreeConfig, repoPath string) string {
-	return cfg.Root(repoPath)
+	return filepath.ToSlash(cfg.Root(repoPath))
 }
 
 func (w *RealWorktree) BrowseURL(sessionPath string, pr bool) (string, error) {

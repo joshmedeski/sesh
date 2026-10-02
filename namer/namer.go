@@ -2,6 +2,7 @@ package namer
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
@@ -43,6 +44,9 @@ func (n *RealNamer) Name(path string) (string, error) {
 		gitName,
 		dirName,
 	}
+	// Use slash normalization for consistent, OS-independent naming,
+	// and to make forward-slash-based substitution patterns also apply to Windows paths.
+	path = filepath.ToSlash(path)
 
 	for _, strategy := range strategies {
 		name, err := strategy(n, path)
@@ -70,6 +74,9 @@ func (n *RealNamer) RootName(path string) (string, error) {
 		gitRootName,
 		dirName,
 	}
+	// Use slash normalization for consistent, OS-independent naming,
+	// and to make forward-slash-based substitution patterns also apply to Windows paths.
+	path = filepath.ToSlash(path)
 
 	for _, strategy := range strategies {
 		name, err := strategy(n, path)
