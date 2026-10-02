@@ -1,7 +1,6 @@
 package pathwrap
 
 import (
-	"path"
 	"path/filepath"
 )
 
@@ -19,17 +18,25 @@ func NewPath() Path {
 }
 
 func (p *RealPath) Join(elem ...string) string {
-	return path.Join(elem...)
+	return filepath.ToSlash(filepath.Join(elem...))
 }
 
 func (p *RealPath) Abs(path string) (string, error) {
-	return filepath.Abs(path)
+	absPath, err := filepath.Abs(path)
+	if err == nil {
+		absPath = filepath.ToSlash(absPath)
+	}
+	return absPath, err
 }
 
 func (p *RealPath) Base(path string) string {
-	return filepath.Base(path)
+	return filepath.ToSlash(filepath.Base(path))
 }
 
 func (p *RealPath) EvalSymlinks(path string) (string, error) {
-	return filepath.EvalSymlinks(path)
+	resolvedPath, err := filepath.EvalSymlinks(path)
+	if err == nil {
+		resolvedPath = filepath.ToSlash(resolvedPath)
+	}
+	return resolvedPath, err
 }
