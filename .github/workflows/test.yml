@@ -56,8 +56,8 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          go test -cover -race -v ./... 2>&1 | tee test.log
-          status=${PIPESTATUS[0]}
+          status=0
+          go test -cover -race -v ./... 2>&1 | tee test.log || status=$?
           go tool go-junit-report < test.log > report.xml
           exit "$status"
       - name: Test Summary
