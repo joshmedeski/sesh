@@ -888,7 +888,7 @@ func TestApplyFilter_DoesNotMatchWindowNames(t *testing.T) {
 }
 
 func TestSessionItems_StringIgnoresWindowNames(t *testing.T) {
-	items := buildItems(sessionsWithWindows(), false, nil)
+	items := buildItems(sessionsWithWindows(), false, nil, nil)
 	for i := range items {
 		assert.Equal(t, items[i].name, items.String(i),
 			"fuzzy source must expose the session name only")
@@ -2253,4 +2253,38 @@ func TestPointer_WidePointerFallsBackAndWarns(t *testing.T) {
 	assert.Equal(t, "> my-project", iconRow(t, m, "my-project"))
 	assert.Equal(t, 1, strings.Count(logged.String(), "level=WARN"),
 		"a pointer that cannot fit the gutter is reported once, when the picker starts")
+}
+
+func TestWorktreeTitle_ShownAndFilterable(t *testing.T) {
+	sessions := model.SeshSessions{
+		OrderedIndex: []string{"w1", "w2", "w3"},
+		Directory: model.SeshSessionMap{
+			"w1": {Name: "sesh/w/423", Src: "zoxide", Path: "/w/423"},
+			"w2": {Name: "sesh/w/500 — Fix crash", Src: "tmux", Path: "/w/500"},
+			"w3": {Name: "sesh/w/600", Src: "zoxide", Path: "/w/600"},
+		},
+	}
+	titles := map[string]string{"/w/423": "Add preview pane", "/w/500": "Fix crash"}
+	opts := testOptionsWith(func(o *Options) {
+		o.Worktree = func(path string) *model.WorktreeInfo {
+			return &model.WorktreeInfo{Title: titles[path]}
+		}
+	})
+	m := New(testFetchFunc(sessions), opts)
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	result, _ = result.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = result.(Model)
+
+	out := ansi.Strip(fmt.Sprintf("%v", m.View()))
+	assert.Contains(t, out, "sesh/w/423 Add preview pane")
+	assert.Equal(t, 1, strings.Count(out, "Fix crash"), "an already-enriched name is not repeated")
+
+	m.filterInput.SetValue("preview")
+	m.applyFilter()
+	require.Len(t, m.filtered, 1)
+	assert.Equal(t, "sesh/w/423", m.filtered[0].item.name, "the selected value stays the bare name")
+
+	nameMatches, titleMatches := splitMatches(m.filtered[0].matchedIndexes, "sesh/w/423", "Add preview pane")
+	assert.Empty(t, nameMatches)
+	assert.Equal(t, []int{4, 5, 6, 7, 8, 9, 10}, titleMatches)
 }

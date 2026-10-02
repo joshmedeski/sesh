@@ -24,7 +24,7 @@ func TestWorktreeResolver(t *testing.T) {
 	entries.Put(github.IssueKey("Nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "Fix bill split rounding", State: "OPEN"})
 	require.NoError(t, issues.Save(entries))
 
-	resolve := worktreeResolver(worktreeTestConfig(), iconTestHome(t), issues)
+	resolve := WorktreeResolver(worktreeTestConfig(), iconTestHome(t), issues)
 
 	want := &model.WorktreeInfo{Repo: "Nutiliti/nutiliti", Number: 409, Title: "Fix bill split rounding", State: "OPEN"}
 	assert.Equal(t, want, resolve("/home/user/c/nu/w/409"))
@@ -38,7 +38,7 @@ func TestWorktreeResolver(t *testing.T) {
 }
 
 func TestWorktreeResolver_NilWithoutWorktrees(t *testing.T) {
-	assert.Nil(t, worktreeResolver(model.Config{}, iconTestHome(t), nil))
+	assert.Nil(t, WorktreeResolver(model.Config{}, iconTestHome(t), nil))
 }
 
 func TestFormatJsonResolvesWorktree(t *testing.T) {
