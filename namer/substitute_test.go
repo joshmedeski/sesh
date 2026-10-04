@@ -89,10 +89,11 @@ func TestApplySubstitutions(t *testing.T) {
 
 func TestNameSubstitutionStrategy(t *testing.T) {
 	t.Run("returns empty when no rules are configured", func(t *testing.T) {
+		p := pathwrap.NewPath()
 		mockHome := new(home.MockHome)
 		n := &RealNamer{home: mockHome, config: model.Config{}}
 
-		name, err := nameSubstitution(n, "/home/john/c/nvim")
+		name, err := nameSubstitution(n, p.FromSlash("/home/john/c/nvim"))
 
 		assert.NoError(t, err)
 		assert.Equal(t, "", name)
@@ -100,29 +101,40 @@ func TestNameSubstitutionStrategy(t *testing.T) {
 	})
 
 	t.Run("returns the rewritten name when a rule matches", func(t *testing.T) {
+		p := pathwrap.NewPath()
+		path := p.FromSlash("/home/john/c/dotfiles/.config/nvim")
+		shortened := p.FromSlash("~/c/dotfiles/.config/nvim")
+
 		mockHome := new(home.MockHome)
-		mockHome.On("ShortenHome", "/home/john/c/dotfiles/.config/nvim").
-			Return("~/c/dotfiles/.config/nvim", nil)
+		mockHome.On("ShortenHome", path).Return(shortened, nil)
+		mockPathwrap := new(pathwrap.MockPath)
+		mockPathwrap.On("ToSlash", shortened).Return(p.ToSlash(shortened))
 		config := model.Config{NameSubstitutions: []model.NameSubstitution{
 			{Find: "~/c/dotfiles/.config/", Replace: ""},
 		}}
-		n := &RealNamer{home: mockHome, config: config}
+		n := &RealNamer{home: mockHome, config: config, pathwrap: mockPathwrap}
 
-		name, err := nameSubstitution(n, "/home/john/c/dotfiles/.config/nvim")
+		name, err := nameSubstitution(n, path)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "nvim", name)
 	})
 
 	t.Run("falls through when no rule changes the path", func(t *testing.T) {
+		p := pathwrap.NewPath()
+		path := p.FromSlash("/home/john/c/api")
+		shortened := p.FromSlash("~/c/api")
+
 		mockHome := new(home.MockHome)
-		mockHome.On("ShortenHome", "/home/john/c/api").Return("~/c/api", nil)
+		mockHome.On("ShortenHome", path).Return(shortened, nil)
+		mockPathwrap := new(pathwrap.MockPath)
+		mockPathwrap.On("ToSlash", shortened).Return(p.ToSlash(shortened))
 		config := model.Config{NameSubstitutions: []model.NameSubstitution{
 			{Find: "~/nowhere/", Replace: ""},
 		}}
-		n := &RealNamer{home: mockHome, config: config}
+		n := &RealNamer{home: mockHome, config: config, pathwrap: mockPathwrap}
 
-		name, err := nameSubstitution(n, "/home/john/c/api")
+		name, err := nameSubstitution(n, path)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "", name)
@@ -130,13 +142,17 @@ func TestNameSubstitutionStrategy(t *testing.T) {
 }
 
 func TestNameUsesSubstitutionBeforeDirStrategy(t *testing.T) {
+	p := pathwrap.NewPath()
 	mockPathwrap := new(pathwrap.MockPath)
 	mockGit := new(git.MockGit)
 	mockHome := new(home.MockHome)
 
-	path := "/home/john/c/dotfiles/.config/nvim"
+	path := p.FromSlash("/home/john/c/dotfiles/.config/nvim")
+	shortened := p.FromSlash("~/c/dotfiles/.config/nvim")
 	mockPathwrap.On("EvalSymlinks", path).Return(path, nil)
-	mockHome.On("ShortenHome", path).Return("~/c/dotfiles/.config/nvim", nil)
+	mockPathwrap.On("ToSlash", path).Return(p.ToSlash(path))
+	mockPathwrap.On("ToSlash", shortened).Return(p.ToSlash(shortened))
+	mockHome.On("ShortenHome", path).Return(shortened, nil)
 
 	config := model.Config{
 		DirLength: 1,
@@ -155,13 +171,17 @@ func TestNameUsesSubstitutionBeforeDirStrategy(t *testing.T) {
 }
 
 func TestNameFallsThroughWhenSubstitutionCollapses(t *testing.T) {
+	p := pathwrap.NewPath()
 	mockPathwrap := new(pathwrap.MockPath)
 	mockGit := new(git.MockGit)
 	mockHome := new(home.MockHome)
 
-	path := "/home/john/c/api"
+	path := p.FromSlash("/home/john/c/api")
+	shortened := p.FromSlash("~/c/api")
 	mockPathwrap.On("EvalSymlinks", path).Return(path, nil)
-	mockHome.On("ShortenHome", path).Return("~/c/api", nil)
+	mockPathwrap.On("ToSlash", path).Return(p.ToSlash(path))
+	mockPathwrap.On("ToSlash", shortened).Return(p.ToSlash(shortened))
+	mockHome.On("ShortenHome", path).Return(shortened, nil)
 	// No git repo, so naming should fall through to the directory strategy.
 	mockGit.On("WorktreeList", path).Return(false, "", nil)
 

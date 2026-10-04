@@ -55,16 +55,20 @@ func TestBrowseURLRejectsEmptySessionPath(t *testing.T) {
 }
 
 func TestBrowseURLPrUsesTheBranchPullRequest(t *testing.T) {
+	p := pathwrap.NewPath()
+
 	w, mGh := newBrowseWorktree(t)
-	mGh.EXPECT().PrURL("/repo/w/2345").Return("https://github.com/nutiliti/nutiliti/pull/2400", true, nil)
+	mGh.EXPECT().PrURL(p.FromSlash("/repo/w/2345")).Return("https://github.com/nutiliti/nutiliti/pull/2400", true, nil)
 	url, err := w.BrowseURL("/repo/w/2345/apps", true)
 	require.NoError(t, err)
 	assert.Equal(t, "https://github.com/nutiliti/nutiliti/pull/2400", url)
 }
 
 func TestBrowseURLPrWithoutPullRequest(t *testing.T) {
+	p := pathwrap.NewPath()
+
 	w, mGh := newBrowseWorktree(t)
-	mGh.EXPECT().PrURL("/repo/w/2345").Return("", false, nil)
+	mGh.EXPECT().PrURL(p.FromSlash("/repo/w/2345")).Return("", false, nil)
 	_, err := w.BrowseURL("/repo/w/2345", true)
 	assert.EqualError(t, err, "no pull request found for worktree 2345")
 }
