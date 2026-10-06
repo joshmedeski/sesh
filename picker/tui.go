@@ -368,6 +368,11 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 	ti := textinput.New()
 	ti.Placeholder = opts.Placeholder
 	ti.Prompt = opts.Prompt
+	ti.SetVirtualCursor(false)
+	styles := ti.Styles()
+	styles.Cursor.Blink = false
+	styles.Cursor.Color = nil
+	ti.SetStyles(styles)
 	// SetValue leaves the cursor at the end, so the pre-filled query reads as
 	// something just typed and can be backspaced away.
 	ti.SetValue(opts.Query)
@@ -1062,7 +1067,7 @@ func (m Model) View() tea.View {
 	var b strings.Builder
 
 	// Filter input
-	b.WriteString("  " + m.filterInput.View())
+	b.WriteString(filterIndent + m.filterInput.View())
 	b.WriteString("\n")
 	// The status shares the blank line under the filter, so showing one never
 	// moves the list.
@@ -1169,8 +1174,14 @@ func (m Model) View() tea.View {
 	// Full window mode: the picker fills the terminal and hands the user's
 	// scrollback back untouched when it quits.
 	v.AltScreen = true
+	if c := m.filterInput.Cursor(); c != nil && m.confirm == nil {
+		c.X += len(filterIndent)
+		v.Cursor = c
+	}
 	return v
 }
+
+const filterIndent = "  "
 
 // separatorRule draws the boundary between two sort_order groups: a faint rule
 // across the list column, so a glance says whether the row under the cursor is

@@ -414,6 +414,20 @@ func TestView_ReturnsNonEmpty(t *testing.T) {
 	assert.NotZero(t, v)
 }
 
+func TestView_UsesTerminalCursorAfterQuery(t *testing.T) {
+	m := New(testFetchFunc(testSessions()), testOptionsWith(func(o *Options) { o.Query = "dot" }))
+	m.width = 60
+	m.height = 24
+
+	c := m.View().Cursor
+	assert.NotNil(t, c)
+	assert.Equal(t, len("  > dot"), c.X)
+	assert.Equal(t, 0, c.Y)
+	assert.False(t, c.Blink)
+	assert.Nil(t, c.Color)
+	assert.NotContains(t, m.View().Content, "\x1b[7m", "the virtual cursor would draw itself in reverse video")
+}
+
 func TestView_LoadingState(t *testing.T) {
 	sessions := testSessions()
 	m := New(testFetchFunc(sessions), testOptions())

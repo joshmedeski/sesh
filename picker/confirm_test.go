@@ -206,6 +206,7 @@ func TestConfirmView_AsksAboutKillingOnATmuxRow(t *testing.T) {
 
 	assert.Contains(t, out, "Do you want to kill this tmux session?")
 	assert.NotContains(t, out, "/home/user/my-project", "a kill targets the name, so the path is noise")
+	assert.Nil(t, m.View().Cursor)
 }
 
 func TestCtrlX_InertWhileLoading(t *testing.T) {
