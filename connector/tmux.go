@@ -29,7 +29,7 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 			return "", fmt.Errorf("failed to create tmux session %q: %w", connection.Session.Name, err)
 		}
 		if opts.Command != "" {
-			c.tmux.SendKeys(connection.Session.Name, opts.Command)
+			c.tmux.SendKeys(connection.Session.Name+":", opts.Command)
 		} else {
 			c.startup.Exec(connection.Session)
 		}

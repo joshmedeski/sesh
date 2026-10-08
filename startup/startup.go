@@ -75,7 +75,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		}); err != nil {
 			return ret, err
 		}
-		if ret, err := s.tmux.SendKeys(session.Name, windowConfig.StartupScript); err != nil {
+		if ret, err := s.tmux.SendKeys(session.Name+":", windowConfig.StartupScript); err != nil {
 			return ret, err
 		}
 	}
@@ -85,7 +85,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		if command, err := strategy(s, session); err != nil {
 			return "", fmt.Errorf("failed to determine startup command: %w", err)
 		} else if command != "" {
-			s.tmux.SendKeys(session.Name, command)
+			s.tmux.SendKeys(session.Name+":", command)
 			return fmt.Sprintf("executing startup command: %s", command), nil
 		}
 	}
