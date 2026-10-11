@@ -2,7 +2,6 @@ package picker
 
 import (
 	"fmt"
-	"image/color"
 	"sort"
 	"strings"
 	"time"
@@ -131,6 +130,7 @@ type Options struct {
 	// IconWidth is the display width the icon column is padded to. Anything
 	// below 1 means the single cell the source glyphs need.
 	IconWidth int
+	Glyphs icon.Glyphs
 	// Preview starts the picker with the preview pane showing. It can still be
 	// toggled at runtime, and is ignored on a terminal narrower than
 	// PreviewMinWidth.
@@ -186,6 +186,7 @@ type Model struct {
 	// the icon column is padded to so wide icons keep the names aligned.
 	iconFunc  IconFunc
 	iconWidth int
+	glyphs    icon.Glyphs
 
 	// aliases is keyed by lowercased alias; aliasByName is keyed by session
 	// name so rows can be tagged while rendering.
@@ -226,13 +227,6 @@ type Model struct {
 	previewSeq int
 }
 
-// srcIcon returns the nerd font icon and color for a session source. The icon
-// carries a trailing space, so it is the whole icon cell for the single-width
-// glyphs it comes from; iconCell pads it when a wider icon is in play.
-func srcIcon(src string) (string, color.Color) {
-	return icon.SourceGlyph(src)
-}
-
 // iconCell renders the icon column for a row: the icon configured for the
 // session, or the colored source glyph when it has none, followed by the gap
 // before the name. Every cell is padded to the same width so a double-width
@@ -249,7 +243,7 @@ func srcIcon(src string) (string, color.Color) {
 // space makes up the difference for that one icon without shifting any other
 // row.
 func (m Model) iconCell(item sessionItem) string {
-	return icon.Cell(item.icon, item.src, m.iconWidth)
+	return m.glyphs.Cell(item.icon, item.src, m.iconWidth)
 }
 
 func padding(n int) string {
@@ -382,6 +376,11 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		aliasByName[alias.Target] = alias.Alias
 	}
 
+	glyphs := opts.Glyphs
+	if glyphs == nil {
+		glyphs, _ = icon.SourceGlyphs(nil)
+	}
+
 	m := Model{
 		filterInput:             ti,
 		showIcons:               opts.ShowIcons,
@@ -389,6 +388,7 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		separatorAware:          opts.SeparatorAware,
 		iconFunc:                opts.Icon,
 		iconWidth:               max(opts.IconWidth, 1),
+		glyphs:                  glyphs,
 		loading:                 true,
 		fetchFunc:               fetchFunc,
 		aliases:                 opts.Aliases,

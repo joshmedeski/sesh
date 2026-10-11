@@ -963,6 +963,21 @@ Terminals disagree about how wide an emoji is, and nothing in a TUI can ask whic
 
 This is picker-only. `sesh list --icons` keeps the source glyphs, because the scripts and external pickers that parse its output trim a known-width glyph — see [#246](https://github.com/joshmedeski/sesh/issues/246). Custom icons are also suppressed entirely with `show_icons = false`.
 
+#### Source icons
+
+The source glyphs themselves can be changed under `[icons]`, keyed by source: `tmux`, `config`, `zoxide`, `tmuxinator`, and `tmux-pane`. Each takes an `icon`, a `color`, or both; whatever you leave out keeps its built-in value.
+
+```toml
+[icons]
+tmux = { icon = "", color = "magenta" }
+zoxide = { icon = "📁" }
+config = { color = "bright-yellow" }
+```
+
+`color` is one of `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, or a `bright-*` variant, so your terminal theme decides the exact shade. An unknown source or color is an error when the config loads.
+
+Unlike per-session icons, source icons apply to `sesh list --icons` as well as the picker, and `sesh connect` strips them back off. Scripts that split on the first space (fzf's `{2..}`) keep working as long as the icon has no spaces in it. A `[[session]]`, `[[wildcard]]`, or `[[worktree]]` icon still wins over the source icon in the picker.
+
 #### Starting with a filter
 
 `--query` (`-q`) opens the picker with its filter already typed out, which is handy for tmux keybinds that scope the list to one slice of your sessions:

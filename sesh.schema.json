@@ -215,6 +215,18 @@
       },
       "additionalProperties": false
     },
+    "icons": {
+      "type": "object",
+      "description": "Default icon and color for each session source, used in the picker and `sesh list --icons`. Icons set on a [[session]], [[wildcard]], or [[worktree]] take precedence. Omitted fields keep the built-in glyph and color.",
+      "properties": {
+        "tmux": { "$ref": "#/definitions/sourceIcon" },
+        "config": { "$ref": "#/definitions/sourceIcon" },
+        "zoxide": { "$ref": "#/definitions/sourceIcon" },
+        "tmuxinator": { "$ref": "#/definitions/sourceIcon" },
+        "tmux-pane": { "$ref": "#/definitions/sourceIcon" }
+      },
+      "additionalProperties": false
+    },
     "default_session": {
       "type": "object",
       "description": "Default settings applied to all sessions",
@@ -415,5 +427,22 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "sourceIcon": {
+      "type": "object",
+      "properties": {
+        "icon": {
+          "type": "string",
+          "description": "Icon for this source. Any string: a nerd font glyph or an emoji."
+        },
+        "color": {
+          "type": "string",
+          "description": "ANSI color for this source's icon.",
+          "enum": ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white", "bright-black", "gray", "grey", "bright-red", "bright-green", "bright-yellow", "bright-blue", "bright-magenta", "bright-cyan", "bright-white"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }
