@@ -60,7 +60,7 @@ func (c *RealConnector) Connect(name string, opts model.ConnectOpts) (string, er
 	// TODO: allow CLI flag to disable zoxide and overwrite all settings?
 	// sesh connect --ignore-zoxide "dotfiles"
 	if connection.AddToZoxide {
-		c.zoxide.Add(connection.Session.Path)
+		_ = c.zoxide.Add(connection.Session.Path)
 	}
 	return connectStrategy[connection.Session.Src](c, connection, opts)
 }

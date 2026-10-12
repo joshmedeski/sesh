@@ -75,7 +75,7 @@ func readRun(p string) (*run, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	r := &run{path: p, benches: map[string]*bench{}}
 	var buf bytes.Buffer

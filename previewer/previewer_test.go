@@ -23,15 +23,14 @@ const (
 
 type PreviewerTestSuite struct {
 	suite.Suite
-	mockLister  *lister.MockLister
-	mockTmux    *tmux.MockTmux
-	mockIcon    *icon.MockIcon
-	mockDir     *dir.MockDir
-	mockHome    *home.MockHome
-	mockLs      *ls.MockLs
-	mockShell   *shell.MockShell
-	mockConnfig *model.Config
-	previewer   Previewer
+	mockLister *lister.MockLister
+	mockTmux   *tmux.MockTmux
+	mockIcon   *icon.MockIcon
+	mockDir    *dir.MockDir
+	mockHome   *home.MockHome
+	mockLs     *ls.MockLs
+	mockShell  *shell.MockShell
+	previewer  Previewer
 }
 
 func (suite *PreviewerTestSuite) SetupTest() {

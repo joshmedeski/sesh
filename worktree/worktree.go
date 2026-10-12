@@ -81,7 +81,7 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 	}
 
 	if fetchEnabled(cfg) {
-		w.git.Fetch(repoPath) // best-effort; a failed fetch shouldn't block
+		_, _ = w.git.Fetch(repoPath)
 	}
 
 	plan, err := w.planConnect(cfg, opts)
@@ -99,7 +99,7 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 			if _, err := w.github.PrCheckout(target, cfg.Repo, opts.Number); err != nil {
 				return "", err
 			}
-			w.git.Pull(target) // best-effort ff-only
+			_, _ = w.git.Pull(target)
 		}
 	} else {
 		created = true

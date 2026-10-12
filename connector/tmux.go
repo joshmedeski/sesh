@@ -29,9 +29,9 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 			return "", fmt.Errorf("failed to create tmux session %q: %w", connection.Session.Name, err)
 		}
 		if opts.Command != "" {
-			c.tmux.SendKeys(connection.Session.Name+":", opts.Command)
+			_, _ = c.tmux.SendKeys(connection.Session.Name+":", opts.Command)
 		} else {
-			c.startup.Exec(connection.Session)
+			_, _ = c.startup.Exec(connection.Session)
 		}
 	}
 
@@ -54,7 +54,7 @@ func (c *RealConnector) connectDetached(sessionName string) (string, error) {
 	// forward is still the useful thing to do: the user lands where they can
 	// attach.
 	if len(clients) == 0 {
-		c.focuser.Activate(c.config.Terminal)
+		_, _ = c.focuser.Activate(c.config.Terminal)
 		return fmt.Sprintf("connected to tmux session: %s", sessionName), nil
 	}
 
@@ -67,7 +67,7 @@ func (c *RealConnector) connectDetached(sessionName string) (string, error) {
 
 	// Worth focusing either way: on failure the user at least lands on the tmux
 	// they need to sort out.
-	c.focuser.Activate(c.config.Terminal)
+	_, _ = c.focuser.Activate(c.config.Terminal)
 
 	if err != nil {
 		slog.Error("failed to switch client", "client", client, "session", sessionName, "error", err)

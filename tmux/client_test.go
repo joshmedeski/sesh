@@ -128,7 +128,7 @@ func TestResolveClient(t *testing.T) {
 				mockOs.EXPECT().Getenv("TMUX_PANE").Return(tt.tmuxPane)
 			}
 			// A pane only short-circuits resolution from inside tmux.
-			if tt.seshClient == "" && !(tt.tmuxPane != "" && tt.tmuxEnv != "") {
+			if tt.seshClient == "" && (tt.tmuxPane == "" || tt.tmuxEnv == "") {
 				mockShell.EXPECT().ListCmd("tmux", "list-clients", "-F", clientFormat).
 					Return(tt.clients, tt.clientsErr)
 			}

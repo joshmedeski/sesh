@@ -1683,8 +1683,7 @@ func TestPreview_AlreadyPreviewedSessionIsNotRefetched(t *testing.T) {
 	m = result.(Model)
 	require.NotNil(t, previewFetch(cmd), "moving away schedules a fetch")
 
-	result, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
-	m = result.(Model)
+	_, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
 
 	assert.Nil(t, previewFetch(cmd), "the displayed preview should not be refetched")
 	assert.Len(t, *asked, before, "no preview command should have run")

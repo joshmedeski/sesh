@@ -1144,7 +1144,7 @@ func (m Model) View() tea.View {
 				}
 			}
 
-			b.WriteString(fmt.Sprintf("%s%s%s%s%s\n", prefix, tag, chip, name, windows))
+			fmt.Fprintf(&b, "%s%s%s%s%s\n", prefix, tag, chip, name, windows)
 		}
 
 		// Pad remaining visible lines

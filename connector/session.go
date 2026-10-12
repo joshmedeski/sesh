@@ -37,7 +37,7 @@ func (c *RealConnector) ensureSession(name string) (model.SeshSession, error) {
 		return model.SeshSession{}, fmt.Errorf("'%s' is a pane, not a session", name)
 	}
 	if connection.AddToZoxide {
-		c.zoxide.Add(connection.Session.Path)
+		_ = c.zoxide.Add(connection.Session.Path)
 	}
 	if !connection.New {
 		return connection.Session, nil
@@ -51,7 +51,7 @@ func (c *RealConnector) ensureSession(name string) (model.SeshSession, error) {
 	if _, err := c.tmux.NewSession(connection.Session.Name, connection.Session.Path); err != nil {
 		return model.SeshSession{}, fmt.Errorf("failed to create tmux session: %w", err)
 	}
-	c.startup.Exec(connection.Session)
+	_, _ = c.startup.Exec(connection.Session)
 	return connection.Session, nil
 }
 
