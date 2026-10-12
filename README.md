@@ -5,8 +5,8 @@
 <h1 align="center">Sesh, the smart tmux session manager</h1>
 
 <p align="center">
-  <a href="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml">
-    <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/ci-cd.yml/badge.svg" />
+  <a href="https://github.com/joshmedeski/sesh/actions/workflows/test.yml">
+    <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/test.yml/badge.svg" />
   </a>
   <a href="https://goreportcard.com/report/github.com/joshmedeski/sesh">
     <img alt="goreport" src="https://goreportcard.com/badge/github.com/joshmedeski/sesh" />
