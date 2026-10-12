@@ -3,6 +3,8 @@ package seshcli
 import (
 	"testing"
 
+	"github.com/spf13/cobra"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,5 +51,18 @@ func TestListFormattingFlags(t *testing.T) {
 		excluded, err := cmd.Flags().GetStringSlice("icons-exclude")
 		require.NoError(t, err)
 		assert.Equal(t, []string{"tmux", "config"}, excluded)
+	})
+
+	t.Run("no-cache defaults to false", func(t *testing.T) {
+		for _, cmd := range []*cobra.Command{NewListCommand(nil), NewPickerCommand(nil)} {
+			noCache, err := cmd.Flags().GetBool("no-cache")
+			require.NoError(t, err)
+			assert.False(t, noCache, cmd.Name())
+
+			require.NoError(t, cmd.Flags().Parse([]string{"--no-cache"}))
+			noCache, err = cmd.Flags().GetBool("no-cache")
+			require.NoError(t, err)
+			assert.True(t, noCache, cmd.Name())
+		}
 	})
 }

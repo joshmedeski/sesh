@@ -22,6 +22,9 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 			}
 			if deps.CachingLister != nil {
 				defer deps.CachingLister.Wait()
+				if noCache, _ := cmd.Flags().GetBool("no-cache"); noCache {
+					deps.CachingLister.SkipRead()
+				}
 			}
 
 			config, _ := cmd.Flags().GetBool("config")
@@ -97,6 +100,7 @@ func NewListCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("blacklisted", "b", false, "show blacklisted sessions")
 	cmd.Flags().String("format", "", "format each session row ({name}, {session}, {source}, {path}, {active_window_name}, {active_window_name_prefix}; colors: {fg:yellow}...{/fg})")
 	cmd.Flags().StringSlice("icons-exclude", nil, "don't show source icons for these session sources (for example: tmux)")
+	cmd.Flags().Bool("no-cache", false, "list live sessions instead of reading the cache (still refreshes it)")
 
 	return cmd
 }
