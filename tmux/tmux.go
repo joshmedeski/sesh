@@ -17,6 +17,10 @@ func sessionTarget(name string) string {
 	return name + ":"
 }
 
+func escapeFormat(s string) string {
+	return strings.ReplaceAll(s, "#", "##")
+}
+
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
 	ListWindows(targetSession string) ([]*model.TmuxWindow, error)
@@ -70,7 +74,7 @@ func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
 }
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
-	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", sessionName, "-c", startDir)
+	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", escapeFormat(sessionName), "-c", escapeFormat(startDir))
 }
 
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {

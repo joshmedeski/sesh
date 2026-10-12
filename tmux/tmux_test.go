@@ -70,3 +70,12 @@ func TestSwitchClientTarget(t *testing.T) {
 	_, err := tm.SwitchClientTarget("/dev/ttys001", "sesh")
 	require.NoError(t, err)
 }
+
+func TestNewSessionEscapesFormatSequences(t *testing.T) {
+	s := shell.NewMockShell(t)
+	s.EXPECT().Cmd("tmux", "new-session", "-d", "-s", "##(id)", "-c", "/tmp/##(touch x)").
+		Return("", nil)
+	tm := NewTmux(oswrap.NewMockOs(t), s, "")
+	_, err := tm.NewSession("#(id)", "/tmp/#(touch x)")
+	require.NoError(t, err)
+}

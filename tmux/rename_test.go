@@ -20,4 +20,16 @@ func TestRenameSession(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, "", result)
 	})
+
+	t.Run("escapes format sequences in the new name", func(t *testing.T) {
+		mockShell := &shell.MockShell{}
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
+		mockShell.EXPECT().
+			Cmd("tmux", "rename-session", "-t", "project:", "##(id)").
+			Return("", nil)
+
+		_, err := tmux.RenameSession("project", "#(id)")
+
+		assert.Nil(t, err)
+	})
 }
