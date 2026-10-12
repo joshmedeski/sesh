@@ -20,6 +20,9 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			}
 			if deps.CachingLister != nil {
 				defer deps.CachingLister.Wait()
+				if noCache, _ := cmd.Flags().GetBool("no-cache"); noCache {
+					deps.CachingLister.SkipRead()
+				}
 			}
 
 			config, _ := cmd.Flags().GetBool("config")
@@ -115,6 +118,7 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().Bool("no-alias-auto", false, "don't auto-connect when an alias is fully typed")
 	cmd.Flags().Bool("preview", false, "show a preview of the highlighted session beside the list")
 	cmd.Flags().Bool("no-preview", false, "hide the preview pane")
+	cmd.Flags().Bool("no-cache", false, "list live sessions instead of reading the cache (still refreshes it)")
 
 	return cmd
 }

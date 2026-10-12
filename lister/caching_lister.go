@@ -15,9 +15,10 @@ const softTTL = 5 * time.Second
 // CachingLister wraps a Lister with stale-while-revalidate caching for List().
 // All other Lister methods delegate directly to the inner lister.
 type CachingLister struct {
-	inner Lister
-	cache cache.Cache
-	wg    sync.WaitGroup
+	inner    Lister
+	cache    cache.Cache
+	wg       sync.WaitGroup
+	skipRead bool
 }
 
 // NewCachingLister creates a CachingLister that decorates inner with file-based caching.
@@ -33,6 +34,11 @@ func (cl *CachingLister) List(opts ListOptions) (model.SeshSessions, error) {
 	// Always fetch/store the full list (all sources, no dedup, no hide);
 	// we apply all view-level filters ourselves after cache read.
 	innerOpts := ListOptions{}
+
+	if cl.skipRead {
+		slog.Debug("cache: read skipped")
+		return cl.listLive(innerOpts, opts)
+	}
 
 	cached, err := cl.cache.Read()
 	if err == nil {
@@ -53,14 +59,23 @@ func (cl *CachingLister) List(opts ListOptions) (model.SeshSessions, error) {
 
 	// Cold start -- fetch synchronously
 	slog.Debug("cache: miss (cold start)")
+	return cl.listLive(innerOpts, opts)
+}
+
+func (cl *CachingLister) listLive(innerOpts, opts ListOptions) (model.SeshSessions, error) {
 	sessions, err := cl.inner.List(innerOpts)
 	if err != nil {
 		return sessions, err
 	}
 	if writeErr := cl.cache.Write(sessions); writeErr != nil {
-		slog.Warn("cache: write failed on cold start", "error", writeErr)
+		slog.Warn("cache: write failed", "error", writeErr)
 	}
 	return cl.finish(sessions, opts)
+}
+
+// SkipRead makes List always fetch live data, still writing it to the cache.
+func (cl *CachingLister) SkipRead() {
+	cl.skipRead = true
 }
 
 // finish applies view-level filtering and then display formatting without

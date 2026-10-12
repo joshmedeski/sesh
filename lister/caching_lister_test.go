@@ -92,6 +92,28 @@ func TestCachingLister_RefreshThenWarmRead(t *testing.T) {
 	assert.Equal(t, fresh.Directory, got.Directory)
 }
 
+func TestCachingLister_SkipRead(t *testing.T) {
+	dir := t.TempDir()
+	fc := cache.NewFileCacheWithPath(filepath.Join(dir, "sessions.gob"))
+	inner := lister.NewMockLister(t)
+
+	require.NoError(t, fc.Write(fakeSessions()))
+	fresh := updatedSessions()
+	inner.On("List", lister.ListOptions{}).Return(fresh, nil).Once()
+
+	cl := lister.NewCachingLister(inner, fc)
+	cl.SkipRead()
+	got, err := cl.List(lister.ListOptions{Tmux: true})
+	require.NoError(t, err)
+	assert.Equal(t, fresh.OrderedIndex, got.OrderedIndex)
+
+	cached, err := fc.Read()
+	require.NoError(t, err)
+	assert.Equal(t, fresh.OrderedIndex, cached.Sessions.OrderedIndex)
+
+	cl.Wait()
+}
+
 func TestCachingLister_ColdStartError(t *testing.T) {
 	dir := t.TempDir()
 	fc := cache.NewFileCacheWithPath(filepath.Join(dir, "sessions.gob"))

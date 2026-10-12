@@ -867,6 +867,13 @@ set-hook -g session-created 'run-shell -b "sesh cache refresh"'
 set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
 ```
 
+To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It lists live sessions and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
+
+```sh
+sesh list --no-cache
+sesh picker --no-cache
+```
+
 If you use a kill binding in an fzf picker (like `ctrl-d` in the example above), refresh the cache before reloading the list so the killed session disappears immediately:
 
 ```sh
