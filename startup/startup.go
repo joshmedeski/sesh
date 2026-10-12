@@ -38,9 +38,9 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 	windows := make(model.SeshWindowMap)
 	for _, window := range s.config.WindowConfigs {
 		key := lister.ConfigKey(window.Name)
-		var path string = ""
-		var err error = nil
+		var path string
 		if window.Path != "" {
+			var err error
 			path, err = s.home.ExpandPath(window.Path)
 			if err != nil {
 				return "", fmt.Errorf("couldn't expand home: %q", err)
@@ -79,13 +79,13 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 			return ret, err
 		}
 	}
-	s.tmux.NextWindowInSession(session.Name)
+	_, _ = s.tmux.NextWindowInSession(session.Name)
 
 	for _, strategy := range strategies {
 		if command, err := strategy(s, session); err != nil {
 			return "", fmt.Errorf("failed to determine startup command: %w", err)
 		} else if command != "" {
-			s.tmux.SendKeys(session.Name+":", command)
+			_, _ = s.tmux.SendKeys(session.Name+":", command)
 			return fmt.Sprintf("executing startup command: %s", command), nil
 		}
 	}

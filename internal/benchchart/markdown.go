@@ -176,7 +176,7 @@ func mdSection(s sectionData) string {
 	}
 	var b strings.Builder
 	b.WriteString("```diff\n")
-	b.WriteString(fmt.Sprintf("@@ %s — %s @@\n", s.metric.title, summary(s.counted(), false, 0, true)))
+	fmt.Fprintf(&b, "@@ %s — %s @@\n", s.metric.title, summary(s.counted(), false, 0, true))
 
 	peak := 0.0
 	for _, l := range s.moved {
@@ -196,13 +196,13 @@ func mdSection(s sectionData) string {
 	barCol := max(mdWidth-fixed-labelCol, mdBarWidth)
 
 	for _, l := range rows {
-		b.WriteString(fmt.Sprintf("%s %s  %s → %s  %s  %s\n",
+		fmt.Fprintf(&b, "%s %s  %s → %s  %s  %s\n",
 			mark(l),
 			pad(clip(l.label, labelCol), labelCol, false),
 			pad(l.from, valueCol, true),
 			pad(l.to, valueCol, true),
 			pad(mdBar(l, scale, barCol), barCol, false),
-			describe(l)))
+			describe(l))
 	}
 	b.WriteString("```\n\n")
 	b.WriteString(mdTable(s))
@@ -247,12 +247,12 @@ func mdBar(l line, scale float64, width int) string {
 // the question the summary line cannot.
 func mdTable(s sectionData) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("<details><summary>All %d %s measurements</summary>\n\n", s.total(), s.metric.title))
+	fmt.Fprintf(&b, "<details><summary>All %d %s measurements</summary>\n\n", s.total(), s.metric.title)
 	b.WriteString("| | What it measures | Before | After | Change |\n|---|---|---|---|---|\n")
 	for _, group := range [][]line{s.moved, s.shaky, s.missing, s.still} {
 		for _, l := range group {
-			b.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s |\n",
-				badge(l), l.label, orDash(l.from), orDash(l.to), tableChange(l)))
+			fmt.Fprintf(&b, "| %s | %s | %s | %s | %s |\n",
+				badge(l), l.label, orDash(l.from), orDash(l.to), tableChange(l))
 		}
 	}
 	b.WriteString("\n</details>\n\n")
@@ -295,7 +295,7 @@ func mdFooter(base, head *run) string {
 		what string
 		run  *run
 	}{{"Before", base}, {"After", head}} {
-		b.WriteString(fmt.Sprintf("**%s** `%s`\n", r.what, r.run.path))
+		fmt.Fprintf(&b, "**%s** `%s`\n", r.what, r.run.path)
 		for _, note := range r.run.notes {
 			b.WriteString("- " + note + "\n")
 		}
@@ -317,11 +317,4 @@ func orDash(s string) string {
 		return "–"
 	}
 	return s
-}
-
-func capitalise(s string) string {
-	if s == "" {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
 }

@@ -38,10 +38,10 @@ func writeAtomic(path string, data []byte) error {
 		return fmt.Errorf("cache create tmp: %w", err)
 	}
 	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath) // no-op once the rename succeeds
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("cache write tmp: %w", err)
 	}
 	if err := tmp.Close(); err != nil {

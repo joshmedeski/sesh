@@ -86,8 +86,8 @@ func compare(baseline, current, format string, opts options) error {
 	// and CLICOLOR_FORCE on the way. The markdown renderer emits no ANSI at
 	// all, so this is a no-op for it.
 	out := colorprofile.NewWriter(os.Stdout, os.Environ())
-	fmt.Fprint(out, render(base, head, opts))
-	return nil
+	_, err = fmt.Fprint(out, render(base, head, opts))
+	return err
 }
 
 // renderers are the two audiences: a terminal, and a pull request.

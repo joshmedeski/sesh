@@ -19,7 +19,7 @@ func NewRootSessionCommand(base *BaseDeps) *cobra.Command {
 
 			session, exists := deps.Lister.GetAttachedTmuxSession()
 			if !exists {
-				return fmt.Errorf("No root found for session")
+				return fmt.Errorf("no root found for session")
 			}
 			root, err := deps.Namer.RootName(session.Path)
 			if err != nil {

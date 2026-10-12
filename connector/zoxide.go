@@ -2,18 +2,6 @@ package connector
 
 import "github.com/joshmedeski/sesh/v2/model"
 
-func zoxideToTmuxName(c *RealConnector, path string) (string, error) {
-	fullPath, err := c.home.ExpandPath(path)
-	if err != nil {
-		return "", err
-	}
-	name, err := c.namer.Name(fullPath)
-	if err != nil {
-		return "", err
-	}
-	return name, nil
-}
-
 func zoxideStrategy(c *RealConnector, path string) (model.Connection, error) {
 	session, exists := c.lister.FindZoxideSession(path)
 	if !exists {

@@ -103,7 +103,7 @@ func header(base, head *run) string {
 		what string
 		run  *run
 	}{{"baseline", base}, {"current ", head}} {
-		b.WriteString(fmt.Sprintf("  %s  %s\n", bold.Render(r.what), r.run.path))
+		fmt.Fprintf(&b, "  %s  %s\n", bold.Render(r.what), r.run.path)
 		b.WriteString("            " + faint.Render(r.run.env.String()) + "\n")
 		for _, note := range r.run.notes {
 			b.WriteString("            " + faint.Render(note) + "\n")
@@ -176,7 +176,7 @@ func section(m metric, base, head *run, opts options) string {
 	b.WriteString(bold.Render(m.title) + "  " + faint.Render(summary(counted{len(moved), len(shaky), len(still), len(missing)}, len(shown) > 0, scale, opts.all)) + "\n\n")
 	b.WriteString(plot(shown, scale, opts))
 	for _, l := range missing {
-		b.WriteString(fmt.Sprintf("  %s  %s  %s\n", l.style.Render(l.note), l.label, faint.Render(l.from+l.to)))
+		fmt.Fprintf(&b, "  %s  %s  %s\n", l.style.Render(l.note), l.label, faint.Render(l.from+l.to))
 	}
 	return b.String() + "\n"
 }
@@ -302,12 +302,12 @@ func plot(lines []line, scale float64, opts options) string {
 
 	var b strings.Builder
 	for _, l := range lines {
-		b.WriteString(fmt.Sprintf("  %s  %s → %s  %s  %s\n",
+		fmt.Fprintf(&b, "  %s  %s → %s  %s  %s\n",
 			pad(shorten(l.label, labelCol, opts.raw), labelCol, false),
 			pad(l.from, fromCol, true),
 			pad(l.to, toCol, true),
 			axis(l, scale, half),
-			l.style.Render(l.note)))
+			l.style.Render(l.note))
 	}
 	return b.String()
 }
