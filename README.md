@@ -8,8 +8,8 @@
   <a href="https://github.com/joshmedeski/sesh/actions/workflows/test.yml">
     <img alt="tests" src="https://github.com/joshmedeski/sesh/actions/workflows/test.yml/badge.svg" />
   </a>
-  <a href="https://goreportcard.com/report/github.com/joshmedeski/sesh">
-    <img alt="goreport" src="https://goreportcard.com/badge/github.com/joshmedeski/sesh" />
+  <a href="https://pkg.go.dev/github.com/joshmedeski/sesh/v2">
+    <img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/joshmedeski/sesh/v2.svg" />
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
