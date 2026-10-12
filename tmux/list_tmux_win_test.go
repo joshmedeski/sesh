@@ -31,7 +31,7 @@ func TestListWindows(t *testing.T) {
 	t.Run("target session flag is passed when non-empty", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
 		tmux := &RealTmux{shell: mockShell}
-		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-t", "work", "-F", mock.Anything).Return(
+		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-t", "work:", "-F", mock.Anything).Return(
 			[]string{"0::main::/home/user::0"},
 			nil,
 		)
