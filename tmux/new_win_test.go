@@ -57,6 +57,20 @@ func TestNewWindowInSession(t *testing.T) {
 		assert.Equal(t, "project:3", result)
 	})
 
+	t.Run("escapes format sequences in the name and start directory", func(t *testing.T) {
+		mockShell := &shell.MockShell{}
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
+		mockShell.EXPECT().
+			Cmd("tmux", "new-window", "-P", "-F", format, "-n", "##(id)", "-c", "/tmp/##(touch x)").
+			Return("", nil)
+
+		_, err := tmux.NewWindowInSession(model.TmuxWindowOpts{
+			Name: "#(id)", StartDir: "/tmp/#(touch x)",
+		})
+
+		assert.Nil(t, err)
+	})
+
 	t.Run("uses the configured tmux binary", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
 		tmux := &RealTmux{shell: mockShell, bin: "/opt/bin/tmux"}
