@@ -55,8 +55,8 @@ func (t *RealTmux) SelectPane(windowIndex int, paneIndex int) (string, error) {
 		return "", fmt.Errorf("failed to get current session: %w", err)
 	}
 
-	target := fmt.Sprintf("%s:%d.%d", sessionName, windowIndex, paneIndex)
-	if _, err := t.shell.Cmd("tmux", "select-window", "-t", fmt.Sprintf("%s:%d", sessionName, windowIndex)); err != nil {
+	target := fmt.Sprintf("%s%d.%d", sessionTarget(sessionName), windowIndex, paneIndex)
+	if _, err := t.shell.Cmd("tmux", "select-window", "-t", fmt.Sprintf("%s%d", sessionTarget(sessionName), windowIndex)); err != nil {
 		return "", fmt.Errorf("failed to select window %d: %w", windowIndex, err)
 	}
 	if _, err := t.shell.Cmd("tmux", "select-pane", "-t", target); err != nil {

@@ -83,21 +83,35 @@ func TestCustomBin(t *testing.T) {
 	t.Run("uses psmux binary for switch client", func(t *testing.T) {
 		mockOs.On("Getenv", "TMUX").Return("/private/tmp/tmux-501/default,72439,4")
 		stubNoClients(mockOs, mockShell, "psmux")
-		mockShell.On("Cmd", "psmux", "switch-client", "-t", "dotfiles").Return("", nil)
+		mockShell.On("Cmd", "psmux", "switch-client", "-t", "dotfiles:").Return("", nil)
 		response, err := psmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: true})
 		assert.Nil(t, err)
 		assert.Equal(t, "switching to tmux session: dotfiles", response)
-		mockShell.AssertCalled(t, "Cmd", "psmux", "switch-client", "-t", "dotfiles")
+		mockShell.AssertCalled(t, "Cmd", "psmux", "switch-client", "-t", "dotfiles:")
 	})
 
 	t.Run("uses psmux binary for attach session", func(t *testing.T) {
 		mockOs.ExpectedCalls = nil
 		mockShell.ExpectedCalls = nil
 		mockOs.On("Getenv", "TMUX").Return("")
-		mockShell.On("CmdWithOutput", "psmux", "attach-session", "-t", "dotfiles").Return("", nil)
+		mockShell.On("CmdWithOutput", "psmux", "attach-session", "-t", "dotfiles:").Return("", nil)
 		response, err := psmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: false})
 		assert.Nil(t, err)
 		assert.Equal(t, "attaching to tmux session: dotfiles", response)
-		mockShell.AssertCalled(t, "CmdWithOutput", "psmux", "attach-session", "-t", "dotfiles")
+		mockShell.AssertCalled(t, "CmdWithOutput", "psmux", "attach-session", "-t", "dotfiles:")
 	})
+}
+
+func TestSwitchOrAttachDottedSessionName(t *testing.T) {
+	mockOs := new(oswrap.MockOs)
+	mockShell := new(shell.MockShell)
+	tmux := NewTmux(mockOs, mockShell, "")
+	stubNoClients(mockOs, mockShell, "tmux")
+	mockShell.On("Cmd", "tmux", "switch-client", "-t", "example.session:").Return("", nil)
+
+	response, err := tmux.SwitchOrAttach("example.session", model.ConnectOpts{Switch: true})
+
+	assert.Nil(t, err)
+	assert.Equal(t, "switching to tmux session: example.session", response)
+	mockShell.AssertCalled(t, "Cmd", "tmux", "switch-client", "-t", "example.session:")
 }

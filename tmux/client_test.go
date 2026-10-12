@@ -149,7 +149,7 @@ func TestSwitchOrAttachNamesTheResolvedClient(t *testing.T) {
 			"/dev/ttys001::/dev/ttys001::$1::100",
 			"/dev/ttys002::/dev/ttys002::$2::200",
 		}, nil)
-	mockShell.EXPECT().Cmd("tmux", "switch-client", "-c", "/dev/ttys001", "-t", "dotfiles").
+	mockShell.EXPECT().Cmd("tmux", "switch-client", "-c", "/dev/ttys001", "-t", "dotfiles:").
 		Return("", nil)
 
 	tm := NewTmux(mockOs, mockShell, "")

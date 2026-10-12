@@ -1,10 +1,21 @@
 package tmux
 
 import (
+	"strings"
+
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/shell"
 )
+
+// sessionTarget adds a trailing colon so tmux reads a dotted name as a session, not a pane
+// an existing colon already marks a window or pane target, so that target stays unchanged
+func sessionTarget(name string) string {
+	if strings.Contains(name, ":") {
+		return name
+	}
+	return name + ":"
+}
 
 type Tmux interface {
 	ListSessions() ([]*model.TmuxSession, error)
@@ -47,15 +58,15 @@ func NewTmux(os oswrap.Os, shell shell.Shell, bin string) Tmux {
 
 func (t *RealTmux) AttachSession(targetSession string) (string, error) {
 	// Using t.shell.Cmd() here (capturing stdout/stderr in buffers) would block psmux on Windows.
-	return t.shell.CmdWithOutput(t.bin, "attach-session", "-t", targetSession)
+	return t.shell.CmdWithOutput(t.bin, "attach-session", "-t", sessionTarget(targetSession))
 }
 
 func (t *RealTmux) SwitchClient(targetSession string) (string, error) {
-	return t.shell.Cmd(t.bin, "switch-client", "-t", targetSession)
+	return t.shell.Cmd(t.bin, "switch-client", "-t", sessionTarget(targetSession))
 }
 
 func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
-	return t.shell.Cmd(t.bin, "send-keys", "-t", targetPane, keys, "Enter")
+	return t.shell.Cmd(t.bin, "send-keys", "-t", sessionTarget(targetPane), keys, "Enter")
 }
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
@@ -63,12 +74,11 @@ func (t *RealTmux) NewSession(sessionName string, startDir string) (string, erro
 }
 
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {
-	return t.shell.Cmd(t.bin, "capture-pane", "-e", "-p", "-t", targetSession)
+	return t.shell.Cmd(t.bin, "capture-pane", "-e", "-p", "-t", sessionTarget(targetSession))
 }
 
 func (t *RealTmux) NextWindowInSession(targetSession string) (string, error) {
-	// trailing colon forces session (not window) target resolution
-	return t.shell.Cmd(t.bin, "next-window", "-t", targetSession+":")
+	return t.shell.Cmd(t.bin, "next-window", "-t", sessionTarget(targetSession))
 }
 
 func (t *RealTmux) IsAttached() bool {
@@ -76,5 +86,5 @@ func (t *RealTmux) IsAttached() bool {
 }
 
 func (t *RealTmux) SwitchClientTarget(client string, targetSession string) (string, error) {
-	return t.shell.Cmd(t.bin, "switch-client", "-c", client, "-t", targetSession)
+	return t.shell.Cmd(t.bin, "switch-client", "-c", client, "-t", sessionTarget(targetSession))
 }

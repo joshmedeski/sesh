@@ -24,8 +24,7 @@ func (t *RealTmux) NewWindowInSession(opts model.TmuxWindowOpts) (string, error)
 		args = append(args, "-d")
 	}
 	if opts.TargetSession != "" {
-		// trailing colon forces session (not window) target resolution
-		args = append(args, "-t", opts.TargetSession+":")
+		args = append(args, "-t", sessionTarget(opts.TargetSession))
 	}
 	if opts.Command != "" {
 		args = append(args, "--", opts.Command)

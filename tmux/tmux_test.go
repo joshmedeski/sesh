@@ -56,9 +56,14 @@ func TestListClientsWithNoClientsAttached(t *testing.T) {
 	assert.Empty(t, clients)
 }
 
+func TestSessionTarget(t *testing.T) {
+	assert.Equal(t, "example.session:", sessionTarget("example.session"))
+	assert.Equal(t, "second-brain:4", sessionTarget("second-brain:4"))
+}
+
 func TestSwitchClientTarget(t *testing.T) {
 	s := shell.NewMockShell(t)
-	s.EXPECT().Cmd("tmux", "switch-client", "-c", "/dev/ttys001", "-t", "sesh").
+	s.EXPECT().Cmd("tmux", "switch-client", "-c", "/dev/ttys001", "-t", "sesh:").
 		Return("", nil)
 	os := oswrap.NewMockOs(t)
 	tm := NewTmux(os, s, "")
