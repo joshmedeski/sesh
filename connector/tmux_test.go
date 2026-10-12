@@ -99,6 +99,27 @@ func TestConnectToTmuxDetachedSwitchesClientAndFocuses(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestConnectToTmuxCommandTargetsSession(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mTmux.EXPECT().SendKeys("myapp:", "nvim").Return("", nil)
+	mTmux.EXPECT().SwitchOrAttach("myapp", model.ConnectOpts{}).Return("switching", nil)
+
+	c := NewConnector(
+		model.Config{}, nil, nil, nil, nil, nil, mTmux, nil, nil, nil,
+	).(*RealConnector)
+
+	connection := model.Connection{
+		Found: true, New: true,
+		Session: model.SeshSession{Src: "dir", Name: "myapp", Path: "/repo/myapp"},
+	}
+
+	message, err := connectToTmux(c, connection, model.ConnectOpts{Command: "nvim"})
+	require.NoError(t, err)
+	assert.Equal(t, "switching", message)
+}
+
 func TestConnectToTmuxDetachedWithNoClientStillFocuses(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
 	mFocuser := focuser.NewMockFocuser(t)
