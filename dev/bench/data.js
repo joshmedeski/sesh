@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791820332688,
+  "lastUpdate": 1791821992007,
   "repoUrl": "https://github.com/joshmedeski/sesh",
   "entries": {
     "sesh": [
@@ -300360,6 +300360,13854 @@ window.BENCHMARK_DATA = {
             "value": 158,
             "unit": "allocs/op",
             "extra": "2278 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "joshmedeski@users.noreply.github.com",
+            "name": "Josh Medeski",
+            "username": "joshmedeski"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "863935c8caa3cc40cac6adcd344ac9742e51739f",
+          "message": "fix: escape # in names and start directories passed to tmux (#505)\n\n* chore(deps): bump mockery to v3.8.1\n\nmockery v3.7.4 depends on golang.org/x/tools v0.49.0, which cannot read\nexport data produced by Go 1.27 (\"export data version 5 is greater than\nmaximum supported version 4\"). On Go 1.27 `just mock` deleted every\ngenerated mock and then failed, which broke `just test`.\n\nv3.8.1 pulls in x/tools v0.51.0, which reads the newer export data.\n\n* fix(tmux): escape # in names and start directories passed to tmux\n\ntmux expands the values of new-session -s/-c, new-window -n/-c and the\nrename-session name as formats. A directory named `#(cmd)` therefore\nran `cmd` in the tmux server when sesh created a session for it. The\ndirectory could reach sesh directly, through a zoxide match, through a\nsymlink, or through a git worktree.\n\nEscape `#` as `##` in all of these values. tmux turns `##` back into a\nliteral `#`, so session names and paths keep their original text.\n\nEach of these flags has been format-expanded since tmux 2.7, and tmux\n3.8 still expands them, so the escape round-trips on every supported\nversion.",
+          "timestamp": "2026-10-12T11:17:49-05:00",
+          "tree_id": "2fce3615cc2ce91d93c836f5ed0af3b318a39750",
+          "url": "https://github.com/joshmedeski/sesh/commit/863935c8caa3cc40cac6adcd344ac9742e51739f"
+        },
+        "date": 1791821991182,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 23836,
+            "unit": "ns/op\t10522 B/op\t85 allocs/op",
+            "extra": "5077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 23836,
+            "unit": "ns/op",
+            "extra": "5077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10522,
+            "unit": "B/op",
+            "extra": "5077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 85,
+            "unit": "allocs/op",
+            "extra": "5077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 90251,
+            "unit": "ns/op\t95919 B/op\t465 allocs/op",
+            "extra": "1304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 90251,
+            "unit": "ns/op",
+            "extra": "1304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95919,
+            "unit": "B/op",
+            "extra": "1304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 465,
+            "unit": "allocs/op",
+            "extra": "1304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 776568,
+            "unit": "ns/op\t901754 B/op\t3962 allocs/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 776568,
+            "unit": "ns/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901754,
+            "unit": "B/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3962,
+            "unit": "allocs/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 31119,
+            "unit": "ns/op\t12355 B/op\t99 allocs/op",
+            "extra": "3823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 31119,
+            "unit": "ns/op",
+            "extra": "3823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 12355,
+            "unit": "B/op",
+            "extra": "3823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 99,
+            "unit": "allocs/op",
+            "extra": "3823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 147885,
+            "unit": "ns/op\t116928 B/op\t507 allocs/op",
+            "extra": "788 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 147885,
+            "unit": "ns/op",
+            "extra": "788 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 116928,
+            "unit": "B/op",
+            "extra": "788 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 507,
+            "unit": "allocs/op",
+            "extra": "788 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1325485,
+            "unit": "ns/op\t1110027 B/op\t4055 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1325485,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1110027,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4055,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 44280,
+            "unit": "ns/op\t24385 B/op\t218 allocs/op",
+            "extra": "2670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 44280,
+            "unit": "ns/op",
+            "extra": "2670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 24385,
+            "unit": "B/op",
+            "extra": "2670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 218,
+            "unit": "allocs/op",
+            "extra": "2670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 154424,
+            "unit": "ns/op\t146610 B/op\t682 allocs/op",
+            "extra": "756 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 154424,
+            "unit": "ns/op",
+            "extra": "756 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 146610,
+            "unit": "B/op",
+            "extra": "756 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 682,
+            "unit": "allocs/op",
+            "extra": "756 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1213733,
+            "unit": "ns/op\t1308911 B/op\t4974 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1213733,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1308911,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4974,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 26469,
+            "unit": "ns/op\t10538 B/op\t86 allocs/op",
+            "extra": "4395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 26469,
+            "unit": "ns/op",
+            "extra": "4395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10538,
+            "unit": "B/op",
+            "extra": "4395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 86,
+            "unit": "allocs/op",
+            "extra": "4395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 97094,
+            "unit": "ns/op\t95955 B/op\t466 allocs/op",
+            "extra": "1225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 97094,
+            "unit": "ns/op",
+            "extra": "1225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95955,
+            "unit": "B/op",
+            "extra": "1225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 466,
+            "unit": "allocs/op",
+            "extra": "1225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 795272,
+            "unit": "ns/op\t901762 B/op\t3963 allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 795272,
+            "unit": "ns/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901762,
+            "unit": "B/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3963,
+            "unit": "allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3901,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "29638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3901,
+            "unit": "ns/op",
+            "extra": "29638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "29638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "29638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 48189,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 48189,
+            "unit": "ns/op",
+            "extra": "2098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 505711,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 505711,
+            "unit": "ns/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 10798,
+            "unit": "ns/op\t9672 B/op\t118 allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 10798,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9672,
+            "unit": "B/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 31833,
+            "unit": "ns/op\t9669 B/op\t118 allocs/op",
+            "extra": "3321 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 31833,
+            "unit": "ns/op",
+            "extra": "3321 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9669,
+            "unit": "B/op",
+            "extra": "3321 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "3321 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 244244,
+            "unit": "ns/op\t9736 B/op\t118 allocs/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 244244,
+            "unit": "ns/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9736,
+            "unit": "B/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.51,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12531400 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.51,
+            "unit": "ns/op",
+            "extra": "12531400 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12531400 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12531400 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 393.2,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "278527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 393.2,
+            "unit": "ns/op",
+            "extra": "278527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "278527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "278527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 153.8,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "776029 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 153.8,
+            "unit": "ns/op",
+            "extra": "776029 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "776029 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "776029 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3831,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "31490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3831,
+            "unit": "ns/op",
+            "extra": "31490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "31490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "31490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 4365,
+            "unit": "ns/op\t2280 B/op\t16 allocs/op",
+            "extra": "27012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 4365,
+            "unit": "ns/op",
+            "extra": "27012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 2280,
+            "unit": "B/op",
+            "extra": "27012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "27012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.759,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12439942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.759,
+            "unit": "ns/op",
+            "extra": "12439942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12439942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12439942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3178,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "36468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3178,
+            "unit": "ns/op",
+            "extra": "36468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "36468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "36468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 409.7,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "279634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 409.7,
+            "unit": "ns/op",
+            "extra": "279634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "279634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "279634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 47932,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 47932,
+            "unit": "ns/op",
+            "extra": "2632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2632 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 51760,
+            "unit": "ns/op\t26776 B/op\t50 allocs/op",
+            "extra": "2379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 51760,
+            "unit": "ns/op",
+            "extra": "2379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 26776,
+            "unit": "B/op",
+            "extra": "2379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "2379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.457,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12591751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.457,
+            "unit": "ns/op",
+            "extra": "12591751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12591751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12591751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 33524,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "3399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 33524,
+            "unit": "ns/op",
+            "extra": "3399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "3399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3801,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "31970 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3801,
+            "unit": "ns/op",
+            "extra": "31970 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "31970 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "31970 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 513121,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 513121,
+            "unit": "ns/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 532041,
+            "unit": "ns/op\t245128 B/op\t95 allocs/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 532041,
+            "unit": "ns/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 245128,
+            "unit": "B/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 95,
+            "unit": "allocs/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 637,
+            "unit": "ns/op\t704 B/op\t8 allocs/op",
+            "extra": "159499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 637,
+            "unit": "ns/op",
+            "extra": "159499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 704,
+            "unit": "B/op",
+            "extra": "159499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "159499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3927,
+            "unit": "ns/op\t5169 B/op\t42 allocs/op",
+            "extra": "31226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3927,
+            "unit": "ns/op",
+            "extra": "31226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 5169,
+            "unit": "B/op",
+            "extra": "31226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "31226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 35320,
+            "unit": "ns/op\t50668 B/op\t321 allocs/op",
+            "extra": "3613 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 35320,
+            "unit": "ns/op",
+            "extra": "3613 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 50668,
+            "unit": "B/op",
+            "extra": "3613 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 321,
+            "unit": "allocs/op",
+            "extra": "3613 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 83349,
+            "unit": "ns/op\t21140 B/op\t176 allocs/op",
+            "extra": "1402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 83349,
+            "unit": "ns/op",
+            "extra": "1402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 21140,
+            "unit": "B/op",
+            "extra": "1402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 176,
+            "unit": "allocs/op",
+            "extra": "1402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 294134,
+            "unit": "ns/op\t94515 B/op\t631 allocs/op",
+            "extra": "399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 294134,
+            "unit": "ns/op",
+            "extra": "399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 94515,
+            "unit": "B/op",
+            "extra": "399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 631,
+            "unit": "allocs/op",
+            "extra": "399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 765771,
+            "unit": "ns/op\t651194 B/op\t1416 allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 765771,
+            "unit": "ns/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 651194,
+            "unit": "B/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1416,
+            "unit": "allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1013,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "123127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1013,
+            "unit": "ns/op",
+            "extra": "123127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "123127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "123127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5199,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "22424 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5199,
+            "unit": "ns/op",
+            "extra": "22424 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "22424 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22424 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5075,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "23676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5075,
+            "unit": "ns/op",
+            "extra": "23676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "23676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2655,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "45858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2655,
+            "unit": "ns/op",
+            "extra": "45858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "45858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "45858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1026,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "108661 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1026,
+            "unit": "ns/op",
+            "extra": "108661 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "108661 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "108661 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5251,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "22411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5251,
+            "unit": "ns/op",
+            "extra": "22411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "22411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5216,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "23085 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5216,
+            "unit": "ns/op",
+            "extra": "23085 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "23085 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23085 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2683,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "45446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2683,
+            "unit": "ns/op",
+            "extra": "45446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "45446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "45446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10773,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "11214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10773,
+            "unit": "ns/op",
+            "extra": "11214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "11214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "11214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45139,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45139,
+            "unit": "ns/op",
+            "extra": "2634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2634 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 43700,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2935 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 43700,
+            "unit": "ns/op",
+            "extra": "2935 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2935 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2935 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24624,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24624,
+            "unit": "ns/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10983,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10983,
+            "unit": "ns/op",
+            "extra": "10899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 46305,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 46305,
+            "unit": "ns/op",
+            "extra": "2562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45580,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2800 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45580,
+            "unit": "ns/op",
+            "extra": "2800 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2800 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2800 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24650,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24650,
+            "unit": "ns/op",
+            "extra": "4695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 201182,
+            "unit": "ns/op\t434180 B/op\t1 allocs/op",
+            "extra": "588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 201182,
+            "unit": "ns/op",
+            "extra": "588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434180,
+            "unit": "B/op",
+            "extra": "588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 533387,
+            "unit": "ns/op\t588953 B/op\t922 allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 533387,
+            "unit": "ns/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588953,
+            "unit": "B/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 511223,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 511223,
+            "unit": "ns/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 250475,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 250475,
+            "unit": "ns/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 159724,
+            "unit": "ns/op\t434176 B/op\t1 allocs/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 159724,
+            "unit": "ns/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434176,
+            "unit": "B/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 515554,
+            "unit": "ns/op\t588954 B/op\t922 allocs/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 515554,
+            "unit": "ns/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588954,
+            "unit": "B/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 515701,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "234 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 515701,
+            "unit": "ns/op",
+            "extra": "234 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "234 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "234 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 252556,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 252556,
+            "unit": "ns/op",
+            "extra": "464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 405.4,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "295905 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 405.4,
+            "unit": "ns/op",
+            "extra": "295905 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "295905 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "295905 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 399.3,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "303128 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 399.3,
+            "unit": "ns/op",
+            "extra": "303128 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "303128 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "303128 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2921,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "40096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2921,
+            "unit": "ns/op",
+            "extra": "40096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "40096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "40096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2931,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "41491 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2931,
+            "unit": "ns/op",
+            "extra": "41491 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "41491 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "41491 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45812,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45812,
+            "unit": "ns/op",
+            "extra": "2521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 46329,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2580 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 46329,
+            "unit": "ns/op",
+            "extra": "2580 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2580 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2580 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1205,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "86858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1205,
+            "unit": "ns/op",
+            "extra": "86858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "86858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "86858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1812,
+            "unit": "ns/op\t4672 B/op\t21 allocs/op",
+            "extra": "62049 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1812,
+            "unit": "ns/op",
+            "extra": "62049 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4672,
+            "unit": "B/op",
+            "extra": "62049 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "62049 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1737,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "66718 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1737,
+            "unit": "ns/op",
+            "extra": "66718 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "66718 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "66718 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10180,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10180,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 17108,
+            "unit": "ns/op\t46720 B/op\t201 allocs/op",
+            "extra": "6114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 17108,
+            "unit": "ns/op",
+            "extra": "6114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 46720,
+            "unit": "B/op",
+            "extra": "6114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 201,
+            "unit": "allocs/op",
+            "extra": "6114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 17277,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "6325 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 17277,
+            "unit": "ns/op",
+            "extra": "6325 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "6325 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "6325 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 151390,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "766 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 151390,
+            "unit": "ns/op",
+            "extra": "766 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "766 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "766 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 226008,
+            "unit": "ns/op\t460448 B/op\t2001 allocs/op",
+            "extra": "459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 226008,
+            "unit": "ns/op",
+            "extra": "459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 460448,
+            "unit": "B/op",
+            "extra": "459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 2001,
+            "unit": "allocs/op",
+            "extra": "459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 200205,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "572 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 200205,
+            "unit": "ns/op",
+            "extra": "572 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "572 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "572 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 7973,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "15036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 7973,
+            "unit": "ns/op",
+            "extra": "15036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "15036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "15036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8050,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "14959 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8050,
+            "unit": "ns/op",
+            "extra": "14959 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "14959 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "14959 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81006,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81006,
+            "unit": "ns/op",
+            "extra": "1449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81359,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1394 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81359,
+            "unit": "ns/op",
+            "extra": "1394 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1394 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1394 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 823954,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 823954,
+            "unit": "ns/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 876853,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "139 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 876853,
+            "unit": "ns/op",
+            "extra": "139 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "139 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "139 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1457,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "100746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1457,
+            "unit": "ns/op",
+            "extra": "100746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "100746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "100746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1544,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "84457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1544,
+            "unit": "ns/op",
+            "extra": "84457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "84457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "84457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1493,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "82514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1493,
+            "unit": "ns/op",
+            "extra": "82514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "82514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "82514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6349,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "18162 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6349,
+            "unit": "ns/op",
+            "extra": "18162 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "18162 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "18162 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5950,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "20097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5950,
+            "unit": "ns/op",
+            "extra": "20097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "20097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "20097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6044,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "19666 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6044,
+            "unit": "ns/op",
+            "extra": "19666 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "19666 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "19666 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 84311,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 84311,
+            "unit": "ns/op",
+            "extra": "1411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 82921,
+            "unit": "ns/op\t144553 B/op\t7 allocs/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 82921,
+            "unit": "ns/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144553,
+            "unit": "B/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1408 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 76730,
+            "unit": "ns/op\t144553 B/op\t7 allocs/op",
+            "extra": "1480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 76730,
+            "unit": "ns/op",
+            "extra": "1480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144553,
+            "unit": "B/op",
+            "extra": "1480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 37619,
+            "unit": "ns/op\t2688 B/op\t73 allocs/op",
+            "extra": "3069 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 37619,
+            "unit": "ns/op",
+            "extra": "3069 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "3069 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 73,
+            "unit": "allocs/op",
+            "extra": "3069 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87784,
+            "unit": "ns/op\t6184 B/op\t159 allocs/op",
+            "extra": "1354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87784,
+            "unit": "ns/op",
+            "extra": "1354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6184,
+            "unit": "B/op",
+            "extra": "1354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 159,
+            "unit": "allocs/op",
+            "extra": "1354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87503,
+            "unit": "ns/op\t4665 B/op\t158 allocs/op",
+            "extra": "1329 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87503,
+            "unit": "ns/op",
+            "extra": "1329 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4665,
+            "unit": "B/op",
+            "extra": "1329 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "1329 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 24638,
+            "unit": "ns/op\t10520 B/op\t85 allocs/op",
+            "extra": "5307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 24638,
+            "unit": "ns/op",
+            "extra": "5307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10520,
+            "unit": "B/op",
+            "extra": "5307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 85,
+            "unit": "allocs/op",
+            "extra": "5307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 90752,
+            "unit": "ns/op\t95928 B/op\t465 allocs/op",
+            "extra": "1273 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 90752,
+            "unit": "ns/op",
+            "extra": "1273 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95928,
+            "unit": "B/op",
+            "extra": "1273 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 465,
+            "unit": "allocs/op",
+            "extra": "1273 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 775191,
+            "unit": "ns/op\t901753 B/op\t3962 allocs/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 775191,
+            "unit": "ns/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901753,
+            "unit": "B/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3962,
+            "unit": "allocs/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 30083,
+            "unit": "ns/op\t12354 B/op\t99 allocs/op",
+            "extra": "4207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 30083,
+            "unit": "ns/op",
+            "extra": "4207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 12354,
+            "unit": "B/op",
+            "extra": "4207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 99,
+            "unit": "allocs/op",
+            "extra": "4207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 148059,
+            "unit": "ns/op\t116921 B/op\t507 allocs/op",
+            "extra": "750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 148059,
+            "unit": "ns/op",
+            "extra": "750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 116921,
+            "unit": "B/op",
+            "extra": "750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 507,
+            "unit": "allocs/op",
+            "extra": "750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1248469,
+            "unit": "ns/op\t1110065 B/op\t4056 allocs/op",
+            "extra": "85 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1248469,
+            "unit": "ns/op",
+            "extra": "85 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1110065,
+            "unit": "B/op",
+            "extra": "85 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4056,
+            "unit": "allocs/op",
+            "extra": "85 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 46751,
+            "unit": "ns/op\t24350 B/op\t218 allocs/op",
+            "extra": "2588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 46751,
+            "unit": "ns/op",
+            "extra": "2588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 24350,
+            "unit": "B/op",
+            "extra": "2588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 218,
+            "unit": "allocs/op",
+            "extra": "2588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 159116,
+            "unit": "ns/op\t147068 B/op\t682 allocs/op",
+            "extra": "768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 159116,
+            "unit": "ns/op",
+            "extra": "768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 147068,
+            "unit": "B/op",
+            "extra": "768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 682,
+            "unit": "allocs/op",
+            "extra": "768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1231015,
+            "unit": "ns/op\t1308898 B/op\t4974 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1231015,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1308898,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4974,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 26654,
+            "unit": "ns/op\t10539 B/op\t86 allocs/op",
+            "extra": "4389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 26654,
+            "unit": "ns/op",
+            "extra": "4389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10539,
+            "unit": "B/op",
+            "extra": "4389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 86,
+            "unit": "allocs/op",
+            "extra": "4389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 99591,
+            "unit": "ns/op\t95949 B/op\t466 allocs/op",
+            "extra": "1268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 99591,
+            "unit": "ns/op",
+            "extra": "1268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95949,
+            "unit": "B/op",
+            "extra": "1268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 466,
+            "unit": "allocs/op",
+            "extra": "1268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 810970,
+            "unit": "ns/op\t901768 B/op\t3963 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 810970,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901768,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3963,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3802,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "31122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3802,
+            "unit": "ns/op",
+            "extra": "31122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "31122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "31122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 47880,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 47880,
+            "unit": "ns/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 524683,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 524683,
+            "unit": "ns/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 11077,
+            "unit": "ns/op\t9656 B/op\t118 allocs/op",
+            "extra": "9160 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 11077,
+            "unit": "ns/op",
+            "extra": "9160 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9656,
+            "unit": "B/op",
+            "extra": "9160 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "9160 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 31825,
+            "unit": "ns/op\t9672 B/op\t118 allocs/op",
+            "extra": "3990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 31825,
+            "unit": "ns/op",
+            "extra": "3990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9672,
+            "unit": "B/op",
+            "extra": "3990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "3990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 243833,
+            "unit": "ns/op\t9731 B/op\t118 allocs/op",
+            "extra": "498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 243833,
+            "unit": "ns/op",
+            "extra": "498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9731,
+            "unit": "B/op",
+            "extra": "498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.578,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12510379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.578,
+            "unit": "ns/op",
+            "extra": "12510379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12510379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12510379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 398.3,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "262688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 398.3,
+            "unit": "ns/op",
+            "extra": "262688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "262688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "262688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 154.2,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "769483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 154.2,
+            "unit": "ns/op",
+            "extra": "769483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "769483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "769483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3816,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "31047 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3816,
+            "unit": "ns/op",
+            "extra": "31047 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "31047 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "31047 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 4273,
+            "unit": "ns/op\t2280 B/op\t16 allocs/op",
+            "extra": "27765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 4273,
+            "unit": "ns/op",
+            "extra": "27765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 2280,
+            "unit": "B/op",
+            "extra": "27765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "27765 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.439,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12743688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.439,
+            "unit": "ns/op",
+            "extra": "12743688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12743688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12743688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3141,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "37179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3141,
+            "unit": "ns/op",
+            "extra": "37179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "37179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "37179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 413.5,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "296127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 413.5,
+            "unit": "ns/op",
+            "extra": "296127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "296127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "296127 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 48317,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2570 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 48317,
+            "unit": "ns/op",
+            "extra": "2570 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2570 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2570 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 51357,
+            "unit": "ns/op\t26776 B/op\t50 allocs/op",
+            "extra": "2488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 51357,
+            "unit": "ns/op",
+            "extra": "2488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 26776,
+            "unit": "B/op",
+            "extra": "2488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "2488 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.431,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12592293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.431,
+            "unit": "ns/op",
+            "extra": "12592293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12592293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12592293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 33345,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "3261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 33345,
+            "unit": "ns/op",
+            "extra": "3261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "3261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3819,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "30624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3819,
+            "unit": "ns/op",
+            "extra": "30624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "30624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "30624 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 521562,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 521562,
+            "unit": "ns/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 532590,
+            "unit": "ns/op\t245128 B/op\t95 allocs/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 532590,
+            "unit": "ns/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 245128,
+            "unit": "B/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 95,
+            "unit": "allocs/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 649.4,
+            "unit": "ns/op\t704 B/op\t8 allocs/op",
+            "extra": "183322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 649.4,
+            "unit": "ns/op",
+            "extra": "183322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 704,
+            "unit": "B/op",
+            "extra": "183322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "183322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3876,
+            "unit": "ns/op\t5169 B/op\t42 allocs/op",
+            "extra": "31479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3876,
+            "unit": "ns/op",
+            "extra": "31479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 5169,
+            "unit": "B/op",
+            "extra": "31479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "31479 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 35985,
+            "unit": "ns/op\t50668 B/op\t321 allocs/op",
+            "extra": "3547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 35985,
+            "unit": "ns/op",
+            "extra": "3547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 50668,
+            "unit": "B/op",
+            "extra": "3547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 321,
+            "unit": "allocs/op",
+            "extra": "3547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 83354,
+            "unit": "ns/op\t21144 B/op\t176 allocs/op",
+            "extra": "1444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 83354,
+            "unit": "ns/op",
+            "extra": "1444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 21144,
+            "unit": "B/op",
+            "extra": "1444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 176,
+            "unit": "allocs/op",
+            "extra": "1444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 290709,
+            "unit": "ns/op\t94519 B/op\t631 allocs/op",
+            "extra": "409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 290709,
+            "unit": "ns/op",
+            "extra": "409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 94519,
+            "unit": "B/op",
+            "extra": "409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 631,
+            "unit": "allocs/op",
+            "extra": "409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 794908,
+            "unit": "ns/op\t651155 B/op\t1416 allocs/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 794908,
+            "unit": "ns/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 651155,
+            "unit": "B/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1416,
+            "unit": "allocs/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1026,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "109293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1026,
+            "unit": "ns/op",
+            "extra": "109293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "109293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "109293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5262,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "22832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5262,
+            "unit": "ns/op",
+            "extra": "22832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "22832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5149,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "23098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5149,
+            "unit": "ns/op",
+            "extra": "23098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "23098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2693,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "44889 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2693,
+            "unit": "ns/op",
+            "extra": "44889 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "44889 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "44889 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1019,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "112396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1019,
+            "unit": "ns/op",
+            "extra": "112396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "112396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "112396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5220,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "22746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5220,
+            "unit": "ns/op",
+            "extra": "22746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "22746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22746 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5260,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "22179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5260,
+            "unit": "ns/op",
+            "extra": "22179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "22179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22179 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2702,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "43869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2702,
+            "unit": "ns/op",
+            "extra": "43869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "43869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "43869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11655,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11655,
+            "unit": "ns/op",
+            "extra": "10450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45185,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45185,
+            "unit": "ns/op",
+            "extra": "2626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 43259,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 43259,
+            "unit": "ns/op",
+            "extra": "2740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 25201,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4694 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 25201,
+            "unit": "ns/op",
+            "extra": "4694 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4694 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4694 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10918,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "11577 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10918,
+            "unit": "ns/op",
+            "extra": "11577 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "11577 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "11577 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44491,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44491,
+            "unit": "ns/op",
+            "extra": "2402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2402 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44416,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44416,
+            "unit": "ns/op",
+            "extra": "2848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2848 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24506,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4897 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24506,
+            "unit": "ns/op",
+            "extra": "4897 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4897 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4897 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 200102,
+            "unit": "ns/op\t434180 B/op\t1 allocs/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 200102,
+            "unit": "ns/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434180,
+            "unit": "B/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 514908,
+            "unit": "ns/op\t588954 B/op\t922 allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 514908,
+            "unit": "ns/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588954,
+            "unit": "B/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 526949,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 526949,
+            "unit": "ns/op",
+            "extra": "217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "217 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 253629,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "475 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 253629,
+            "unit": "ns/op",
+            "extra": "475 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "475 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "475 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 162140,
+            "unit": "ns/op\t434177 B/op\t1 allocs/op",
+            "extra": "663 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 162140,
+            "unit": "ns/op",
+            "extra": "663 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434177,
+            "unit": "B/op",
+            "extra": "663 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "663 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 529226,
+            "unit": "ns/op\t588955 B/op\t922 allocs/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 529226,
+            "unit": "ns/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588955,
+            "unit": "B/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 535890,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 535890,
+            "unit": "ns/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 251411,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 251411,
+            "unit": "ns/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 413.1,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "289305 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 413.1,
+            "unit": "ns/op",
+            "extra": "289305 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "289305 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "289305 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 416.6,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "251035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 416.6,
+            "unit": "ns/op",
+            "extra": "251035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "251035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "251035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2978,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "38895 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2978,
+            "unit": "ns/op",
+            "extra": "38895 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "38895 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "38895 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2929,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "40786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2929,
+            "unit": "ns/op",
+            "extra": "40786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "40786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "40786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 47164,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 47164,
+            "unit": "ns/op",
+            "extra": "2335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2335 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 49597,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 49597,
+            "unit": "ns/op",
+            "extra": "2324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1289,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "84603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1289,
+            "unit": "ns/op",
+            "extra": "84603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "84603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "84603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1912,
+            "unit": "ns/op\t4672 B/op\t21 allocs/op",
+            "extra": "62498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1912,
+            "unit": "ns/op",
+            "extra": "62498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4672,
+            "unit": "B/op",
+            "extra": "62498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "62498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1841,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "64285 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1841,
+            "unit": "ns/op",
+            "extra": "64285 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "64285 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "64285 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10632,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "11238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10632,
+            "unit": "ns/op",
+            "extra": "11238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "11238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "11238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 17696,
+            "unit": "ns/op\t46720 B/op\t201 allocs/op",
+            "extra": "6750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 17696,
+            "unit": "ns/op",
+            "extra": "6750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 46720,
+            "unit": "B/op",
+            "extra": "6750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 201,
+            "unit": "allocs/op",
+            "extra": "6750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 17763,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "6277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 17763,
+            "unit": "ns/op",
+            "extra": "6277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "6277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "6277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 128921,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 128921,
+            "unit": "ns/op",
+            "extra": "823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 236652,
+            "unit": "ns/op\t460448 B/op\t2001 allocs/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 236652,
+            "unit": "ns/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 460448,
+            "unit": "B/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 2001,
+            "unit": "allocs/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 199447,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 199447,
+            "unit": "ns/op",
+            "extra": "591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 7988,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "15020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 7988,
+            "unit": "ns/op",
+            "extra": "15020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "15020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "15020 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 7989,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "14996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 7989,
+            "unit": "ns/op",
+            "extra": "14996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "14996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "14996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81045,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1465 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81045,
+            "unit": "ns/op",
+            "extra": "1465 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1465 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1465 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81195,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81195,
+            "unit": "ns/op",
+            "extra": "1477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 831073,
+            "unit": "ns/op\t9 B/op\t0 allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 831073,
+            "unit": "ns/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 9,
+            "unit": "B/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 833584,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 833584,
+            "unit": "ns/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1107,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "99096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1107,
+            "unit": "ns/op",
+            "extra": "99096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "99096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "99096 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1277,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "89073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1277,
+            "unit": "ns/op",
+            "extra": "89073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "89073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "89073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1043,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "119654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1043,
+            "unit": "ns/op",
+            "extra": "119654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "119654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "119654 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5941,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "20146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5941,
+            "unit": "ns/op",
+            "extra": "20146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "20146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "20146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8270,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "13348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8270,
+            "unit": "ns/op",
+            "extra": "13348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "13348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "13348 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6019,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "19956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6019,
+            "unit": "ns/op",
+            "extra": "19956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "19956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "19956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 83651,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1376 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 83651,
+            "unit": "ns/op",
+            "extra": "1376 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1376 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1376 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 83022,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 83022,
+            "unit": "ns/op",
+            "extra": "1473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81019,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81019,
+            "unit": "ns/op",
+            "extra": "1418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 37590,
+            "unit": "ns/op\t2688 B/op\t73 allocs/op",
+            "extra": "3079 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 37590,
+            "unit": "ns/op",
+            "extra": "3079 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "3079 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 73,
+            "unit": "allocs/op",
+            "extra": "3079 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87323,
+            "unit": "ns/op\t6184 B/op\t159 allocs/op",
+            "extra": "1377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87323,
+            "unit": "ns/op",
+            "extra": "1377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6184,
+            "unit": "B/op",
+            "extra": "1377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 159,
+            "unit": "allocs/op",
+            "extra": "1377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87451,
+            "unit": "ns/op\t4665 B/op\t158 allocs/op",
+            "extra": "1362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87451,
+            "unit": "ns/op",
+            "extra": "1362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4665,
+            "unit": "B/op",
+            "extra": "1362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "1362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 22825,
+            "unit": "ns/op\t10520 B/op\t85 allocs/op",
+            "extra": "5161 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 22825,
+            "unit": "ns/op",
+            "extra": "5161 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10520,
+            "unit": "B/op",
+            "extra": "5161 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 85,
+            "unit": "allocs/op",
+            "extra": "5161 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 92438,
+            "unit": "ns/op\t95935 B/op\t465 allocs/op",
+            "extra": "1248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 92438,
+            "unit": "ns/op",
+            "extra": "1248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95935,
+            "unit": "B/op",
+            "extra": "1248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 465,
+            "unit": "allocs/op",
+            "extra": "1248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 714171,
+            "unit": "ns/op\t901733 B/op\t3962 allocs/op",
+            "extra": "169 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 714171,
+            "unit": "ns/op",
+            "extra": "169 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901733,
+            "unit": "B/op",
+            "extra": "169 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3962,
+            "unit": "allocs/op",
+            "extra": "169 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 29570,
+            "unit": "ns/op\t12354 B/op\t99 allocs/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 29570,
+            "unit": "ns/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 12354,
+            "unit": "B/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 99,
+            "unit": "allocs/op",
+            "extra": "3512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 144606,
+            "unit": "ns/op\t116921 B/op\t507 allocs/op",
+            "extra": "835 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 144606,
+            "unit": "ns/op",
+            "extra": "835 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 116921,
+            "unit": "B/op",
+            "extra": "835 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 507,
+            "unit": "allocs/op",
+            "extra": "835 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1214298,
+            "unit": "ns/op\t1110038 B/op\t4055 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1214298,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1110038,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4055,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 44169,
+            "unit": "ns/op\t24358 B/op\t218 allocs/op",
+            "extra": "3008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 44169,
+            "unit": "ns/op",
+            "extra": "3008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 24358,
+            "unit": "B/op",
+            "extra": "3008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 218,
+            "unit": "allocs/op",
+            "extra": "3008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 156147,
+            "unit": "ns/op\t146424 B/op\t682 allocs/op",
+            "extra": "775 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 156147,
+            "unit": "ns/op",
+            "extra": "775 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 146424,
+            "unit": "B/op",
+            "extra": "775 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 682,
+            "unit": "allocs/op",
+            "extra": "775 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1207794,
+            "unit": "ns/op\t1308126 B/op\t4973 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1207794,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1308126,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4973,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 26333,
+            "unit": "ns/op\t10538 B/op\t86 allocs/op",
+            "extra": "4252 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 26333,
+            "unit": "ns/op",
+            "extra": "4252 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10538,
+            "unit": "B/op",
+            "extra": "4252 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 86,
+            "unit": "allocs/op",
+            "extra": "4252 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 98591,
+            "unit": "ns/op\t95951 B/op\t466 allocs/op",
+            "extra": "1236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 98591,
+            "unit": "ns/op",
+            "extra": "1236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95951,
+            "unit": "B/op",
+            "extra": "1236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 466,
+            "unit": "allocs/op",
+            "extra": "1236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 787019,
+            "unit": "ns/op\t901767 B/op\t3963 allocs/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 787019,
+            "unit": "ns/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901767,
+            "unit": "B/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3963,
+            "unit": "allocs/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3692,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "32690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3692,
+            "unit": "ns/op",
+            "extra": "32690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "32690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "32690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 47257,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2619 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 47257,
+            "unit": "ns/op",
+            "extra": "2619 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2619 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2619 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 503820,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 503820,
+            "unit": "ns/op",
+            "extra": "236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 10754,
+            "unit": "ns/op\t9664 B/op\t118 allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 10754,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9664,
+            "unit": "B/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 31652,
+            "unit": "ns/op\t9644 B/op\t118 allocs/op",
+            "extra": "4030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 31652,
+            "unit": "ns/op",
+            "extra": "4030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9644,
+            "unit": "B/op",
+            "extra": "4030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "4030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 242275,
+            "unit": "ns/op\t9731 B/op\t118 allocs/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 242275,
+            "unit": "ns/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9731,
+            "unit": "B/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.438,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12590864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.438,
+            "unit": "ns/op",
+            "extra": "12590864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12590864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12590864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 385.6,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "282381 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 385.6,
+            "unit": "ns/op",
+            "extra": "282381 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "282381 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "282381 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 149.2,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "745298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 149.2,
+            "unit": "ns/op",
+            "extra": "745298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "745298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "745298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3795,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "31387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3795,
+            "unit": "ns/op",
+            "extra": "31387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "31387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "31387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 4297,
+            "unit": "ns/op\t2280 B/op\t16 allocs/op",
+            "extra": "28275 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 4297,
+            "unit": "ns/op",
+            "extra": "28275 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 2280,
+            "unit": "B/op",
+            "extra": "28275 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "28275 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.522,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "11734042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.522,
+            "unit": "ns/op",
+            "extra": "11734042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "11734042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "11734042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3176,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "36058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3176,
+            "unit": "ns/op",
+            "extra": "36058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "36058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "36058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 406.8,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "272976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 406.8,
+            "unit": "ns/op",
+            "extra": "272976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "272976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "272976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 48122,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 48122,
+            "unit": "ns/op",
+            "extra": "2653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 51656,
+            "unit": "ns/op\t26776 B/op\t50 allocs/op",
+            "extra": "2277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 51656,
+            "unit": "ns/op",
+            "extra": "2277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 26776,
+            "unit": "B/op",
+            "extra": "2277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "2277 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.476,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12426702 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.476,
+            "unit": "ns/op",
+            "extra": "12426702 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12426702 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12426702 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 33317,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "3315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 33317,
+            "unit": "ns/op",
+            "extra": "3315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "3315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3822,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "31222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3822,
+            "unit": "ns/op",
+            "extra": "31222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "31222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "31222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 513940,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "231 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 513940,
+            "unit": "ns/op",
+            "extra": "231 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "231 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "231 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 529972,
+            "unit": "ns/op\t245128 B/op\t95 allocs/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 529972,
+            "unit": "ns/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 245128,
+            "unit": "B/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 95,
+            "unit": "allocs/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 640.6,
+            "unit": "ns/op\t704 B/op\t8 allocs/op",
+            "extra": "186627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 640.6,
+            "unit": "ns/op",
+            "extra": "186627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 704,
+            "unit": "B/op",
+            "extra": "186627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "186627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3806,
+            "unit": "ns/op\t5169 B/op\t42 allocs/op",
+            "extra": "31302 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3806,
+            "unit": "ns/op",
+            "extra": "31302 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 5169,
+            "unit": "B/op",
+            "extra": "31302 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "31302 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 36725,
+            "unit": "ns/op\t50668 B/op\t321 allocs/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 36725,
+            "unit": "ns/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 50668,
+            "unit": "B/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 321,
+            "unit": "allocs/op",
+            "extra": "3598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 83097,
+            "unit": "ns/op\t21140 B/op\t176 allocs/op",
+            "extra": "1419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 83097,
+            "unit": "ns/op",
+            "extra": "1419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 21140,
+            "unit": "B/op",
+            "extra": "1419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 176,
+            "unit": "allocs/op",
+            "extra": "1419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 290744,
+            "unit": "ns/op\t94515 B/op\t631 allocs/op",
+            "extra": "415 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 290744,
+            "unit": "ns/op",
+            "extra": "415 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 94515,
+            "unit": "B/op",
+            "extra": "415 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 631,
+            "unit": "allocs/op",
+            "extra": "415 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 783082,
+            "unit": "ns/op\t651192 B/op\t1416 allocs/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 783082,
+            "unit": "ns/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 651192,
+            "unit": "B/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1416,
+            "unit": "allocs/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1057,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "103951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1057,
+            "unit": "ns/op",
+            "extra": "103951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "103951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "103951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5001,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "23883 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5001,
+            "unit": "ns/op",
+            "extra": "23883 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "23883 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23883 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5083,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "23884 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5083,
+            "unit": "ns/op",
+            "extra": "23884 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "23884 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23884 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2676,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "45631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2676,
+            "unit": "ns/op",
+            "extra": "45631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "45631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "45631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1005,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "114439 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1005,
+            "unit": "ns/op",
+            "extra": "114439 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "114439 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "114439 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5009,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "23838 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5009,
+            "unit": "ns/op",
+            "extra": "23838 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "23838 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23838 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5165,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "23172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5165,
+            "unit": "ns/op",
+            "extra": "23172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "23172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2703,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "43522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2703,
+            "unit": "ns/op",
+            "extra": "43522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "43522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "43522 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10614,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "11450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10614,
+            "unit": "ns/op",
+            "extra": "11450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "11450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "11450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44539,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44539,
+            "unit": "ns/op",
+            "extra": "2690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2690 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44681,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44681,
+            "unit": "ns/op",
+            "extra": "2840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2840 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24662,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24662,
+            "unit": "ns/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4882 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11300,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11300,
+            "unit": "ns/op",
+            "extra": "10830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44607,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44607,
+            "unit": "ns/op",
+            "extra": "2664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44395,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44395,
+            "unit": "ns/op",
+            "extra": "2996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2996 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24557,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4677 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24557,
+            "unit": "ns/op",
+            "extra": "4677 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4677 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4677 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 216314,
+            "unit": "ns/op\t434178 B/op\t1 allocs/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 216314,
+            "unit": "ns/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434178,
+            "unit": "B/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "655 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 562369,
+            "unit": "ns/op\t588953 B/op\t922 allocs/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 562369,
+            "unit": "ns/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588953,
+            "unit": "B/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 548164,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 548164,
+            "unit": "ns/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 250459,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 250459,
+            "unit": "ns/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 161447,
+            "unit": "ns/op\t434177 B/op\t1 allocs/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 161447,
+            "unit": "ns/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434177,
+            "unit": "B/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 561850,
+            "unit": "ns/op\t588954 B/op\t922 allocs/op",
+            "extra": "213 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 561850,
+            "unit": "ns/op",
+            "extra": "213 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588954,
+            "unit": "B/op",
+            "extra": "213 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "213 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 556802,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 556802,
+            "unit": "ns/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 251718,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "471 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 251718,
+            "unit": "ns/op",
+            "extra": "471 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "471 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "471 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 412.3,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "287418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 412.3,
+            "unit": "ns/op",
+            "extra": "287418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "287418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "287418 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 393.7,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "305499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 393.7,
+            "unit": "ns/op",
+            "extra": "305499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "305499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "305499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 3149,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "38480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 3149,
+            "unit": "ns/op",
+            "extra": "38480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "38480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "38480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 3015,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "39454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 3015,
+            "unit": "ns/op",
+            "extra": "39454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "39454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "39454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 48673,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2233 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 48673,
+            "unit": "ns/op",
+            "extra": "2233 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2233 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2233 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 63859,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "1951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 63859,
+            "unit": "ns/op",
+            "extra": "1951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "1951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "1951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1208,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "99706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1208,
+            "unit": "ns/op",
+            "extra": "99706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "99706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "99706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1907,
+            "unit": "ns/op\t4672 B/op\t21 allocs/op",
+            "extra": "66130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1907,
+            "unit": "ns/op",
+            "extra": "66130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4672,
+            "unit": "B/op",
+            "extra": "66130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "66130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1830,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "56340 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1830,
+            "unit": "ns/op",
+            "extra": "56340 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "56340 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "56340 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11364,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "10579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11364,
+            "unit": "ns/op",
+            "extra": "10579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "10579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 18684,
+            "unit": "ns/op\t46720 B/op\t201 allocs/op",
+            "extra": "6451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 18684,
+            "unit": "ns/op",
+            "extra": "6451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 46720,
+            "unit": "B/op",
+            "extra": "6451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 201,
+            "unit": "allocs/op",
+            "extra": "6451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 18335,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "6518 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 18335,
+            "unit": "ns/op",
+            "extra": "6518 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "6518 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "6518 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 131646,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "793 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 131646,
+            "unit": "ns/op",
+            "extra": "793 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "793 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "793 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 236376,
+            "unit": "ns/op\t460448 B/op\t2001 allocs/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 236376,
+            "unit": "ns/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 460448,
+            "unit": "B/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 2001,
+            "unit": "allocs/op",
+            "extra": "528 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 220791,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 220791,
+            "unit": "ns/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 7968,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "15054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 7968,
+            "unit": "ns/op",
+            "extra": "15054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "15054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "15054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8005,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "14972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8005,
+            "unit": "ns/op",
+            "extra": "14972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "14972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "14972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 80889,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1484 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 80889,
+            "unit": "ns/op",
+            "extra": "1484 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1484 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1484 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81077,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81077,
+            "unit": "ns/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 827108,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 827108,
+            "unit": "ns/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 825396,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 825396,
+            "unit": "ns/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1043,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "100776 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1043,
+            "unit": "ns/op",
+            "extra": "100776 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "100776 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "100776 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1033,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "120135 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1033,
+            "unit": "ns/op",
+            "extra": "120135 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "120135 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "120135 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1049,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "114504 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1049,
+            "unit": "ns/op",
+            "extra": "114504 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "114504 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "114504 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6415,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "18867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6415,
+            "unit": "ns/op",
+            "extra": "18867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "18867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "18867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6460,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "18664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6460,
+            "unit": "ns/op",
+            "extra": "18664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "18664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "18664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 7169,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "16579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 7169,
+            "unit": "ns/op",
+            "extra": "16579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "16579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "16579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 99232,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 99232,
+            "unit": "ns/op",
+            "extra": "1222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 98792,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 98792,
+            "unit": "ns/op",
+            "extra": "1260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 94227,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 94227,
+            "unit": "ns/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 37501,
+            "unit": "ns/op\t2688 B/op\t73 allocs/op",
+            "extra": "3208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 37501,
+            "unit": "ns/op",
+            "extra": "3208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "3208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 73,
+            "unit": "allocs/op",
+            "extra": "3208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 88354,
+            "unit": "ns/op\t6184 B/op\t159 allocs/op",
+            "extra": "1310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 88354,
+            "unit": "ns/op",
+            "extra": "1310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6184,
+            "unit": "B/op",
+            "extra": "1310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 159,
+            "unit": "allocs/op",
+            "extra": "1310 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 89359,
+            "unit": "ns/op\t4665 B/op\t158 allocs/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 89359,
+            "unit": "ns/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4665,
+            "unit": "B/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "1249 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 24287,
+            "unit": "ns/op\t10520 B/op\t85 allocs/op",
+            "extra": "4719 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 24287,
+            "unit": "ns/op",
+            "extra": "4719 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10520,
+            "unit": "B/op",
+            "extra": "4719 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 85,
+            "unit": "allocs/op",
+            "extra": "4719 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 92796,
+            "unit": "ns/op\t95935 B/op\t465 allocs/op",
+            "extra": "1286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 92796,
+            "unit": "ns/op",
+            "extra": "1286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95935,
+            "unit": "B/op",
+            "extra": "1286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 465,
+            "unit": "allocs/op",
+            "extra": "1286 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 729793,
+            "unit": "ns/op\t901728 B/op\t3962 allocs/op",
+            "extra": "163 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 729793,
+            "unit": "ns/op",
+            "extra": "163 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901728,
+            "unit": "B/op",
+            "extra": "163 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3962,
+            "unit": "allocs/op",
+            "extra": "163 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 30339,
+            "unit": "ns/op\t12354 B/op\t99 allocs/op",
+            "extra": "3938 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 30339,
+            "unit": "ns/op",
+            "extra": "3938 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 12354,
+            "unit": "B/op",
+            "extra": "3938 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 99,
+            "unit": "allocs/op",
+            "extra": "3938 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 145945,
+            "unit": "ns/op\t116923 B/op\t507 allocs/op",
+            "extra": "802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 145945,
+            "unit": "ns/op",
+            "extra": "802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 116923,
+            "unit": "B/op",
+            "extra": "802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 507,
+            "unit": "allocs/op",
+            "extra": "802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1231028,
+            "unit": "ns/op\t1110039 B/op\t4055 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1231028,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1110039,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4055,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 45920,
+            "unit": "ns/op\t24321 B/op\t218 allocs/op",
+            "extra": "2212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 45920,
+            "unit": "ns/op",
+            "extra": "2212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 24321,
+            "unit": "B/op",
+            "extra": "2212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 218,
+            "unit": "allocs/op",
+            "extra": "2212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 157923,
+            "unit": "ns/op\t147338 B/op\t682 allocs/op",
+            "extra": "679 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 157923,
+            "unit": "ns/op",
+            "extra": "679 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 147338,
+            "unit": "B/op",
+            "extra": "679 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 682,
+            "unit": "allocs/op",
+            "extra": "679 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1263619,
+            "unit": "ns/op\t1304000 B/op\t4973 allocs/op",
+            "extra": "98 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1263619,
+            "unit": "ns/op",
+            "extra": "98 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1304000,
+            "unit": "B/op",
+            "extra": "98 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4973,
+            "unit": "allocs/op",
+            "extra": "98 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 26918,
+            "unit": "ns/op\t10538 B/op\t86 allocs/op",
+            "extra": "3932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 26918,
+            "unit": "ns/op",
+            "extra": "3932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10538,
+            "unit": "B/op",
+            "extra": "3932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 86,
+            "unit": "allocs/op",
+            "extra": "3932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 98433,
+            "unit": "ns/op\t95952 B/op\t466 allocs/op",
+            "extra": "1053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 98433,
+            "unit": "ns/op",
+            "extra": "1053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95952,
+            "unit": "B/op",
+            "extra": "1053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 466,
+            "unit": "allocs/op",
+            "extra": "1053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 801718,
+            "unit": "ns/op\t901787 B/op\t3963 allocs/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 801718,
+            "unit": "ns/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901787,
+            "unit": "B/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3963,
+            "unit": "allocs/op",
+            "extra": "148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3703,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "32438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3703,
+            "unit": "ns/op",
+            "extra": "32438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "32438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "32438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 47596,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 47596,
+            "unit": "ns/op",
+            "extra": "2692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 513732,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 513732,
+            "unit": "ns/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "230 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 12489,
+            "unit": "ns/op\t9655 B/op\t118 allocs/op",
+            "extra": "8816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 12489,
+            "unit": "ns/op",
+            "extra": "8816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9655,
+            "unit": "B/op",
+            "extra": "8816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "8816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 31603,
+            "unit": "ns/op\t9699 B/op\t118 allocs/op",
+            "extra": "4039 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 31603,
+            "unit": "ns/op",
+            "extra": "4039 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9699,
+            "unit": "B/op",
+            "extra": "4039 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "4039 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 242107,
+            "unit": "ns/op\t9731 B/op\t118 allocs/op",
+            "extra": "499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 242107,
+            "unit": "ns/op",
+            "extra": "499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9731,
+            "unit": "B/op",
+            "extra": "499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "499 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.407,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12660541 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.407,
+            "unit": "ns/op",
+            "extra": "12660541 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12660541 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12660541 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 391.1,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "276606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 391.1,
+            "unit": "ns/op",
+            "extra": "276606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "276606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "276606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 151.6,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "925524 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 151.6,
+            "unit": "ns/op",
+            "extra": "925524 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "925524 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "925524 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3806,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "31569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3806,
+            "unit": "ns/op",
+            "extra": "31569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "31569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "31569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 4259,
+            "unit": "ns/op\t2280 B/op\t16 allocs/op",
+            "extra": "28616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 4259,
+            "unit": "ns/op",
+            "extra": "28616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 2280,
+            "unit": "B/op",
+            "extra": "28616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "28616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.454,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12630355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.454,
+            "unit": "ns/op",
+            "extra": "12630355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12630355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12630355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3252,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "35500 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3252,
+            "unit": "ns/op",
+            "extra": "35500 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "35500 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "35500 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 406.1,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "246591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 406.1,
+            "unit": "ns/op",
+            "extra": "246591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "246591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "246591 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 48706,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2378 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 48706,
+            "unit": "ns/op",
+            "extra": "2378 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2378 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2378 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 52147,
+            "unit": "ns/op\t26776 B/op\t50 allocs/op",
+            "extra": "2523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 52147,
+            "unit": "ns/op",
+            "extra": "2523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 26776,
+            "unit": "B/op",
+            "extra": "2523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "2523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.483,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12646051 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.483,
+            "unit": "ns/op",
+            "extra": "12646051 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12646051 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12646051 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 32865,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "3410 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 32865,
+            "unit": "ns/op",
+            "extra": "3410 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "3410 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3410 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3878,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "30610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3878,
+            "unit": "ns/op",
+            "extra": "30610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "30610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "30610 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 521562,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 521562,
+            "unit": "ns/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "225 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 533284,
+            "unit": "ns/op\t245128 B/op\t95 allocs/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 533284,
+            "unit": "ns/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 245128,
+            "unit": "B/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 95,
+            "unit": "allocs/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 644.5,
+            "unit": "ns/op\t704 B/op\t8 allocs/op",
+            "extra": "156531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 644.5,
+            "unit": "ns/op",
+            "extra": "156531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 704,
+            "unit": "B/op",
+            "extra": "156531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "156531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3869,
+            "unit": "ns/op\t5169 B/op\t42 allocs/op",
+            "extra": "30409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3869,
+            "unit": "ns/op",
+            "extra": "30409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 5169,
+            "unit": "B/op",
+            "extra": "30409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "30409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 36328,
+            "unit": "ns/op\t50668 B/op\t321 allocs/op",
+            "extra": "3450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 36328,
+            "unit": "ns/op",
+            "extra": "3450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 50668,
+            "unit": "B/op",
+            "extra": "3450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 321,
+            "unit": "allocs/op",
+            "extra": "3450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 82842,
+            "unit": "ns/op\t21144 B/op\t176 allocs/op",
+            "extra": "1412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 82842,
+            "unit": "ns/op",
+            "extra": "1412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 21144,
+            "unit": "B/op",
+            "extra": "1412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 176,
+            "unit": "allocs/op",
+            "extra": "1412 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 296180,
+            "unit": "ns/op\t94520 B/op\t631 allocs/op",
+            "extra": "392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 296180,
+            "unit": "ns/op",
+            "extra": "392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 94520,
+            "unit": "B/op",
+            "extra": "392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 631,
+            "unit": "allocs/op",
+            "extra": "392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 778095,
+            "unit": "ns/op\t651202 B/op\t1416 allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 778095,
+            "unit": "ns/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 651202,
+            "unit": "B/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1416,
+            "unit": "allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1083,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "105345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1083,
+            "unit": "ns/op",
+            "extra": "105345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "105345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "105345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5261,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "21771 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5261,
+            "unit": "ns/op",
+            "extra": "21771 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "21771 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "21771 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5223,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "22909 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5223,
+            "unit": "ns/op",
+            "extra": "22909 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "22909 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22909 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2674,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "44983 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2674,
+            "unit": "ns/op",
+            "extra": "44983 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "44983 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "44983 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1065,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "111099 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1065,
+            "unit": "ns/op",
+            "extra": "111099 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "111099 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "111099 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5259,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "22902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5259,
+            "unit": "ns/op",
+            "extra": "22902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "22902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22902 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5246,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "22256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5246,
+            "unit": "ns/op",
+            "extra": "22256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "22256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2683,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "45510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2683,
+            "unit": "ns/op",
+            "extra": "45510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "45510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "45510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11266,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10658 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11266,
+            "unit": "ns/op",
+            "extra": "10658 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10658 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10658 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44472,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44472,
+            "unit": "ns/op",
+            "extra": "2532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45110,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2683 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45110,
+            "unit": "ns/op",
+            "extra": "2683 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2683 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2683 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24521,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24521,
+            "unit": "ns/op",
+            "extra": "4890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4890 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11323,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11323,
+            "unit": "ns/op",
+            "extra": "10627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10627 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 43607,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 43607,
+            "unit": "ns/op",
+            "extra": "2742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44301,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44301,
+            "unit": "ns/op",
+            "extra": "2870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24558,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4602 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24558,
+            "unit": "ns/op",
+            "extra": "4602 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4602 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4602 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 243568,
+            "unit": "ns/op\t434177 B/op\t1 allocs/op",
+            "extra": "626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 243568,
+            "unit": "ns/op",
+            "extra": "626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434177,
+            "unit": "B/op",
+            "extra": "626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "626 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 586330,
+            "unit": "ns/op\t588953 B/op\t922 allocs/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 586330,
+            "unit": "ns/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588953,
+            "unit": "B/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 533716,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 533716,
+            "unit": "ns/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "223 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 251387,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 251387,
+            "unit": "ns/op",
+            "extra": "477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "477 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 180290,
+            "unit": "ns/op\t434177 B/op\t1 allocs/op",
+            "extra": "643 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 180290,
+            "unit": "ns/op",
+            "extra": "643 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434177,
+            "unit": "B/op",
+            "extra": "643 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "643 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 545581,
+            "unit": "ns/op\t588953 B/op\t922 allocs/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 545581,
+            "unit": "ns/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588953,
+            "unit": "B/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 543917,
+            "unit": "ns/op\t603361 B/op\t922 allocs/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 543917,
+            "unit": "ns/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603361,
+            "unit": "B/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 251580,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "472 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 251580,
+            "unit": "ns/op",
+            "extra": "472 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "472 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "472 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 429.9,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "276352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 429.9,
+            "unit": "ns/op",
+            "extra": "276352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "276352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "276352 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 427.2,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "291427 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 427.2,
+            "unit": "ns/op",
+            "extra": "291427 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "291427 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "291427 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 3029,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "38557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 3029,
+            "unit": "ns/op",
+            "extra": "38557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "38557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "38557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 3053,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "39042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 3053,
+            "unit": "ns/op",
+            "extra": "39042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "39042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "39042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 47779,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 47779,
+            "unit": "ns/op",
+            "extra": "2320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2320 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 46973,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 46973,
+            "unit": "ns/op",
+            "extra": "2276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1347,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "84511 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1347,
+            "unit": "ns/op",
+            "extra": "84511 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "84511 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "84511 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1963,
+            "unit": "ns/op\t4672 B/op\t21 allocs/op",
+            "extra": "58236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1963,
+            "unit": "ns/op",
+            "extra": "58236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4672,
+            "unit": "B/op",
+            "extra": "58236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "58236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1922,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "58315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1922,
+            "unit": "ns/op",
+            "extra": "58315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "58315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "58315 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11284,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "10506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11284,
+            "unit": "ns/op",
+            "extra": "10506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "10506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 19570,
+            "unit": "ns/op\t46720 B/op\t201 allocs/op",
+            "extra": "6015 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 19570,
+            "unit": "ns/op",
+            "extra": "6015 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 46720,
+            "unit": "B/op",
+            "extra": "6015 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 201,
+            "unit": "allocs/op",
+            "extra": "6015 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 18411,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "6514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 18411,
+            "unit": "ns/op",
+            "extra": "6514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "6514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "6514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 135827,
+            "unit": "ns/op\t401409 B/op\t1 allocs/op",
+            "extra": "801 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 135827,
+            "unit": "ns/op",
+            "extra": "801 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401409,
+            "unit": "B/op",
+            "extra": "801 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "801 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 233728,
+            "unit": "ns/op\t460448 B/op\t2001 allocs/op",
+            "extra": "492 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 233728,
+            "unit": "ns/op",
+            "extra": "492 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 460448,
+            "unit": "B/op",
+            "extra": "492 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 2001,
+            "unit": "allocs/op",
+            "extra": "492 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 209254,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 209254,
+            "unit": "ns/op",
+            "extra": "566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "566 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8019,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "14925 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8019,
+            "unit": "ns/op",
+            "extra": "14925 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "14925 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "14925 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8051,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "14875 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8051,
+            "unit": "ns/op",
+            "extra": "14875 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "14875 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "14875 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 80853,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 80853,
+            "unit": "ns/op",
+            "extra": "1467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81153,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81153,
+            "unit": "ns/op",
+            "extra": "1446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 828175,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 828175,
+            "unit": "ns/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 833086,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 833086,
+            "unit": "ns/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1145,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "103278 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1145,
+            "unit": "ns/op",
+            "extra": "103278 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "103278 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "103278 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1127,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "112138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1127,
+            "unit": "ns/op",
+            "extra": "112138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "112138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "112138 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1108,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "112742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1108,
+            "unit": "ns/op",
+            "extra": "112742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "112742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "112742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6933,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "16392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6933,
+            "unit": "ns/op",
+            "extra": "16392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "16392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "16392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6289,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "19040 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6289,
+            "unit": "ns/op",
+            "extra": "19040 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "19040 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "19040 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6504,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "18682 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6504,
+            "unit": "ns/op",
+            "extra": "18682 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "18682 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "18682 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 98893,
+            "unit": "ns/op\t144553 B/op\t7 allocs/op",
+            "extra": "1221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 98893,
+            "unit": "ns/op",
+            "extra": "1221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144553,
+            "unit": "B/op",
+            "extra": "1221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 98709,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1239 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 98709,
+            "unit": "ns/op",
+            "extra": "1239 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1239 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1239 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 95163,
+            "unit": "ns/op\t144553 B/op\t7 allocs/op",
+            "extra": "1264 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 95163,
+            "unit": "ns/op",
+            "extra": "1264 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144553,
+            "unit": "B/op",
+            "extra": "1264 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1264 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 37418,
+            "unit": "ns/op\t2688 B/op\t73 allocs/op",
+            "extra": "3151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 37418,
+            "unit": "ns/op",
+            "extra": "3151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "3151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 73,
+            "unit": "allocs/op",
+            "extra": "3151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 88986,
+            "unit": "ns/op\t6185 B/op\t159 allocs/op",
+            "extra": "1368 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 88986,
+            "unit": "ns/op",
+            "extra": "1368 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6185,
+            "unit": "B/op",
+            "extra": "1368 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 159,
+            "unit": "allocs/op",
+            "extra": "1368 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87909,
+            "unit": "ns/op\t4665 B/op\t158 allocs/op",
+            "extra": "1356 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87909,
+            "unit": "ns/op",
+            "extra": "1356 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4665,
+            "unit": "B/op",
+            "extra": "1356 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "1356 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 23876,
+            "unit": "ns/op\t10522 B/op\t85 allocs/op",
+            "extra": "4988 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 23876,
+            "unit": "ns/op",
+            "extra": "4988 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10522,
+            "unit": "B/op",
+            "extra": "4988 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 85,
+            "unit": "allocs/op",
+            "extra": "4988 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 90499,
+            "unit": "ns/op\t95920 B/op\t465 allocs/op",
+            "extra": "1288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 90499,
+            "unit": "ns/op",
+            "extra": "1288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95920,
+            "unit": "B/op",
+            "extra": "1288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 465,
+            "unit": "allocs/op",
+            "extra": "1288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 720706,
+            "unit": "ns/op\t901735 B/op\t3962 allocs/op",
+            "extra": "165 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 720706,
+            "unit": "ns/op",
+            "extra": "165 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901735,
+            "unit": "B/op",
+            "extra": "165 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3962,
+            "unit": "allocs/op",
+            "extra": "165 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 30331,
+            "unit": "ns/op\t12355 B/op\t99 allocs/op",
+            "extra": "3937 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 30331,
+            "unit": "ns/op",
+            "extra": "3937 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 12355,
+            "unit": "B/op",
+            "extra": "3937 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 99,
+            "unit": "allocs/op",
+            "extra": "3937 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 147540,
+            "unit": "ns/op\t116923 B/op\t507 allocs/op",
+            "extra": "837 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 147540,
+            "unit": "ns/op",
+            "extra": "837 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 116923,
+            "unit": "B/op",
+            "extra": "837 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 507,
+            "unit": "allocs/op",
+            "extra": "837 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1248570,
+            "unit": "ns/op\t1110021 B/op\t4055 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1248570,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1110021,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4055,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 47079,
+            "unit": "ns/op\t24344 B/op\t218 allocs/op",
+            "extra": "2142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 47079,
+            "unit": "ns/op",
+            "extra": "2142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 24344,
+            "unit": "B/op",
+            "extra": "2142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 218,
+            "unit": "allocs/op",
+            "extra": "2142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 160393,
+            "unit": "ns/op\t147114 B/op\t682 allocs/op",
+            "extra": "715 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 160393,
+            "unit": "ns/op",
+            "extra": "715 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 147114,
+            "unit": "B/op",
+            "extra": "715 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 682,
+            "unit": "allocs/op",
+            "extra": "715 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1250160,
+            "unit": "ns/op\t1307756 B/op\t4973 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1250160,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1307756,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4973,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 26588,
+            "unit": "ns/op\t10538 B/op\t86 allocs/op",
+            "extra": "4519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 26588,
+            "unit": "ns/op",
+            "extra": "4519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10538,
+            "unit": "B/op",
+            "extra": "4519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 86,
+            "unit": "allocs/op",
+            "extra": "4519 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 96412,
+            "unit": "ns/op\t95949 B/op\t466 allocs/op",
+            "extra": "1257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 96412,
+            "unit": "ns/op",
+            "extra": "1257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95949,
+            "unit": "B/op",
+            "extra": "1257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 466,
+            "unit": "allocs/op",
+            "extra": "1257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 784244,
+            "unit": "ns/op\t901746 B/op\t3963 allocs/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 784244,
+            "unit": "ns/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901746,
+            "unit": "B/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3963,
+            "unit": "allocs/op",
+            "extra": "152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3746,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "30674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3746,
+            "unit": "ns/op",
+            "extra": "30674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "30674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "30674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 46656,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 46656,
+            "unit": "ns/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 508049,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 508049,
+            "unit": "ns/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "235 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 11092,
+            "unit": "ns/op\t9674 B/op\t118 allocs/op",
+            "extra": "9414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 11092,
+            "unit": "ns/op",
+            "extra": "9414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9674,
+            "unit": "B/op",
+            "extra": "9414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "9414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 31364,
+            "unit": "ns/op\t9663 B/op\t118 allocs/op",
+            "extra": "4000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 31364,
+            "unit": "ns/op",
+            "extra": "4000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9663,
+            "unit": "B/op",
+            "extra": "4000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "4000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 240341,
+            "unit": "ns/op\t9728 B/op\t118 allocs/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 240341,
+            "unit": "ns/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9728,
+            "unit": "B/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.463,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12206919 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.463,
+            "unit": "ns/op",
+            "extra": "12206919 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12206919 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12206919 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 395,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "260212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 395,
+            "unit": "ns/op",
+            "extra": "260212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "260212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "260212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 151.6,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "793972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 151.6,
+            "unit": "ns/op",
+            "extra": "793972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "793972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "793972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3763,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "31886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3763,
+            "unit": "ns/op",
+            "extra": "31886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "31886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "31886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 4303,
+            "unit": "ns/op\t2280 B/op\t16 allocs/op",
+            "extra": "27307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 4303,
+            "unit": "ns/op",
+            "extra": "27307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 2280,
+            "unit": "B/op",
+            "extra": "27307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "27307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.496,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12730269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.496,
+            "unit": "ns/op",
+            "extra": "12730269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12730269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12730269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3211,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "34754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3211,
+            "unit": "ns/op",
+            "extra": "34754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "34754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "34754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 428.1,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "284898 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 428.1,
+            "unit": "ns/op",
+            "extra": "284898 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "284898 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "284898 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 48829,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 48829,
+            "unit": "ns/op",
+            "extra": "2457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2457 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 50979,
+            "unit": "ns/op\t26776 B/op\t50 allocs/op",
+            "extra": "2534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 50979,
+            "unit": "ns/op",
+            "extra": "2534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 26776,
+            "unit": "B/op",
+            "extra": "2534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "2534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.419,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12673023 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.419,
+            "unit": "ns/op",
+            "extra": "12673023 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12673023 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12673023 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 33342,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "3202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 33342,
+            "unit": "ns/op",
+            "extra": "3202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "3202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3912,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "31350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3912,
+            "unit": "ns/op",
+            "extra": "31350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "31350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "31350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 517314,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 517314,
+            "unit": "ns/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 529111,
+            "unit": "ns/op\t245128 B/op\t95 allocs/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 529111,
+            "unit": "ns/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 245128,
+            "unit": "B/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 95,
+            "unit": "allocs/op",
+            "extra": "224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 632.6,
+            "unit": "ns/op\t704 B/op\t8 allocs/op",
+            "extra": "159507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 632.6,
+            "unit": "ns/op",
+            "extra": "159507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 704,
+            "unit": "B/op",
+            "extra": "159507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "159507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3894,
+            "unit": "ns/op\t5169 B/op\t42 allocs/op",
+            "extra": "30985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3894,
+            "unit": "ns/op",
+            "extra": "30985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 5169,
+            "unit": "B/op",
+            "extra": "30985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "30985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 36546,
+            "unit": "ns/op\t50668 B/op\t321 allocs/op",
+            "extra": "3426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 36546,
+            "unit": "ns/op",
+            "extra": "3426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 50668,
+            "unit": "B/op",
+            "extra": "3426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 321,
+            "unit": "allocs/op",
+            "extra": "3426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 84036,
+            "unit": "ns/op\t21139 B/op\t176 allocs/op",
+            "extra": "1435 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 84036,
+            "unit": "ns/op",
+            "extra": "1435 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 21139,
+            "unit": "B/op",
+            "extra": "1435 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 176,
+            "unit": "allocs/op",
+            "extra": "1435 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 296800,
+            "unit": "ns/op\t94531 B/op\t631 allocs/op",
+            "extra": "393 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 296800,
+            "unit": "ns/op",
+            "extra": "393 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 94531,
+            "unit": "B/op",
+            "extra": "393 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 631,
+            "unit": "allocs/op",
+            "extra": "393 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 788189,
+            "unit": "ns/op\t651151 B/op\t1416 allocs/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 788189,
+            "unit": "ns/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 651151,
+            "unit": "B/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1416,
+            "unit": "allocs/op",
+            "extra": "150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1027,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "100987 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1027,
+            "unit": "ns/op",
+            "extra": "100987 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "100987 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "100987 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5074,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "23486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5074,
+            "unit": "ns/op",
+            "extra": "23486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "23486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23486 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5115,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "23312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5115,
+            "unit": "ns/op",
+            "extra": "23312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "23312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2728,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "43185 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2728,
+            "unit": "ns/op",
+            "extra": "43185 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "43185 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "43185 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1036,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "111147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1036,
+            "unit": "ns/op",
+            "extra": "111147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "111147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "111147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5111,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "23392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5111,
+            "unit": "ns/op",
+            "extra": "23392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "23392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23392 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5119,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "23089 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5119,
+            "unit": "ns/op",
+            "extra": "23089 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "23089 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23089 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2713,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "43958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2713,
+            "unit": "ns/op",
+            "extra": "43958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "43958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "43958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11430,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10597 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11430,
+            "unit": "ns/op",
+            "extra": "10597 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10597 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10597 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45052,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45052,
+            "unit": "ns/op",
+            "extra": "2667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44173,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44173,
+            "unit": "ns/op",
+            "extra": "2864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24882,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4815 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24882,
+            "unit": "ns/op",
+            "extra": "4815 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4815 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4815 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10917,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10995 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10917,
+            "unit": "ns/op",
+            "extra": "10995 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10995 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10995 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45884,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45884,
+            "unit": "ns/op",
+            "extra": "2614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44547,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2539 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44547,
+            "unit": "ns/op",
+            "extra": "2539 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2539 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2539 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24564,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24564,
+            "unit": "ns/op",
+            "extra": "4603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4603 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 216870,
+            "unit": "ns/op\t434178 B/op\t1 allocs/op",
+            "extra": "585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 216870,
+            "unit": "ns/op",
+            "extra": "585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434178,
+            "unit": "B/op",
+            "extra": "585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 562373,
+            "unit": "ns/op\t588954 B/op\t922 allocs/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 562373,
+            "unit": "ns/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588954,
+            "unit": "B/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "201 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 540353,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 540353,
+            "unit": "ns/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 250005,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 250005,
+            "unit": "ns/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 183214,
+            "unit": "ns/op\t434176 B/op\t1 allocs/op",
+            "extra": "693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 183214,
+            "unit": "ns/op",
+            "extra": "693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434176,
+            "unit": "B/op",
+            "extra": "693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 591022,
+            "unit": "ns/op\t588953 B/op\t922 allocs/op",
+            "extra": "193 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 591022,
+            "unit": "ns/op",
+            "extra": "193 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588953,
+            "unit": "B/op",
+            "extra": "193 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "193 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 581870,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 581870,
+            "unit": "ns/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "202 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 252866,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 252866,
+            "unit": "ns/op",
+            "extra": "460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 418.6,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "284768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 418.6,
+            "unit": "ns/op",
+            "extra": "284768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "284768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "284768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 400.3,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "309416 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 400.3,
+            "unit": "ns/op",
+            "extra": "309416 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "309416 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "309416 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2998,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "38194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2998,
+            "unit": "ns/op",
+            "extra": "38194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "38194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "38194 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2975,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "39974 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2975,
+            "unit": "ns/op",
+            "extra": "39974 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "39974 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "39974 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 49302,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 49302,
+            "unit": "ns/op",
+            "extra": "2221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 48692,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 48692,
+            "unit": "ns/op",
+            "extra": "2620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1191,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "94389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1191,
+            "unit": "ns/op",
+            "extra": "94389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "94389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "94389 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1887,
+            "unit": "ns/op\t4672 B/op\t21 allocs/op",
+            "extra": "66411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1887,
+            "unit": "ns/op",
+            "extra": "66411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4672,
+            "unit": "B/op",
+            "extra": "66411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "66411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1761,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "68546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1761,
+            "unit": "ns/op",
+            "extra": "68546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "68546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "68546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10662,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10662,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 17457,
+            "unit": "ns/op\t46720 B/op\t201 allocs/op",
+            "extra": "5982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 17457,
+            "unit": "ns/op",
+            "extra": "5982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 46720,
+            "unit": "B/op",
+            "extra": "5982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 201,
+            "unit": "allocs/op",
+            "extra": "5982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 18465,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "6304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 18465,
+            "unit": "ns/op",
+            "extra": "6304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "6304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "6304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 137388,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "794 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 137388,
+            "unit": "ns/op",
+            "extra": "794 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "794 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "794 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 238167,
+            "unit": "ns/op\t460448 B/op\t2001 allocs/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 238167,
+            "unit": "ns/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 460448,
+            "unit": "B/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 2001,
+            "unit": "allocs/op",
+            "extra": "501 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 250488,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "481 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 250488,
+            "unit": "ns/op",
+            "extra": "481 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "481 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "481 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8040,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "14869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8040,
+            "unit": "ns/op",
+            "extra": "14869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "14869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "14869 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8003,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "15008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8003,
+            "unit": "ns/op",
+            "extra": "15008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "15008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "15008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 80760,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 80760,
+            "unit": "ns/op",
+            "extra": "1478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 82354,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 82354,
+            "unit": "ns/op",
+            "extra": "1470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 827308,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 827308,
+            "unit": "ns/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 839154,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 839154,
+            "unit": "ns/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1077,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "101269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1077,
+            "unit": "ns/op",
+            "extra": "101269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "101269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "101269 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1052,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "113685 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1052,
+            "unit": "ns/op",
+            "extra": "113685 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "113685 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "113685 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1069,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "108110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1069,
+            "unit": "ns/op",
+            "extra": "108110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "108110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "108110 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6051,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "19954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6051,
+            "unit": "ns/op",
+            "extra": "19954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "19954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "19954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6082,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "19312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6082,
+            "unit": "ns/op",
+            "extra": "19312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "19312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "19312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6186,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "19438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6186,
+            "unit": "ns/op",
+            "extra": "19438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "19438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "19438 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 99423,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 99423,
+            "unit": "ns/op",
+            "extra": "1232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 100760,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 100760,
+            "unit": "ns/op",
+            "extra": "1182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 100221,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 100221,
+            "unit": "ns/op",
+            "extra": "1124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 37559,
+            "unit": "ns/op\t2688 B/op\t73 allocs/op",
+            "extra": "3075 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 37559,
+            "unit": "ns/op",
+            "extra": "3075 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "3075 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 73,
+            "unit": "allocs/op",
+            "extra": "3075 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87327,
+            "unit": "ns/op\t6185 B/op\t159 allocs/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87327,
+            "unit": "ns/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6185,
+            "unit": "B/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 159,
+            "unit": "allocs/op",
+            "extra": "1371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87933,
+            "unit": "ns/op\t4665 B/op\t158 allocs/op",
+            "extra": "1382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87933,
+            "unit": "ns/op",
+            "extra": "1382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4665,
+            "unit": "B/op",
+            "extra": "1382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "1382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 24433,
+            "unit": "ns/op\t10520 B/op\t85 allocs/op",
+            "extra": "4744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 24433,
+            "unit": "ns/op",
+            "extra": "4744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10520,
+            "unit": "B/op",
+            "extra": "4744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 85,
+            "unit": "allocs/op",
+            "extra": "4744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 91143,
+            "unit": "ns/op\t95936 B/op\t465 allocs/op",
+            "extra": "1312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 91143,
+            "unit": "ns/op",
+            "extra": "1312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95936,
+            "unit": "B/op",
+            "extra": "1312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 465,
+            "unit": "allocs/op",
+            "extra": "1312 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 731666,
+            "unit": "ns/op\t901734 B/op\t3962 allocs/op",
+            "extra": "164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 731666,
+            "unit": "ns/op",
+            "extra": "164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901734,
+            "unit": "B/op",
+            "extra": "164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkList/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3962,
+            "unit": "allocs/op",
+            "extra": "164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 29805,
+            "unit": "ns/op\t12355 B/op\t99 allocs/op",
+            "extra": "3411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 29805,
+            "unit": "ns/op",
+            "extra": "3411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 12355,
+            "unit": "B/op",
+            "extra": "3411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 99,
+            "unit": "allocs/op",
+            "extra": "3411 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 143938,
+            "unit": "ns/op\t116919 B/op\t507 allocs/op",
+            "extra": "783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 143938,
+            "unit": "ns/op",
+            "extra": "783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 116919,
+            "unit": "B/op",
+            "extra": "783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 507,
+            "unit": "allocs/op",
+            "extra": "783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1232297,
+            "unit": "ns/op\t1110061 B/op\t4055 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1232297,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1110061,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListHideDuplicates/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4055,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 44155,
+            "unit": "ns/op\t24470 B/op\t218 allocs/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 44155,
+            "unit": "ns/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 24470,
+            "unit": "B/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 218,
+            "unit": "allocs/op",
+            "extra": "2660 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 152489,
+            "unit": "ns/op\t147003 B/op\t682 allocs/op",
+            "extra": "789 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 152489,
+            "unit": "ns/op",
+            "extra": "789 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 147003,
+            "unit": "B/op",
+            "extra": "789 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 682,
+            "unit": "allocs/op",
+            "extra": "789 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 1255885,
+            "unit": "ns/op\t1309732 B/op\t4974 allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 1255885,
+            "unit": "ns/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1309732,
+            "unit": "B/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListBlacklist/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 4974,
+            "unit": "allocs/op",
+            "extra": "100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 26557,
+            "unit": "ns/op\t10538 B/op\t86 allocs/op",
+            "extra": "4327 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 26557,
+            "unit": "ns/op",
+            "extra": "4327 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 10538,
+            "unit": "B/op",
+            "extra": "4327 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 86,
+            "unit": "allocs/op",
+            "extra": "4327 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 95364,
+            "unit": "ns/op\t95955 B/op\t466 allocs/op",
+            "extra": "1292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 95364,
+            "unit": "ns/op",
+            "extra": "1292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 95955,
+            "unit": "B/op",
+            "extra": "1292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 466,
+            "unit": "allocs/op",
+            "extra": "1292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 779464,
+            "unit": "ns/op\t901769 B/op\t3963 allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 779464,
+            "unit": "ns/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 901769,
+            "unit": "B/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkListShowWindows/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 3963,
+            "unit": "allocs/op",
+            "extra": "153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3750,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "30781 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3750,
+            "unit": "ns/op",
+            "extra": "30781 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "30781 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "30781 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 46734,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 46734,
+            "unit": "ns/op",
+            "extra": "2631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2631 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 509195,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 509195,
+            "unit": "ns/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkApplyDedup/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 10947,
+            "unit": "ns/op\t9671 B/op\t118 allocs/op",
+            "extra": "10887 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 10947,
+            "unit": "ns/op",
+            "extra": "10887 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9671,
+            "unit": "B/op",
+            "extra": "10887 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "10887 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 31691,
+            "unit": "ns/op\t9709 B/op\t118 allocs/op",
+            "extra": "4003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 31691,
+            "unit": "ns/op",
+            "extra": "4003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9709,
+            "unit": "B/op",
+            "extra": "4003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "4003 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 242533,
+            "unit": "ns/op\t9733 B/op\t118 allocs/op",
+            "extra": "493 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 242533,
+            "unit": "ns/op",
+            "extra": "493 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 9733,
+            "unit": "B/op",
+            "extra": "493 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBlacklistFilter/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "493 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.446,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12466483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.446,
+            "unit": "ns/op",
+            "extra": "12466483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12466483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12466483 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 391.2,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "266181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 391.2,
+            "unit": "ns/op",
+            "extra": "266181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "266181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "266181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 151.5,
+            "unit": "ns/op\t160 B/op\t1 allocs/op",
+            "extra": "788673 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 151.5,
+            "unit": "ns/op",
+            "extra": "788673 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 160,
+            "unit": "B/op",
+            "extra": "788673 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "788673 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3796,
+            "unit": "ns/op\t1848 B/op\t14 allocs/op",
+            "extra": "31377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3796,
+            "unit": "ns/op",
+            "extra": "31377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1848,
+            "unit": "B/op",
+            "extra": "31377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 14,
+            "unit": "allocs/op",
+            "extra": "31377 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 4230,
+            "unit": "ns/op\t2280 B/op\t16 allocs/op",
+            "extra": "28254 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 4230,
+            "unit": "ns/op",
+            "extra": "28254 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 2280,
+            "unit": "B/op",
+            "extra": "28254 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=10/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "28254 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.475,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12024428 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.475,
+            "unit": "ns/op",
+            "extra": "12024428 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12024428 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12024428 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3684,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "35844 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3684,
+            "unit": "ns/op",
+            "extra": "35844 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "35844 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "35844 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 687.4,
+            "unit": "ns/op\t1792 B/op\t1 allocs/op",
+            "extra": "154659 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 687.4,
+            "unit": "ns/op",
+            "extra": "154659 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 1792,
+            "unit": "B/op",
+            "extra": "154659 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "154659 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 52929,
+            "unit": "ns/op\t21000 B/op\t42 allocs/op",
+            "extra": "2181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 52929,
+            "unit": "ns/op",
+            "extra": "2181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 21000,
+            "unit": "B/op",
+            "extra": "2181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "2181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 54721,
+            "unit": "ns/op\t26776 B/op\t50 allocs/op",
+            "extra": "2146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 54721,
+            "unit": "ns/op",
+            "extra": "2146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 26776,
+            "unit": "B/op",
+            "extra": "2146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=100/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 50,
+            "unit": "allocs/op",
+            "extra": "2146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 9.452,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "12472182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 9.452,
+            "unit": "ns/op",
+            "extra": "12472182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "12472182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/passthrough (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "12472182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 33259,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "3172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 33259,
+            "unit": "ns/op",
+            "extra": "3172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "3172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/source-filter (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3172 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3852,
+            "unit": "ns/op\t16384 B/op\t1 allocs/op",
+            "extra": "30375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3852,
+            "unit": "ns/op",
+            "extra": "30375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 16384,
+            "unit": "B/op",
+            "extra": "30375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-attached (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "30375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 519580,
+            "unit": "ns/op\t208264 B/op\t93 allocs/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 519580,
+            "unit": "ns/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 208264,
+            "unit": "B/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/hide-duplicates (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 93,
+            "unit": "allocs/op",
+            "extra": "229 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 530212,
+            "unit": "ns/op\t245128 B/op\t95 allocs/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 530212,
+            "unit": "ns/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 245128,
+            "unit": "B/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCachingListerApplyFilters/n=1000/picker-defaults (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 95,
+            "unit": "allocs/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 640.1,
+            "unit": "ns/op\t704 B/op\t8 allocs/op",
+            "extra": "188043 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 640.1,
+            "unit": "ns/op",
+            "extra": "188043 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 704,
+            "unit": "B/op",
+            "extra": "188043 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=10 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "188043 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 3864,
+            "unit": "ns/op\t5169 B/op\t42 allocs/op",
+            "extra": "31166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 3864,
+            "unit": "ns/op",
+            "extra": "31166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 5169,
+            "unit": "B/op",
+            "extra": "31166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=100 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 42,
+            "unit": "allocs/op",
+            "extra": "31166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister)",
+            "value": 35854,
+            "unit": "ns/op\t50668 B/op\t321 allocs/op",
+            "extra": "3337 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - ns/op",
+            "value": 35854,
+            "unit": "ns/op",
+            "extra": "3337 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - B/op",
+            "value": 50668,
+            "unit": "B/op",
+            "extra": "3337 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFindTmuxSessionByBase/n=1000 (github.com/joshmedeski/sesh/v2/lister) - allocs/op",
+            "value": 321,
+            "unit": "allocs/op",
+            "extra": "3337 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 82509,
+            "unit": "ns/op\t21144 B/op\t176 allocs/op",
+            "extra": "1440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 82509,
+            "unit": "ns/op",
+            "extra": "1440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 21144,
+            "unit": "B/op",
+            "extra": "1440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 176,
+            "unit": "allocs/op",
+            "extra": "1440 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 293965,
+            "unit": "ns/op\t94515 B/op\t631 allocs/op",
+            "extra": "405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 293965,
+            "unit": "ns/op",
+            "extra": "405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 94515,
+            "unit": "B/op",
+            "extra": "405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 631,
+            "unit": "allocs/op",
+            "extra": "405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 782493,
+            "unit": "ns/op\t651155 B/op\t1416 allocs/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 782493,
+            "unit": "ns/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 651155,
+            "unit": "B/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystroke/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1416,
+            "unit": "allocs/op",
+            "extra": "151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1040,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "106414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1040,
+            "unit": "ns/op",
+            "extra": "106414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "106414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "106414 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5088,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "23653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5088,
+            "unit": "ns/op",
+            "extra": "23653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "23653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "23653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5355,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "21601 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5355,
+            "unit": "ns/op",
+            "extra": "21601 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "21601 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "21601 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2689,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "44563 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2689,
+            "unit": "ns/op",
+            "extra": "44563 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "44563 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "44563 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1059,
+            "unit": "ns/op\t4864 B/op\t1 allocs/op",
+            "extra": "107512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1059,
+            "unit": "ns/op",
+            "extra": "107512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4864,
+            "unit": "B/op",
+            "extra": "107512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "107512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5209,
+            "unit": "ns/op\t6976 B/op\t25 allocs/op",
+            "extra": "22405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5209,
+            "unit": "ns/op",
+            "extra": "22405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6976,
+            "unit": "B/op",
+            "extra": "22405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22405 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5275,
+            "unit": "ns/op\t7128 B/op\t25 allocs/op",
+            "extra": "22743 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5275,
+            "unit": "ns/op",
+            "extra": "22743 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 7128,
+            "unit": "B/op",
+            "extra": "22743 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 25,
+            "unit": "allocs/op",
+            "extra": "22743 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2692,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "45072 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2692,
+            "unit": "ns/op",
+            "extra": "45072 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "45072 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=10/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "45072 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10635,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "11226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10635,
+            "unit": "ns/op",
+            "extra": "11226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "11226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "11226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 44005,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2617 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 44005,
+            "unit": "ns/op",
+            "extra": "2617 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2617 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2617 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45191,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2646 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45191,
+            "unit": "ns/op",
+            "extra": "2646 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2646 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2646 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24714,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24714,
+            "unit": "ns/op",
+            "extra": "4569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4569 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 11178,
+            "unit": "ns/op\t49152 B/op\t1 allocs/op",
+            "extra": "10608 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 11178,
+            "unit": "ns/op",
+            "extra": "10608 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 49152,
+            "unit": "B/op",
+            "extra": "10608 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "10608 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45380,
+            "unit": "ns/op\t64328 B/op\t109 allocs/op",
+            "extra": "2605 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45380,
+            "unit": "ns/op",
+            "extra": "2605 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 64328,
+            "unit": "B/op",
+            "extra": "2605 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2605 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45206,
+            "unit": "ns/op\t65776 B/op\t109 allocs/op",
+            "extra": "2871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45206,
+            "unit": "ns/op",
+            "extra": "2871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65776,
+            "unit": "B/op",
+            "extra": "2871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 109,
+            "unit": "allocs/op",
+            "extra": "2871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 24609,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "4638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 24609,
+            "unit": "ns/op",
+            "extra": "4638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "4638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=100/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "4638 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 190565,
+            "unit": "ns/op\t434177 B/op\t1 allocs/op",
+            "extra": "656 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 190565,
+            "unit": "ns/op",
+            "extra": "656 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434177,
+            "unit": "B/op",
+            "extra": "656 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "656 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 525678,
+            "unit": "ns/op\t588954 B/op\t922 allocs/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 525678,
+            "unit": "ns/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588954,
+            "unit": "B/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "222 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 501671,
+            "unit": "ns/op\t603360 B/op\t922 allocs/op",
+            "extra": "237 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 501671,
+            "unit": "ns/op",
+            "extra": "237 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603360,
+            "unit": "B/op",
+            "extra": "237 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "237 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 250898,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 250898,
+            "unit": "ns/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/plain/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 177301,
+            "unit": "ns/op\t434176 B/op\t1 allocs/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 177301,
+            "unit": "ns/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 434176,
+            "unit": "B/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 514276,
+            "unit": "ns/op\t588954 B/op\t922 allocs/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 514276,
+            "unit": "ns/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 588954,
+            "unit": "B/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/1-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "226 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 520240,
+            "unit": "ns/op\t603361 B/op\t922 allocs/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 520240,
+            "unit": "ns/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 603361,
+            "unit": "B/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/3-char (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 922,
+            "unit": "allocs/op",
+            "extra": "220 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 250106,
+            "unit": "ns/op\t248 B/op\t8 allocs/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 250106,
+            "unit": "ns/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 248,
+            "unit": "B/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterSessions/n=1000/separator-aware/no-match (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 389.8,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "306657 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 389.8,
+            "unit": "ns/op",
+            "extra": "306657 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "306657 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "306657 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 395.4,
+            "unit": "ns/op\t776 B/op\t4 allocs/op",
+            "extra": "321687 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 395.4,
+            "unit": "ns/op",
+            "extra": "321687 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 776,
+            "unit": "B/op",
+            "extra": "321687 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=10/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "321687 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2840,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "41016 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2840,
+            "unit": "ns/op",
+            "extra": "41016 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "41016 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "41016 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 2886,
+            "unit": "ns/op\t6280 B/op\t4 allocs/op",
+            "extra": "40693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 2886,
+            "unit": "ns/op",
+            "extra": "40693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6280,
+            "unit": "B/op",
+            "extra": "40693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=100/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "40693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 45743,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2425 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 45743,
+            "unit": "ns/op",
+            "extra": "2425 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2425 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2425 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 46371,
+            "unit": "ns/op\t65672 B/op\t4 allocs/op",
+            "extra": "2214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 46371,
+            "unit": "ns/op",
+            "extra": "2214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 65672,
+            "unit": "B/op",
+            "extra": "2214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRankMatches/n=1000/app (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "2214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1207,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "87391 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1207,
+            "unit": "ns/op",
+            "extra": "87391 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "87391 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "87391 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1812,
+            "unit": "ns/op\t4672 B/op\t21 allocs/op",
+            "extra": "65143 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1812,
+            "unit": "ns/op",
+            "extra": "65143 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4672,
+            "unit": "B/op",
+            "extra": "65143 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "65143 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1751,
+            "unit": "ns/op\t4096 B/op\t1 allocs/op",
+            "extra": "66667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1751,
+            "unit": "ns/op",
+            "extra": "66667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4096,
+            "unit": "B/op",
+            "extra": "66667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=10/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "66667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 10080,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "11822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 10080,
+            "unit": "ns/op",
+            "extra": "11822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "11822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "11822 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 17039,
+            "unit": "ns/op\t46720 B/op\t201 allocs/op",
+            "extra": "6830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 17039,
+            "unit": "ns/op",
+            "extra": "6830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 46720,
+            "unit": "B/op",
+            "extra": "6830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 201,
+            "unit": "allocs/op",
+            "extra": "6830 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 16280,
+            "unit": "ns/op\t40960 B/op\t1 allocs/op",
+            "extra": "6799 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 16280,
+            "unit": "ns/op",
+            "extra": "6799 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 40960,
+            "unit": "B/op",
+            "extra": "6799 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=100/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "6799 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 151917,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "774 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 151917,
+            "unit": "ns/op",
+            "extra": "774 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "774 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/plain (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "774 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 221556,
+            "unit": "ns/op\t460448 B/op\t2001 allocs/op",
+            "extra": "532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 221556,
+            "unit": "ns/op",
+            "extra": "532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 460448,
+            "unit": "B/op",
+            "extra": "532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/separator-aware (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 2001,
+            "unit": "allocs/op",
+            "extra": "532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 202453,
+            "unit": "ns/op\t401408 B/op\t1 allocs/op",
+            "extra": "578 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 202453,
+            "unit": "ns/op",
+            "extra": "578 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 401408,
+            "unit": "B/op",
+            "extra": "578 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildItems/n=1000/icons (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "578 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 7994,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "14997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 7994,
+            "unit": "ns/op",
+            "extra": "14997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "14997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "14997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 8013,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "15006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 8013,
+            "unit": "ns/op",
+            "extra": "15006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "15006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=10/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "15006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81228,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81228,
+            "unit": "ns/op",
+            "extra": "1436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 80760,
+            "unit": "ns/op\t0 B/op\t0 allocs/op",
+            "extra": "1490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 80760,
+            "unit": "ns/op",
+            "extra": "1490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=100/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 825627,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 825627,
+            "unit": "ns/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/miss (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 825390,
+            "unit": "ns/op\t8 B/op\t0 allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 825390,
+            "unit": "ns/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 8,
+            "unit": "B/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkIconResolverWildcard/n=1000/hit-last (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1039,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "100387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1039,
+            "unit": "ns/op",
+            "extra": "100387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "100387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "100387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1034,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "114804 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1034,
+            "unit": "ns/op",
+            "extra": "114804 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "114804 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "114804 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 1013,
+            "unit": "ns/op\t2688 B/op\t3 allocs/op",
+            "extra": "125281 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 1013,
+            "unit": "ns/op",
+            "extra": "125281 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "125281 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=10/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 3,
+            "unit": "allocs/op",
+            "extra": "125281 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5967,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "20115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5967,
+            "unit": "ns/op",
+            "extra": "20115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "20115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "20115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 5927,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "20260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 5927,
+            "unit": "ns/op",
+            "extra": "20260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "20260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "20260 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 6183,
+            "unit": "ns/op\t15224 B/op\t7 allocs/op",
+            "extra": "19168 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 6183,
+            "unit": "ns/op",
+            "extra": "19168 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 15224,
+            "unit": "B/op",
+            "extra": "19168 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=100/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "19168 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 82862,
+            "unit": "ns/op\t144552 B/op\t7 allocs/op",
+            "extra": "1353 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 82862,
+            "unit": "ns/op",
+            "extra": "1353 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144552,
+            "unit": "B/op",
+            "extra": "1353 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/empty (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1353 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 81341,
+            "unit": "ns/op\t144553 B/op\t7 allocs/op",
+            "extra": "1395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 81341,
+            "unit": "ns/op",
+            "extra": "1395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144553,
+            "unit": "B/op",
+            "extra": "1395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/a (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1395 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 82447,
+            "unit": "ns/op\t144553 B/op\t7 allocs/op",
+            "extra": "1527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 82447,
+            "unit": "ns/op",
+            "extra": "1527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 144553,
+            "unit": "B/op",
+            "extra": "1527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFilterAliases/n=1000/al7 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 7,
+            "unit": "allocs/op",
+            "extra": "1527 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 37714,
+            "unit": "ns/op\t2688 B/op\t73 allocs/op",
+            "extra": "2918 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 37714,
+            "unit": "ns/op",
+            "extra": "2918 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 2688,
+            "unit": "B/op",
+            "extra": "2918 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=10 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 73,
+            "unit": "allocs/op",
+            "extra": "2918 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87163,
+            "unit": "ns/op\t6185 B/op\t159 allocs/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87163,
+            "unit": "ns/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 6185,
+            "unit": "B/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=100 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 159,
+            "unit": "allocs/op",
+            "extra": "1345 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker)",
+            "value": 87396,
+            "unit": "ns/op\t4665 B/op\t158 allocs/op",
+            "extra": "1383 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - ns/op",
+            "value": 87396,
+            "unit": "ns/op",
+            "extra": "1383 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - B/op",
+            "value": 4665,
+            "unit": "B/op",
+            "extra": "1383 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkView/n=1000 (github.com/joshmedeski/sesh/v2/picker) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "1383 times\n4 procs"
           }
         ]
       }
