@@ -1,6 +1,7 @@
 package icon
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,20 +16,13 @@ type Icon interface {
 }
 
 type RealIcon struct {
-	config model.Config
+	glyphs Glyphs
 }
 
 func NewIcon(config model.Config) Icon {
-	return &RealIcon{config}
+	glyphs, _ := SourceGlyphs(config.Icons)
+	return &RealIcon{glyphs}
 }
-
-var (
-	zoxideIcon     string = ""
-	tmuxIcon       string = ""
-	configIcon     string = ""
-	tmuxinatorIcon string = ""
-	tmuxPaneIcon   string = ""
-)
 
 // Glyph holds the icon character and ANSI color code for a session source.
 type Glyph struct {
@@ -37,12 +31,43 @@ type Glyph struct {
 }
 
 // Glyphs maps session source names to their icon and color.
-var Glyphs = map[string]Glyph{
-	"tmux":       {Icon: tmuxIcon, ColorCode: ansi.Blue},
-	"config":     {Icon: configIcon, ColorCode: ansi.BrightBlack},
-	"zoxide":     {Icon: zoxideIcon, ColorCode: ansi.Cyan},
-	"tmuxinator": {Icon: tmuxinatorIcon, ColorCode: ansi.Yellow},
-	"tmux-pane":  {Icon: tmuxPaneIcon, ColorCode: ansi.Green},
+type Glyphs map[string]Glyph
+
+var defaultGlyphs = Glyphs{
+	"tmux":       {Icon: "", ColorCode: ansi.Blue},
+	"config":     {Icon: "", ColorCode: ansi.BrightBlack},
+	"zoxide":     {Icon: "", ColorCode: ansi.Cyan},
+	"tmuxinator": {Icon: "", ColorCode: ansi.Yellow},
+	"tmux-pane":  {Icon: "", ColorCode: ansi.Green},
+}
+
+func SourceGlyphs(icons map[string]model.SourceIcon) (Glyphs, error) {
+	glyphs := make(Glyphs, len(defaultGlyphs))
+	for src, g := range defaultGlyphs {
+		glyphs[src] = g
+	}
+
+	var errs []error
+	for src, override := range icons {
+		g, ok := glyphs[src]
+		if !ok {
+			errs = append(errs, fmt.Errorf("icons: unknown source %q (use tmux, config, zoxide, tmuxinator, or tmux-pane)", src))
+			continue
+		}
+		if override.Color != "" {
+			code, ok := ansi.ColorCode(override.Color)
+			if !ok {
+				errs = append(errs, fmt.Errorf("icons.%s.color: unknown color %q (use black, red, green, yellow, blue, magenta, cyan, white, or a bright-* variant)", src, override.Color))
+				continue
+			}
+			g.ColorCode = code
+		}
+		if override.Icon != "" {
+			g.Icon = override.Icon
+		}
+		glyphs[src] = g
+	}
+	return glyphs, errors.Join(errs...)
 }
 
 func ansiString(code int, s string) string {
@@ -50,22 +75,24 @@ func ansiString(code int, s string) string {
 }
 
 func (i *RealIcon) AddIcon(s model.SeshSession) string {
-	if g, ok := Glyphs[s.Src]; ok {
+	if g, ok := i.glyphs[s.Src]; ok {
 		return fmt.Sprintf("%s %s", ansiString(g.ColorCode, g.Icon), s.Name)
 	}
 	return s.Name
 }
 
 func (i *RealIcon) AddIconNoColor(s model.SeshSession) string {
-	if g, ok := Glyphs[s.Src]; ok {
+	if g, ok := i.glyphs[s.Src]; ok {
 		return fmt.Sprintf("%s %s", g.Icon, s.Name)
 	}
 	return s.Name
 }
 
 func (i *RealIcon) RemoveIcon(name string) string {
-	if strings.HasPrefix(name, tmuxIcon) || strings.HasPrefix(name, zoxideIcon) || strings.HasPrefix(name, configIcon) || strings.HasPrefix(name, tmuxinatorIcon) || strings.HasPrefix(name, tmuxPaneIcon) {
-		return name[4:]
+	for _, g := range i.glyphs {
+		if rest, ok := strings.CutPrefix(name, g.Icon+" "); ok {
+			return rest
+		}
 	}
 	return name
 }

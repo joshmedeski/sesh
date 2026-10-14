@@ -368,6 +368,31 @@ path = "~/.config"
 		"a session without an icon keeps its source glyph")
 }
 
+func TestGetConfig_SourceIcons(t *testing.T) {
+	config, err := configFromTOML(t, `
+[icons]
+tmux = { icon = "T", color = "magenta" }
+
+[icons.zoxide]
+icon = "📁"
+`)
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]model.SourceIcon{
+		"tmux":   {Icon: "T", Color: "magenta"},
+		"zoxide": {Icon: "📁"},
+	}, config.Icons)
+}
+
+func TestGetConfig_SourceIconInvalidColor(t *testing.T) {
+	_, err := configFromTOML(t, "[icons]\ntmux = { color = \"purple\" }\n")
+	assert.ErrorContains(t, err, `icons.tmux.color: unknown color "purple"`)
+}
+
+func TestGetConfig_SourceIconUnknownSource(t *testing.T) {
+	_, err := configFromTOML(t, "[icons]\nzoxdie = { icon = \"Z\" }\n")
+	assert.ErrorContains(t, err, `icons: unknown source "zoxdie"`)
+}
+
 func TestGetConfig_DuplicateAliases(t *testing.T) {
 	_, err := configFromTOML(t, `
 [[session]]

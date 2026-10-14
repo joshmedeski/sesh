@@ -9,11 +9,8 @@ import (
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
-// SourceGlyph returns the nerd font icon and color for a session source. The
-// icon carries a trailing space, so it is the whole icon cell for the
-// single-width glyphs it comes from; Cell pads it when a wider icon is in play.
-func SourceGlyph(src string) (string, color.Color) {
-	if g, ok := Glyphs[src]; ok {
+func (glyphs Glyphs) Source(src string) (string, color.Color) {
+	if g, ok := glyphs[src]; ok {
 		var code int
 		switch {
 		case g.ColorCode >= 90 && g.ColorCode <= 97:
@@ -40,6 +37,9 @@ func ColumnWidth(config model.Config) int {
 	for _, wildcard := range config.WildcardConfigs {
 		width = max(width, Width(wildcard.Icon))
 	}
+	for _, source := range config.Icons {
+		width = max(width, Width(source.Icon))
+	}
 	return width
 }
 
@@ -52,9 +52,9 @@ func Width(icn string) int {
 // Cell renders an icon column cell of width+1 cells: the configured icon, or
 // the colored source glyph when there is none, followed by the gap before the
 // next column. A configured icon is left unstyled.
-func Cell(custom, src string, width int) string {
+func (glyphs Glyphs) Cell(custom, src string, width int) string {
 	if custom == "" {
-		glyph, clr := SourceGlyph(src)
+		glyph, clr := glyphs.Source(src)
 		cell := lipgloss.NewStyle().Foreground(clr).Render(glyph)
 		return cell + pad(width+1-lipgloss.Width(cell))
 	}

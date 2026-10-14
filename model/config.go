@@ -44,27 +44,34 @@ const (
 
 type (
 	Config struct {
-		Cache                   bool                 `toml:"cache"`
-		StrictMode              bool                 `toml:"strict_mode"`
-		ImportPaths             []string             `toml:"import"`
-		DefaultSessionConfig    DefaultSessionConfig `toml:"default_session"`
-		Blacklist               []string             `toml:"blacklist"`
-		SessionConfigs          []SessionConfig      `toml:"session"`
-		SortOrder               SortOrder            `toml:"sort_order"`
-		WindowConfigs           []WindowConfig       `toml:"window"`
-		WildcardConfigs         []WildcardConfig     `toml:"wildcard"`
-		WorktreeConfigs         []WorktreeConfig     `toml:"worktree"`
-		DirLength               int                  `toml:"dir_length"`
-		NameSubstitutions       []NameSubstitution   `toml:"name_substitution"`
-		GitNamerUseWorktreeRoot bool                 `toml:"git_namer_use_worktree_root"`
-		GitDirLength            int                  `toml:"git_dir_length"`
-		SeparatorAware          bool                 `toml:"separator_aware"`
-		TmuxCommand             string               `toml:"tmux_command"`
-		Terminal                string               `toml:"terminal"`
-		Browser                 BrowserConfig        `toml:"browser"`
-		Frecency                FrecencyConfig       `toml:"frecency"`
-		TUI                     TUIConfig            `toml:"tui"`
+		Cache                   bool                  `toml:"cache"`
+		StrictMode              bool                  `toml:"strict_mode"`
+		ImportPaths             []string              `toml:"import"`
+		DefaultSessionConfig    DefaultSessionConfig  `toml:"default_session"`
+		Blacklist               []string              `toml:"blacklist"`
+		SessionConfigs          []SessionConfig       `toml:"session"`
+		SortOrder               SortOrder             `toml:"sort_order"`
+		WindowConfigs           []WindowConfig        `toml:"window"`
+		WildcardConfigs         []WildcardConfig      `toml:"wildcard"`
+		WorktreeConfigs         []WorktreeConfig      `toml:"worktree"`
+		DirLength               int                   `toml:"dir_length"`
+		NameSubstitutions       []NameSubstitution    `toml:"name_substitution"`
+		GitNamerUseWorktreeRoot bool                  `toml:"git_namer_use_worktree_root"`
+		GitDirLength            int                   `toml:"git_dir_length"`
+		SeparatorAware          bool                  `toml:"separator_aware"`
+		TmuxCommand             string                `toml:"tmux_command"`
+		Terminal                string                `toml:"terminal"`
+		Browser                 BrowserConfig         `toml:"browser"`
+		Frecency                FrecencyConfig        `toml:"frecency"`
+		TUI                     TUIConfig             `toml:"tui"`
+		Icons                   map[string]SourceIcon `toml:"icons"`
 	}
+
+	SourceIcon struct {
+		Icon  string `toml:"icon"`
+		Color string `toml:"color"`
+	}
+
 	Evaluation struct {
 		StrictMode bool `toml:"strict_mode"`
 	}

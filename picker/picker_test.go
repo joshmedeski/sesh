@@ -79,19 +79,6 @@ func TestNew_StartsInLoadingState(t *testing.T) {
 	assert.Len(t, m.filtered, 0)
 }
 
-func TestSrcIcon(t *testing.T) {
-	for _, src := range []string{"tmux", "config", "zoxide", "tmuxinator"} {
-		icn, clr := srcIcon(src)
-		assert.NotEmpty(t, icn, "icon for %s should not be empty", src)
-		assert.NotEqual(t, "? ", icn, "icon for %s should not be fallback", src)
-		assert.NotNil(t, clr, "color for %s should not be nil", src)
-	}
-
-	icn, clr := srcIcon("other")
-	assert.Equal(t, "? ", icn)
-	assert.NotNil(t, clr)
-}
-
 func TestApplyFilter_EmptyPattern(t *testing.T) {
 	m := newTestModel()
 	assert.Len(t, m.filtered, 5)

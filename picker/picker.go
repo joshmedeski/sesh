@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/previewer"
@@ -256,6 +257,11 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		killFunc = p.killSession
 	}
 
+	glyphs, err := icon.SourceGlyphs(p.config.Icons)
+	if err != nil {
+		return "", err
+	}
+
 	m := New(fetchFunc, Options{
 		ShowIcons:               showIcons,
 		ShowWindows:             showWindows,
@@ -269,6 +275,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		DisableAliasAutoConnect: disableAliasAutoConnect,
 		Icon:                    lister.IconResolver(p.config, p.home, p.wildcards),
 		IconWidth:               iconColWidth(p.config),
+		Glyphs:                  glyphs,
 		Preview:                 preview,
 		PreviewWidth:            previewWidth(p.config.TUI.PreviewWidth),
 		PreviewMinWidth:         previewMinWidth(p.config.TUI.PreviewMinWidth),

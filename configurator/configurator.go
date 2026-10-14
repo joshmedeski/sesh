@@ -8,6 +8,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
@@ -216,6 +217,9 @@ func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Confi
 	if err := validateNameSubstitutions(&config); err != nil {
 		return config, err
 	}
+	if _, err := icon.SourceGlyphs(config.Icons); err != nil {
+		return config, err
+	}
 	return config, nil
 }
 
@@ -252,6 +256,9 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 		return config, err
 	}
 	if err := validateNameSubstitutions(&config); err != nil {
+		return config, err
+	}
+	if _, err := icon.SourceGlyphs(config.Icons); err != nil {
 		return config, err
 	}
 	return config, nil
