@@ -1191,7 +1191,7 @@ func (m Model) separatorRule() string {
 	if width < 1 {
 		width = 1
 	}
-	return lipgloss.NewStyle().Faint(true).Render("  " + strings.Repeat("─", width))
+	return lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Render("  " + strings.Repeat("─", width))
 }
 
 // indexGutter renders the jump number for the row at position i, or blanks of
