@@ -2225,6 +2225,23 @@ func TestPointer_NarrowPointerIsPaddedToTheGutter(t *testing.T) {
 	}
 }
 
+func TestPointer_NerdFontGlyph(t *testing.T) {
+	// U+F0A4 is a Nerd Font glyph in the private use area. It measures one
+	// cell, so it needs the same right padding as any other narrow marker.
+	const hand = "\uf0a4"
+
+	for _, pointer := range []string{hand, hand + " "} {
+		t.Run(fmt.Sprintf("%q", pointer), func(t *testing.T) {
+			m := newPointerModel(pointer)
+
+			row := iconRow(t, m, "my-project")
+			assert.Equal(t, hand+" my-project", row)
+			assert.Equal(t, 2, lipgloss.Width(row[:strings.Index(row, "my-project")]))
+			assert.Equal(t, "  dotfiles", iconRow(t, m, "dotfiles"))
+		})
+	}
+}
+
 func TestPointer_WidePointerFallsBackAndWarns(t *testing.T) {
 	var logged bytes.Buffer
 	previous := slog.Default()
