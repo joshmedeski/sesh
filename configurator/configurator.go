@@ -129,6 +129,9 @@ func (c *RealConfigurator) applyDefaults(config *model.Config) {
 	if config.TUI.Placeholder == "" {
 		config.TUI.Placeholder = "Filter Sessions..."
 	}
+	if config.TUI.Pointer == "" {
+		config.TUI.Pointer = model.DefaultPointer
+	}
 	if config.TUI.AliasAutoConnectDelay == "" {
 		config.TUI.AliasAutoConnectDelay = model.DefaultAliasAutoConnectDelay
 	}

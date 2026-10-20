@@ -168,6 +168,11 @@
           "type": "string",
           "description": "The prompt shown in the picker TUI"
         },
+        "pointer": {
+          "type": "string",
+          "description": "Marker shown before the highlighted row in the picker TUI. It is padded on the right to the two-cell row gutter; a wider value falls back to \"> \".",
+          "default": "> "
+        },
         "placeholder": {
           "type": "string",
           "description": "The placeholder text in the picker TUI"

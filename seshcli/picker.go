@@ -82,6 +82,9 @@ func NewPickerCommand(base *BaseDeps) *cobra.Command {
 			} else if deps.Config.TUI.Placeholder != "" {
 				pickerOpts.Placeholder = &deps.Config.TUI.Placeholder
 			}
+			if deps.Config.TUI.Pointer != "" {
+				pickerOpts.Pointer = &deps.Config.TUI.Pointer
+			}
 			if cmd.Flags().Changed("query") {
 				query, _ := cmd.Flags().GetString("query")
 				pickerOpts.Query = &query

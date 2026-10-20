@@ -13,6 +13,10 @@ const DefaultAliasAutoConnectDelay = "150ms"
 // [tui] alias_filter_prefix is not set.
 const DefaultAliasFilterPrefix = "/"
 
+// DefaultPointer marks the highlighted row in the picker when [tui] pointer is
+// not set.
+const DefaultPointer = "> "
+
 // DefaultWindowNameFormat is the tmux format used for window names when
 // [tui] window_name_format is not set.
 const DefaultWindowNameFormat = "#{window_name}"
@@ -176,6 +180,10 @@ type (
 		WindowNameFormat string `toml:"window_name_format"`
 		Prompt           string `toml:"prompt"`
 		Placeholder      string `toml:"placeholder"`
+		// Pointer marks the highlighted row in the picker. It is padded on the
+		// right to the two-cell row gutter, and a wider one falls back to
+		// DefaultPointer rather than being truncated.
+		Pointer string `toml:"pointer"`
 		// AliasAutoConnectDelay is the grace period between typing an alias and
 		// auto-connecting to it, giving longer aliases that share a prefix time
 		// to be typed. Any duration string time.ParseDuration accepts.

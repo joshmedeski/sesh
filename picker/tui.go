@@ -2,6 +2,7 @@ package picker
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"time"
@@ -110,6 +111,9 @@ type Options struct {
 	SeparatorAware bool
 	Prompt         string
 	Placeholder    string
+	// Pointer marks the highlighted row. It is padded on the right to the
+	// two-cell gutter; a wider one falls back to the default with a warning.
+	Pointer string
 	// Query pre-fills the filter input. It goes in as if it had been typed —
 	// the sigils for alias and index mode included — but never triggers alias
 	// auto-connect on its own, which stays a reward for an actual keystroke.
@@ -130,7 +134,7 @@ type Options struct {
 	// IconWidth is the display width the icon column is padded to. Anything
 	// below 1 means the single cell the source glyphs need.
 	IconWidth int
-	Glyphs icon.Glyphs
+	Glyphs    icon.Glyphs
 	// Preview starts the picker with the preview pane showing. It can still be
 	// toggled at runtime, and is ignored on a terminal narrower than
 	// PreviewMinWidth.
@@ -177,10 +181,13 @@ type Model struct {
 	showIcons      bool
 	showWindows    bool
 	separatorAware bool
-	focusCmd       tea.Cmd
-	loading        bool
-	fetchFunc      FetchFunc
-	loadErr        error
+	// pointer is the configured highlight marker, already checked against the
+	// gutter so the row loop only has to pad it.
+	pointer   string
+	focusCmd  tea.Cmd
+	loading   bool
+	fetchFunc FetchFunc
+	loadErr   error
 
 	// iconFunc resolves a session's configured icon, and iconWidth is the width
 	// the icon column is padded to so wide icons keep the names aligned.
@@ -251,6 +258,37 @@ func padding(n int) string {
 		return ""
 	}
 	return strings.Repeat(" ", n)
+}
+
+// pointerGutter is the width of the column before every row's content. The
+// filter indent, the separator rule, and the status line all assume it.
+const pointerGutter = 2
+
+// normalizePointer keeps the highlight marker inside the row gutter. A wider
+// one would push the content of every row out of line, and truncating it would
+// cut a glyph, so it falls back to the default and says so once when the picker
+// starts.
+func normalizePointer(pointer string) string {
+	if pointer == "" {
+		return model.DefaultPointer
+	}
+	if width := lipgloss.Width(pointer); width > pointerGutter {
+		slog.Warn("tui pointer is wider than the row gutter, using the default",
+			"pointer", pointer, "width", width)
+		return model.DefaultPointer
+	}
+	return pointer
+}
+
+// pointerPrefixes renders the gutter for the highlighted row and for every
+// other row. Both are exactly pointerGutter cells, so names stay in one column
+// whichever marker is configured. It is called once per frame, not per row.
+func pointerPrefixes(pointer string) (highlighted, blank string) {
+	highlighted = lipgloss.NewStyle().
+		Foreground(lipgloss.ANSIColor(2)).
+		Bold(true).
+		Render(pointer + padding(pointerGutter-lipgloss.Width(pointer)))
+	return highlighted, padding(pointerGutter)
 }
 
 // Powerline half circles used to round off the alias chip. They are nerd font
@@ -386,6 +424,7 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		showIcons:               opts.ShowIcons,
 		showWindows:             opts.ShowWindows,
 		separatorAware:          opts.SeparatorAware,
+		pointer:                 normalizePointer(opts.Pointer),
 		iconFunc:                opts.Icon,
 		iconWidth:               max(opts.IconWidth, 1),
 		glyphs:                  glyphs,
@@ -1101,7 +1140,7 @@ func (m Model) View() tea.View {
 			end = len(m.rows)
 		}
 
-		cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
+		cursorPrefix, blankPrefix := pointerPrefixes(m.pointer)
 		matchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 		normalStyle := lipgloss.NewStyle()
 		windowStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(8)).Faint(true)
@@ -1119,9 +1158,9 @@ func (m Model) View() tea.View {
 			}
 			i := m.rows[r].index
 			item := m.filtered[i]
-			prefix := "  "
+			prefix := blankPrefix
 			if i == m.cursor {
-				prefix = cursorStyle.Render("> ")
+				prefix = cursorPrefix
 			}
 			if indexMode {
 				prefix += indexGutter(i, indexStyle)
