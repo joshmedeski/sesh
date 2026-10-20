@@ -51,6 +51,45 @@ func TestExecTargetsSessionForWindowScriptsAndStartupCommand(t *testing.T) {
 	assert.Equal(t, "executing startup command: nvim", message)
 }
 
+func TestExecCreatesConfiguredPanesWithWindowLayout(t *testing.T) {
+	mLister := lister.NewMockLister(t)
+	mTmux := tmux.NewMockTmux(t)
+	mHome := home.NewMockHome(t)
+
+	const sessionName = "myapp"
+	const sessionPath = "/repo/myapp"
+	mHome.EXPECT().ExpandPath(sessionPath).Return(sessionPath, nil)
+	mTmux.EXPECT().NewWindowInSession(model.TmuxWindowOpts{
+		Name: "dev", StartDir: sessionPath, TargetSession: sessionName,
+	}).Return("myapp:1", nil)
+	mTmux.EXPECT().SendKeys("myapp:dev", "nvim").Return("", nil)
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
+		TargetWindow: "myapp:dev", StartDir: sessionPath, Command: "lazydocker", Layout: "main-vertical",
+	}).Return("%1", nil).Once()
+	mTmux.EXPECT().NextWindowInSession(sessionName).Return("", nil)
+	mLister.EXPECT().FindConfigSession(sessionName).Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindConfigWildcard(sessionPath).Return(model.WildcardConfig{}, false)
+
+	s := &RealStartup{
+		lister: mLister,
+		tmux:   mTmux,
+		config: model.Config{
+			WindowConfigs: []model.WindowConfig{{Name: "dev", StartupScript: "nvim", Panes: []string{"docker"}, Layout: "main-vertical"}},
+			PaneConfigs:   []model.PaneConfig{{Name: "docker", StartupCommand: "lazydocker"}},
+		},
+		home: mHome,
+	}
+
+	_, err := s.Exec(model.SeshSession{Name: sessionName, Path: sessionPath, WindowNames: []string{"dev"}})
+	assert.NoError(t, err)
+}
+
+func TestCreatePanesFailsOnUndefinedPane(t *testing.T) {
+	s := &RealStartup{tmux: tmux.NewMockTmux(t)}
+	_, err := s.createPanes("myapp:dev", model.WindowConfig{Name: "dev", Panes: []string{"missing"}}, model.SeshPaneMap{})
+	assert.EqualError(t, err, "pane missing is not defined in config")
+}
+
 func TestCreatePanesSelectsFirstFocusedPane(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
 	const target = "myapp:dev"
