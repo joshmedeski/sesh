@@ -86,3 +86,45 @@ func TestCreatePanesWithoutFocusKeepsMainPane(t *testing.T) {
 	assert.NoError(t, err)
 	mTmux.AssertNotCalled(t, "SelectPaneByID", "%1")
 }
+
+func TestCreatePanesZoomsFocusedPane(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	window := model.WindowConfig{Name: "dev", Panes: []string{"logs"}, Zoom: true}
+	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs", Focus: true}}
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
+	mTmux.EXPECT().SelectPaneByID("%1").Return("", nil).Once()
+	mTmux.EXPECT().ZoomPane("%1").Return("", nil).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	_, err := s.createPanes("myapp:dev", window, panes)
+	assert.NoError(t, err)
+}
+
+func TestCreatePanesZoomedPaneWinsOverFocus(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	window := model.WindowConfig{Name: "dev", Panes: []string{"logs", "server"}}
+	panes := model.SeshPaneMap{
+		lister.ConfigKey("logs"):   {Name: "logs", Focus: true},
+		lister.ConfigKey("server"): {Name: "server", Zoom: true},
+	}
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%2", nil).Once()
+	mTmux.EXPECT().SelectPaneByID("%1").Return("", nil).Once()
+	mTmux.EXPECT().ZoomPane("%2").Return("", nil).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	_, err := s.createPanes("myapp:dev", window, panes)
+	assert.NoError(t, err)
+}
+
+func TestCreatePanesZoomsMainPaneWithoutFocus(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	window := model.WindowConfig{Name: "dev", Panes: []string{"logs"}, Zoom: true}
+	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs"}}
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
+	mTmux.EXPECT().ZoomPane("myapp:dev").Return("", nil).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	_, err := s.createPanes("myapp:dev", window, panes)
+	assert.NoError(t, err)
+}

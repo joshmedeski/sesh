@@ -173,12 +173,14 @@ type (
 		Path          string   `toml:"path"`
 		Panes         []string `toml:"panes"`
 		Layout        string   `toml:"layout"`
+		Zoom          bool     `toml:"zoom"` // zoom (fullscreen) the focused pane
 	}
 
 	PaneConfig struct {
 		Name           string `toml:"name"`
 		StartupCommand string `toml:"startup_command"`
 		Focus          bool   `toml:"focus"`
+		Zoom           bool   `toml:"zoom"`
 	}
 
 	TUIConfig struct {

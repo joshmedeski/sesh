@@ -35,3 +35,8 @@ func (t *RealTmux) NewPaneInWindow(opts model.TmuxPaneOpts) (string, error) {
 func (t *RealTmux) SelectPaneByID(paneID string) (string, error) {
 	return t.shell.Cmd(t.bin, "select-pane", "-t", paneID)
 }
+
+// ZoomPane zooms (fullscreen) the target pane. A window target zooms its active pane.
+func (t *RealTmux) ZoomPane(target string) (string, error) {
+	return t.shell.Cmd(t.bin, "resize-pane", "-Z", "-t", target)
+}

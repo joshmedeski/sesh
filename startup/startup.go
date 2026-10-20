@@ -1,6 +1,7 @@
 package startup
 
 import (
+	"cmp"
 	"fmt"
 
 	"github.com/joshmedeski/sesh/v2/home"
@@ -99,7 +100,7 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 }
 
 func (s *RealStartup) createPanes(target string, window model.WindowConfig, panes model.SeshPaneMap) (string, error) {
-	var focusID string
+	var focusID, zoomID string
 	for _, paneName := range window.Panes {
 		pane, ok := panes[lister.ConfigKey(paneName)]
 		if !ok {
@@ -117,9 +118,20 @@ func (s *RealStartup) createPanes(target string, window model.WindowConfig, pane
 		if pane.Focus && focusID == "" {
 			focusID = paneID
 		}
+		if pane.Zoom && zoomID == "" {
+			zoomID = paneID
+		}
 	}
 	if focusID != "" {
-		return s.tmux.SelectPaneByID(focusID)
+		if ret, err := s.tmux.SelectPaneByID(focusID); err != nil {
+			return ret, err
+		}
+	}
+	if zoomID != "" {
+		return s.tmux.ZoomPane(zoomID)
+	}
+	if window.Zoom && len(window.Panes) > 0 {
+		return s.tmux.ZoomPane(cmp.Or(focusID, target))
 	}
 	return "", nil
 }
