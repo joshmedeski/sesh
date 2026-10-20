@@ -1,6 +1,7 @@
 package startup
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/home"
@@ -48,4 +49,40 @@ func TestExecTargetsSessionForWindowScriptsAndStartupCommand(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "executing startup command: nvim", message)
+}
+
+func TestCreatePanesSelectsFirstFocusedPane(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	const target = "myapp:dev"
+	window := model.WindowConfig{Name: "dev", Path: "/repo/myapp", Panes: []string{"logs", "server", "shell"}, Layout: "tiled"}
+	panes := model.SeshPaneMap{
+		lister.ConfigKey("logs"):   {Name: "logs", StartupCommand: "tail -f log"},
+		lister.ConfigKey("server"): {Name: "server", StartupCommand: "make run", Focus: true},
+		lister.ConfigKey("shell"):  {Name: "shell", Focus: true},
+	}
+	for i, name := range window.Panes {
+		mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
+			TargetWindow: target,
+			StartDir:     window.Path,
+			Command:      panes[lister.ConfigKey(name)].StartupCommand,
+			Layout:       "tiled",
+		}).Return(fmt.Sprintf("%%%d", i+1), nil).Once()
+	}
+	mTmux.EXPECT().SelectPaneByID("%2").Return("", nil).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	_, err := s.createPanes(target, window, panes)
+	assert.NoError(t, err)
+}
+
+func TestCreatePanesWithoutFocusKeepsMainPane(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	window := model.WindowConfig{Name: "dev", Panes: []string{"logs"}}
+	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs"}}
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	_, err := s.createPanes("myapp:dev", window, panes)
+	assert.NoError(t, err)
+	mTmux.AssertNotCalled(t, "SelectPaneByID", "%1")
 }

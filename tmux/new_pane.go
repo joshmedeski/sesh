@@ -30,3 +30,8 @@ func (t *RealTmux) NewPaneInWindow(opts model.TmuxPaneOpts) (string, error) {
 	}
 	return paneID, nil
 }
+
+// SelectPaneByID makes the pane active in its window without switching the client's window.
+func (t *RealTmux) SelectPaneByID(paneID string) (string, error) {
+	return t.shell.Cmd(t.bin, "select-pane", "-t", paneID)
+}

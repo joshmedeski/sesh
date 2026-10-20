@@ -99,20 +99,27 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 }
 
 func (s *RealStartup) createPanes(target string, window model.WindowConfig, panes model.SeshPaneMap) (string, error) {
+	var focusID string
 	for _, paneName := range window.Panes {
 		pane, ok := panes[lister.ConfigKey(paneName)]
 		if !ok {
 			return "", fmt.Errorf("pane %s is not defined in config", paneName)
 		}
-		// TODO: implement focus?
-		if _, err := s.tmux.NewPaneInWindow(model.TmuxPaneOpts{
+		paneID, err := s.tmux.NewPaneInWindow(model.TmuxPaneOpts{
 			TargetWindow: target,
 			StartDir:     window.Path,
 			Command:      pane.StartupCommand,
 			Layout:       window.Layout,
-		}); err != nil {
+		})
+		if err != nil {
 			return "", err
 		}
+		if pane.Focus && focusID == "" {
+			focusID = paneID
+		}
+	}
+	if focusID != "" {
+		return s.tmux.SelectPaneByID(focusID)
 	}
 	return "", nil
 }
