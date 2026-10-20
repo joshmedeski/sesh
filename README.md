@@ -126,6 +126,26 @@ sudo dnf install tmux-sesh
 </details>
 
 <details>
+  <summary>RPM / DEB packages</summary>
+
+Download the `.rpm` or `.deb` for your architecture from the [latest release](https://github.com/joshmedeski/sesh/releases/latest), then install it with your package manager:
+
+```sh
+# openSUSE
+sudo zypper install ./sesh_*_linux_amd64.rpm
+
+# Fedora / RHEL
+sudo dnf install ./sesh_*_linux_amd64.rpm
+
+# Debian / Ubuntu
+sudo apt install ./sesh_*_linux_amd64.deb
+```
+
+Replace `amd64` with `arm64` or `386` as needed.
+
+</details>
+
+<details>
   <summary>Go</summary>
 
 Alternatively, you can install Sesh using Go's go install command:

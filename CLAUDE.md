@@ -71,3 +71,4 @@ just mock
 - All external dependencies use interfaces for testability (see wrapper packages: `execwrap`, `oswrap`, `pathwrap`)
 - Mock files follow pattern `mock_*.go` in the same package as the interface
 - Follow existing patterns for error handling and `slog` logging
+- Whenever `README.md` changes, apply the same change to `README.zh-cn.md` (translated to Simplified Chinese) in the same commit

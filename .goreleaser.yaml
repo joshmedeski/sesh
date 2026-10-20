@@ -44,6 +44,22 @@ archives:
     files:
       - share/man/man1/sesh.1
 
+nfpms:
+  - package_name: sesh
+    homepage: https://github.com/joshmedeski/sesh
+    maintainer: Josh Medeski <josh.medeski@gmail.com>
+    description: Smart terminal session manager
+    license: MIT
+    formats: [rpm, deb]
+    dependencies:
+      - tmux
+      - zoxide
+    contents:
+      - src: share/man/man1/sesh.1
+        dst: /usr/share/man/man1/sesh.1
+      - src: LICENSE
+        dst: /usr/share/licenses/sesh/LICENSE
+
 changelog:
   sort: asc
   filters:
