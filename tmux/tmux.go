@@ -41,6 +41,7 @@ type Tmux interface {
 	ListTmuxPanes() ([]*model.TmuxPane, error)
 	SelectPane(windowIndex int, paneIndex int) (string, error)
 	SelectPaneByID(paneID string) (string, error)
+	ZoomPane(target string) (string, error)
 	GetCurrentSession() (string, error)
 	ListClients() ([]model.TmuxClient, error)
 	ResolveClient() string
