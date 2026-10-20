@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -194,6 +195,31 @@ func validateNameSubstitutions(config *model.Config) error {
 	return nil
 }
 
+// windowLayouts are the tmux preset layouts. Custom layout strings are not
+// accepted: they encode an exact pane count, and the layout is re-applied
+// after every split, so tmux would reject them part way through.
+var windowLayouts = []string{"even-horizontal", "even-vertical", "main-horizontal", "main-vertical", "tiled"}
+
+// validateWindows rejects window settings that would only fail once tmux is
+// half way through building a session, leaving its remaining windows uncreated.
+func validateWindows(config *model.Config) error {
+	panes := make(map[string]bool, len(config.PaneConfigs))
+	for _, pane := range config.PaneConfigs {
+		panes[pane.Name] = true
+	}
+	for _, window := range config.WindowConfigs {
+		if window.Layout != "" && !slices.Contains(windowLayouts, window.Layout) {
+			return fmt.Errorf("invalid layout %q for window %q: must be one of %s", window.Layout, window.Name, strings.Join(windowLayouts, ", "))
+		}
+		for _, pane := range window.Panes {
+			if !panes[pane] {
+				return fmt.Errorf("window %q uses pane %q, which is not defined in config", window.Name, pane)
+			}
+		}
+	}
+	return nil
+}
+
 func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Config, error) {
 	file, err := c.os.ReadFile(configPath)
 	if err != nil {
@@ -219,6 +245,9 @@ func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Confi
 		return config, err
 	}
 	if err := validateNameSubstitutions(&config); err != nil {
+		return config, err
+	}
+	if err := validateWindows(&config); err != nil {
 		return config, err
 	}
 	if _, err := icon.SourceGlyphs(config.Icons); err != nil {
@@ -260,6 +289,9 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 		return config, err
 	}
 	if err := validateNameSubstitutions(&config); err != nil {
+		return config, err
+	}
+	if err := validateWindows(&config); err != nil {
 		return config, err
 	}
 	if _, err := icon.SourceGlyphs(config.Icons); err != nil {

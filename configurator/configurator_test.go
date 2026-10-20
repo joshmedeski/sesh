@@ -296,6 +296,26 @@ func TestGetConfig_AliasAutoConnectDelayInvalid(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid alias_auto_connect_delay")
 }
 
+func TestGetConfig_WindowPanes(t *testing.T) {
+	const pane = "[[pane]]\nname = \"logs\"\n"
+
+	t.Run("accepts a preset layout and defined panes", func(t *testing.T) {
+		config, err := configFromTOML(t, pane+"[[window]]\nname = \"dev\"\npanes = [\"logs\"]\nlayout = \"main-vertical\"\n")
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"logs"}, config.WindowConfigs[0].Panes)
+	})
+
+	t.Run("rejects an unknown layout", func(t *testing.T) {
+		_, err := configFromTOML(t, pane+"[[window]]\nname = \"dev\"\npanes = [\"logs\"]\nlayout = \"bogus\"\n")
+		assert.ErrorContains(t, err, `invalid layout "bogus" for window "dev"`)
+	})
+
+	t.Run("rejects a pane that is not defined", func(t *testing.T) {
+		_, err := configFromTOML(t, "[[window]]\nname = \"dev\"\npanes = [\"logs\"]\n")
+		assert.ErrorContains(t, err, `window "dev" uses pane "logs", which is not defined in config`)
+	})
+}
+
 func TestGetConfig_AliasFilterPrefixDefault(t *testing.T) {
 	config, err := configFromTOML(t, "")
 	assert.NoError(t, err)
