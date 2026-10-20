@@ -333,6 +333,51 @@
           "path": {
             "type": "string",
             "description": "Working directory for the window"
+          },
+          "panes": {
+            "type": "array",
+            "description": "Names of [[pane]] entries to split into this window, in order. The window's own pane (running startup_script) stays first",
+            "items": {
+              "type": "string"
+            }
+          },
+          "layout": {
+            "type": "string",
+            "description": "tmux layout applied after each pane is created: a preset name or a custom layout string",
+            "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
+          },
+          "zoom": {
+            "type": "boolean",
+            "description": "Zoom the focused pane (fullscreen) once the panes are created. Ignored when a pane sets zoom itself or the window has no panes",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "pane": {
+      "type": "array",
+      "description": "Pane configurations, referenced by name from a window's panes list",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the pane, used in a window's panes list"
+          },
+          "startup_command": {
+            "type": "string",
+            "description": "Command to run when the pane is created"
+          },
+          "focus": {
+            "type": "boolean",
+            "description": "Make this pane active instead of the window's own pane. The first focused pane in a window wins",
+            "default": false
+          },
+          "zoom": {
+            "type": "boolean",
+            "description": "Zoom this pane (fullscreen), which also focuses it. Takes precedence over focus; the first zoomed pane in a window wins",
+            "default": false
           }
         },
         "additionalProperties": false
