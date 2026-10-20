@@ -25,7 +25,7 @@ func TestExecTargetsSessionForWindowScriptsAndStartupCommand(t *testing.T) {
 		StartDir:      sessionPath,
 		TargetSession: sessionName,
 	}).Return("myapp:1", nil)
-	mTmux.EXPECT().SendKeys(sessionName+":", "echo ready").Return("", nil)
+	mTmux.EXPECT().SendKeys(sessionName+":myapp-logs", "echo ready").Return("", nil)
 	mTmux.EXPECT().NextWindowInSession(sessionName).Return("", nil)
 	mLister.EXPECT().FindConfigSession(sessionName).Return(model.SeshSession{}, false)
 	mLister.EXPECT().FindConfigWildcard(sessionPath).Return(model.WildcardConfig{}, false)

@@ -52,6 +52,7 @@ type (
 		SessionConfigs          []SessionConfig       `toml:"session"`
 		SortOrder               SortOrder             `toml:"sort_order"`
 		WindowConfigs           []WindowConfig        `toml:"window"`
+		PaneConfigs             []PaneConfig          `toml:"pane"`
 		WildcardConfigs         []WildcardConfig      `toml:"wildcard"`
 		WorktreeConfigs         []WorktreeConfig      `toml:"worktree"`
 		DirLength               int                   `toml:"dir_length"`
@@ -162,9 +163,17 @@ type (
 	}
 
 	WindowConfig struct {
-		Name          string `toml:"name"`
-		StartupScript string `toml:"startup_script"`
-		Path          string `toml:"path"`
+		Name          string   `toml:"name"`
+		StartupScript string   `toml:"startup_script"`
+		Path          string   `toml:"path"`
+		Panes         []string `toml:"panes"`
+		Layout        string   `toml:"layout"`
+	}
+
+	PaneConfig struct {
+		Name           string `toml:"name"`
+		StartupCommand string `toml:"startup_command"`
+		Focus          bool   `toml:"focus"`
 	}
 
 	TUIConfig struct {
