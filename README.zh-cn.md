@@ -1329,7 +1329,18 @@ focus = true
 | `[[pane]]` `focus` | 激活此窗格，而不是窗口自身的窗格 |
 | `[[pane]]` `zoom` | 缩放（全屏）此窗格，同时也会使其获得焦点 |
 
-第一个设置了 `focus` 或 `zoom` 的窗格生效，且缩放的窗格优先于 `focus` 和窗口的 `zoom`。窗格可以在多个窗口中重用，并且只适用于 `[[window]]` 条目，不适用于会话的第一个窗口。
+第一个设置了 `focus` 或 `zoom` 的窗格生效，且缩放的窗格优先于 `focus` 和窗口的 `zoom`。窗格可以在多个窗口中重用。
+
+会话的第一个窗口可以在 `[[session]]`、`[[wildcard]]` 或 `[default_session]` 中使用相同的 `panes`、`layout` 和 `zoom`。其 `startup_command` 在窗口自身的窗格中运行。按 `[[session]]`、`[[wildcard]]`、`[default_session]` 的顺序，第一个设置了 `panes` 的配置生效，并一同使用其 `layout` 和 `zoom`。
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+startup_command = "nvim"
+panes = [ "server" ]
+layout = "main-vertical"
+```
 
 如果某个窗口、窗格或布局无法创建，sesh 会在此停止，在 tmux 状态栏中显示该错误，并且 `sesh connect` 以非零状态退出。
 
@@ -1363,6 +1374,7 @@ startup_command = "git status"
 | `preview_command` | 预览会话时运行的命令 |
 | `disable_startup_command` | 设为 `true` 以禁止运行启动命令 |
 | `windows` | 要使用的窗口布局（`[[window]]` 配置中的窗口名称数组） |
+| `panes`、`layout`、`zoom` | 会话第一个窗口的窗格 —— 请参阅 [窗格](#窗格) |
 | `icon` | 匹配的会话在选择器中显示的图标 —— 请参阅 [自定义图标](#自定义图标) |
 
 **注意：** 模式使用 Go 的 `filepath.Match` 语法，支持 `*`（任意序列）、`?`（单个字符）和 `[...]`（字符类）。您也可以在模式末尾使用 `/**` 进行递归匹配 —— `~/projects/**` 匹配 `~/projects/foo`、`~/projects/foo/bar` 以及任何更深层的嵌套。单个 `*` 只匹配一层：`~/projects/*` 匹配 `~/projects/foo`，但不匹配 `~/projects/foo/bar`。显式的 `[[session]]` 配置始终优先于通配符匹配。如果有多个通配符匹配，配置中排在最前的优先。
