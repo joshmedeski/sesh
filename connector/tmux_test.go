@@ -166,3 +166,59 @@ func TestConnectToTmuxDetachedReportsUnreachableTmux(t *testing.T) {
 	_, err := connectToTmux(c, conn, model.ConnectOpts{Switch: true})
 	require.ErrorContains(t, err, "couldn't reach tmux to switch to 'nutiliti/2345'")
 }
+
+func TestConnectToTmuxShowsStartupErrorsAndFails(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mStartup := startup.NewMockStartup(t)
+	startupErr := errors.Join(
+		errors.New("window foo is not defined in config"),
+		errors.New("window dev: pane bar is not defined in config"),
+	)
+
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mStartup.EXPECT().Exec(mock.Anything).Return("", startupErr)
+	mTmux.EXPECT().SwitchOrAttach("myapp", model.ConnectOpts{}).Return("switching", nil)
+	mTmux.EXPECT().
+		DisplayMessage("sesh: window foo is not defined in config; window dev: pane bar is not defined in config").
+		Return("", errors.New("no client"))
+
+	c := NewConnector(
+		model.Config{}, nil, nil, nil, nil, mStartup, mTmux, nil, nil, nil,
+	).(*RealConnector)
+
+	connection := model.Connection{
+		Found: true, New: true,
+		Session: model.SeshSession{Src: "config", Name: "myapp", Path: "/repo/myapp"},
+	}
+
+	message, err := connectToTmux(c, connection, model.ConnectOpts{})
+
+	assert.Equal(t, "switching", message)
+	require.ErrorContains(t, err, "session myapp started with errors:")
+	require.ErrorIs(t, err, startupErr)
+}
+
+func TestConnectToTmuxJoinsFocusAndStartupErrors(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mStartup := startup.NewMockStartup(t)
+	startupErr := errors.New("window foo is not defined in config")
+	focusErr := errors.New("attach failed")
+
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mStartup.EXPECT().Exec(mock.Anything).Return("", startupErr)
+	mTmux.EXPECT().SwitchOrAttach("myapp", model.ConnectOpts{}).Return("", focusErr)
+
+	c := NewConnector(
+		model.Config{}, nil, nil, nil, nil, mStartup, mTmux, nil, nil, nil,
+	).(*RealConnector)
+
+	connection := model.Connection{
+		Found: true, New: true,
+		Session: model.SeshSession{Src: "config", Name: "myapp", Path: "/repo/myapp"},
+	}
+
+	_, err := connectToTmux(c, connection, model.ConnectOpts{})
+
+	require.ErrorIs(t, err, focusErr)
+	require.ErrorIs(t, err, startupErr)
+}

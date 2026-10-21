@@ -2,6 +2,7 @@ package tmux
 
 import (
 	"cmp"
+	"fmt"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
@@ -16,18 +17,18 @@ func (t *RealTmux) NewPaneInWindow(opts model.TmuxPaneOpts) (string, error) {
 
 	paneID, err := t.shell.Cmd(t.bin, args...)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("split window: %w", err)
 	}
 	paneID = strings.TrimSpace(paneID)
 
 	if opts.Command != "" {
 		if _, err := t.shell.Cmd(t.bin, "send-keys", "-t", paneID, opts.Command, "Enter"); err != nil {
-			return paneID, err
+			return paneID, fmt.Errorf("run startup command: %w", err)
 		}
 	}
 	if opts.Layout != "" {
 		if _, err := t.SelectLayout(opts.TargetWindow, opts.Layout); err != nil {
-			return paneID, err
+			return paneID, fmt.Errorf("apply layout %s: %w", opts.Layout, err)
 		}
 	}
 	return paneID, nil

@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/dir"
@@ -8,6 +9,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
+	"github.com/joshmedeski/sesh/v2/startup"
 	"github.com/joshmedeski/sesh/v2/tmux"
 	"github.com/joshmedeski/sesh/v2/zoxide"
 	"github.com/stretchr/testify/assert"
@@ -223,4 +225,30 @@ func TestConnectWindow(t *testing.T) {
 
 		assert.ErrorContains(t, err, "use --target")
 	})
+}
+
+func TestEnsureSessionShowsStartupErrorsWithoutFailing(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mStartup := startup.NewMockStartup(t)
+	mLister := lister.NewMockLister(t)
+	mZoxide := zoxide.NewMockZoxide(t)
+	session := model.SeshSession{Src: "config", Name: "myapp", Path: "/repo/myapp"}
+
+	mTmux.EXPECT().IsAttached().Return(false)
+	mLister.EXPECT().FindTmuxSession("myapp").Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindTmuxinatorConfig("myapp").Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindConfigSession("myapp").Return(session, true)
+	mZoxide.EXPECT().Add("/repo/myapp").Return(nil)
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mStartup.EXPECT().Exec(session).Return("", errors.Join(errors.New("window foo is not defined in config"), errors.New("boom")))
+	mTmux.EXPECT().DisplayMessage("sesh: window foo is not defined in config; boom").Return("", nil)
+
+	c := NewConnector(
+		model.Config{}, nil, nil, mLister, nil, mStartup, mTmux, mZoxide, nil, nil,
+	).(*RealConnector)
+
+	got, err := c.ensureSession("myapp")
+
+	require.NoError(t, err)
+	assert.Equal(t, session, got)
 }
