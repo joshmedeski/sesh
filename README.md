@@ -26,7 +26,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 
 - **Smart session creation** - automatically names sessions based on git repo, git remote, or directory
 - **Zoxide integration** - jump to your most-used projects instantly
-- **Session configuration** - define startup commands, windows, and preview commands per project in `sesh.toml`
+- **Session configuration** - define startup commands, windows, panes, and preview commands per project in `sesh.toml`
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
 - **Clone and connect** - clone a git repo and start a session in one step
@@ -1313,6 +1313,44 @@ windows = [ "git" ]
 name = "git"
 startup_script = "git pull"
 ```
+
+#### Panes
+
+A window can be split into panes. Define each pane once with `[[pane]]` and list it by name in a window's `panes`. The window's own pane runs `startup_script` and stays first; the listed panes follow in order, start in the window's path, and run their `startup_command`.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+windows = [ "dev" ]
+
+[[window]]
+name = "dev"
+startup_script = "nvim"
+panes = [ "server", "tests" ]
+layout = "main-vertical"
+
+[[pane]]
+name = "server"
+startup_command = "npm run dev"
+
+[[pane]]
+name = "tests"
+startup_command = "npm test -- --watch"
+focus = true
+```
+
+| Field | Description |
+|-------|-------------|
+| `[[window]]` `panes` | Names of `[[pane]]` entries to split into the window, in order |
+| `[[window]]` `layout` | tmux layout applied to the window: `main-vertical`, `main-horizontal`, `tiled`, `even-horizontal`, `even-vertical`, or a custom layout string |
+| `[[window]]` `zoom` | Zoom the focused pane once the panes are created |
+| `[[pane]]` `name` | Name used in a window's `panes` |
+| `[[pane]]` `startup_command` | Command to run in the pane |
+| `[[pane]]` `focus` | Make this pane active instead of the window's own pane |
+| `[[pane]]` `zoom` | Zoom this pane, which also focuses it |
+
+The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows and only apply to `[[window]]` entries, not to the session's first window.
 
 ### Wildcard Configuration
 
