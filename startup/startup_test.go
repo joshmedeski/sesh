@@ -26,7 +26,7 @@ func TestExecTargetsSessionForWindowScriptsAndStartupCommand(t *testing.T) {
 		StartDir:      sessionPath,
 		TargetSession: sessionName,
 	}).Return("myapp:1", nil)
-	mTmux.EXPECT().SendKeys(sessionName+":myapp-logs", "echo ready").Return("", nil)
+	mTmux.EXPECT().SendKeys("myapp:1", "echo ready").Return("", nil)
 	mTmux.EXPECT().NextWindowInSession(sessionName).Return("", nil)
 	mLister.EXPECT().FindConfigSession(sessionName).Return(model.SeshSession{}, false)
 	mLister.EXPECT().FindConfigWildcard(sessionPath).Return(model.WildcardConfig{}, false)
@@ -62,9 +62,9 @@ func TestExecCreatesConfiguredPanesWithWindowLayout(t *testing.T) {
 	mTmux.EXPECT().NewWindowInSession(model.TmuxWindowOpts{
 		Name: "dev", StartDir: sessionPath, TargetSession: sessionName,
 	}).Return("myapp:1", nil)
-	mTmux.EXPECT().SendKeys("myapp:dev", "nvim").Return("", nil)
+	mTmux.EXPECT().SendKeys("myapp:1", "nvim").Return("", nil)
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
-		TargetWindow: "myapp:dev", StartDir: sessionPath, Command: "lazydocker", Layout: "main-vertical",
+		TargetWindow: "myapp:1", StartDir: sessionPath, Command: "lazydocker", Layout: "main-vertical",
 	}).Return("%1", nil).Once()
 	mTmux.EXPECT().NextWindowInSession(sessionName).Return("", nil)
 	mLister.EXPECT().FindConfigSession(sessionName).Return(model.SeshSession{}, false)

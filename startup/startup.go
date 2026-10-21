@@ -87,12 +87,13 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 		window.Path = path
 	}
 
-	if ret, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
+	// "session:index" target; window names may contain dots or digits
+	target, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
 		Name: window.Name, StartDir: window.Path, TargetSession: session.Name,
-	}); err != nil {
-		return ret, err
+	})
+	if err != nil {
+		return target, err
 	}
-	target := session.Name + ":" + window.Name
 	if ret, err := s.tmux.SendKeys(target, window.StartupScript); err != nil {
 		return ret, err
 	}
