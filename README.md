@@ -1281,6 +1281,8 @@ focus = true
 
 The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows and only apply to `[[window]]` entries, not to the session's first window.
 
+If a window, pane, or layout can't be set up, sesh still creates the rest of the session, shows the errors in the tmux status line, and `sesh connect` exits non-zero.
+
 ### Wildcard Configuration
 
 Wildcard configs let you define session settings that apply to any directory matching a glob pattern, instead of creating a `[[session]]` entry for each project. This is useful when you have a directory full of projects that should all use the same startup command.
