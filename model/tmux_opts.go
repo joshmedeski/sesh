@@ -13,6 +13,7 @@ type TmuxWindowOpts struct {
 
 type TmuxPaneOpts struct {
 	TargetWindow string
+	TargetPane   string // pane to split; empty splits the window's active pane
 	StartDir     string
 	Command      string
 	Layout       string // "main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"

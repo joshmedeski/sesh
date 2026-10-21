@@ -100,8 +100,13 @@ func TestCreatePanesSelectsFirstFocusedPane(t *testing.T) {
 		lister.ConfigKey("shell"):  {Name: "shell", Focus: true},
 	}
 	for i, name := range window.Panes {
+		prevID := ""
+		if i > 0 {
+			prevID = fmt.Sprintf("%%%d", i)
+		}
 		mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
 			TargetWindow: target,
+			TargetPane:   prevID,
 			StartDir:     window.Path,
 			Command:      panes[lister.ConfigKey(name)].StartupCommand,
 			Layout:       "tiled",
@@ -147,7 +152,7 @@ func TestCreatePanesZoomedPaneWinsOverFocus(t *testing.T) {
 		lister.ConfigKey("server"): {Name: "server", Zoom: true},
 	}
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
-	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%2", nil).Once()
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev", TargetPane: "%1"}).Return("%2", nil).Once()
 	mTmux.EXPECT().SelectPaneByID("%1").Return("", nil).Once()
 	mTmux.EXPECT().ZoomPane("%2").Return("", nil).Once()
 

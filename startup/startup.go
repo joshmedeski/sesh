@@ -101,14 +101,16 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 }
 
 func (s *RealStartup) createPanes(target string, window model.WindowConfig, panes model.SeshPaneMap) (string, error) {
-	var focusID, zoomID string
+	var focusID, zoomID, prevID string
 	for _, paneName := range window.Panes {
 		pane, ok := panes[lister.ConfigKey(paneName)]
 		if !ok {
 			return "", fmt.Errorf("pane %s is not defined in config", paneName)
 		}
+		// split the previous pane so panes keep config order
 		paneID, err := s.tmux.NewPaneInWindow(model.TmuxPaneOpts{
 			TargetWindow: target,
+			TargetPane:   prevID,
 			StartDir:     window.Path,
 			Command:      pane.StartupCommand,
 			Layout:       window.Layout,
@@ -116,6 +118,7 @@ func (s *RealStartup) createPanes(target string, window model.WindowConfig, pane
 		if err != nil {
 			return "", err
 		}
+		prevID = paneID
 		if pane.Focus && focusID == "" {
 			focusID = paneID
 		}
