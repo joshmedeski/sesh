@@ -145,6 +145,10 @@ type (
 		Tmuxinator     string   `toml:"tmuxinator"`
 		PreviewCommand string   `toml:"preview_command"`
 		Windows        []string `toml:"windows"`
+		// Panes, Layout and Zoom apply to the session's first window.
+		Panes  []string `toml:"panes"`
+		Layout string   `toml:"layout"`
+		Zoom   bool     `toml:"zoom"`
 	}
 
 	SessionConfig struct {
@@ -234,6 +238,10 @@ type (
 		DisableStartCommand bool     `toml:"disable_startup_command"`
 		PreviewCommand      string   `toml:"preview_command"`
 		Windows             []string `toml:"windows"`
+		// Panes, Layout and Zoom apply to the session's first window.
+		Panes  []string `toml:"panes"`
+		Layout string   `toml:"layout"`
+		Zoom   bool     `toml:"zoom"`
 		// Icon replaces the source glyph every session under this pattern gets
 		// in the picker. See SessionConfig.Icon.
 		Icon string `toml:"icon"`

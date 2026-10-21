@@ -54,6 +54,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 	}
 	_, _ = s.tmux.NextWindowInSession(session.Name)
 
+	var message string
 	for _, strategy := range strategies {
 		if command, err := strategy(s, session); err != nil {
 			return "", fmt.Errorf("failed to determine startup command: %w", err)
@@ -61,11 +62,40 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 			if _, err := s.tmux.SendKeys(session.Name+":", command); err != nil {
 				return "", fmt.Errorf("failed to send startup command: %w", err)
 			}
-			return fmt.Sprintf("executing startup command: %s", command), nil
+			message = fmt.Sprintf("executing startup command: %s", command)
+			break
 		}
 	}
 
-	return "", nil // no command to run
+	// panes come after the command so it lands in the main pane
+	if first := s.firstWindow(session); len(first.Panes) > 0 {
+		path, err := s.home.ExpandPath(session.Path)
+		if err != nil {
+			return "", fmt.Errorf("first window: couldn't expand home: %q", err)
+		}
+		first.Path = path
+		// "^" is tmux's lowest-index window
+		if err := s.createPanes(session.Name+":^", first, panes); err != nil {
+			return "", fmt.Errorf("first window: %w", err)
+		}
+	}
+
+	return message, nil
+}
+
+// firstWindow returns the pane layout for the session's first window:
+// [[session]], then [[wildcard]], then [default_session].
+func (s *RealStartup) firstWindow(session model.SeshSession) model.WindowConfig {
+	for _, sc := range s.config.SessionConfigs {
+		if lister.ConfigKey(sc.Name) == lister.ConfigKey(session.Name) && len(sc.Panes) > 0 {
+			return model.WindowConfig{Panes: sc.Panes, Layout: sc.Layout, Zoom: sc.Zoom}
+		}
+	}
+	if wc, ok := s.lister.FindConfigWildcard(session.Path); ok && len(wc.Panes) > 0 {
+		return model.WindowConfig{Panes: wc.Panes, Layout: wc.Layout, Zoom: wc.Zoom}
+	}
+	d := s.config.DefaultSessionConfig
+	return model.WindowConfig{Panes: d.Panes, Layout: d.Layout, Zoom: d.Zoom}
 }
 
 func (s *RealStartup) createWindow(session model.SeshSession, name string, windows model.SeshWindowMap, panes model.SeshPaneMap) error {

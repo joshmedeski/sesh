@@ -281,3 +281,128 @@ func TestCreatePanesZoomsMainPaneWithoutFocus(t *testing.T) {
 	err := s.createPanes("myapp:dev", window, panes)
 	assert.NoError(t, err)
 }
+
+func TestExecCreatesFirstWindowPanesAfterStartupCommand(t *testing.T) {
+	mLister := lister.NewMockLister(t)
+	mTmux := tmux.NewMockTmux(t)
+	mHome := home.NewMockHome(t)
+	mReplacer := replacer.NewMockReplacer(t)
+
+	const sessionPath = "/repo/myapp"
+	var calls []string
+	mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
+	mLister.EXPECT().FindConfigSession("myapp").Return(model.SeshSession{StartupCommand: "nvim"}, true)
+	mReplacer.EXPECT().Replace("nvim", map[string]string{"{}": sessionPath}).Return("nvim")
+	mTmux.EXPECT().SendKeys("myapp:", "nvim").
+		Run(func(string, string) { calls = append(calls, "startup command") }).Return("", nil)
+	mHome.EXPECT().ExpandPath(sessionPath).Return(sessionPath, nil)
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
+		TargetWindow: "myapp:^", StartDir: sessionPath, Command: "lazydocker", Layout: "tiled",
+	}).Run(func(model.TmuxPaneOpts) { calls = append(calls, "pane") }).Return("%1", nil)
+
+	s := &RealStartup{
+		lister: mLister, tmux: mTmux, home: mHome, replacer: mReplacer,
+		config: model.Config{
+			SessionConfigs: []model.SessionConfig{{
+				Name:                 "myapp",
+				DefaultSessionConfig: model.DefaultSessionConfig{Panes: []string{"docker"}, Layout: "tiled"},
+			}},
+			PaneConfigs: []model.PaneConfig{{Name: "docker", StartupCommand: "lazydocker"}},
+		},
+	}
+
+	message, err := s.Exec(model.SeshSession{Name: "myapp", Path: sessionPath})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "executing startup command: nvim", message)
+	assert.Equal(t, []string{"startup command", "pane"}, calls)
+}
+
+func TestExecFirstWindowPanePrecedence(t *testing.T) {
+	const sessionPath = "/repo/myapp"
+	sessionCfg := model.SessionConfig{
+		Name:                 "myapp",
+		DefaultSessionConfig: model.DefaultSessionConfig{Panes: []string{"a"}, Layout: "tiled", Zoom: true},
+	}
+	wildcardCfg := model.WildcardConfig{Panes: []string{"b"}, Layout: "even-vertical"}
+	defaultCfg := model.DefaultSessionConfig{Panes: []string{"c"}, Layout: "main-vertical"}
+	noPanes := model.SessionConfig{Name: "myapp"}
+
+	tests := []struct {
+		name     string
+		sessions []model.SessionConfig
+		wildcard model.WildcardConfig
+		wildOK   bool
+		pane     string
+		layout   string
+		zoom     bool
+	}{
+		{"session wins", []model.SessionConfig{sessionCfg}, wildcardCfg, true, "a", "tiled", true},
+		{"wildcard beats default", []model.SessionConfig{noPanes}, wildcardCfg, true, "b", "even-vertical", false},
+		{"default as fallback", nil, model.WildcardConfig{}, true, "c", "main-vertical", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mLister := lister.NewMockLister(t)
+			mTmux := tmux.NewMockTmux(t)
+			mHome := home.NewMockHome(t)
+			mLister.EXPECT().FindConfigSession("myapp").Return(model.SeshSession{}, false).Maybe()
+			mLister.EXPECT().FindConfigWildcard(sessionPath).Return(tt.wildcard, tt.wildOK).Maybe()
+			mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
+			mHome.EXPECT().ExpandPath(sessionPath).Return(sessionPath, nil)
+			mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
+				TargetWindow: "myapp:^", StartDir: sessionPath, Layout: tt.layout,
+			}).Return("%1", nil).Once()
+			if tt.zoom {
+				mTmux.EXPECT().ZoomPane("myapp:^").Return("", nil).Once()
+			}
+
+			s := &RealStartup{
+				lister: mLister, tmux: mTmux, home: mHome,
+				config: model.Config{
+					SessionConfigs:       tt.sessions,
+					DefaultSessionConfig: defaultCfg,
+					PaneConfigs:          []model.PaneConfig{{Name: "a"}, {Name: "b"}, {Name: "c"}},
+				},
+			}
+
+			_, err := s.Exec(model.SeshSession{Name: "myapp", Path: sessionPath})
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestExecFirstWindowUndefinedPane(t *testing.T) {
+	mLister := lister.NewMockLister(t)
+	mTmux := tmux.NewMockTmux(t)
+	mHome := home.NewMockHome(t)
+	mLister.EXPECT().FindConfigSession("myapp").Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindConfigWildcard("/repo/myapp").Return(model.WildcardConfig{}, false)
+	mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
+	mHome.EXPECT().ExpandPath("/repo/myapp").Return("/repo/myapp", nil)
+
+	s := &RealStartup{
+		lister: mLister, tmux: mTmux, home: mHome,
+		config: model.Config{DefaultSessionConfig: model.DefaultSessionConfig{Panes: []string{"x"}}},
+	}
+
+	_, err := s.Exec(model.SeshSession{Name: "myapp", Path: "/repo/myapp"})
+
+	assert.EqualError(t, err, "first window: pane x is not defined in config")
+}
+
+func TestExecWithoutFirstWindowPanesCreatesNoPanes(t *testing.T) {
+	mLister := lister.NewMockLister(t)
+	mTmux := tmux.NewMockTmux(t)
+	mLister.EXPECT().FindConfigSession("myapp").Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindConfigWildcard("/repo/myapp").Return(model.WildcardConfig{}, false)
+	mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
+
+	s := &RealStartup{lister: mLister, tmux: mTmux}
+
+	message, err := s.Exec(model.SeshSession{Name: "myapp", Path: "/repo/myapp"})
+
+	assert.NoError(t, err)
+	assert.Empty(t, message)
+	mTmux.AssertNotCalled(t, "NewPaneInWindow", mock.Anything)
+}
