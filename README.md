@@ -1279,7 +1279,18 @@ focus = true
 | `[[pane]]` `focus` | Make this pane active instead of the window's own pane |
 | `[[pane]]` `zoom` | Zoom this pane, which also focuses it |
 
-The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows and only apply to `[[window]]` entries, not to the session's first window.
+The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows.
+
+The session's first window takes the same `panes`, `layout`, and `zoom` keys on `[[session]]`, `[[wildcard]]`, or `[default_session]`. Its `startup_command` runs in the window's own pane. The first of `[[session]]`, `[[wildcard]]`, `[default_session]` that sets `panes` is used, together with its `layout` and `zoom`.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+startup_command = "nvim"
+panes = [ "server" ]
+layout = "main-vertical"
+```
 
 If a window, pane, or layout can't be set up, sesh stops there, shows the error in the tmux status line, and `sesh connect` exits non-zero.
 
@@ -1313,6 +1324,7 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
+| `panes`, `layout`, `zoom` | Panes for the session's first window — see [Panes](#panes) |
 | `icon` | Icon shown for matching sessions in the picker — see [Custom icons](#custom-icons) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
