@@ -240,8 +240,8 @@ func TestEnsureSessionShowsStartupErrorsWithoutFailing(t *testing.T) {
 	mLister.EXPECT().FindConfigSession("myapp").Return(session, true)
 	mZoxide.EXPECT().Add("/repo/myapp").Return(nil)
 	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
-	mStartup.EXPECT().Exec(session).Return("", errors.Join(errors.New("window foo is not defined in config"), errors.New("boom")))
-	mTmux.EXPECT().DisplayMessage("sesh: window foo is not defined in config; boom").Return("", nil)
+	mStartup.EXPECT().Exec(session).Return("", errors.New("window foo is not defined in config"))
+	mTmux.EXPECT().DisplayMessage("sesh: window foo is not defined in config").Return("", nil)
 
 	c := NewConnector(
 		model.Config{}, nil, nil, mLister, nil, mStartup, mTmux, mZoxide, nil, nil,

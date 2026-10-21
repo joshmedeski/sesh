@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
@@ -22,14 +21,9 @@ func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 	}, nil
 }
 
-// oneLine flattens an error list so it fits tmux's single-line status message.
-func oneLine(err error) string {
-	return strings.ReplaceAll(err.Error(), "\n", "; ")
-}
-
 // showStartupError surfaces startup errors in the tmux status line.
 func (c *RealConnector) showStartupError(err error) {
-	_, _ = c.tmux.DisplayMessage("sesh: " + oneLine(err))
+	_, _ = c.tmux.DisplayMessage("sesh: " + err.Error())
 }
 
 func connectToTmux(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
@@ -56,7 +50,7 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 		return message, errors.Join(err, startupErr)
 	}
 	c.showStartupError(startupErr)
-	return message, fmt.Errorf("session %s started with errors: %w", connection.Session.Name, startupErr)
+	return message, fmt.Errorf("session %s startup failed: %w", connection.Session.Name, startupErr)
 }
 
 func (c *RealConnector) connectDetached(sessionName string) (string, error) {
