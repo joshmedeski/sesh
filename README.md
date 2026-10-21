@@ -1352,7 +1352,7 @@ focus = true
 
 The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows and only apply to `[[window]]` entries, not to the session's first window.
 
-If a window, pane, or layout can't be set up, sesh still creates the rest of the session, shows the errors in the tmux status line, and `sesh connect` exits non-zero.
+If a window, pane, or layout can't be set up, sesh stops there, shows the error in the tmux status line, and `sesh connect` exits non-zero.
 
 ### Wildcard Configuration
 
