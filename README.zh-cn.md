@@ -26,7 +26,7 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
 
 - **智能创建会话** - 根据 git 仓库、git 远程或目录自动为会话命名
 - **集成 zoxide** - 立即跳转到您最常用的项目
-- **会话配置** - 在 `sesh.toml` 中为每个项目定义启动命令、窗口和预览命令
+- **会话配置** - 在 `sesh.toml` 中为每个项目定义启动命令、窗口、窗格和预览命令
 - **通配符配置** - 将设置应用于所有匹配 glob 模式的项目
 - **内置选择器** - 交互式会话选择器，也可以与 fzf、television 或 gum 集成
 - **克隆并连接** - 一步克隆 git 仓库并启动会话
@@ -1226,6 +1226,44 @@ windows = [ "git" ]
 name = "git"
 startup_script = "git pull"
 ```
+
+#### 窗格
+
+窗口可以拆分为多个窗格。使用 `[[pane]]` 定义每个窗格，并在窗口的 `panes` 中按名称引用。窗口自身的窗格运行 `startup_script` 并始终位于第一个；列出的窗格按顺序排列在其后，在窗口的路径中启动，并运行各自的 `startup_command`。
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+windows = [ "dev" ]
+
+[[window]]
+name = "dev"
+startup_script = "nvim"
+panes = [ "server", "tests" ]
+layout = "main-vertical"
+
+[[pane]]
+name = "server"
+startup_command = "npm run dev"
+
+[[pane]]
+name = "tests"
+startup_command = "npm test -- --watch"
+focus = true
+```
+
+| 字段 | 描述 |
+|-------|-------------|
+| `[[window]]` `panes` | 要拆分到窗口中的 `[[pane]]` 名称，按顺序排列 |
+| `[[window]]` `layout` | 应用于窗口的 tmux 布局：`main-vertical`、`main-horizontal`、`tiled`、`even-horizontal`、`even-vertical`，或自定义布局字符串 |
+| `[[window]]` `zoom` | 创建窗格后缩放（全屏）获得焦点的窗格 |
+| `[[pane]]` `name` | 在窗口的 `panes` 中使用的名称 |
+| `[[pane]]` `startup_command` | 在窗格中运行的命令 |
+| `[[pane]]` `focus` | 激活此窗格，而不是窗口自身的窗格 |
+| `[[pane]]` `zoom` | 缩放（全屏）此窗格，同时也会使其获得焦点 |
+
+第一个设置了 `focus` 或 `zoom` 的窗格生效，且缩放的窗格优先于 `focus` 和窗口的 `zoom`。窗格可以在多个窗口中重用，并且只适用于 `[[window]]` 条目，不适用于会话的第一个窗口。
 
 ### 通配符配置
 
