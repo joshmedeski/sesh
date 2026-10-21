@@ -264,6 +264,23 @@
           "items": {
             "type": "string"
           }
+        },
+        "panes": {
+          "type": "array",
+          "description": "Names of [[pane]] entries to split into the first window of every session, in order. startup_command runs in the window's own pane, which stays first",
+          "items": {
+            "type": "string"
+          }
+        },
+        "layout": {
+          "type": "string",
+          "description": "tmux layout applied after each pane is created in the first window: a preset name or a custom layout string",
+          "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
+        },
+        "zoom": {
+          "type": "boolean",
+          "description": "Zoom the focused pane (fullscreen) in the first window once the panes are created. Ignored when a pane sets zoom itself or there are no panes",
+          "default": false
         }
       },
       "additionalProperties": false
@@ -322,6 +339,23 @@
             "items": {
               "type": "string"
             }
+          },
+          "panes": {
+            "type": "array",
+            "description": "Names of [[pane]] entries to split into this session's first window, in order. startup_command runs in the window's own pane, which stays first",
+            "items": {
+              "type": "string"
+            }
+          },
+          "layout": {
+            "type": "string",
+            "description": "tmux layout applied after each pane is created in the first window: a preset name or a custom layout string",
+            "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
+          },
+          "zoom": {
+            "type": "boolean",
+            "description": "Zoom the focused pane (fullscreen) in the first window once the panes are created. Ignored when a pane sets zoom itself or there are no panes",
+            "default": false
           }
         },
         "additionalProperties": false
@@ -423,6 +457,23 @@
             "items": {
               "type": "string"
             }
+          },
+          "panes": {
+            "type": "array",
+            "description": "Names of [[pane]] entries to split into the first window of matching sessions, in order. startup_command runs in the window's own pane, which stays first",
+            "items": {
+              "type": "string"
+            }
+          },
+          "layout": {
+            "type": "string",
+            "description": "tmux layout applied after each pane is created in the first window: a preset name or a custom layout string",
+            "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
+          },
+          "zoom": {
+            "type": "boolean",
+            "description": "Zoom the focused pane (fullscreen) in the first window once the panes are created. Ignored when a pane sets zoom itself or there are no panes",
+            "default": false
           },
           "icon": {
             "type": "string",
