@@ -207,16 +207,13 @@ func TestConnectToTmuxBackgroundReturnsStartupErrors(t *testing.T) {
 func TestConnectToTmuxShowsStartupErrorsAndFails(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
 	mStartup := startup.NewMockStartup(t)
-	startupErr := errors.Join(
-		errors.New("window foo is not defined in config"),
-		errors.New("window dev: pane bar is not defined in config"),
-	)
+	startupErr := errors.New("window dev: pane bar is not defined in config")
 
 	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
 	mStartup.EXPECT().Exec(mock.Anything).Return("", startupErr)
 	mTmux.EXPECT().SwitchOrAttach("myapp", model.ConnectOpts{}).Return("switching", nil)
 	mTmux.EXPECT().
-		DisplayMessage("sesh: window foo is not defined in config; window dev: pane bar is not defined in config").
+		DisplayMessage("sesh: window dev: pane bar is not defined in config").
 		Return("", errors.New("no client"))
 
 	c := NewConnector(
@@ -231,7 +228,7 @@ func TestConnectToTmuxShowsStartupErrorsAndFails(t *testing.T) {
 	message, err := connectToTmux(c, connection, model.ConnectOpts{})
 
 	assert.Equal(t, "switching", message)
-	require.ErrorContains(t, err, "session myapp started with errors:")
+	require.ErrorContains(t, err, "session myapp startup failed: window dev: pane bar is not defined in config")
 	require.ErrorIs(t, err, startupErr)
 }
 
