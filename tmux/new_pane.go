@@ -1,13 +1,15 @@
 package tmux
 
 import (
+	"cmp"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
 func (t *RealTmux) NewPaneInWindow(opts model.TmuxPaneOpts) (string, error) {
-	args := []string{"split-window", "-d", "-P", "-F", "#{pane_id}", "-t", sessionTarget(opts.TargetWindow)}
+	target := cmp.Or(opts.TargetPane, sessionTarget(opts.TargetWindow))
+	args := []string{"split-window", "-d", "-P", "-F", "#{pane_id}", "-t", target}
 	if opts.StartDir != "" {
 		args = append(args, "-c", escapeFormat(opts.StartDir))
 	}

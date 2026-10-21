@@ -38,6 +38,20 @@ func TestNewPaneInWindow(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "%6", paneID)
 	})
+
+	t.Run("splits the target pane and applies the layout to its window", func(t *testing.T) {
+		mockShell := shell.NewMockShell(t)
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
+		mockShell.EXPECT().
+			Cmd("tmux", "split-window", "-d", "-P", "-F", "#{pane_id}", "-t", "%5").
+			Return("%7", nil)
+		mockShell.EXPECT().Cmd("tmux", "select-layout", "-t", "app:1", "tiled").Return("", nil)
+
+		paneID, err := tmux.NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "app:1", TargetPane: "%5", Layout: "tiled"})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "%7", paneID)
+	})
 }
 
 func TestSelectAndZoomPane(t *testing.T) {
