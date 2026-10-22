@@ -907,6 +907,7 @@ The Picker TUI can be configured with some options that help you customize it's 
 ```toml
 [tui]
 prompt = "> "
+pointer = "> "
 placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
@@ -919,6 +920,10 @@ preview_width = 60
 preview_min_width = 100
 preview_border = "line"
 ```
+
+`pointer` changes the marker before the highlighted row. It is padded on the
+right to the two-cell row gutter, so a one-cell marker keeps the names aligned;
+a marker wider than two cells falls back to `> ` instead of being truncated.
 
 With `show_windows = true`, each row also lists the names of the windows inside that session, dimmed after the session name. Window names that don't fit are summarized as `+N`:
 

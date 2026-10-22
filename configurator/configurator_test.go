@@ -540,3 +540,13 @@ func TestGetConfig_GroupSeparator(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, config.TUI.GroupSeparator)
 }
+
+func TestGetConfig_Pointer(t *testing.T) {
+	config, err := configFromTOML(t, "")
+	assert.NoError(t, err)
+	assert.Equal(t, "> ", config.TUI.Pointer, "the default marker")
+
+	config, err = configFromTOML(t, "[tui]\npointer = \"❯ \"\n")
+	assert.NoError(t, err)
+	assert.Equal(t, "❯ ", config.TUI.Pointer)
+}

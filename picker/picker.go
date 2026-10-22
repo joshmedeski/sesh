@@ -29,6 +29,7 @@ type PickerOptions struct {
 	SeparatorAware          *bool
 	Prompt                  *string
 	Placeholder             *string
+	Pointer                 *string
 	DisableAliasAutoConnect *bool
 	Preview                 *bool
 	Query                   *string
@@ -40,6 +41,7 @@ type WorktreePickerOptions struct {
 	ShowIcons   *bool
 	Prompt      *string
 	Placeholder *string
+	Pointer     *string
 	Query       *string
 	AutoRefresh *bool
 }
@@ -221,6 +223,13 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		placeholder = p.config.TUI.Placeholder
 	}
 
+	pointer := model.DefaultPointer
+	if opts.Pointer != nil {
+		pointer = *opts.Pointer
+	} else if p.config.TUI.Pointer != "" {
+		pointer = p.config.TUI.Pointer
+	}
+
 	disableAliasAutoConnect := false
 	if opts.DisableAliasAutoConnect != nil {
 		disableAliasAutoConnect = *opts.DisableAliasAutoConnect
@@ -268,6 +277,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		SeparatorAware:          p.config.SeparatorAware,
 		Prompt:                  prompt,
 		Placeholder:             placeholder,
+		Pointer:                 pointer,
 		Query:                   query,
 		Aliases:                 buildAliases(p.config.SessionConfigs),
 		AliasFilterPrefix:       aliasFilterPrefix(p.config.TUI.AliasFilterPrefix),
@@ -322,6 +332,13 @@ func (p *RealPicker) PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePick
 		placeholder = p.config.TUI.Placeholder
 	}
 
+	pointer := model.DefaultPointer
+	if opts.Pointer != nil {
+		pointer = *opts.Pointer
+	} else if p.config.TUI.Pointer != "" {
+		pointer = p.config.TUI.Pointer
+	}
+
 	// A pre-filled query is per-invocation only: a configured default would
 	// silently hide worktrees on every launch.
 	query := ""
@@ -347,6 +364,7 @@ func (p *RealPicker) PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePick
 	m := NewWorktreeModel(fetchFunc, WorktreeOptions{
 		Prompt:      prompt,
 		Placeholder: placeholder,
+		Pointer:     pointer,
 		ShowIcons:   showIcons,
 		Query:       query,
 		AutoRefresh: autoRefresh,

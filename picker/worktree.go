@@ -34,6 +34,9 @@ type worktreesLoadedMsg struct {
 type WorktreeOptions struct {
 	Prompt      string
 	Placeholder string
+	// Pointer marks the highlighted row, padded to the two-cell gutter like the
+	// session picker's.
+	Pointer string
 	// ShowIcons declares that the terminal's font has the nerd font glyphs, so
 	// the state badges are rounded off into pills rather than squared off with
 	// filled spaces.
@@ -200,6 +203,9 @@ type WorktreeModel struct {
 	// enough because refreshing already admits a single refresh at a time.
 	refreshIsAuto bool
 	showIcons     bool
+	// pointer is the configured highlight marker, already checked against the
+	// gutter so rowView only has to draw it.
+	pointer string
 	// numberWidth is the width of the widest number, which the column is
 	// right-aligned to so the numbers read as a column.
 	numberWidth int
@@ -218,6 +224,7 @@ func NewWorktreeModel(fetchFunc WorktreeFetchFunc, opts WorktreeOptions) Worktre
 		loading:     true,
 		fetchFunc:   fetchFunc,
 		showIcons:   opts.ShowIcons,
+		pointer:     normalizePointer(opts.Pointer),
 		autoRefresh: opts.AutoRefresh,
 	}
 	m.focusCmd = m.filterInput.Focus()
@@ -483,12 +490,16 @@ func (m WorktreeModel) View() tea.View {
 	default:
 		end := min(m.offset+visible, len(m.filtered))
 
-		cursorStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
+		cursorPrefix, blankPrefix := pointerPrefixes(m.pointer)
 		matchStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(1)).Bold(true)
 		normalStyle := lipgloss.NewStyle()
 
 		for i := m.offset; i < end; i++ {
-			b.WriteString(m.rowView(m.filtered[i], i == m.cursor, cursorStyle, matchStyle, normalStyle))
+			prefix := blankPrefix
+			if i == m.cursor {
+				prefix = cursorPrefix
+			}
+			b.WriteString(m.rowView(m.filtered[i], prefix, matchStyle, normalStyle))
 			b.WriteString("\n")
 		}
 
@@ -532,12 +543,7 @@ const numberGap = "  "
 
 // rowView renders one row: the number, the state badge, then the title, with
 // the query's matches highlighted in the number and the title.
-func (m WorktreeModel) rowView(row filteredWorktree, atCursor bool, cursorStyle, matchStyle, normalStyle lipgloss.Style) string {
-	prefix := "  "
-	if atCursor {
-		prefix = cursorStyle.Render("> ")
-	}
-
+func (m WorktreeModel) rowView(row filteredWorktree, prefix string, matchStyle, normalStyle lipgloss.Style) string {
 	number := padding(m.numberWidth-len(row.item.number)) +
 		highlightMatches(row.item.number, row.numberIndexes, matchStyle, normalStyle)
 	badge := stateBadge(row.item.entry.State, m.showIcons)

@@ -1,8 +1,10 @@
 package picker
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -2170,4 +2172,85 @@ func TestGroupSeparator_ScrollCountsTheRule(t *testing.T) {
 
 	lines := strings.Split(ansi.Strip(m.View().Content), "\n")
 	assert.Contains(t, lines[len(lines)-1], "rails-app")
+}
+
+// newPointerModel returns a loaded model with the row gutter configured.
+func newPointerModel(pointer string) Model {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) {
+		o.Pointer = pointer
+	}))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.width = 60
+	m.height = 24
+	return m
+}
+
+func TestPointer_CustomPointerOnHighlightedRow(t *testing.T) {
+	m := newPointerModel("❯ ")
+
+	assert.Equal(t, "❯ my-project", iconRow(t, m, "my-project"))
+}
+
+func TestPointer_DefaultWhenUnset(t *testing.T) {
+	m := newPointerModel("")
+
+	assert.Equal(t, "> my-project", iconRow(t, m, "my-project"))
+}
+
+func TestPointer_UnselectedRowsKeepTheGutter(t *testing.T) {
+	m := newPointerModel("❯ ")
+
+	highlighted := iconRow(t, m, "my-project")
+	unselected := iconRow(t, m, "dotfiles")
+
+	assert.Equal(t, "  dotfiles", unselected)
+	assert.Equal(t,
+		lipgloss.Width(highlighted[:strings.Index(highlighted, "my-project")]),
+		lipgloss.Width(unselected[:strings.Index(unselected, "dotfiles")]),
+		"a blank gutter must be the same width as the pointer")
+	assert.Equal(t, 2, lipgloss.Width(unselected[:strings.Index(unselected, "dotfiles")]))
+}
+
+func TestPointer_NarrowPointerIsPaddedToTheGutter(t *testing.T) {
+	for _, pointer := range []string{">", "❯"} {
+		t.Run(pointer, func(t *testing.T) {
+			m := newPointerModel(pointer)
+
+			row := iconRow(t, m, "my-project")
+			assert.Equal(t, pointer+" my-project", row)
+			assert.Equal(t, 2, lipgloss.Width(row[:strings.Index(row, "my-project")]))
+		})
+	}
+}
+
+func TestPointer_NerdFontGlyph(t *testing.T) {
+	// U+F0A4 is a Nerd Font glyph in the private use area. It measures one
+	// cell, so it needs the same right padding as any other narrow marker.
+	const hand = "\uf0a4"
+
+	for _, pointer := range []string{hand, hand + " "} {
+		t.Run(fmt.Sprintf("%q", pointer), func(t *testing.T) {
+			m := newPointerModel(pointer)
+
+			row := iconRow(t, m, "my-project")
+			assert.Equal(t, hand+" my-project", row)
+			assert.Equal(t, 2, lipgloss.Width(row[:strings.Index(row, "my-project")]))
+			assert.Equal(t, "  dotfiles", iconRow(t, m, "dotfiles"))
+		})
+	}
+}
+
+func TestPointer_WidePointerFallsBackAndWarns(t *testing.T) {
+	var logged bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logged, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+
+	m := newPointerModel("wide ")
+
+	assert.Equal(t, "> my-project", iconRow(t, m, "my-project"))
+	assert.Equal(t, 1, strings.Count(logged.String(), "level=WARN"),
+		"a pointer that cannot fit the gutter is reported once, when the picker starts")
 }

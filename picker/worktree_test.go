@@ -107,6 +107,21 @@ func TestWorktreeView_ShowsNumberBadgeAndTitle(t *testing.T) {
 	assert.Contains(t, out, "423   CLOSED  Cap the fuzzy length penalty")
 }
 
+func TestWorktreeView_CustomPointerOnHighlightedRow(t *testing.T) {
+	opts := testWorktreeOptions()
+	opts.Pointer = "❯ "
+	out := worktreeView(newTestWorktreeModelWith(testWorktrees(), opts))
+
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "MERGED") {
+			assert.True(t, strings.HasPrefix(line, "❯ "),
+				"the worktree picker must use the same configured pointer")
+			return
+		}
+	}
+	t.Fatal("expected a row for the merged worktree")
+}
+
 func TestWorktreeView_ShowsPillsWhenIconsAreEnabled(t *testing.T) {
 	opts := testWorktreeOptions()
 	opts.ShowIcons = true
