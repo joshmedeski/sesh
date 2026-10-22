@@ -28,6 +28,7 @@ type Tmux interface {
 	ListAllWindows() (map[string][]model.TmuxWindow, error)
 	NewSession(sessionName string, startDir string) (string, error)
 	NewWindowInSession(opts model.TmuxWindowOpts) (string, error)
+	NewPaneInWindow(opts model.TmuxPaneOpts) (string, error)
 	IsAttached() bool
 	AttachSession(targetSession string) (string, error)
 	SendKeys(name string, command string) (string, error)
@@ -35,9 +36,12 @@ type Tmux interface {
 	CapturePane(targetSession string) (string, error)
 	NextWindowInSession(targetSession string) (string, error)
 	SelectWindow(targetWindow string) (string, error)
+	SelectLayout(targetWindow string, layout string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 	ListTmuxPanes() ([]*model.TmuxPane, error)
 	SelectPane(windowIndex int, paneIndex int) (string, error)
+	SelectPaneByID(paneID string) (string, error)
+	ZoomPane(target string) (string, error)
 	GetCurrentSession() (string, error)
 	ListClients() ([]model.TmuxClient, error)
 	ResolveClient() string
@@ -45,6 +49,7 @@ type Tmux interface {
 	SwitchClientTarget(client string, targetSession string) (string, error)
 	RenameSession(target string, newName string) (string, error)
 	KillSession(target string) (string, error)
+	DisplayMessage(message string) (string, error)
 }
 
 type RealTmux struct {
@@ -91,4 +96,13 @@ func (t *RealTmux) IsAttached() bool {
 
 func (t *RealTmux) SwitchClientTarget(client string, targetSession string) (string, error) {
 	return t.shell.Cmd(t.bin, "switch-client", "-c", client, "-t", sessionTarget(targetSession))
+}
+
+// DisplayMessage shows the message in the status line until a key is pressed.
+func (t *RealTmux) DisplayMessage(message string) (string, error) {
+	return t.shell.Cmd(t.bin, "display-message", "-d", "0", escapeFormat(message))
+}
+
+func (t *RealTmux) SelectLayout(targetWindow string, layout string) (string, error) {
+	return t.shell.Cmd(t.bin, "select-layout", "-t", sessionTarget(targetWindow), layout)
 }

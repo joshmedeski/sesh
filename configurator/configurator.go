@@ -111,6 +111,7 @@ func (c *RealConfigurator) resolveImports(config *model.Config, homeDir string) 
 
 		config.SessionConfigs = append(config.SessionConfigs, importConfig.SessionConfigs...)
 		config.WindowConfigs = append(config.WindowConfigs, importConfig.WindowConfigs...)
+		config.PaneConfigs = append(config.PaneConfigs, importConfig.PaneConfigs...)
 		config.WildcardConfigs = append(config.WildcardConfigs, importConfig.WildcardConfigs...)
 	}
 	return nil

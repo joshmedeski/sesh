@@ -56,6 +56,7 @@ type (
 		SessionConfigs          []SessionConfig       `toml:"session"`
 		SortOrder               SortOrder             `toml:"sort_order"`
 		WindowConfigs           []WindowConfig        `toml:"window"`
+		PaneConfigs             []PaneConfig          `toml:"pane"`
 		WildcardConfigs         []WildcardConfig      `toml:"wildcard"`
 		WorktreeConfigs         []WorktreeConfig      `toml:"worktree"`
 		DirLength               int                   `toml:"dir_length"`
@@ -143,6 +144,10 @@ type (
 		Tmuxinator     string   `toml:"tmuxinator"`
 		PreviewCommand string   `toml:"preview_command"`
 		Windows        []string `toml:"windows"`
+		// Panes, Layout and Zoom apply to the session's first window.
+		Panes  []string `toml:"panes"`
+		Layout string   `toml:"layout"`
+		Zoom   bool     `toml:"zoom"`
 	}
 
 	SessionConfig struct {
@@ -166,9 +171,19 @@ type (
 	}
 
 	WindowConfig struct {
-		Name          string `toml:"name"`
-		StartupScript string `toml:"startup_script"`
-		Path          string `toml:"path"`
+		Name          string   `toml:"name"`
+		StartupScript string   `toml:"startup_script"`
+		Path          string   `toml:"path"`
+		Panes         []string `toml:"panes"`
+		Layout        string   `toml:"layout"`
+		Zoom          bool     `toml:"zoom"` // zoom (fullscreen) the focused pane
+	}
+
+	PaneConfig struct {
+		Name           string `toml:"name"`
+		StartupCommand string `toml:"startup_command"`
+		Focus          bool   `toml:"focus"`
+		Zoom           bool   `toml:"zoom"`
 	}
 
 	TUIConfig struct {
@@ -222,6 +237,10 @@ type (
 		DisableStartCommand bool     `toml:"disable_startup_command"`
 		PreviewCommand      string   `toml:"preview_command"`
 		Windows             []string `toml:"windows"`
+		// Panes, Layout and Zoom apply to the session's first window.
+		Panes  []string `toml:"panes"`
+		Layout string   `toml:"layout"`
+		Zoom   bool     `toml:"zoom"`
 		// Icon replaces the source glyph every session under this pattern gets
 		// in the picker. See SessionConfig.Icon.
 		Icon string `toml:"icon"`

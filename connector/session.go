@@ -51,7 +51,9 @@ func (c *RealConnector) ensureSession(name string) (model.SeshSession, error) {
 	if _, err := c.tmux.NewSession(connection.Session.Name, connection.Session.Path); err != nil {
 		return model.SeshSession{}, fmt.Errorf("failed to create tmux session: %w", err)
 	}
-	_, _ = c.startup.Exec(connection.Session)
+	if _, err := c.startup.Exec(connection.Session); err != nil {
+		c.showStartupError(err)
+	}
 	return connection.Session, nil
 }
 

@@ -26,7 +26,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 
 - **Smart session creation** - automatically names sessions based on git repo, git remote, or directory
 - **Zoxide integration** - jump to your most-used projects instantly
-- **Session configuration** - define startup commands, windows, and preview commands per project in `sesh.toml`
+- **Session configuration** - define startup commands, windows, panes, and preview commands per project in `sesh.toml`
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
 - **Clone and connect** - clone a git repo and start a session in one step
@@ -1248,6 +1248,57 @@ name = "git"
 startup_script = "git pull"
 ```
 
+#### Panes
+
+A window can be split into panes. Define each pane once with `[[pane]]` and list it by name in a window's `panes`. The window's own pane runs `startup_script` and stays first; the listed panes follow in order, start in the window's path, and run their `startup_command`.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+windows = [ "dev" ]
+
+[[window]]
+name = "dev"
+startup_script = "nvim"
+panes = [ "server", "tests" ]
+layout = "main-vertical"
+
+[[pane]]
+name = "server"
+startup_command = "npm run dev"
+
+[[pane]]
+name = "tests"
+startup_command = "npm test -- --watch"
+focus = true
+```
+
+| Field | Description |
+|-------|-------------|
+| `[[window]]` `panes` | Names of `[[pane]]` entries to split into the window, in order |
+| `[[window]]` `layout` | tmux layout applied to the window: `main-vertical`, `main-horizontal`, `tiled`, `even-horizontal`, `even-vertical`, or a custom layout string |
+| `[[window]]` `zoom` | Zoom the focused pane once the panes are created |
+| `[[pane]]` `name` | Name used in a window's `panes` |
+| `[[pane]]` `startup_command` | Command to run in the pane |
+| `[[pane]]` `focus` | Make this pane active instead of the window's own pane |
+| `[[pane]]` `zoom` | Zoom this pane, which also focuses it |
+
+The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows.
+
+The session's first window takes the same `panes`, `layout`, and `zoom` keys on `[[session]]`, `[[wildcard]]`, or `[default_session]`. Its `startup_command` runs in the window's own pane. The first of `[[session]]`, `[[wildcard]]`, `[default_session]` that sets `panes` is used, together with its `layout` and `zoom`.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+startup_command = "nvim"
+panes = [ "server" ]
+layout = "main-vertical"
+```
+
+If a window, pane, or layout can't be set up, sesh stops there, shows the error in the tmux status line, and `sesh connect` exits non-zero.
+
 ### Wildcard Configuration
 
 Wildcard configs let you define session settings that apply to any directory matching a glob pattern, instead of creating a `[[session]]` entry for each project. This is useful when you have a directory full of projects that should all use the same startup command.
@@ -1278,6 +1329,7 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
+| `panes`, `layout`, `zoom` | Panes for the session's first window — see [Panes](#panes) |
 | `icon` | Icon shown for matching sessions in the picker — see [Custom icons](#custom-icons) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
