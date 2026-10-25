@@ -29,6 +29,10 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: "1.26"
+      - name: Write GPG key
+        run: echo "$GPG_PRIVATE_KEY" > "$RUNNER_TEMP/gpg.key"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -37,3 +41,50 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GPG_KEY_PATH: ${{ runner.temp }}/gpg.key
+          NFPM_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+  rpm-repo:
+    name: Publish RPM repository
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v7
+        with:
+          ref: gh-pages
+      - name: Install createrepo_c
+        run: sudo apt-get update && sudo apt-get install -y createrepo-c
+      - name: Import GPG key
+        run: echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      - name: Build repository
+        run: |
+          rm -rf rpm
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --pattern '*.rpm' --dir rpm
+          createrepo_c rpm
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+            --detach-sign --armor rpm/repodata/repomd.xml
+          gpg --armor --export > rpm/repodata/repomd.xml.key
+          cat > rpm/sesh.repo <<'EOF'
+          [sesh]
+          name=sesh
+          baseurl=https://joshmedeski.github.io/sesh/rpm
+          enabled=1
+          gpgcheck=1
+          repo_gpgcheck=1
+          gpgkey=https://joshmedeski.github.io/sesh/rpm/repodata/repomd.xml.key
+          EOF
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Push to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rpm
+          git commit -m "rpm: publish $GITHUB_REF_NAME"
+          git pull --rebase origin gh-pages
+          git push origin gh-pages

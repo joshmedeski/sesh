@@ -8,6 +8,8 @@
 
 version: 2
 
+project_name: sesh
+
 before:
   hooks:
     # You may remove this if you don't use go modules.
@@ -54,6 +56,9 @@ nfpms:
     dependencies:
       - tmux
       - zoxide
+    rpm:
+      signature:
+        key_file: '{{ index .Env "GPG_KEY_PATH" }}'
     contents:
       - src: share/man/man1/sesh.1
         dst: /usr/share/man/man1/sesh.1

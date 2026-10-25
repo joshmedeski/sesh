@@ -126,6 +126,56 @@ sudo dnf install tmux-sesh
 </details>
 
 <details>
+  <summary>openSUSE (zypper)</summary>
+
+Add the sesh RPM repository so `zypper up` keeps sesh current:
+
+```sh
+sudo zypper addrepo --refresh https://joshmedeski.github.io/sesh/rpm/sesh.repo
+sudo zypper install sesh
+```
+
+The repository only hosts the latest release. To roll back, install an older `.rpm` from the [releases page](https://github.com/joshmedeski/sesh/releases) and lock it so `zypper up` leaves it alone:
+
+```sh
+sudo zypper install --oldpackage ./sesh_*_linux_amd64.rpm
+sudo zypper addlock sesh
+```
+
+Run `sudo zypper removelock sesh` to resume updates.
+
+</details>
+
+<details>
+  <summary>Fedora / RHEL (dnf)</summary>
+
+Add the sesh RPM repository so `dnf upgrade` keeps sesh current:
+
+```sh
+# Fedora 41+ (dnf5)
+sudo dnf config-manager addrepo --from-repofile=https://joshmedeski.github.io/sesh/rpm/sesh.repo
+sudo dnf install sesh
+
+# RHEL / Rocky / Alma 9+ (dnf4, zoxide comes from EPEL)
+sudo dnf install epel-release dnf-plugins-core
+sudo dnf config-manager --add-repo https://joshmedeski.github.io/sesh/rpm/sesh.repo
+sudo dnf install sesh
+```
+
+If you installed `tmux-sesh` from Copr, run `sudo dnf remove tmux-sesh` first.
+
+The repository only hosts the latest release. To roll back, download an older `.rpm` from the [releases page](https://github.com/joshmedeski/sesh/releases), downgrade to it, and lock it so `dnf upgrade` leaves it alone:
+
+```sh
+sudo dnf downgrade ./sesh_*_linux_amd64.rpm
+sudo dnf versionlock add sesh
+```
+
+On dnf4, `versionlock` needs `sudo dnf install python3-dnf-plugin-versionlock`. Run `sudo dnf versionlock delete sesh` to resume updates.
+
+</details>
+
+<details>
   <summary>RPM / DEB packages</summary>
 
 Download the `.rpm` or `.deb` for your architecture from the [latest release](https://github.com/joshmedeski/sesh/releases/latest), then install it with your package manager:

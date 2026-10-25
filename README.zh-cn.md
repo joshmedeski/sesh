@@ -126,6 +126,56 @@ sudo dnf install tmux-sesh
 </details>
 
 <details>
+  <summary>openSUSE（zypper）</summary>
+
+添加 sesh RPM 仓库，之后 `zypper up` 即可保持 sesh 为最新版本：
+
+```sh
+sudo zypper addrepo --refresh https://joshmedeski.github.io/sesh/rpm/sesh.repo
+sudo zypper install sesh
+```
+
+该仓库仅提供最新版本。如需回退，请从 [发布页面](https://github.com/joshmedeski/sesh/releases) 下载旧版本的 `.rpm` 进行安装，并将其锁定，以免 `zypper up` 再次升级：
+
+```sh
+sudo zypper install --oldpackage ./sesh_*_linux_amd64.rpm
+sudo zypper addlock sesh
+```
+
+运行 `sudo zypper removelock sesh` 即可恢复更新。
+
+</details>
+
+<details>
+  <summary>Fedora / RHEL（dnf）</summary>
+
+添加 sesh RPM 仓库，之后 `dnf upgrade` 即可保持 sesh 为最新版本：
+
+```sh
+# Fedora 41+（dnf5）
+sudo dnf config-manager addrepo --from-repofile=https://joshmedeski.github.io/sesh/rpm/sesh.repo
+sudo dnf install sesh
+
+# RHEL / Rocky / Alma 9+（dnf4，zoxide 来自 EPEL）
+sudo dnf install epel-release dnf-plugins-core
+sudo dnf config-manager --add-repo https://joshmedeski.github.io/sesh/rpm/sesh.repo
+sudo dnf install sesh
+```
+
+如果您之前从 Copr 安装了 `tmux-sesh`，请先运行 `sudo dnf remove tmux-sesh`。
+
+该仓库仅提供最新版本。如需回退，请从 [发布页面](https://github.com/joshmedeski/sesh/releases) 下载旧版本的 `.rpm` 并降级安装，然后将其锁定，以免 `dnf upgrade` 再次升级：
+
+```sh
+sudo dnf downgrade ./sesh_*_linux_amd64.rpm
+sudo dnf versionlock add sesh
+```
+
+在 dnf4 上，`versionlock` 需要先运行 `sudo dnf install python3-dnf-plugin-versionlock`。运行 `sudo dnf versionlock delete sesh` 即可恢复更新。
+
+</details>
+
+<details>
   <summary>RPM / DEB 软件包</summary>
 
 从 [最新版本](https://github.com/joshmedeski/sesh/releases/latest) 下载适合您架构的 `.rpm` 或 `.deb` 文件，然后使用您的包管理器安装：
