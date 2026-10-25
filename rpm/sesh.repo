@@ -1,0 +1,7 @@
+[sesh]
+name=sesh
+baseurl=https://joshmedeski.github.io/sesh/rpm
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://joshmedeski.github.io/sesh/rpm/repodata/repomd.xml.key
