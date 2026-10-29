@@ -294,8 +294,6 @@ func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("switch", "s", false, "Switch the session rather than attach (for use outside tmux)")
 	cmd.Flags().BoolP("browser", "b", false, "Read the issue/PR from the active browser tab (macOS)")
 	cmd.Flags().StringP("command", "c", "", "Run a command in a new window named after its program")
-	cmd.Flags().BoolP("background", "d", false, "Start the session without attaching or switching the client")
-	cmd.Flags().StringP("command", "c", "", "Run a command in a new window named after its program")
 	cmd.Flags().Bool("background", false, "Create the session without attaching or switching the client")
 
 	return cmd
