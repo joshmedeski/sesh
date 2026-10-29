@@ -20,6 +20,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
+	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/json"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/ls"
@@ -51,6 +52,7 @@ type BaseDeps struct {
 	Json       json.Json
 	Replacer   replacer.Replacer
 	Git        git.Git
+	Jj         jj.Jj
 	Github     github.Github
 	Focuser    focuser.Focuser
 	Dir        dir.Dir
@@ -92,7 +94,8 @@ func NewBaseDeps() *BaseDeps {
 	g := git.NewGit(sh)
 	gh := github.NewGithub(sh, g)
 	fo := focuser.NewFocuser(runtime, sh)
-	d := dir.NewDir(os, g, path)
+	jjr := jj.NewJj(os, sh)
+	d := dir.NewDir(os, g, jjr, path)
 	ti := tmuxinator.NewTmuxinator(sh)
 
 	return &BaseDeps{
@@ -105,6 +108,7 @@ func NewBaseDeps() *BaseDeps {
 		Json:       j,
 		Replacer:   r,
 		Git:        g,
+		Jj:         jjr,
 		Github:     gh,
 		Focuser:    fo,
 		Dir:        d,
@@ -144,10 +148,10 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	}
 
 	s := startup.NewStartup(config, usedLister, t, b.Home, b.Replacer)
-	n := namer.NewNamer(b.Path, b.Git, b.Home, config)
+	n := namer.NewNamer(b.Path, b.Git, b.Jj, b.Home, config)
 	c := connector.NewConnector(config, b.Dir, b.Home, usedLister, n, s, t, b.Zoxide, b.Tmuxinator, b.Focuser)
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
-	cl := cloner.NewCloner(c, b.Git)
+	cl := cloner.NewCloner(c, b.Git, b.Jj)
 	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
 	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
 	// Removing an entry from the picker has to be written through to the cache,

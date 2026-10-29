@@ -5,6 +5,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/stretchr/testify/assert"
@@ -184,6 +185,8 @@ func TestNameFallsThroughWhenSubstitutionCollapses(t *testing.T) {
 	mockHome.On("ShortenHome", path).Return(shortened, nil)
 	// No git repo, so naming should fall through to the directory strategy.
 	mockGit.On("WorktreeList", path).Return(false, "", nil)
+	mockJj := new(jj.MockJj)
+	mockJj.On("Roots", path).Return(false, "", "")
 
 	config := model.Config{
 		DirLength: 1,
@@ -191,7 +194,7 @@ func TestNameFallsThroughWhenSubstitutionCollapses(t *testing.T) {
 			{Find: "~/c/api", Replace: " "},
 		},
 	}
-	n := &RealNamer{pathwrap: mockPathwrap, git: mockGit, home: mockHome, config: config}
+	n := &RealNamer{pathwrap: mockPathwrap, git: mockGit, jj: mockJj, home: mockHome, config: config}
 
 	name, err := n.Name(path)
 

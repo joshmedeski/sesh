@@ -5,6 +5,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 )
@@ -19,14 +20,16 @@ type Namer interface {
 type RealNamer struct {
 	pathwrap pathwrap.Path
 	git      git.Git
+	jj       jj.Jj
 	home     home.Home
 	config   model.Config
 }
 
-func NewNamer(pathwrap pathwrap.Path, git git.Git, home home.Home, config model.Config) Namer {
+func NewNamer(pathwrap pathwrap.Path, git git.Git, jj jj.Jj, home home.Home, config model.Config) Namer {
 	return &RealNamer{
 		pathwrap: pathwrap,
 		git:      git,
+		jj:       jj,
 		home:     home,
 		config:   config,
 	}
@@ -41,6 +44,7 @@ func (n *RealNamer) Name(path string) (string, error) {
 	strategies := []func(*RealNamer, string) (string, error){
 		nameSubstitution,
 		gitName,
+		jjName,
 		dirName,
 	}
 
@@ -68,6 +72,7 @@ func (n *RealNamer) RootName(path string) (string, error) {
 	strategies := []func(*RealNamer, string) (string, error){
 		nameSubstitution,
 		gitRootName,
+		jjRootName,
 		dirName,
 	}
 
