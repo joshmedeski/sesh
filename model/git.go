@@ -5,4 +5,5 @@ type GitCloneOptions struct {
 	CmdDir   string
 	Repo     string
 	GitFlags []string
+	Vcs      string
 }

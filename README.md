@@ -818,6 +818,22 @@ dir_length = 2  # Uses last 2 directories: "projects/sesh" instead of just "sesh
 > [!NOTE]
 > Works great with [tmux-floax](https://github.com/omerxx/tmux-floax)
 
+### Jujutsu (jj) Repositories
+
+Sesh names sessions in [Jujutsu](https://github.com/jj-vcs/jj) repositories the same way it names git repositories: opening a subdirectory resolves to the repo root, and `jj workspace add` workspaces are named under their parent repo. Colocated repos (with both `.jj` and `.git`) use the git strategies. `git_namer_use_worktree_root` and `git_dir_length` also apply to jj, treating workspaces like worktrees.
+
+`sesh clone` uses git by default. Set `vcs = "jj"` to clone with `jj git clone` instead, or pick per command with `--vcs`. Flags after `--` go to the clone command:
+
+```toml
+vcs = "jj"
+```
+
+```sh
+sesh clone https://github.com/joshmedeski/sesh               # uses the vcs config
+sesh clone --vcs git https://github.com/joshmedeski/sesh     # force git
+sesh clone --vcs jj https://github.com/joshmedeski/sesh -- --no-colocate
+```
+
 ### Session Name Substitution
 
 Some directories produce long, repetitive session names -- everything under

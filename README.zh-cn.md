@@ -813,6 +813,22 @@ dir_length = 2  # 使用最后两个目录："projects/sesh" 而不是 "sesh"
 > [!NOTE]
 > 与 [tmux-floax](https://github.com/omerxx/tmux-floax) 配合使用效果很好
 
+### Jujutsu (jj) 仓库
+
+Sesh 为 [Jujutsu](https://github.com/jj-vcs/jj) 仓库命名会话的方式与 git 仓库相同：打开子目录时会解析到仓库根目录，通过 `jj workspace add` 创建的工作区会以其父仓库命名。共置仓库（同时包含 `.jj` 和 `.git`）使用 git 策略。`git_namer_use_worktree_root` 和 `git_dir_length` 同样适用于 jj，工作区被视为 worktree。
+
+`sesh clone` 默认使用 git。设置 `vcs = "jj"` 即可改用 `jj git clone`，也可以通过 `--vcs` 为单条命令指定。`--` 之后的参数会传给克隆命令：
+
+```toml
+vcs = "jj"
+```
+
+```sh
+sesh clone https://github.com/joshmedeski/sesh               # 使用 vcs 配置
+sesh clone --vcs git https://github.com/joshmedeski/sesh     # 强制使用 git
+sesh clone --vcs jj https://github.com/joshmedeski/sesh -- --no-colocate
+```
+
 ### 会话名称替换
 
 有些目录会产生冗长、重复的会话名称 —— `~/c/dotfiles/.config` 下的所有内容都会带上整个前缀。

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/git"
+	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 )
@@ -16,11 +17,12 @@ type Dir interface {
 type RealDir struct {
 	os   oswrap.Os
 	git  git.Git
+	jj   jj.Jj
 	path pathwrap.Path
 }
 
-func NewDir(os oswrap.Os, git git.Git, path pathwrap.Path) Dir {
-	return &RealDir{os, git, path}
+func NewDir(os oswrap.Os, git git.Git, jj jj.Jj, path pathwrap.Path) Dir {
+	return &RealDir{os, git, jj, path}
 }
 
 func (d *RealDir) Dir(path string) (isDir bool, absPath string) {
@@ -48,6 +50,9 @@ func (d *RealDir) RootDir(path string) (hasRootDir bool, absPath string) {
 	isGit, absPath := gitRootDir(d, path)
 	if isGit {
 		return true, absPath
+	}
+	if isJj, workspace, _ := d.jj.Roots(path); isJj {
+		return true, workspace
 	}
 	return false, ""
 }

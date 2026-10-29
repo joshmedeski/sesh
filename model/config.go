@@ -62,6 +62,7 @@ type (
 		NameSubstitutions       []NameSubstitution    `toml:"name_substitution"`
 		GitNamerUseWorktreeRoot bool                  `toml:"git_namer_use_worktree_root"`
 		GitDirLength            int                   `toml:"git_dir_length"`
+		Vcs                     string                `toml:"vcs"`
 		SeparatorAware          bool                  `toml:"separator_aware"`
 		TmuxCommand             string                `toml:"tmux_command"`
 		Terminal                string                `toml:"terminal"`
