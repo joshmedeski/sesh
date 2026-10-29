@@ -126,6 +126,38 @@ and cold and warm targets take the same command.
 With no `-t`, the target is the attached session. Outside tmux that fails with
 `Not inside a tmux session, use --target to specify one.` — pass `-t`.
 
+## Fanning out across issues
+
+To start several GitHub issues at once, give each its own worktree session with an agent already
+working on it — one `sesh worktree connect` per issue:
+
+```bash
+sesh worktree connect -r <org/repo> <n> --background -c 'claude "<prompt for issue n>"'
+```
+
+`sesh worktree connect` creates or reuses the issue's worktree session as usual (its configured
+startup command still runs on a cold start), then runs `-c` in a new window named after the
+program — `claude`. That window is always new, so a second run never types into a running agent.
+`--background` keeps the user where they are, so the commands can run back to back.
+
+```bash
+sesh worktree connect -r joshmedeski/sesh 123 --background -c 'claude "Implement #123. Read it with gh issue view 123 --repo joshmedeski/sesh."'
+sesh worktree connect -r joshmedeski/sesh 127 --background -c 'claude "Implement #127. Read it with gh issue view 127 --repo joshmedeski/sesh."'
+sesh worktree connect -r joshmedeski/sesh 184 --background -c 'claude "Implement #184. Read it with gh issue view 184 --repo joshmedeski/sesh."'
+```
+
+Write a prompt per issue that names the issue number and repo and how to read it.
+
+**Which issues:**
+
+- If issues were just created or discussed in this conversation, `/sesh` means launch those. Take
+  the numbers and repo from the conversation, say in one line which issues you're launching, then
+  run — no further questions.
+- If the list or how many to run in parallel is ambiguous — say a board triage turned up more
+  candidates than slots — ask once to confirm the list and the count. Never pick a number
+  yourself.
+- Don't read or rank the project board to choose work. Launch the issues you're given.
+
 ## Focus: don't yank the user out of their work
 
 Both commands move the user to what they connected to. That's right when they asked for it and
@@ -134,12 +166,13 @@ wrong when it's a background step.
 | Situation | Flag |
 |---|---|
 | The user asked for this and wants to land there | *(default)* |
-| Background work; leave them where they are | `-b` (windows only) |
+| Background work; leave them where they are | `-b` (windows), `--background` (worktrees) |
 | Triggered from outside tmux — hotkey, script, another app | `-s` |
 
 `-b` / `--background` creates the window without selecting it or moving the client. Prefer it for
-anything the user didn't explicitly ask to be taken to. Sessions have no `-b`; a window connect
-with `-t` is the way to set something up without moving.
+anything the user didn't explicitly ask to be taken to. `sesh connect` has no `-b`; a window
+connect with `-t` is the way to set something up without moving. `sesh worktree connect` takes
+`--background` (its `-b` is `--browser`).
 
 ## Finding the right target
 
@@ -196,6 +229,12 @@ sesh window connect [name|directory]   Select a window, creating it if it doesn'
 sesh window list                       List the windows of a session
   -t, --target <session>   Target session (default: current attached session)
   -j, --json               Output as json
+
+sesh worktree connect <number>         Connect to the worktree session for an issue/PR
+  -r, --repo <org/repo>    Target repo (default: detect from cwd)
+  -c, --command <cmd>      Run in a new window named after its program
+      --background         Create without attaching or switching the client
+  -s, --switch             Switch the client rather than attach
 
 sesh list                              List sessions from all sources
   -j, --json               Output as json

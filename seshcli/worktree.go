@@ -273,6 +273,8 @@ func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 			repo, _ := cmd.Flags().GetString("repo")
 			pr, _ := cmd.Flags().GetBool("pr")
 			switchFlag, _ := cmd.Flags().GetBool("switch")
+			command, _ := cmd.Flags().GetString("command")
+			background, _ := cmd.Flags().GetBool("background")
 
 			_, err = deps.Worktree.Connect(model.WorktreeConnectOpts{
 				Number:      number,
@@ -280,6 +282,8 @@ func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 				Pr:          pr,
 				Switch:      switchFlag,
 				FromBrowser: fromBrowser,
+				Command:     command,
+				Background:  background,
 			})
 			return err
 		},
@@ -289,6 +293,10 @@ func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("pr", "p", false, "Treat the number as a pull request")
 	cmd.Flags().BoolP("switch", "s", false, "Switch the session rather than attach (for use outside tmux)")
 	cmd.Flags().BoolP("browser", "b", false, "Read the issue/PR from the active browser tab (macOS)")
+	cmd.Flags().StringP("command", "c", "", "Run a command in a new window named after its program")
+	cmd.Flags().BoolP("background", "d", false, "Start the session without attaching or switching the client")
+	cmd.Flags().StringP("command", "c", "", "Run a command in a new window named after its program")
+	cmd.Flags().Bool("background", false, "Create the session without attaching or switching the client")
 
 	return cmd
 }

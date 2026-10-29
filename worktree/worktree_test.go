@@ -303,3 +303,71 @@ func TestConnectNoConfigMatch(t *testing.T) {
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 1, Repo: "unknown/repo"})
 	require.Error(t, err)
 }
+
+func TestConnectWithCommandOpensNewWindow(t *testing.T) {
+	for _, background := range []bool{false, true} {
+		mGit := git.NewMockGit(t)
+		mGh := github.NewMockGithub(t)
+		mConn := connector.NewMockConnector(t)
+		mBrowser := browser.NewMockBrowser(t)
+		mOs := oswrap.NewMockOs(t)
+		h := home.NewHome(mOs)
+		p := pathwrap.NewPath()
+
+		wPath := p.FromSlash("/repo/w/2345")
+
+		mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+		mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+		mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+		mOs.EXPECT().Stat(wPath).Return(nil, nil)
+
+		mConn.EXPECT().
+			Connect(wPath, model.ConnectOpts{Command: "nu_setup", Background: true}).
+			Return("nutiliti/2345", nil)
+		mConn.EXPECT().
+			ConnectWindow(model.WindowConnectOpts{
+				Name:       "claude",
+				New:        true,
+				Session:    "nutiliti/2345",
+				Command:    `/usr/bin/claude "Implement #2345"`,
+				Background: background,
+			}).
+			Return("nutiliti/2345:3", nil)
+
+		w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+		_, err := w.Connect(model.WorktreeConnectOpts{
+			Number:     2345,
+			Repo:       "nutiliti/nutiliti",
+			Command:    `/usr/bin/claude "Implement #2345"`,
+			Background: background,
+		})
+		require.NoError(t, err)
+	}
+}
+
+func TestConnectBackgroundWithoutCommand(t *testing.T) {
+	mGit := git.NewMockGit(t)
+	mGh := github.NewMockGithub(t)
+	mConn := connector.NewMockConnector(t)
+	mBrowser := browser.NewMockBrowser(t)
+	mOs := oswrap.NewMockOs(t)
+	h := home.NewHome(mOs)
+	p := pathwrap.NewPath()
+
+	wRoot := p.FromSlash("/repo/w")
+	wPath := p.FromSlash("/repo/w/2345")
+
+	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
+	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
+	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
+	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
+	mConn.EXPECT().
+		Connect(wPath, model.ConnectOpts{Command: "nu_install", Background: true}).
+		Return("nutiliti/2345", nil)
+
+	w := NewWorktree(nuConfig(), mGit, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Background: true})
+	require.NoError(t, err)
+}
