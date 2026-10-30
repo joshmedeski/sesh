@@ -68,13 +68,13 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 	}
 
 	// panes come after the command so it lands in the main pane
-	if first := s.firstWindow(session); len(first.Panes) > 0 {
+	if firstPanes := s.firstWindowPanes(session); len(firstPanes.Panes) > 0 {
 		path, err := s.home.ExpandPath(session.Path)
 		if err != nil {
 			return "", fmt.Errorf("first window: couldn't expand home: %q", err)
 		}
 		// "^" is tmux's lowest-index window
-		if err := s.createPanes(session.Name+":^", path, first, panes); err != nil {
+		if err := s.createPanes(session.Name+":^", path, firstPanes, panes); err != nil {
 			return "", fmt.Errorf("first window: %w", err)
 		}
 	}
@@ -82,16 +82,14 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 	return message, nil
 }
 
-// firstWindow returns the pane layout for the session's first window:
-// [[session]], then [[wildcard]], then [default_session].
-func (s *RealStartup) firstWindow(session model.SeshSession) model.WindowPanes {
-	for _, sc := range s.config.SessionConfigs {
-		if lister.ConfigKey(sc.Name) == lister.ConfigKey(session.Name) && len(sc.Panes) > 0 {
-			return sc.WindowPanes
+func (s *RealStartup) firstWindowPanes(session model.SeshSession) model.WindowPanes {
+	for _, sessionConfig := range s.config.SessionConfigs {
+		if lister.ConfigKey(sessionConfig.Name) == lister.ConfigKey(session.Name) && len(sessionConfig.Panes) > 0 {
+			return sessionConfig.WindowPanes
 		}
 	}
-	if wc, ok := s.lister.FindConfigWildcard(session.Path); ok && len(wc.Panes) > 0 {
-		return wc.WindowPanes
+	if wildcard, ok := s.lister.FindConfigWildcard(session.Path); ok && len(wildcard.Panes) > 0 {
+		return wildcard.WindowPanes
 	}
 	return s.config.DefaultSessionConfig.WindowPanes
 }
@@ -123,9 +121,9 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 	return nil
 }
 
-func (s *RealStartup) createPanes(target string, startDir string, window model.WindowPanes, panes model.SeshPaneMap) error {
+func (s *RealStartup) createPanes(target string, startDir string, windowPanes model.WindowPanes, panes model.SeshPaneMap) error {
 	var focusID, zoomID, prevID string
-	for _, paneName := range window.Panes {
+	for _, paneName := range windowPanes.Panes {
 		pane, ok := panes[lister.ConfigKey(paneName)]
 		if !ok {
 			return fmt.Errorf("pane %s is not defined in config", paneName)
@@ -152,9 +150,9 @@ func (s *RealStartup) createPanes(target string, startDir string, window model.W
 			zoomID = paneID
 		}
 	}
-	if window.Layout != "" {
-		if _, err := s.tmux.SelectLayout(target, window.Layout); err != nil {
-			return fmt.Errorf("apply layout %s: %w", window.Layout, err)
+	if windowPanes.Layout != "" {
+		if _, err := s.tmux.SelectLayout(target, windowPanes.Layout); err != nil {
+			return fmt.Errorf("apply layout %s: %w", windowPanes.Layout, err)
 		}
 	}
 	if focusID != "" {
@@ -163,7 +161,7 @@ func (s *RealStartup) createPanes(target string, startDir string, window model.W
 		}
 	}
 	zoomTarget := zoomID
-	if zoomTarget == "" && window.Zoom && len(window.Panes) > 0 {
+	if zoomTarget == "" && windowPanes.Zoom && len(windowPanes.Panes) > 0 {
 		zoomTarget = cmp.Or(focusID, target)
 	}
 	if zoomTarget != "" {

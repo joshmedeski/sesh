@@ -90,7 +90,7 @@ func TestExecCreatesConfiguredPanesWithWindowLayout(t *testing.T) {
 
 func TestCreatePanesStopsAtUndefinedPane(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs", "missing", "server"}}
+	windowPanes := model.WindowPanes{Panes: []string{"logs", "missing", "server"}}
 	panes := model.SeshPaneMap{
 		lister.ConfigKey("logs"):   {Name: "logs", Focus: true},
 		lister.ConfigKey("server"): {Name: "server"},
@@ -98,14 +98,14 @@ func TestCreatePanesStopsAtUndefinedPane(t *testing.T) {
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.EqualError(t, err, "pane missing is not defined in config")
 	mTmux.AssertNotCalled(t, "SelectPaneByID", mock.Anything)
 }
 
 func TestCreatePanesStopsWhenSplitFails(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs", "server"}}
+	windowPanes := model.WindowPanes{Panes: []string{"logs", "server"}}
 	panes := model.SeshPaneMap{
 		lister.ConfigKey("logs"):   {Name: "logs"},
 		lister.ConfigKey("server"): {Name: "server"},
@@ -113,32 +113,32 @@ func TestCreatePanesStopsWhenSplitFails(t *testing.T) {
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("", errors.New("split failed")).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.EqualError(t, err, "pane logs: split failed")
 }
 
 func TestCreatePanesReportsFocusFailure(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs"}}
+	windowPanes := model.WindowPanes{Panes: []string{"logs"}}
 	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs", Focus: true, Zoom: true}}
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
 	mTmux.EXPECT().SelectPaneByID("%1").Return("", errors.New("no pane")).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.EqualError(t, err, "focus pane: no pane")
 	mTmux.AssertNotCalled(t, "ZoomPane", mock.Anything)
 }
 
 func TestCreatePanesReportsZoomFailure(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs"}}
+	windowPanes := model.WindowPanes{Panes: []string{"logs"}}
 	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs", Zoom: true}}
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
 	mTmux.EXPECT().ZoomPane("%1").Return("", errors.New("cannot zoom")).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.EqualError(t, err, "zoom pane: cannot zoom")
 }
 
@@ -204,13 +204,13 @@ func TestExecReportsStartupCommandFailure(t *testing.T) {
 func TestCreatePanesSelectsFirstFocusedPane(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
 	const target = "myapp:dev"
-	window := model.WindowPanes{Panes: []string{"logs", "server", "shell"}, Layout: "tiled"}
+	windowPanes := model.WindowPanes{Panes: []string{"logs", "server", "shell"}, Layout: "tiled"}
 	panes := model.SeshPaneMap{
 		lister.ConfigKey("logs"):   {Name: "logs", StartupCommand: "tail -f log"},
 		lister.ConfigKey("server"): {Name: "server", StartupCommand: "make run", Focus: true},
 		lister.ConfigKey("shell"):  {Name: "shell", Focus: true},
 	}
-	for i, name := range window.Panes {
+	for i, name := range windowPanes.Panes {
 		prevID := ""
 		if i > 0 {
 			prevID = fmt.Sprintf("%%%d", i)
@@ -229,7 +229,7 @@ func TestCreatePanesSelectsFirstFocusedPane(t *testing.T) {
 	mTmux.EXPECT().SelectPaneByID("%2").Return("", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes(target, "/repo/myapp", window, panes)
+	err := s.createPanes(target, "/repo/myapp", windowPanes, panes)
 	assert.NoError(t, err)
 }
 
@@ -237,7 +237,7 @@ func TestCreatePanesAppliesCustomLayoutAfterAllPanes(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
 	const target = "myapp:dev"
 	const layout = "5d4b,80x24,0,0{40x24,0,0,0,39x24,41,0[39x12,41,0,1,39x11,41,13,2]}"
-	window := model.WindowPanes{Panes: []string{"logs", "server"}, Layout: layout}
+	windowPanes := model.WindowPanes{Panes: []string{"logs", "server"}, Layout: layout}
 	panes := model.SeshPaneMap{
 		lister.ConfigKey("logs"):   {Name: "logs"},
 		lister.ConfigKey("server"): {Name: "server"},
@@ -251,20 +251,20 @@ func TestCreatePanesAppliesCustomLayoutAfterAllPanes(t *testing.T) {
 		Run(func(string, string) { calls = append(calls, "layout") }).Return("", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes(target, "", window, panes)
+	err := s.createPanes(target, "", windowPanes, panes)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"split", "split", "layout"}, calls)
 }
 
 func TestCreatePanesReportsLayoutFailure(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs"}, Layout: "bogus", Zoom: true}
+	windowPanes := model.WindowPanes{Panes: []string{"logs"}, Layout: "bogus", Zoom: true}
 	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs", Focus: true}}
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
 	mTmux.EXPECT().SelectLayout("myapp:dev", "bogus").Return("", errors.New("invalid layout")).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.EqualError(t, err, "apply layout bogus: invalid layout")
 	mTmux.AssertNotCalled(t, "SelectPaneByID", mock.Anything)
 	mTmux.AssertNotCalled(t, "ZoomPane", mock.Anything)
@@ -272,7 +272,7 @@ func TestCreatePanesReportsLayoutFailure(t *testing.T) {
 
 func TestCreatePanesReportsPaneCommandFailure(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs", "server"}}
+	windowPanes := model.WindowPanes{Panes: []string{"logs", "server"}}
 	panes := model.SeshPaneMap{
 		lister.ConfigKey("logs"):   {Name: "logs", StartupCommand: "tail -f log"},
 		lister.ConfigKey("server"): {Name: "server"},
@@ -281,38 +281,38 @@ func TestCreatePanesReportsPaneCommandFailure(t *testing.T) {
 	mTmux.EXPECT().SendKeys("%1", "tail -f log").Return("", errors.New("no pane")).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.EqualError(t, err, "pane logs: run startup command: no pane")
 }
 
 func TestCreatePanesWithoutFocusKeepsMainPane(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs"}}
+	windowPanes := model.WindowPanes{Panes: []string{"logs"}}
 	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs"}}
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.NoError(t, err)
 	mTmux.AssertNotCalled(t, "SelectPaneByID", "%1")
 }
 
 func TestCreatePanesZoomsFocusedPane(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs"}, Zoom: true}
+	windowPanes := model.WindowPanes{Panes: []string{"logs"}, Zoom: true}
 	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs", Focus: true}}
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
 	mTmux.EXPECT().SelectPaneByID("%1").Return("", nil).Once()
 	mTmux.EXPECT().ZoomPane("%1").Return("", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.NoError(t, err)
 }
 
 func TestCreatePanesZoomedPaneWinsOverFocus(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs", "server"}}
+	windowPanes := model.WindowPanes{Panes: []string{"logs", "server"}}
 	panes := model.SeshPaneMap{
 		lister.ConfigKey("logs"):   {Name: "logs", Focus: true},
 		lister.ConfigKey("server"): {Name: "server", Zoom: true},
@@ -323,19 +323,19 @@ func TestCreatePanesZoomedPaneWinsOverFocus(t *testing.T) {
 	mTmux.EXPECT().ZoomPane("%2").Return("", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.NoError(t, err)
 }
 
 func TestCreatePanesZoomsMainPaneWithoutFocus(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
-	window := model.WindowPanes{Panes: []string{"logs"}, Zoom: true}
+	windowPanes := model.WindowPanes{Panes: []string{"logs"}, Zoom: true}
 	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs"}}
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
 	mTmux.EXPECT().ZoomPane("myapp:dev").Return("", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
-	err := s.createPanes("myapp:dev", "", window, panes)
+	err := s.createPanes("myapp:dev", "", windowPanes, panes)
 	assert.NoError(t, err)
 }
 
