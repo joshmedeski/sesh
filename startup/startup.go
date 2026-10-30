@@ -71,7 +71,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 	if firstPanes := s.firstWindowPanes(session); len(firstPanes.Panes) > 0 {
 		path, err := s.home.ExpandPath(session.Path)
 		if err != nil {
-			return "", fmt.Errorf("first window: couldn't expand home: %q", err)
+			return "", fmt.Errorf("first window: couldn't expand home: %w", err)
 		}
 		// "^" is tmux's lowest-index window
 		if err := s.createPanes(session.Name+":^", path, firstPanes, panes); err != nil {
@@ -102,7 +102,7 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 	// session path is the fallback for windows without their own
 	path, err := s.home.ExpandPath(cmp.Or(window.Path, session.Path))
 	if err != nil {
-		return fmt.Errorf("window %s: couldn't expand home: %q", name, err)
+		return fmt.Errorf("window %s: couldn't expand home: %w", name, err)
 	}
 
 	// "session:index" target; window names may contain dots or digits
