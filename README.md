@@ -1352,7 +1352,7 @@ focus = true
 
 The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows.
 
-The session's first window takes the same `panes`, `layout`, and `zoom` keys on `[[session]]`, `[[wildcard]]`, or `[default_session]`. Its `startup_command` runs in the window's own pane. The first of `[[session]]`, `[[wildcard]]`, `[default_session]` that sets `panes` is used, together with its `layout` and `zoom`.
+The session's first window takes the same `panes`, `layout`, and `zoom` keys on `[[session]]`, `[[wildcard]]`, or `[default_session]`. Its `startup_command` runs in the window's own pane. The first of `[[session]]`, `[[wildcard]]`, `[default_session]` that sets `panes` or `layout` is used, together with its `zoom`.
 
 ```toml
 [[session]]

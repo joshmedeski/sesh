@@ -67,7 +67,7 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		}
 	}
 
-	if firstPanes := s.firstWindowPanes(session); len(firstPanes.Panes) > 0 {
+	if firstPanes := s.firstWindowPanes(session); hasPaneSettings(firstPanes) {
 		path, err := s.home.ExpandPath(session.Path)
 		if err != nil {
 			return "", fmt.Errorf("first window: couldn't expand home: %w", err)
@@ -82,14 +82,18 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 
 func (s *RealStartup) firstWindowPanes(session model.SeshSession) model.WindowPanes {
 	for _, sessionConfig := range s.config.SessionConfigs {
-		if lister.ConfigKey(sessionConfig.Name) == lister.ConfigKey(session.Name) && len(sessionConfig.Panes) > 0 {
+		if lister.ConfigKey(sessionConfig.Name) == lister.ConfigKey(session.Name) && hasPaneSettings(sessionConfig.WindowPanes) {
 			return sessionConfig.WindowPanes
 		}
 	}
-	if wildcard, ok := s.lister.FindConfigWildcard(session.Path); ok && len(wildcard.Panes) > 0 {
+	if wildcard, ok := s.lister.FindConfigWildcard(session.Path); ok && hasPaneSettings(wildcard.WindowPanes) {
 		return wildcard.WindowPanes
 	}
 	return s.config.DefaultSessionConfig.WindowPanes
+}
+
+func hasPaneSettings(windowPanes model.WindowPanes) bool {
+	return len(windowPanes.Panes) > 0 || windowPanes.Layout != ""
 }
 
 func (s *RealStartup) createWindow(session model.SeshSession, name string, windows model.SeshWindowMap, panes model.SeshPaneMap) error {

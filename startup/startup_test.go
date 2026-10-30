@@ -465,3 +465,30 @@ func TestExecWithoutFirstWindowPanesCreatesNoPanes(t *testing.T) {
 	assert.Empty(t, message)
 	mTmux.AssertNotCalled(t, "NewPaneInWindow", mock.Anything)
 }
+
+func TestExecAppliesFirstWindowLayoutWithoutPanes(t *testing.T) {
+	mLister := lister.NewMockLister(t)
+	mTmux := tmux.NewMockTmux(t)
+	mHome := home.NewMockHome(t)
+	mLister.EXPECT().FindConfigSession("myapp").Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindConfigWildcard("/repo/myapp").Return(model.WildcardConfig{}, false)
+	mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
+	mHome.EXPECT().ExpandPath("/repo/myapp").Return("/repo/myapp", nil)
+	mTmux.EXPECT().SelectLayout("myapp:^", "bogus").Return("", errors.New("invalid layout")).Once()
+
+	s := &RealStartup{
+		lister: mLister, tmux: mTmux, home: mHome,
+		config: model.Config{
+			SessionConfigs: []model.SessionConfig{{
+				Name:                 "myapp",
+				DefaultSessionConfig: model.DefaultSessionConfig{WindowPanes: model.WindowPanes{Layout: "bogus"}},
+			}},
+			DefaultSessionConfig: model.DefaultSessionConfig{WindowPanes: model.WindowPanes{Panes: []string{"x"}}},
+		},
+	}
+
+	_, err := s.Exec(model.SeshSession{Name: "myapp", Path: "/repo/myapp"})
+
+	assert.EqualError(t, err, "first window: apply layout bogus: invalid layout")
+	mTmux.AssertNotCalled(t, "NewPaneInWindow", mock.Anything)
+}
