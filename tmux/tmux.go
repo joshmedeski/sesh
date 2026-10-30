@@ -105,12 +105,3 @@ func (t *RealTmux) IsAttached() bool {
 func (t *RealTmux) SwitchClientTarget(client string, targetSession string) (string, error) {
 	return t.shell.Cmd(t.bin, "switch-client", "-c", client, "-t", sessionTarget(targetSession))
 }
-
-// DisplayMessage shows the message in the status line until a key is pressed.
-func (t *RealTmux) DisplayMessage(message string) (string, error) {
-	return t.shell.Cmd(t.bin, "display-message", "-d", "0", escapeFormat(message))
-}
-
-func (t *RealTmux) SelectLayout(targetWindow string, layout string) (string, error) {
-	return t.shell.Cmd(t.bin, "select-layout", "-t", sessionTarget(targetWindow), layout)
-}
