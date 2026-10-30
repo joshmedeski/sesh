@@ -89,6 +89,9 @@ func (s *RealStartup) firstWindowPanes(session model.SeshSession) model.WindowPa
 	if wildcard, ok := s.lister.FindConfigWildcard(session.Path); ok && hasPaneSettings(wildcard.WindowPanes) {
 		return wildcard.WindowPanes
 	}
+	if session.DisableStartupCommand {
+		return model.WindowPanes{}
+	}
 	return s.config.DefaultSessionConfig.WindowPanes
 }
 

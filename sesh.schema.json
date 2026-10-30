@@ -287,7 +287,7 @@
           },
           "disable_startup_command": {
             "type": "boolean",
-            "description": "Disable the default startup command for this session",
+            "description": "Disable the default startup command and [default_session] panes for this session",
             "default": false
           },
           "alias": {
@@ -402,7 +402,7 @@
           },
           "disable_startup_command": {
             "type": "boolean",
-            "description": "Disable the default startup command for matching sessions",
+            "description": "Disable the default startup command and [default_session] panes for matching sessions",
             "default": false
           },
           "preview_command": {

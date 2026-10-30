@@ -1331,7 +1331,7 @@ focus = true
 
 第一个设置了 `focus` 或 `zoom` 的窗格生效，且缩放的窗格优先于 `focus` 和窗口的 `zoom`。窗格可以在多个窗口中重用。
 
-会话的第一个窗口可以在 `[[session]]`、`[[wildcard]]` 或 `[default_session]` 中使用相同的 `panes`、`layout` 和 `zoom`。其 `startup_command` 在窗口自身的窗格中运行。按 `[[session]]`、`[[wildcard]]`、`[default_session]` 的顺序，第一个设置了 `panes` 或 `layout` 的配置生效，并一同使用其 `zoom`。
+会话的第一个窗口可以在 `[[session]]`、`[[wildcard]]` 或 `[default_session]` 中使用相同的 `panes`、`layout` 和 `zoom`。其 `startup_command` 在窗口自身的窗格中运行。按 `[[session]]`、`[[wildcard]]`、`[default_session]` 的顺序，第一个设置了 `panes` 或 `layout` 的配置生效，并一同使用其 `zoom`。设置了 `disable_startup_command` 的会话不会继承 `[default_session]` 的窗格。
 
 ```toml
 [[session]]

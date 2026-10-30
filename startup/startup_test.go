@@ -492,3 +492,57 @@ func TestExecAppliesFirstWindowLayoutWithoutPanes(t *testing.T) {
 	assert.EqualError(t, err, "first window: apply layout bogus: invalid layout")
 	mTmux.AssertNotCalled(t, "NewPaneInWindow", mock.Anything)
 }
+
+func TestExecDisableStartupCommandSkipsDefaultPanes(t *testing.T) {
+	mLister := lister.NewMockLister(t)
+	mTmux := tmux.NewMockTmux(t)
+	mLister.EXPECT().FindConfigSession("myapp").Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindConfigWildcard("/repo/myapp").Return(model.WildcardConfig{}, false).Twice()
+	mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
+
+	s := &RealStartup{
+		lister: mLister, tmux: mTmux,
+		config: model.Config{
+			DefaultSessionConfig: model.DefaultSessionConfig{
+				StartupCommand: "nvim",
+				WindowPanes:    model.WindowPanes{Panes: []string{"logs"}, Layout: "tiled"},
+			},
+			PaneConfigs: []model.PaneConfig{{Name: "logs"}},
+		},
+	}
+
+	message, err := s.Exec(model.SeshSession{Name: "myapp", Path: "/repo/myapp", DisableStartupCommand: true})
+
+	assert.NoError(t, err)
+	assert.Empty(t, message)
+	mTmux.AssertNotCalled(t, "NewPaneInWindow", mock.Anything)
+	mTmux.AssertNotCalled(t, "SelectLayout", mock.Anything, mock.Anything)
+}
+
+func TestExecDisableStartupCommandKeepsOwnPanes(t *testing.T) {
+	mLister := lister.NewMockLister(t)
+	mTmux := tmux.NewMockTmux(t)
+	mHome := home.NewMockHome(t)
+	mLister.EXPECT().FindConfigSession("myapp").Return(model.SeshSession{}, false)
+	mLister.EXPECT().FindConfigWildcard("/repo/myapp").Return(model.WildcardConfig{}, false)
+	mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
+	mHome.EXPECT().ExpandPath("/repo/myapp").Return("/repo/myapp", nil)
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:^", StartDir: "/repo/myapp"}).Return("%1", nil).Once()
+
+	s := &RealStartup{
+		lister: mLister, tmux: mTmux, home: mHome,
+		config: model.Config{
+			SessionConfigs: []model.SessionConfig{{
+				Name:                 "myapp",
+				DisableStartCommand:  true,
+				DefaultSessionConfig: model.DefaultSessionConfig{WindowPanes: model.WindowPanes{Panes: []string{"logs"}}},
+			}},
+			DefaultSessionConfig: model.DefaultSessionConfig{WindowPanes: model.WindowPanes{Panes: []string{"other"}}},
+			PaneConfigs:          []model.PaneConfig{{Name: "logs"}},
+		},
+	}
+
+	_, err := s.Exec(model.SeshSession{Name: "myapp", Path: "/repo/myapp", DisableStartupCommand: true})
+
+	assert.NoError(t, err)
+}
