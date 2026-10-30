@@ -21,7 +21,6 @@ func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 	}, nil
 }
 
-// showStartupError surfaces startup errors in the tmux status line.
 func (c *RealConnector) showStartupError(err error) {
 	_, _ = c.tmux.DisplayMessage("sesh: " + err.Error())
 }

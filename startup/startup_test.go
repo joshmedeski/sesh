@@ -155,7 +155,6 @@ func TestExecStopsAtUndefinedWindow(t *testing.T) {
 
 	assert.EqualError(t, err, "window missing is not defined in config")
 	assert.Empty(t, message)
-	// no later window, window switch or startup command
 	mTmux.AssertNotCalled(t, "NewWindowInSession", mock.Anything)
 	mTmux.AssertNotCalled(t, "NextWindowInSession", mock.Anything)
 	mTmux.AssertNotCalled(t, "SendKeys", mock.Anything, mock.Anything)

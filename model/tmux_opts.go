@@ -13,6 +13,6 @@ type TmuxWindowOpts struct {
 
 type TmuxPaneOpts struct {
 	TargetWindow string
-	TargetPane   string // pane to split; empty splits the window's active pane
+	TargetPane   string
 	StartDir     string
 }

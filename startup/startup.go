@@ -67,13 +67,11 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		}
 	}
 
-	// panes come after the command so it lands in the main pane
 	if firstPanes := s.firstWindowPanes(session); len(firstPanes.Panes) > 0 {
 		path, err := s.home.ExpandPath(session.Path)
 		if err != nil {
 			return "", fmt.Errorf("first window: couldn't expand home: %w", err)
 		}
-		// "^" is tmux's lowest-index window
 		if err := s.createPanes(session.Name+":^", path, firstPanes, panes); err != nil {
 			return "", fmt.Errorf("first window: %w", err)
 		}
@@ -99,13 +97,11 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 	if !ok {
 		return fmt.Errorf("window %s is not defined in config", name)
 	}
-	// session path is the fallback for windows without their own
 	path, err := s.home.ExpandPath(cmp.Or(window.Path, session.Path))
 	if err != nil {
 		return fmt.Errorf("window %s: couldn't expand home: %w", name, err)
 	}
 
-	// "session:index" target; window names may contain dots or digits
 	target, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
 		Name: window.Name, StartDir: path, TargetSession: session.Name,
 	})
@@ -128,7 +124,6 @@ func (s *RealStartup) createPanes(target string, startDir string, windowPanes mo
 		if !ok {
 			return fmt.Errorf("pane %s is not defined in config", paneName)
 		}
-		// split the previous pane so panes keep config order
 		paneID, err := s.tmux.NewPaneInWindow(model.TmuxPaneOpts{
 			TargetWindow: target,
 			TargetPane:   prevID,

@@ -194,8 +194,6 @@ func validateNameSubstitutions(config *model.Config) error {
 	return nil
 }
 
-// validateWindows rejects window settings that would only fail once tmux is
-// half way through building a session, leaving its remaining windows uncreated.
 func validateWindows(config *model.Config) error {
 	panes := make(map[string]bool, len(config.PaneConfigs))
 	for _, pane := range config.PaneConfigs {
