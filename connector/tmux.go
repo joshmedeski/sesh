@@ -21,8 +21,12 @@ func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 	}, nil
 }
 
+func startupErrorMessage(err error) string {
+	return "sesh: " + err.Error()
+}
+
 func (c *RealConnector) showStartupError(err error) {
-	_, _ = c.tmux.DisplayMessage("sesh: " + err.Error())
+	_, _ = c.tmux.DisplayMessage(startupErrorMessage(err))
 }
 
 func connectToTmux(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
@@ -47,14 +51,13 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 		}
 		return connection.Session.Name, nil
 	}
-	message, err := c.focusSession(connection.Session.Name, opts.Switch)
 	if startupErr == nil {
-		return message, err
+		return c.focusSession(connection.Session.Name, opts.Switch, "")
 	}
+	message, err := c.focusSession(connection.Session.Name, opts.Switch, startupErrorMessage(startupErr))
 	if err != nil {
 		return message, errors.Join(err, startupErr)
 	}
-	c.showStartupError(startupErr)
 	return message, fmt.Errorf("session %s startup failed: %w", connection.Session.Name, startupErr)
 }
 

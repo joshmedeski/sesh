@@ -66,6 +66,31 @@ func TestSwitchOrAttach(t *testing.T) {
 		assert.Equal(t, "attaching to tmux session: dotfiles", response)
 		assert.Equal(t, nil, error)
 	})
+
+	t.Run("shows the message once attached", func(t *testing.T) {
+		mockOs.ExpectedCalls = nil
+		mockShell.ExpectedCalls = nil
+		mockOs.On("Getenv", "TMUX").Return("")
+		mockShell.On("CmdWithOutput", "tmux", "attach-session", "-t", "dotfiles:",
+			";", "display-message", "-d", "0", "sesh: pane ##1 failed").Return("", nil)
+		response, err := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Message: "sesh: pane #1 failed"})
+		assert.Equal(t, "attaching to tmux session: dotfiles", response)
+		assert.NoError(t, err)
+		mockShell.AssertExpectations(t)
+	})
+
+	t.Run("shows the message after switching", func(t *testing.T) {
+		mockOs.ExpectedCalls = nil
+		mockShell.ExpectedCalls = nil
+		mockShell.Calls = nil
+		stubNoClients(mockOs, mockShell, "tmux")
+		mockShell.On("Cmd", "tmux", "switch-client", "-t", "dotfiles:").Return("", nil)
+		mockShell.On("Cmd", "tmux", "display-message", "-d", "0", "sesh: failed").Return("", nil)
+		response, err := tmux.SwitchOrAttach("dotfiles", model.ConnectOpts{Switch: true, Message: "sesh: failed"})
+		assert.Equal(t, "switching to tmux session: dotfiles", response)
+		assert.NoError(t, err)
+		mockShell.AssertCalled(t, "Cmd", "tmux", "display-message", "-d", "0", "sesh: failed")
+	})
 }
 
 func TestCustomBin(t *testing.T) {

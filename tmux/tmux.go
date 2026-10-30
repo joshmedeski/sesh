@@ -38,7 +38,7 @@ type Tmux interface {
 	NewWindowInSession(opts model.TmuxWindowOpts) (string, error)
 	NewPaneInWindow(opts model.TmuxPaneOpts) (string, error)
 	IsAttached() bool
-	AttachSession(targetSession string) (string, error)
+	AttachSession(targetSession string, message string) (string, error)
 	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
@@ -73,9 +73,13 @@ func NewTmux(os oswrap.Os, shell shell.Shell, bin string) Tmux {
 	return &RealTmux{os, shell, bin}
 }
 
-func (t *RealTmux) AttachSession(targetSession string) (string, error) {
+func (t *RealTmux) AttachSession(targetSession string, message string) (string, error) {
+	args := []string{"attach-session", "-t", sessionTarget(targetSession)}
+	if message != "" {
+		args = append(append(args, ";"), displayMessageArgs(message)...)
+	}
 	// Using t.shell.Cmd() here (capturing stdout/stderr in buffers) would block psmux on Windows.
-	return t.shell.CmdWithOutput(t.bin, "attach-session", "-t", sessionTarget(targetSession))
+	return t.shell.CmdWithOutput(t.bin, args...)
 }
 
 func (t *RealTmux) SwitchClient(targetSession string) (string, error) {

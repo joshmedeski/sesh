@@ -59,12 +59,16 @@ func (c *RealConnector) ensureSession(name string) (model.SeshSession, error) {
 
 // focusSession brings the client to a session, honouring the same
 // switch-vs-attach rules as Connect.
-func (c *RealConnector) focusSession(sessionName string, doSwitch bool) (string, error) {
+func (c *RealConnector) focusSession(sessionName string, doSwitch bool, statusMessage string) (string, error) {
 	// When invoked from outside tmux (e.g. osascript/browser dispatcher),
 	// `switch-client -t` has no current client to act on. Find the active
 	// client, switch it explicitly, and bring the terminal to the front.
 	if doSwitch && !c.tmux.IsAttached() {
-		return c.connectDetached(sessionName)
+		message, err := c.connectDetached(sessionName)
+		if err == nil && statusMessage != "" {
+			_, _ = c.tmux.DisplayMessage(statusMessage)
+		}
+		return message, err
 	}
-	return c.tmux.SwitchOrAttach(sessionName, model.ConnectOpts{Switch: doSwitch})
+	return c.tmux.SwitchOrAttach(sessionName, model.ConnectOpts{Switch: doSwitch, Message: statusMessage})
 }
