@@ -66,8 +66,10 @@ func TestExecCreatesConfiguredPanesWithWindowLayout(t *testing.T) {
 	}).Return("myapp:1", nil)
 	mTmux.EXPECT().SendKeys("myapp:1", "nvim").Return("", nil)
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
-		TargetWindow: "myapp:1", StartDir: sessionPath, Command: "lazydocker", Layout: "main-vertical",
+		TargetWindow: "myapp:1", StartDir: sessionPath,
 	}).Return("%1", nil).Once()
+	mTmux.EXPECT().SendKeys("%1", "lazydocker").Return("", nil).Once()
+	mTmux.EXPECT().SelectLayout("myapp:1", "main-vertical").Return("", nil).Once()
 	mTmux.EXPECT().NextWindowInSession(sessionName).Return("", nil)
 	mLister.EXPECT().FindConfigSession(sessionName).Return(model.SeshSession{}, false)
 	mLister.EXPECT().FindConfigWildcard(sessionPath).Return(model.WildcardConfig{}, false)
@@ -213,19 +215,74 @@ func TestCreatePanesSelectsFirstFocusedPane(t *testing.T) {
 		if i > 0 {
 			prevID = fmt.Sprintf("%%%d", i)
 		}
+		paneID := fmt.Sprintf("%%%d", i+1)
 		mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
 			TargetWindow: target,
 			TargetPane:   prevID,
 			StartDir:     "/repo/myapp",
-			Command:      panes[lister.ConfigKey(name)].StartupCommand,
-			Layout:       "tiled",
-		}).Return(fmt.Sprintf("%%%d", i+1), nil).Once()
+		}).Return(paneID, nil).Once()
+		if command := panes[lister.ConfigKey(name)].StartupCommand; command != "" {
+			mTmux.EXPECT().SendKeys(paneID, command).Return("", nil).Once()
+		}
 	}
+	mTmux.EXPECT().SelectLayout(target, "tiled").Return("", nil).Once()
 	mTmux.EXPECT().SelectPaneByID("%2").Return("", nil).Once()
 
 	s := &RealStartup{tmux: mTmux}
 	err := s.createPanes(target, "/repo/myapp", window, panes)
 	assert.NoError(t, err)
+}
+
+func TestCreatePanesAppliesCustomLayoutAfterAllPanes(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	const target = "myapp:dev"
+	const layout = "5d4b,80x24,0,0{40x24,0,0,0,39x24,41,0[39x12,41,0,1,39x11,41,13,2]}"
+	window := model.WindowPanes{Panes: []string{"logs", "server"}, Layout: layout}
+	panes := model.SeshPaneMap{
+		lister.ConfigKey("logs"):   {Name: "logs"},
+		lister.ConfigKey("server"): {Name: "server"},
+	}
+	var calls []string
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: target}).
+		Run(func(model.TmuxPaneOpts) { calls = append(calls, "split") }).Return("%1", nil).Once()
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: target, TargetPane: "%1"}).
+		Run(func(model.TmuxPaneOpts) { calls = append(calls, "split") }).Return("%2", nil).Once()
+	mTmux.EXPECT().SelectLayout(target, layout).
+		Run(func(string, string) { calls = append(calls, "layout") }).Return("", nil).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	err := s.createPanes(target, "", window, panes)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"split", "split", "layout"}, calls)
+}
+
+func TestCreatePanesReportsLayoutFailure(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	window := model.WindowPanes{Panes: []string{"logs"}, Layout: "bogus", Zoom: true}
+	panes := model.SeshPaneMap{lister.ConfigKey("logs"): {Name: "logs", Focus: true}}
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
+	mTmux.EXPECT().SelectLayout("myapp:dev", "bogus").Return("", errors.New("invalid layout")).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	err := s.createPanes("myapp:dev", "", window, panes)
+	assert.EqualError(t, err, "apply layout bogus: invalid layout")
+	mTmux.AssertNotCalled(t, "SelectPaneByID", mock.Anything)
+	mTmux.AssertNotCalled(t, "ZoomPane", mock.Anything)
+}
+
+func TestCreatePanesReportsPaneCommandFailure(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	window := model.WindowPanes{Panes: []string{"logs", "server"}}
+	panes := model.SeshPaneMap{
+		lister.ConfigKey("logs"):   {Name: "logs", StartupCommand: "tail -f log"},
+		lister.ConfigKey("server"): {Name: "server"},
+	}
+	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "myapp:dev"}).Return("%1", nil).Once()
+	mTmux.EXPECT().SendKeys("%1", "tail -f log").Return("", errors.New("no pane")).Once()
+
+	s := &RealStartup{tmux: mTmux}
+	err := s.createPanes("myapp:dev", "", window, panes)
+	assert.EqualError(t, err, "pane logs: run startup command: no pane")
 }
 
 func TestCreatePanesWithoutFocusKeepsMainPane(t *testing.T) {
@@ -297,8 +354,10 @@ func TestExecCreatesFirstWindowPanesAfterStartupCommand(t *testing.T) {
 		Run(func(string, string) { calls = append(calls, "startup command") }).Return("", nil)
 	mHome.EXPECT().ExpandPath(sessionPath).Return(sessionPath, nil)
 	mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
-		TargetWindow: "myapp:^", StartDir: sessionPath, Command: "lazydocker", Layout: "tiled",
+		TargetWindow: "myapp:^", StartDir: sessionPath,
 	}).Run(func(model.TmuxPaneOpts) { calls = append(calls, "pane") }).Return("%1", nil)
+	mTmux.EXPECT().SendKeys("%1", "lazydocker").Return("", nil)
+	mTmux.EXPECT().SelectLayout("myapp:^", "tiled").Return("", nil)
 
 	s := &RealStartup{
 		lister: mLister, tmux: mTmux, home: mHome, replacer: mReplacer,
@@ -351,8 +410,9 @@ func TestExecFirstWindowPanePrecedence(t *testing.T) {
 			mTmux.EXPECT().NextWindowInSession("myapp").Return("", nil)
 			mHome.EXPECT().ExpandPath(sessionPath).Return(sessionPath, nil)
 			mTmux.EXPECT().NewPaneInWindow(model.TmuxPaneOpts{
-				TargetWindow: "myapp:^", StartDir: sessionPath, Layout: tt.layout,
+				TargetWindow: "myapp:^", StartDir: sessionPath,
 			}).Return("%1", nil).Once()
+			mTmux.EXPECT().SelectLayout("myapp:^", tt.layout).Return("", nil).Once()
 			if tt.zoom {
 				mTmux.EXPECT().ZoomPane("myapp:^").Return("", nil).Once()
 			}

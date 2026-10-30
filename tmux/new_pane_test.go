@@ -9,24 +9,20 @@ import (
 )
 
 func TestNewPaneInWindow(t *testing.T) {
-	t.Run("splits detached, runs the command in the new pane and applies the layout", func(t *testing.T) {
+	t.Run("splits the window detached in the start directory", func(t *testing.T) {
 		mockShell := shell.NewMockShell(t)
 		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
 		mockShell.EXPECT().
 			Cmd("tmux", "split-window", "-d", "-P", "-F", "#{pane_id}", "-t", "app:dev", "-c", "/repo/app").
 			Return("%5\n", nil)
-		mockShell.EXPECT().Cmd("tmux", "send-keys", "-t", "%5", "lazydocker", "Enter").Return("", nil)
-		mockShell.EXPECT().Cmd("tmux", "select-layout", "-t", "app:dev", "main-vertical").Return("", nil)
 
-		paneID, err := tmux.NewPaneInWindow(model.TmuxPaneOpts{
-			TargetWindow: "app:dev", StartDir: "/repo/app", Command: "lazydocker", Layout: "main-vertical",
-		})
+		paneID, err := tmux.NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "app:dev", StartDir: "/repo/app"})
 
 		assert.NoError(t, err)
 		assert.Equal(t, "%5", paneID)
 	})
 
-	t.Run("only splits when there is no command or layout", func(t *testing.T) {
+	t.Run("targets the session when the window has no index", func(t *testing.T) {
 		mockShell := shell.NewMockShell(t)
 		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
 		mockShell.EXPECT().
@@ -39,15 +35,14 @@ func TestNewPaneInWindow(t *testing.T) {
 		assert.Equal(t, "%6", paneID)
 	})
 
-	t.Run("splits the target pane and applies the layout to its window", func(t *testing.T) {
+	t.Run("splits the target pane", func(t *testing.T) {
 		mockShell := shell.NewMockShell(t)
 		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
 		mockShell.EXPECT().
 			Cmd("tmux", "split-window", "-d", "-P", "-F", "#{pane_id}", "-t", "%5").
 			Return("%7", nil)
-		mockShell.EXPECT().Cmd("tmux", "select-layout", "-t", "app:1", "tiled").Return("", nil)
 
-		paneID, err := tmux.NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "app:1", TargetPane: "%5", Layout: "tiled"})
+		paneID, err := tmux.NewPaneInWindow(model.TmuxPaneOpts{TargetWindow: "app:1", TargetPane: "%5"})
 
 		assert.NoError(t, err)
 		assert.Equal(t, "%7", paneID)

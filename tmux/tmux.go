@@ -11,10 +11,18 @@ import (
 // sessionTarget adds a trailing colon so tmux reads a dotted name as a session, not a pane
 // an existing colon already marks a window or pane target, so that target stays unchanged
 func sessionTarget(name string) string {
-	if strings.Contains(name, ":") {
+	if strings.Contains(name, ":") || isPaneID(name) {
 		return name
 	}
 	return name + ":"
+}
+
+func isPaneID(name string) bool {
+	id, ok := strings.CutPrefix(name, "%")
+	if !ok || id == "" {
+		return false
+	}
+	return strings.Trim(id, "0123456789") == ""
 }
 
 func escapeFormat(s string) string {

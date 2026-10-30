@@ -135,11 +135,14 @@ func (s *RealStartup) createPanes(target string, startDir string, window model.W
 			TargetWindow: target,
 			TargetPane:   prevID,
 			StartDir:     startDir,
-			Command:      pane.StartupCommand,
-			Layout:       window.Layout,
 		})
 		if err != nil {
 			return fmt.Errorf("pane %s: %w", paneName, err)
+		}
+		if pane.StartupCommand != "" {
+			if _, err := s.tmux.SendKeys(paneID, pane.StartupCommand); err != nil {
+				return fmt.Errorf("pane %s: run startup command: %w", paneName, err)
+			}
 		}
 		prevID = paneID
 		if pane.Focus && focusID == "" {
@@ -147,6 +150,11 @@ func (s *RealStartup) createPanes(target string, startDir string, window model.W
 		}
 		if pane.Zoom && zoomID == "" {
 			zoomID = paneID
+		}
+	}
+	if window.Layout != "" {
+		if _, err := s.tmux.SelectLayout(target, window.Layout); err != nil {
+			return fmt.Errorf("apply layout %s: %w", window.Layout, err)
 		}
 	}
 	if focusID != "" {
