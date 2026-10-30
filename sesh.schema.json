@@ -265,23 +265,9 @@
             "type": "string"
           }
         },
-        "panes": {
-          "type": "array",
-          "description": "Names of [[pane]] entries to split into the first window of every session, in order. startup_command runs in the window's own pane, which stays first",
-          "items": {
-            "type": "string"
-          }
-        },
-        "layout": {
-          "type": "string",
-          "description": "tmux layout applied after each pane is created in the first window: a preset name or a custom layout string",
-          "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
-        },
-        "zoom": {
-          "type": "boolean",
-          "description": "Zoom the focused pane (fullscreen) in the first window once the panes are created. Ignored when a pane sets zoom itself or there are no panes",
-          "default": false
-        }
+        "panes": { "$ref": "#/definitions/panes" },
+        "layout": { "$ref": "#/definitions/layout" },
+        "zoom": { "$ref": "#/definitions/zoom" }
       },
       "additionalProperties": false
     },
@@ -340,23 +326,9 @@
               "type": "string"
             }
           },
-          "panes": {
-            "type": "array",
-            "description": "Names of [[pane]] entries to split into this session's first window, in order. startup_command runs in the window's own pane, which stays first",
-            "items": {
-              "type": "string"
-            }
-          },
-          "layout": {
-            "type": "string",
-            "description": "tmux layout applied after each pane is created in the first window: a preset name or a custom layout string",
-            "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
-          },
-          "zoom": {
-            "type": "boolean",
-            "description": "Zoom the focused pane (fullscreen) in the first window once the panes are created. Ignored when a pane sets zoom itself or there are no panes",
-            "default": false
-          }
+          "panes": { "$ref": "#/definitions/panes" },
+          "layout": { "$ref": "#/definitions/layout" },
+          "zoom": { "$ref": "#/definitions/zoom" }
         },
         "additionalProperties": false
       }
@@ -379,23 +351,9 @@
             "type": "string",
             "description": "Working directory for the window"
           },
-          "panes": {
-            "type": "array",
-            "description": "Names of [[pane]] entries to split into this window, in order. The window's own pane (running startup_script) stays first",
-            "items": {
-              "type": "string"
-            }
-          },
-          "layout": {
-            "type": "string",
-            "description": "tmux preset layout applied after each pane is created",
-            "enum": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
-          },
-          "zoom": {
-            "type": "boolean",
-            "description": "Zoom the focused pane (fullscreen) once the panes are created. Ignored when a pane sets zoom itself or the window has no panes",
-            "default": false
-          }
+          "panes": { "$ref": "#/definitions/panes" },
+          "layout": { "$ref": "#/definitions/layout" },
+          "zoom": { "$ref": "#/definitions/zoom" }
         },
         "additionalProperties": false
       }
@@ -458,23 +416,9 @@
               "type": "string"
             }
           },
-          "panes": {
-            "type": "array",
-            "description": "Names of [[pane]] entries to split into the first window of matching sessions, in order. startup_command runs in the window's own pane, which stays first",
-            "items": {
-              "type": "string"
-            }
-          },
-          "layout": {
-            "type": "string",
-            "description": "tmux layout applied after each pane is created in the first window: a preset name or a custom layout string",
-            "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
-          },
-          "zoom": {
-            "type": "boolean",
-            "description": "Zoom the focused pane (fullscreen) in the first window once the panes are created. Ignored when a pane sets zoom itself or there are no panes",
-            "default": false
-          },
+          "panes": { "$ref": "#/definitions/panes" },
+          "layout": { "$ref": "#/definitions/layout" },
+          "zoom": { "$ref": "#/definitions/zoom" },
           "icon": {
             "type": "string",
             "description": "Icon shown for matching sessions in the picker instead of their source glyph. Any string: a nerd font glyph or an emoji. Picker-only; `sesh list` keeps the source glyph."
@@ -536,6 +480,23 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "panes": {
+      "type": "array",
+      "description": "Names of [[pane]] entries to split into the window, in order. The window's own pane stays first. On [[session]], [[wildcard]] and [default_session] this is the session's first window",
+      "items": {
+        "type": "string"
+      }
+    },
+    "layout": {
+      "type": "string",
+      "description": "tmux preset layout applied after each pane is created",
+      "enum": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
+    },
+    "zoom": {
+      "type": "boolean",
+      "description": "Zoom the focused pane (fullscreen) once the panes are created. Ignored when a pane sets zoom itself or the window has no panes",
+      "default": false
+    },
     "sourceIcon": {
       "type": "object",
       "properties": {

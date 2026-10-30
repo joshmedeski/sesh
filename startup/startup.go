@@ -73,9 +73,8 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("first window: couldn't expand home: %q", err)
 		}
-		first.Path = path
 		// "^" is tmux's lowest-index window
-		if err := s.createPanes(session.Name+":^", first, panes); err != nil {
+		if err := s.createPanes(session.Name+":^", path, first, panes); err != nil {
 			return "", fmt.Errorf("first window: %w", err)
 		}
 	}
@@ -85,17 +84,16 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 
 // firstWindow returns the pane layout for the session's first window:
 // [[session]], then [[wildcard]], then [default_session].
-func (s *RealStartup) firstWindow(session model.SeshSession) model.WindowConfig {
+func (s *RealStartup) firstWindow(session model.SeshSession) model.WindowPanes {
 	for _, sc := range s.config.SessionConfigs {
 		if lister.ConfigKey(sc.Name) == lister.ConfigKey(session.Name) && len(sc.Panes) > 0 {
-			return model.WindowConfig{Panes: sc.Panes, Layout: sc.Layout, Zoom: sc.Zoom}
+			return sc.WindowPanes
 		}
 	}
 	if wc, ok := s.lister.FindConfigWildcard(session.Path); ok && len(wc.Panes) > 0 {
-		return model.WindowConfig{Panes: wc.Panes, Layout: wc.Layout, Zoom: wc.Zoom}
+		return wc.WindowPanes
 	}
-	d := s.config.DefaultSessionConfig
-	return model.WindowConfig{Panes: d.Panes, Layout: d.Layout, Zoom: d.Zoom}
+	return s.config.DefaultSessionConfig.WindowPanes
 }
 
 func (s *RealStartup) createWindow(session model.SeshSession, name string, windows model.SeshWindowMap, panes model.SeshPaneMap) error {
@@ -108,11 +106,10 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 	if err != nil {
 		return fmt.Errorf("window %s: couldn't expand home: %q", name, err)
 	}
-	window.Path = path
 
 	// "session:index" target; window names may contain dots or digits
 	target, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
-		Name: window.Name, StartDir: window.Path, TargetSession: session.Name,
+		Name: window.Name, StartDir: path, TargetSession: session.Name,
 	})
 	if err != nil {
 		return fmt.Errorf("window %s: %w", name, err)
@@ -120,13 +117,13 @@ func (s *RealStartup) createWindow(session model.SeshSession, name string, windo
 	if _, err := s.tmux.SendKeys(target, window.StartupScript); err != nil {
 		return fmt.Errorf("window %s: %w", name, err)
 	}
-	if err := s.createPanes(target, window, panes); err != nil {
+	if err := s.createPanes(target, path, window.WindowPanes, panes); err != nil {
 		return fmt.Errorf("window %s: %w", name, err)
 	}
 	return nil
 }
 
-func (s *RealStartup) createPanes(target string, window model.WindowConfig, panes model.SeshPaneMap) error {
+func (s *RealStartup) createPanes(target string, startDir string, window model.WindowPanes, panes model.SeshPaneMap) error {
 	var focusID, zoomID, prevID string
 	for _, paneName := range window.Panes {
 		pane, ok := panes[lister.ConfigKey(paneName)]
@@ -137,7 +134,7 @@ func (s *RealStartup) createPanes(target string, window model.WindowConfig, pane
 		paneID, err := s.tmux.NewPaneInWindow(model.TmuxPaneOpts{
 			TargetWindow: target,
 			TargetPane:   prevID,
-			StartDir:     window.Path,
+			StartDir:     startDir,
 			Command:      pane.StartupCommand,
 			Layout:       window.Layout,
 		})
