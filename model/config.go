@@ -56,6 +56,7 @@ type (
 		SessionConfigs          []SessionConfig       `toml:"session"`
 		SortOrder               SortOrder             `toml:"sort_order"`
 		WindowConfigs           []WindowConfig        `toml:"window"`
+		PaneConfigs             []PaneConfig          `toml:"pane"`
 		WildcardConfigs         []WildcardConfig      `toml:"wildcard"`
 		WorktreeConfigs         []WorktreeConfig      `toml:"worktree"`
 		DirLength               int                   `toml:"dir_length"`
@@ -144,6 +145,7 @@ type (
 		Tmuxinator     string   `toml:"tmuxinator"`
 		PreviewCommand string   `toml:"preview_command"`
 		Windows        []string `toml:"windows"`
+		WindowPanes
 	}
 
 	SessionConfig struct {
@@ -170,6 +172,20 @@ type (
 		Name          string `toml:"name"`
 		StartupScript string `toml:"startup_script"`
 		Path          string `toml:"path"`
+		WindowPanes
+	}
+
+	WindowPanes struct {
+		Panes  []string `toml:"panes"`
+		Layout string   `toml:"layout"`
+		Zoom   bool     `toml:"zoom"`
+	}
+
+	PaneConfig struct {
+		Name           string `toml:"name"`
+		StartupCommand string `toml:"startup_command"`
+		Focus          bool   `toml:"focus"`
+		Zoom           bool   `toml:"zoom"`
 	}
 
 	TUIConfig struct {
@@ -223,6 +239,7 @@ type (
 		DisableStartCommand bool     `toml:"disable_startup_command"`
 		PreviewCommand      string   `toml:"preview_command"`
 		Windows             []string `toml:"windows"`
+		WindowPanes
 		// Icon replaces the source glyph every session under this pattern gets
 		// in the picker. See SessionConfig.Icon.
 		Icon string `toml:"icon"`

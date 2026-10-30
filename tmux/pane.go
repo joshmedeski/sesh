@@ -65,6 +65,14 @@ func (t *RealTmux) SelectPane(windowIndex int, paneIndex int) (string, error) {
 	return fmt.Sprintf("selected pane %d in window %d", paneIndex, windowIndex), nil
 }
 
+func (t *RealTmux) SelectPaneByID(paneID string) (string, error) {
+	return t.shell.Cmd(t.bin, "select-pane", "-t", paneID)
+}
+
+func (t *RealTmux) ZoomPane(target string) (string, error) {
+	return t.shell.Cmd(t.bin, "resize-pane", "-Z", "-t", target)
+}
+
 func (t *RealTmux) GetCurrentSession() (string, error) {
 	return t.shell.Cmd("tmux", "display-message", "-p", "#{session_name}")
 }
