@@ -35,6 +35,9 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 		}
 	}
 
+	if opts.Background {
+		return connection.Session.Name, nil
+	}
 	return c.focusSession(connection.Session.Name, opts.Switch)
 }
 

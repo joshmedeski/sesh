@@ -2,6 +2,7 @@ package worktree
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -121,10 +122,30 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 		}
 	}
 
-	return w.connector.Connect(target, model.ConnectOpts{
-		Switch:  opts.Switch,
-		Command: connectCommand(cfg, created),
+	sessionName, err := w.connector.Connect(target, model.ConnectOpts{
+		Switch:     opts.Switch,
+		Command:    connectCommand(cfg, created),
+		Background: opts.Background || opts.Command != "",
 	})
+	if err != nil || opts.Command == "" {
+		return sessionName, err
+	}
+	return w.connector.ConnectWindow(model.WindowConnectOpts{
+		Name:       commandProgram(opts.Command),
+		New:        true,
+		Session:    sessionName,
+		Command:    opts.Command,
+		Background: opts.Background,
+		Switch:     opts.Switch,
+	})
+}
+
+func commandProgram(command string) string {
+	fields := strings.Fields(command)
+	if len(fields) == 0 {
+		return ""
+	}
+	return filepath.Base(fields[0])
 }
 
 // connectCommand picks the command the new session runs. The two are exclusive:

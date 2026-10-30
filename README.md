@@ -1388,9 +1388,16 @@ sesh worktree connect 2345                       # detect repo from cwd, connect
 sesh worktree connect 2345 --repo joshmedeski/sesh   # target a repo explicitly (no cwd needed)
 sesh worktree connect 2345 --pr                  # force the pull-request path
 sesh worktree connect 2345 --switch              # switch (not attach) — for invocation outside tmux
+sesh worktree connect 2345 -c 'claude'          # also run claude in a new window named claude
+sesh worktree connect 2345 --background         # create without attaching or switching the client
 ```
 
-Each flag also has a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`.
+Most flags also have a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`, `--command`/`-c`.
+
+`--command` runs alongside the session's startup command rather than replacing it: the
+session starts (or is reused) as usual, then the command runs in a newly created window
+named after its program, so a second run never types into one already running. Combine it
+with `--background` to start several worktrees in a row without leaving where you are.
 
 `sesh` auto-detects whether `<number>` is an issue or a PR via `gh`. For your own
 PRs it resolves the closing issue (falling back to the first `#N` reference in the

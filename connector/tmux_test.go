@@ -166,3 +166,21 @@ func TestConnectToTmuxDetachedReportsUnreachableTmux(t *testing.T) {
 	_, err := connectToTmux(c, conn, model.ConnectOpts{Switch: true})
 	require.ErrorContains(t, err, "couldn't reach tmux to switch to 'nutiliti/2345'")
 }
+
+func TestConnectToTmuxBackgroundSkipsFocus(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mStartup := startup.NewMockStartup(t)
+
+	session := model.SeshSession{Src: "dir", Name: "myapp", Path: "/repo/myapp"}
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mStartup.EXPECT().Exec(session).Return("", nil)
+
+	c := NewConnector(
+		model.Config{}, nil, nil, nil, nil, mStartup, mTmux, nil, nil, nil,
+	).(*RealConnector)
+
+	connection := model.Connection{Found: true, New: true, Session: session}
+	name, err := connectToTmux(c, connection, model.ConnectOpts{Background: true})
+	require.NoError(t, err)
+	assert.Equal(t, "myapp", name)
+}
