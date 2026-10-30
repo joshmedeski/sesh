@@ -489,8 +489,8 @@
     },
     "layout": {
       "type": "string",
-      "description": "tmux preset layout applied after each pane is created",
-      "enum": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
+      "description": "tmux layout applied once the window's panes are created: a preset name or a custom layout string",
+      "examples": ["main-vertical", "main-horizontal", "tiled", "even-horizontal", "even-vertical"]
     },
     "zoom": {
       "type": "boolean",

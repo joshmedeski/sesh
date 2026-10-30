@@ -305,9 +305,11 @@ func TestGetConfig_WindowPanes(t *testing.T) {
 		assert.Equal(t, []string{"logs"}, config.WindowConfigs[0].Panes)
 	})
 
-	t.Run("rejects an unknown layout", func(t *testing.T) {
-		_, err := configFromTOML(t, pane+"[[window]]\nname = \"dev\"\npanes = [\"logs\"]\nlayout = \"bogus\"\n")
-		assert.ErrorContains(t, err, `invalid layout "bogus" for window "dev"`)
+	t.Run("accepts a custom layout string", func(t *testing.T) {
+		const layout = "bb62,80x24,0,0{40x24,0,0,0,39x24,41,0,1}"
+		config, err := configFromTOML(t, pane+"[[window]]\nname = \"dev\"\npanes = [\"logs\"]\nlayout = \""+layout+"\"\n")
+		assert.NoError(t, err)
+		assert.Equal(t, layout, config.WindowConfigs[0].Layout)
 	})
 
 	t.Run("rejects a pane that is not defined", func(t *testing.T) {
