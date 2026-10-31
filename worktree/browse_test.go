@@ -1,6 +1,8 @@
 package worktree
 
 import (
+	"os"
+	"slices"
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/github"
@@ -9,15 +11,22 @@ import (
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func newBrowseWorktree(t *testing.T) (*RealWorktree, *github.MockGithub) {
+func newBrowseWorktree(t *testing.T, jjDirs ...string) (*RealWorktree, *github.MockGithub) {
 	mGh := github.NewMockGithub(t)
 	mOs := oswrap.NewMockOs(t)
 	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
 	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
 	mOs.EXPECT().ExpandEnv("/dotfiles").Return("/dotfiles").Maybe()
+	mOs.EXPECT().Stat(mock.Anything).RunAndReturn(func(name string) (os.FileInfo, error) {
+		if slices.Contains(jjDirs, name) {
+			return dirInfo{}, nil
+		}
+		return nil, os.ErrNotExist
+	}).Maybe()
 	cfg := nuConfig()
 	cfg.WorktreeConfigs = append([]model.WorktreeConfig{{Repo: "joshmedeski/dotfiles", Path: "/dotfiles"}}, cfg.WorktreeConfigs...)
 	w := &RealWorktree{config: cfg, github: mGh, home: home.NewHome(mOs), os: mOs, path: pathwrap.NewPath()}
@@ -71,4 +80,25 @@ func TestBrowseURLPrWithoutPullRequest(t *testing.T) {
 	mGh.EXPECT().PrURL(p.FromSlash("/repo/w/2345")).Return("", false, nil)
 	_, err := w.BrowseURL("/repo/w/2345", true)
 	assert.EqualError(t, err, "no pull request found for worktree 2345")
+}
+
+func TestBrowseURLPrJjUsesTheBookmarkPullRequest(t *testing.T) {
+	p := pathwrap.NewPath()
+
+	w, mGh := newBrowseWorktree(t, p.FromSlash("/repo/w/2345/.jj"))
+	mGh.EXPECT().PrURLForHead("nutiliti/nutiliti", "jam/2345-1").Return("https://github.com/nutiliti/nutiliti/pull/2400", true, nil)
+	url, err := w.BrowseURL("/repo/w/2345/apps", true)
+	require.NoError(t, err)
+	assert.Equal(t, "https://github.com/nutiliti/nutiliti/pull/2400", url)
+}
+
+func TestBrowseURLPrJjFallsBackToThePrNumber(t *testing.T) {
+	p := pathwrap.NewPath()
+
+	w, mGh := newBrowseWorktree(t, p.FromSlash("/repo/w/200/.jj"))
+	mGh.EXPECT().PrURLForHead("nutiliti/nutiliti", "jam/200-1").Return("", false, nil)
+	mGh.EXPECT().PrView("nutiliti/nutiliti", 200).Return(github.PullRequest{URL: "https://github.com/nutiliti/nutiliti/pull/200"}, true, nil)
+	url, err := w.BrowseURL("/repo/w/200", true)
+	require.NoError(t, err)
+	assert.Equal(t, "https://github.com/nutiliti/nutiliti/pull/200", url)
 }

@@ -13,21 +13,39 @@ import (
 func TestPrViewFound(t *testing.T) {
 	s := shell.NewMockShell(t)
 	s.EXPECT().
-		Cmd("gh", "pr", "view", "2345", "--repo", "nutiliti/nutiliti", "--json", "author,closingIssuesReferences,title,body").
-		Return(`{"author":{"login":"octocat"},"closingIssuesReferences":[{"number":42}],"title":"Fix","body":"closes #7"}`, nil)
+		Cmd("gh", "pr", "view", "2345", "--repo", "nutiliti/nutiliti", "--json", "author,closingIssuesReferences,title,body,url,headRefName,headRepository,headRepositoryOwner,isCrossRepository").
+		Return(`{"author":{"login":"octocat"},"closingIssuesReferences":[{"number":42}],"title":"Fix","body":"closes #7","url":"https://github.com/nutiliti/nutiliti/pull/2345","headRefName":"fix","headRepository":{"name":"nutiliti"},"headRepositoryOwner":{"login":"octocat"},"isCrossRepository":true}`, nil)
 	g := NewGithub(s, git.NewMockGit(t))
 	pr, found, err := g.PrView("nutiliti/nutiliti", 2345)
 	require.NoError(t, err)
 	assert.True(t, found)
 	assert.Equal(t, "octocat", pr.Author)
 	assert.Equal(t, []int{42}, pr.ClosingIssues)
+	assert.Equal(t, "https://github.com/nutiliti/nutiliti/pull/2345", pr.URL)
+	assert.Equal(t, "fix", pr.HeadRefName)
+	assert.Equal(t, "octocat", pr.HeadOwner)
+	assert.Equal(t, "nutiliti", pr.HeadRepo)
+	assert.True(t, pr.IsFork)
+}
+
+func TestPrURLForHead(t *testing.T) {
+	s := shell.NewMockShell(t)
+	s.EXPECT().
+		Cmd("gh", "pr", "list", "--repo", "nutiliti/nutiliti", "--head", "jam/42-1",
+			"--state", "all", "--limit", "1", "--json", "url", "--jq", ".[0].url").
+		Return("https://github.com/nutiliti/nutiliti/pull/100", nil)
+	g := NewGithub(s, git.NewMockGit(t))
+	url, found, err := g.PrURLForHead("nutiliti/nutiliti", "jam/42-1")
+	require.NoError(t, err)
+	assert.True(t, found)
+	assert.Equal(t, "https://github.com/nutiliti/nutiliti/pull/100", url)
 }
 
 func TestPrViewNotAPr(t *testing.T) {
 	s := shell.NewMockShell(t)
 	// gh returns empty (swallowed error) when the number is an issue, not a PR
 	s.EXPECT().
-		Cmd("gh", "pr", "view", "7", "--repo", "nutiliti/nutiliti", "--json", "author,closingIssuesReferences,title,body").
+		Cmd("gh", "pr", "view", "7", "--repo", "nutiliti/nutiliti", "--json", "author,closingIssuesReferences,title,body,url,headRefName,headRepository,headRepositoryOwner,isCrossRepository").
 		Return("", nil)
 	g := NewGithub(s, git.NewMockGit(t))
 	_, found, err := g.PrView("nutiliti/nutiliti", 7)
