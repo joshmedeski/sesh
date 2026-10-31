@@ -6,6 +6,7 @@ type ConnectOpts struct {
 	Command    string
 	Switch     bool
 	Tmuxinator bool
+	Background bool
 }
 
 type WorktreeConnectOpts struct {
@@ -14,6 +15,8 @@ type WorktreeConnectOpts struct {
 	Pr          bool   // force the pull-request path
 	Switch      bool
 	FromBrowser bool // resolve Number/Repo/Pr from the active browser tab URL
+	Command     string
+	Background  bool
 }
 
 // WorktreeListOpts selects which repo's worktrees to list. Path and Repo are

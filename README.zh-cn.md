@@ -1366,9 +1366,15 @@ sesh worktree connect 2345                       # 从当前目录检测仓库�
 sesh worktree connect 2345 --repo joshmedeski/sesh   # 显式指定仓库（无需当前目录）
 sesh worktree connect 2345 --pr                  # 强制使用 pull request 路径
 sesh worktree connect 2345 --switch              # 切换（而非附加）—— 用于在 tmux 外部调用
+sesh worktree connect 2345 -c 'claude'          # 同时在名为 claude 的新窗口中运行 claude
+sesh worktree connect 2345 --background         # 创建但不附加或切换客户端
 ```
 
-每个标志也有短格式：`--repo`/`-r`、`--pr`/`-p`、`--switch`/`-s`。
+大多数标志也有短格式：`--repo`/`-r`、`--pr`/`-p`、`--switch`/`-s`、`--command`/`-c`。
+
+`--command` 与会话的启动命令并存，而不是替换它：会话照常启动（或复用），然后该命令在一个以其程序命名的
+新建窗口中运行，因此再次运行绝不会把输入敲进已在运行的窗口。配合 `--background` 可以连续启动多个
+worktree，而不离开当前位置。
 
 `sesh` 通过 `gh` 自动检测 `<number>` 是 issue 还是 PR。对于您自己的 PR，它会解析其关闭的 issue
 （回退到 PR 标题或正文中第一个 `#N` 引用）；对于他人的 PR，它会创建一个分离的 worktree 并运行 `gh pr checkout`。
