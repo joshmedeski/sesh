@@ -12,7 +12,7 @@ import (
 func TestListWindows(t *testing.T) {
 	t.Run("returns parsed windows", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
-		tmux := &RealTmux{shell: mockShell}
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
 		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-F", mock.Anything).Return(
 			[]string{"0::editor::/Users/josh/c/sesh::0", "1::server::/Users/josh/c/sesh::1"},
 			nil,
@@ -30,7 +30,7 @@ func TestListWindows(t *testing.T) {
 
 	t.Run("target session flag is passed when non-empty", func(t *testing.T) {
 		mockShell := &shell.MockShell{}
-		tmux := &RealTmux{shell: mockShell}
+		tmux := &RealTmux{shell: mockShell, bin: "tmux"}
 		mockShell.EXPECT().ListCmd("tmux", "list-windows", "-t", "work:", "-F", mock.Anything).Return(
 			[]string{"0::main::/home/user::0"},
 			nil,
