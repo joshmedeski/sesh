@@ -22,7 +22,7 @@ func listpanesformat() string {
 }
 
 func (t *RealTmux) ListTmuxPanes() ([]*model.TmuxPane, error) {
-	output, err := t.shell.ListCmd("tmux", "list-panes", "-s", "-F", listpanesformat())
+	output, err := t.shell.ListCmd(t.bin, "list-panes", "-s", "-F", listpanesformat())
 	if err != nil {
 		return []*model.TmuxPane{}, nil
 	}
@@ -56,15 +56,15 @@ func (t *RealTmux) SelectPane(windowIndex int, paneIndex int) (string, error) {
 	}
 
 	target := fmt.Sprintf("%s%d.%d", sessionTarget(sessionName), windowIndex, paneIndex)
-	if _, err := t.shell.Cmd("tmux", "select-window", "-t", fmt.Sprintf("%s%d", sessionTarget(sessionName), windowIndex)); err != nil {
+	if _, err := t.shell.Cmd(t.bin, "select-window", "-t", fmt.Sprintf("%s%d", sessionTarget(sessionName), windowIndex)); err != nil {
 		return "", fmt.Errorf("failed to select window %d: %w", windowIndex, err)
 	}
-	if _, err := t.shell.Cmd("tmux", "select-pane", "-t", target); err != nil {
+	if _, err := t.shell.Cmd(t.bin, "select-pane", "-t", target); err != nil {
 		return "", fmt.Errorf("failed to select pane %d in window %d: %w", paneIndex, windowIndex, err)
 	}
 	return fmt.Sprintf("selected pane %d in window %d", paneIndex, windowIndex), nil
 }
 
 func (t *RealTmux) GetCurrentSession() (string, error) {
-	return t.shell.Cmd("tmux", "display-message", "-p", "#{session_name}")
+	return t.shell.Cmd(t.bin, "display-message", "-p", "#{session_name}")
 }
