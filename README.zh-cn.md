@@ -1380,6 +1380,18 @@ worktree，而不离开当前位置。
 （回退到 PR 标题或正文中第一个 `#N` 引用）；对于他人的 PR，它会创建一个分离的 worktree 并运行 `gh pr checkout`。
 在 tmux 外部使用 `--switch` 调用时，`sesh` 会将活动的 tmux 客户端切换到新会话，并（在 macOS 上）激活 `terminal` 应用。
 
+##### Jujutsu (jj) 仓库
+
+当 `path` 包含 `.jj` 目录（仅 jj 或共置仓库）时，`sesh worktree` 会创建 jj workspace 而不是 git worktree：
+
+- 对于 issue，运行 `jj workspace add --name <number> -r <base_branch>`，然后在新的工作副本提交上创建一个按
+  `branch_template` 命名的 bookmark。提交时请使用 `jj bookmark set` 移动它。
+- git 形式的 `base_branch`（`origin/main`）会被转换为 `main@origin`；包含 `@` 或 `(` 的值
+  （`main@origin`、`trunk()`）会作为 revset 原样使用。
+- 对于他人的 PR，使用 `jj git fetch --branch` 获取 PR 分支并在其上添加 workspace。来自 fork 的 PR
+  会先添加一个以 fork 所有者命名的远程仓库。重新连接时会再次获取并在更新后的 head 上运行 `jj new`。
+- `sesh worktree browse --pr` 按 bookmark 名称查找 PR，找不到时回退到 workspace 的 PR 编号。
+
 ##### `create_command` 与 `startup_command`
 
 两者互斥，运行哪一个取决于本次连接是否创建了 worktree：

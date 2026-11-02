@@ -1405,6 +1405,22 @@ PR title or body); for others' PRs it creates a detached worktree and runs `gh p
 When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
 the new session and (on macOS) activates the `terminal` app.
 
+##### Jujutsu (jj) repositories
+
+When `path` contains a `.jj` directory (jj-only or colocated), `sesh worktree` creates
+jj workspaces instead of git worktrees:
+
+- Issues run `jj workspace add --name <number> -r <base_branch>`, then create a bookmark
+  named from `branch_template` on the new working-copy commit. Move it along with
+  `jj bookmark set` as you commit.
+- `base_branch` in git form (`origin/main`) is translated to `main@origin`; a value
+  containing `@` or `(` (`main@origin`, `trunk()`) is used as a revset as-is.
+- Others' PRs fetch the PR branch with `jj git fetch --branch` and add a workspace on
+  it. PRs from forks add a remote named after the fork owner first. Reconnecting
+  fetches again and runs `jj new` on the updated head.
+- `sesh worktree browse --pr` looks up the PR by bookmark name, falling back to the
+  workspace's PR number.
+
 ##### `create_command` vs `startup_command`
 
 The two are exclusive, and which one runs depends on whether the connect created the

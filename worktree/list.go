@@ -71,9 +71,7 @@ func (w *RealWorktree) List(opts model.WorktreeListOpts) ([]model.WorktreeEntry,
 			entry.Title = issue.Title
 			entry.State = issue.State
 		}
-		if info, err := w.os.Stat(w.path.Join(entry.Path, ".git")); err == nil {
-			entry.Created = info.ModTime()
-		}
+		entry.Created = w.createdAt(entry.Path)
 		entries = append(entries, entry)
 	}
 	return entries, nil
@@ -199,4 +197,13 @@ func (w *RealWorktree) resolveIssues(repo string, numbers []int, refresh bool) m
 		slog.Debug("worktree list: could not save issue cache", "error", err)
 	}
 	return issues
+}
+
+func (w *RealWorktree) createdAt(dir string) time.Time {
+	for _, marker := range []string{".git", ".jj"} {
+		if info, err := w.os.Stat(w.path.Join(dir, marker)); err == nil {
+			return info.ModTime()
+		}
+	}
+	return time.Time{}
 }

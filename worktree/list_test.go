@@ -17,6 +17,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
+	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/oswrap"
 	"github.com/joshmedeski/sesh/v2/pathwrap"
@@ -85,7 +86,7 @@ func newListFixture(t *testing.T, issues *cache.Namespace[github.Issue]) listFix
 	}).Maybe()
 
 	w := NewWorktree(
-		nuConfig(), git.NewMockGit(t), mGh, connector.NewMockConnector(t),
+		nuConfig(), git.NewMockGit(t), jj.NewMockJj(t), mGh, connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), issues,
 	)
 	return listFixture{worktree: w, gh: mGh, os: mOs, issues: issues, created: created}
@@ -429,7 +430,7 @@ func TestList_MissingRepoKeyErrors(t *testing.T) {
 		return nil, os.ErrNotExist
 	}).Maybe()
 	w := NewWorktree(
-		config, git.NewMockGit(t), github.NewMockGithub(t), connector.NewMockConnector(t),
+		config, git.NewMockGit(t), jj.NewMockJj(t), github.NewMockGithub(t), connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), testIssueCache(t),
 	)
 
@@ -468,12 +469,13 @@ func TestList_KeysAreScopedByRepo(t *testing.T) {
 	assert.Equal(t, "right repo", got[0].Title)
 }
 
-func TestList_CreatedFromDotGitModTime(t *testing.T) {
+func TestList_CreatedFromDotGitOrDotJjModTime(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	f := newListFixture(t, testIssueCache(t))
 	added := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 	f.created[p.FromSlash("/repo/w/409/.git")] = added
+	f.created[p.FromSlash("/repo/w/426/.jj")] = added.Add(time.Hour)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409", "426"), nil)
 	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409, 426}).Return(map[int]github.Issue{}, nil, nil)
 
@@ -481,7 +483,7 @@ func TestList_CreatedFromDotGitModTime(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, got, 2)
 	assert.Equal(t, added, got[0].Created)
-	assert.True(t, got[1].Created.IsZero())
+	assert.Equal(t, added.Add(time.Hour), got[1].Created)
 }
 
 func TestList_CarriesConfiguredIcon(t *testing.T) {
