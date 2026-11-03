@@ -918,7 +918,7 @@ exactly as it always has: merging is opt-in.
 
 Once sources are interleaved, the boundary between live tmux sessions and
 everywhere else stops being obvious from position alone. `group_separator` draws
-a faint rule between the `sort_order` groups in the picker:
+a gray rule between the `sort_order` groups in the picker:
 
 ```toml
 [tui]
@@ -978,6 +978,7 @@ placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
 group_separator = false
+show_worktree_titles = false
 window_name_format = "#{window_name}"
 alias_auto_connect_delay = "150ms"
 alias_filter_prefix = "/"

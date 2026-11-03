@@ -214,9 +214,14 @@
         },
         "group_separator": {
       "type": "boolean",
-      "description": "Draw a faint rule between the sort_order groups in the picker, so the boundary between live tmux sessions and everywhere else stays visible. Suppressed while the list is filtered.",
+      "description": "Draw a gray rule between the sort_order groups in the picker, so the boundary between live tmux sessions and everywhere else stays visible. Suppressed while the list is filtered.",
       "default": false
     },
+        "show_worktree_titles": {
+          "type": "boolean",
+          "description": "Show the cached GitHub issue title after the name of each session under a [[worktree]] root in the picker TUI, and match it when filtering",
+          "default": false
+        },
     "preview_border": {
           "type": "string",
           "description": "Divider drawn between the session list and the preview pane. Use \"none\" for no divider.",

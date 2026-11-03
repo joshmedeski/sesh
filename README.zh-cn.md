@@ -961,6 +961,7 @@ placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
 group_separator = false
+show_worktree_titles = false
 window_name_format = "#{window_name}"
 alias_auto_connect_delay = "150ms"
 alias_filter_prefix = "/"

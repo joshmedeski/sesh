@@ -6,10 +6,12 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/sahilm/fuzzy"
 
 	"github.com/joshmedeski/sesh/v2/icon"
@@ -22,6 +24,7 @@ type sessionItem struct {
 	searchName string // normalized name used for fuzzy matching
 	src        string // source type (tmux, config, zoxide, tmuxinator)
 	icon       string // custom icon from config, "" to use the source glyph
+	title      string // worktree issue title shown after the name, "" for none
 }
 
 // sessionItems implements fuzzy.Source for fuzzy matching.
@@ -54,6 +57,10 @@ type FetchFunc func() (model.SeshSessions, error)
 // IconFunc resolves the icon configured for a session, returning "" when none
 // is and the source glyph should be used instead.
 type IconFunc func(session model.SeshSession) string
+
+// WorktreeFunc resolves the [[worktree]] issue a session path sits under,
+// returning nil for a path outside every worktree root.
+type WorktreeFunc func(path string) *model.WorktreeInfo
 
 // PreviewFunc renders the preview of a single session. It is called from a
 // tea.Cmd, never from Update or View: some strategies shell out, and blocking
@@ -131,6 +138,9 @@ type Options struct {
 	// Icon resolves the icon configured for a session. Nil means no session
 	// declares one, so every row keeps its source glyph.
 	Icon IconFunc
+	// Worktree resolves the worktree issue whose title is shown after a
+	// session's name. Nil means no worktree is configured.
+	Worktree WorktreeFunc
 	// IconWidth is the display width the icon column is padded to. Anything
 	// below 1 means the single cell the source glyphs need.
 	IconWidth int
@@ -150,7 +160,7 @@ type Options struct {
 	PreviewBorder string
 	// PreviewFunc renders previews. Nil disables the pane entirely.
 	PreviewFunc PreviewFunc
-	// GroupSeparator draws a faint rule between sort_order groups. It is
+	// GroupSeparator draws a gray rule between sort_order groups. It is
 	// suppressed while the list is filtered, where the groups no longer occupy
 	// contiguous ranges.
 	GroupSeparator bool
@@ -191,9 +201,10 @@ type Model struct {
 
 	// iconFunc resolves a session's configured icon, and iconWidth is the width
 	// the icon column is padded to so wide icons keep the names aligned.
-	iconFunc  IconFunc
-	iconWidth int
-	glyphs    icon.Glyphs
+	iconFunc     IconFunc
+	worktreeFunc WorktreeFunc
+	iconWidth    int
+	glyphs       icon.Glyphs
 
 	// aliases is keyed by lowercased alias; aliasByName is keyed by session
 	// name so rows can be tagged while rendering.
@@ -373,13 +384,20 @@ func normalizeSeparators(s string) string {
 	return separatorReplacer.Replace(s)
 }
 
-func buildItems(sessions model.SeshSessions, separatorAware bool, resolveIcon IconFunc) sessionItems {
+func buildItems(sessions model.SeshSessions, separatorAware bool, resolveIcon IconFunc, resolveWorktree WorktreeFunc) sessionItems {
 	items := make(sessionItems, 0, len(sessions.OrderedIndex))
 	for _, key := range sessions.OrderedIndex {
 		s := sessions.Directory[key]
+		if s.Worktree == nil && resolveWorktree != nil {
+			s.Worktree = resolveWorktree(s.Path)
+		}
+		title := worktreeTitle(s)
 		searchName := s.Name
+		if title != "" {
+			searchName += titleGap + title
+		}
 		if separatorAware {
-			searchName = normalizeSeparators(s.Name)
+			searchName = normalizeSeparators(searchName)
 		}
 		var icn string
 		if resolveIcon != nil {
@@ -391,9 +409,32 @@ func buildItems(sessions model.SeshSessions, separatorAware bool, resolveIcon Ic
 			searchName: searchName,
 			src:        s.Src,
 			icon:       icn,
+			title:      title,
 		})
 	}
 	return items
+}
+
+const titleGap = " "
+
+func worktreeTitle(s model.SeshSession) string {
+	if s.Worktree == nil || strings.Contains(s.Name, s.Worktree.Title) {
+		return ""
+	}
+	return s.Worktree.Title
+}
+
+func splitMatches(indexes []int, name, title string) (nameMatches, titleMatches []int) {
+	titleStart := len(name) + len(titleGap)
+	for _, idx := range indexes {
+		switch {
+		case idx < len(name):
+			nameMatches = append(nameMatches, utf8.RuneCountInString(name[:idx]))
+		case idx >= titleStart && idx-titleStart < len(title):
+			titleMatches = append(titleMatches, utf8.RuneCountInString(title[:idx-titleStart]))
+		}
+	}
+	return nameMatches, titleMatches
 }
 
 func New(fetchFunc FetchFunc, opts Options) Model {
@@ -426,6 +467,7 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		separatorAware:          opts.SeparatorAware,
 		pointer:                 normalizePointer(opts.Pointer),
 		iconFunc:                opts.Icon,
+		worktreeFunc:            opts.Worktree,
 		iconWidth:               max(opts.IconWidth, 1),
 		glyphs:                  glyphs,
 		loading:                 true,
@@ -550,7 +592,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		m.loading = false
-		m.allItems = buildItems(msg.sessions, m.separatorAware, m.iconFunc)
+		m.allItems = buildItems(msg.sessions, m.separatorAware, m.iconFunc, m.worktreeFunc)
 		m.applyFilter()
 		return m, m.schedulePreview()
 
@@ -1028,7 +1070,7 @@ func (m Model) visibleCount() int {
 }
 
 const (
-	// maxListWidth is the widest the session list gets, split or not.
+	// maxListWidth is the widest the session list gets beside the preview.
 	maxListWidth = 60
 	// minListWidth is the narrowest list worth splitting off; the preview gives
 	// columns back to stay above it.
@@ -1092,11 +1134,12 @@ func (m Model) previewCols() int {
 }
 
 func (m Model) contentWidth() int {
-	w := m.width - m.previewCols()
+	cols := m.previewCols()
+	w := m.width - cols
 	if w < 30 {
 		w = minListWidth
 	}
-	if w > maxListWidth {
+	if cols > 0 && w > maxListWidth {
 		w = maxListWidth
 	}
 	return w
@@ -1171,19 +1214,26 @@ func (m Model) View() tea.View {
 				tag = m.iconCell(item.item)
 			}
 			chip := m.aliasChip(item.item.name, item.chipMatchLen)
-			name := highlightMatches(item.item.name, item.matchedIndexes, matchStyle, normalStyle)
+			nameMatches, titleMatches := splitMatches(item.matchedIndexes, item.item.name, item.item.title)
+			name := highlightMatches(item.item.name, nameMatches, matchStyle, normalStyle)
+			used := lipgloss.Width(prefix) + lipgloss.Width(tag) + lipgloss.Width(chip) + lipgloss.Width(item.item.name)
+
+			var title string
+			if budget := m.contentWidth() - used; item.item.title != "" && budget > len(titleGap) {
+				title = ansi.Truncate(titleGap+highlightMatches(item.item.title, titleMatches, matchStyle, normalStyle), budget, "…")
+				used += lipgloss.Width(title)
+			}
 
 			var windows string
 			if m.showWindows {
 				// Window names are display-only: they are never highlighted as
 				// matches and never become part of the selected value.
-				used := lipgloss.Width(prefix) + lipgloss.Width(tag) + lipgloss.Width(chip) + lipgloss.Width(item.item.name)
 				if text := windowsText(item.item.session.WindowNames, m.contentWidth()-used); text != "" {
 					windows = windowStyle.Render(text)
 				}
 			}
 
-			fmt.Fprintf(&b, "%s%s%s%s%s\n", prefix, tag, chip, name, windows)
+			fmt.Fprintf(&b, "%s%s%s%s%s%s\n", prefix, tag, chip, name, title, windows)
 		}
 
 		// Pad remaining visible lines
@@ -1222,7 +1272,7 @@ func (m Model) View() tea.View {
 
 const filterIndent = "  "
 
-// separatorRule draws the boundary between two sort_order groups: a faint rule
+// separatorRule draws the boundary between two sort_order groups: a gray rule
 // across the list column, so a glance says whether the row under the cursor is
 // a live tmux session or somewhere to go.
 func (m Model) separatorRule() string {
