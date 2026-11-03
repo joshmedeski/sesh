@@ -100,6 +100,24 @@ func TestShortenHome(t *testing.T) {
 		assert.Equal(t, "~/projects", got)
 	})
 
+	t.Run("shortens the home dir itself to a tilde", func(t *testing.T) {
+		mockOs := new(oswrap.MockOs)
+		mockOs.On("UserHomeDir").Return("/home/user", nil)
+
+		got, err := NewHome(mockOs).ShortenHome("/home/user")
+		assert.NoError(t, err)
+		assert.Equal(t, "~", got)
+	})
+
+	t.Run("returns path unchanged for a sibling dir sharing the home dir prefix", func(t *testing.T) {
+		mockOs := new(oswrap.MockOs)
+		mockOs.On("UserHomeDir").Return("/home/user", nil)
+
+		got, err := NewHome(mockOs).ShortenHome("/home/username/projects")
+		assert.NoError(t, err)
+		assert.Equal(t, "/home/username/projects", got)
+	})
+
 	t.Run("returns path unchanged when home dir is not a prefix", func(t *testing.T) {
 		mockOs := new(oswrap.MockOs)
 		mockOs.On("UserHomeDir").Return("/home/user", nil)
