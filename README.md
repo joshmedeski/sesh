@@ -1581,6 +1581,27 @@ I've decided to start over and build a session manager from the ground up. This 
 
 The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
 
+## Alternatives
+
+If you use a terminal or multiplexer other than tmux, these projects bring the sesh workflow to it.
+
+### Herdr
+
+- [herdr-plugin-sesh](https://github.com/fullerzz/herdr-plugin-sesh): sesh-style workspace picker for [Herdr](https://herdr.dev/), with zoxide integration
+
+### Rex
+
+- [resh](https://github.com/CruelAddict/resh): native macOS session manager for [Rex](https://www.superlogical.com/rex), inspired by sesh
+- [sex](https://github.com/rtuszik/sex): session manager for Rex, built on sesh
+
+### WezTerm
+
+- [smart_workspace_switcher.wezterm](https://github.com/MLFlexer/smart_workspace_switcher.wezterm): smart workspace switcher for [WezTerm](https://wezterm.org/), inspired by sesh's predecessor, the "t" script
+
+### Zellij
+
+- [noren](https://github.com/MaySeikatsu/noren): sesh-style session manager for [Zellij](https://zellij.dev), with zoxide and fzf integration
+
 ## StarMapper
 
 <a href="https://starmapper.bruniaux.com/joshmedeski/sesh?utm_source=map-embed&utm_medium=readme&utm_campaign=stargazer-map">

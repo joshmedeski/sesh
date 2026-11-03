@@ -1532,6 +1532,27 @@ Sesh 是我广受欢迎的 [t-smart-tmux-session-manager](https://github.com/jos
 
 第一步是构建一个可以与 tmux 交互的 CLI，并作为我以前的 tmux 插件的直接替代品。一旦完成，我将扩展它以支持其他终端多路复用器。
 
+## 替代方案
+
+如果您使用 tmux 以外的终端或多路复用器，这些项目可以将 sesh 的工作流带到其中。
+
+### Herdr
+
+- [herdr-plugin-sesh](https://github.com/fullerzz/herdr-plugin-sesh)：适用于 [Herdr](https://herdr.dev/) 的 sesh 风格工作区选择器，集成了 zoxide
+
+### Rex
+
+- [resh](https://github.com/CruelAddict/resh)：受 sesh 启发的 [Rex](https://www.superlogical.com/rex) 原生 macOS 会话管理器
+- [sex](https://github.com/rtuszik/sex)：基于 sesh 构建的 Rex 会话管理器
+
+### WezTerm
+
+- [smart_workspace_switcher.wezterm](https://github.com/MLFlexer/smart_workspace_switcher.wezterm)：适用于 [WezTerm](https://wezterm.org/) 的智能工作区切换器，灵感来自 sesh 的前身“t”脚本
+
+### Zellij
+
+- [noren](https://github.com/MaySeikatsu/noren)：适用于 [Zellij](https://zellij.dev) 的 sesh 风格会话管理器，集成了 zoxide 和 fzf
+
 ## StarMapper
 
 <a href="https://starmapper.bruniaux.com/joshmedeski/sesh?utm_source=map-embed&utm_medium=readme&utm_campaign=stargazer-map">
