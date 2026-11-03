@@ -1,6 +1,7 @@
 package home
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -26,7 +27,12 @@ func (p *RealHome) ShortenHome(path string) (string, error) {
 	}
 
 	if strings.HasPrefix(path, home) {
-		return strings.Replace(path, home, "~", 1), nil
+		// Only shorten when the home dir ends at a path boundary, so that a sibling
+		// like /home/username is not turned into ~name when home is /home/user.
+		rest := path[len(home):]
+		if rest == "" || rest[0] == '/' || rest[0] == filepath.Separator {
+			return "~" + rest, nil
+		}
 	}
 
 	return path, nil
