@@ -151,6 +151,13 @@ func aliasAutoConnectDelay(configured string) time.Duration {
 	return d
 }
 
+func worktreeResolver(config model.Config, h home.Home, issues *cache.Namespace[github.Issue]) WorktreeFunc {
+	if !config.TUI.ShowWorktreeTitles {
+		return nil
+	}
+	return lister.WorktreeResolver(config, h, issues)
+}
+
 // previewWidth resolves the percent of the terminal guaranteed to the preview
 // pane, clamping rather than failing the picker on an out-of-range value (the
 // JSON schema flags those in the editor, but nothing rejects them at load).
@@ -288,7 +295,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
 		DisableAliasAutoConnect: disableAliasAutoConnect,
 		Icon:                    lister.IconResolver(p.config, p.home, p.wildcards),
-		Worktree:                lister.WorktreeResolver(p.config, p.home, p.issues),
+		Worktree:                worktreeResolver(p.config, p.home, p.issues),
 		IconWidth:               iconColWidth(p.config),
 		Glyphs:                  glyphs,
 		Preview:                 preview,
