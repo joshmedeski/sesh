@@ -67,6 +67,7 @@ type (
 		TmuxCommand             string                `toml:"tmux_command"`
 		Terminal                string                `toml:"terminal"`
 		Browser                 BrowserConfig         `toml:"browser"`
+		URL                     URLConfig             `toml:"url"`
 		Frecency                FrecencyConfig        `toml:"frecency"`
 		TUI                     TUIConfig             `toml:"tui"`
 		Icons                   map[string]SourceIcon `toml:"icons"`
@@ -242,6 +243,12 @@ type (
 		StartupCommand string `toml:"startup_command"` // runs when connecting to a worktree that already existed
 		CreateCommand  string `toml:"create_command"`  // runs instead, on the connect that creates the worktree
 		Icon           string `toml:"icon"`
+	}
+
+	URLConfig struct {
+		History        int    `toml:"history"`
+		ExtraFilter    string `toml:"extra_filter"`
+		PreviewCommand string `toml:"preview_command"`
 	}
 
 	// BrowserConfig configures reading the active browser tab's URL so

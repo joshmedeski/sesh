@@ -1,6 +1,7 @@
 package tmux
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/model"
@@ -33,6 +34,8 @@ type Tmux interface {
 	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
+	CaptureCurrentPane(history int) (string, error)
+	CurrentPanePath() (string, error)
 	NextWindowInSession(targetSession string) (string, error)
 	SelectWindow(targetWindow string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
@@ -91,4 +94,16 @@ func (t *RealTmux) IsAttached() bool {
 
 func (t *RealTmux) SwitchClientTarget(client string, targetSession string) (string, error) {
 	return t.shell.Cmd(t.bin, "switch-client", "-c", client, "-t", sessionTarget(targetSession))
+}
+
+func (t *RealTmux) CaptureCurrentPane(history int) (string, error) {
+	args := []string{"capture-pane", "-J", "-p"}
+	if history > 0 {
+		args = append(args, "-S", "-"+strconv.Itoa(history))
+	}
+	return t.shell.Cmd(t.bin, args...)
+}
+
+func (t *RealTmux) CurrentPanePath() (string, error) {
+	return t.shell.Cmd(t.bin, "display-message", "-p", "#{pane_current_path}")
 }

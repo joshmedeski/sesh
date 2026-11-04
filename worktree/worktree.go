@@ -27,6 +27,9 @@ type Worktree interface {
 	// BrowseURL returns the GitHub URL for the worktree containing
 	// sessionPath: its issue, or with pr the pull request for its branch.
 	BrowseURL(sessionPath string, pr bool) (string, error)
+	// RepoAt returns the GitHub repo of the [[worktree]] block whose root
+	// contains path.
+	RepoAt(path string) (string, bool)
 }
 
 type RealWorktree struct {
@@ -190,7 +193,7 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeConnectOpts) (model
 	if !ok {
 		return opts, fmt.Errorf("browser tab lookup unavailable: set [browser].application (macOS only)")
 	}
-	repo, number, isPR, ok := parseGitHubRef(url)
+	repo, number, isPR, ok := ParseGitHubRef(url)
 	if !ok {
 		return opts, fmt.Errorf("could not parse a GitHub issue/PR from browser URL %q", url)
 	}
@@ -453,9 +456,9 @@ func firstIssueRef(text string) int {
 // query, and fragment.
 var githubRefRe = regexp.MustCompile(`(?:^|https?://)(?:www\.)?github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
 
-// parseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
+// ParseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
 // ok is false for any URL that is not a recognizable issue/PR reference.
-func parseGitHubRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
+func ParseGitHubRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
 	m := githubRefRe.FindStringSubmatch(rawURL)
 	if len(m) < 4 {
 		return "", 0, false, false
@@ -487,4 +490,9 @@ func renderBranch(cfg model.WorktreeConfig, key int) string {
 		tmpl = "{number}"
 	}
 	return strings.ReplaceAll(tmpl, "{number}", strconv.Itoa(key))
+}
+
+func (w *RealWorktree) RepoAt(path string) (string, bool) {
+	cfg, _, _, ok := w.worktreeAt(path)
+	return cfg.Repo, ok && cfg.Repo != ""
 }

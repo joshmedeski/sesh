@@ -688,6 +688,35 @@ keeps its plain name), and it self-heals: switching to a branch without an issue
 renames the session back to its base name. Reconnecting to the directory
 reattaches to the enriched session rather than creating a duplicate.
 
+### Open URLs from the pane
+
+`sesh url` lists every link in the current tmux pane in a picker and opens the
+ones you choose in the browser. Enter opens the highlighted URL; tab marks
+several to open at once. The preview pane shows GitHub issues and PRs (title,
+state and body) and other pages as markdown via
+[defuddle](https://github.com/kepano/defuddle) when it's on your `PATH`.
+
+Besides `http(s)`, `ftp` and `file` URLs it picks up bare `www.` domains, IP
+addresses, `git@` remotes, quoted `"org/repo"` strings, JS/TS `import` package
+names, and `#1234`, which links to an issue in the session's `[[worktree]]` repo
+or else the GitHub `origin` of the pane's directory.
+
+Bind it to a popup in your `tmux.conf`:
+
+```sh
+bind -N "open URLs from the pane (via sesh)" u display-popup -E -w 80% -h 80% "sesh url"
+```
+
+`--history <lines>` also searches that much scrollback. Set defaults in
+`sesh.toml`:
+
+```toml
+[url]
+history = 2000
+extra_filter = "grep -oE 'JIRA-[0-9]+' | sed 's#^#https://jira.example.com/browse/#'"
+preview_command = "defuddle parse {url} --markdown"
+```
+
 ### Connect to root
 
 While working in a nested session, you may way to connect to the root session of a git worktree or git repository. To do this, you can use the `--root` flag with the `sesh connect` command.

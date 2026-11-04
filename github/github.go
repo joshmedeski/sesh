@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/shell"
@@ -57,6 +58,8 @@ type Github interface {
 	// resolved nor were confirmed absent (a rate limit, say) appear in
 	// neither result and should simply be retried later.
 	Issues(repo string, numbers []int) (found map[int]Issue, missing []int, err error)
+	// IssueDetail returns the title, state and body of an issue or pull request.
+	IssueDetail(repo string, number int) (IssueDetail, error)
 }
 
 type RealGithub struct {
@@ -176,4 +179,35 @@ func (g *RealGithub) Issue(path string) (Issue, bool, error) {
 		return Issue{}, false, nil
 	}
 	return issue, true, nil
+}
+
+// IssueDetail is an issue or pull request as the URL picker previews it.
+type IssueDetail struct {
+	Title string
+	State string
+	Body  string
+	IsPR  bool
+}
+
+func (g *RealGithub) IssueDetail(repo string, number int) (IssueDetail, error) {
+	out, err := g.shell.Cmd("gh", "api", "repos/"+repo+"/issues/"+strconv.Itoa(number))
+	if err != nil {
+		return IssueDetail{}, err
+	}
+	var raw struct {
+		Title       string `json:"title"`
+		State       string `json:"state"`
+		Body        string `json:"body"`
+		PullRequest *struct {
+			MergedAt *string `json:"merged_at"`
+		} `json:"pull_request"`
+	}
+	if err := json.Unmarshal([]byte(out), &raw); err != nil {
+		return IssueDetail{}, err
+	}
+	detail := IssueDetail{Title: raw.Title, State: strings.ToUpper(raw.State), Body: raw.Body, IsPR: raw.PullRequest != nil}
+	if detail.IsPR && raw.PullRequest.MergedAt != nil {
+		detail.State = "MERGED"
+	}
+	return detail, nil
 }

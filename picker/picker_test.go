@@ -2288,3 +2288,41 @@ func TestWorktreeTitle_ShownAndFilterable(t *testing.T) {
 	assert.Empty(t, nameMatches)
 	assert.Equal(t, []int{4, 5, 6, 7, 8, 9, 10}, titleMatches)
 }
+
+func TestUpdate_MultiSelect_ReturnsMarkedInListOrder(t *testing.T) {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) { o.MultiSelect = true }))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+	m.height = 30
+
+	tab := tea.KeyPressMsg{Code: tea.KeyTab}
+	m.cursorDown(2)
+	result, _ = m.Update(tab)
+	m = result.(Model)
+	m.cursorUp(3)
+	result, _ = m.Update(tab)
+	m = result.(Model)
+
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	assert.Equal(t, []string{m.allItems[0].name, m.allItems[2].name}, result.(Model).ChosenAll())
+}
+
+func TestUpdate_MultiSelect_FallsBackToHighlighted(t *testing.T) {
+	sessions := testSessions()
+	m := New(testFetchFunc(sessions), testOptionsWith(func(o *Options) { o.MultiSelect = true }))
+	result, _ := m.Update(sessionsLoadedMsg{sessions: sessions})
+	m = result.(Model)
+
+	result, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	assert.Equal(t, []string{"my-project"}, result.(Model).ChosenAll())
+}
+
+func TestMarkdownFormatterRendersAndWraps(t *testing.T) {
+	out := markdownFormatter("dark")("# Title\n\nsome **bold** text that is long enough to wrap past the narrow width", 30)
+	assert.Contains(t, ansi.Strip(out), "Title")
+	assert.NotContains(t, out, "**")
+	for _, line := range strings.Split(out, "\n") {
+		assert.LessOrEqual(t, lipgloss.Width(line), 30)
+	}
+}
