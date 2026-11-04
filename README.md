@@ -693,8 +693,9 @@ reattaches to the enriched session rather than creating a duplicate.
 `sesh url` lists every link in the current tmux pane in a picker and opens the
 ones you choose in the browser. Enter opens the highlighted URL; tab marks
 several to open at once. The preview pane shows GitHub issues and PRs (title,
-state and body) and other pages as markdown via
-[defuddle](https://github.com/kepano/defuddle) when it's on your `PATH`.
+state and body) and other pages as markdown. sesh extracts the main content of
+the page itself; set `preview_command` or install
+[defuddle](https://github.com/kepano/defuddle) to use that instead.
 
 Besides `http(s)`, `ftp` and `file` URLs it picks up bare `www.` domains, IP
 addresses, `git@` remotes, quoted `"org/repo"` strings, JS/TS `import` package

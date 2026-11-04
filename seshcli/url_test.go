@@ -104,15 +104,38 @@ func TestURLPreview(t *testing.T) {
 		assert.Equal(t, "# A", out)
 	})
 
-	t.Run("shows the bare URL when the command fails", func(t *testing.T) {
+	stubFetch := func(t *testing.T, out string, err error) {
+		original := fetchMarkdown
+		fetchMarkdown = func(string) (string, error) { return out, err }
+		t.Cleanup(func() { fetchMarkdown = original })
+	}
+
+	t.Run("fetches the page itself with no command", func(t *testing.T) {
+		stubFetch(t, "# A page", nil)
+		deps, _, _ := newDeps("")
+		out, _ := urlPreview(deps)("https://a.dev")
+		assert.Equal(t, "# A page", out)
+	})
+
+	t.Run("falls back to the built-in fetch when the command fails", func(t *testing.T) {
+		stubFetch(t, "# A page", nil)
 		deps, _, mockShell := newDeps("fetch {url}")
-		mockShell.On("ShellCmd", mock.Anything, mock.Anything).Return("", errors.New("offline"))
+		mockShell.On("ShellCmd", mock.Anything, mock.Anything).Return("", errors.New("no content"))
+		out, _ := urlPreview(deps)("https://a.dev")
+		assert.Equal(t, "# A page", out)
+	})
+
+	t.Run("shows the bare URL when the command and the built-in fetch fail", func(t *testing.T) {
+		stubFetch(t, "", errors.New("offline"))
+		deps, _, mockShell := newDeps("fetch {url}")
+		mockShell.On("ShellCmd", mock.Anything, mock.Anything).Return("", errors.New("no content"))
 		out, err := urlPreview(deps)("https://a.dev")
 		assert.NoError(t, err)
 		assert.Equal(t, "https://a.dev", out)
 	})
 
-	t.Run("shows the bare URL with no command", func(t *testing.T) {
+	t.Run("shows the bare URL when the built-in fetch fails", func(t *testing.T) {
+		stubFetch(t, "", errors.New("offline"))
 		deps, _, _ := newDeps("")
 		out, _ := urlPreview(deps)("https://a.dev")
 		assert.Equal(t, "https://a.dev", out)

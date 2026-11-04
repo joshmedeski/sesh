@@ -17,6 +17,8 @@ import (
 
 const defuddleCommand = "defuddle parse {url} --markdown"
 
+var fetchMarkdown = links.Markdown
+
 func NewURLCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "url",
@@ -141,14 +143,15 @@ func urlPreview(deps *Deps) picker.PreviewFunc {
 			}
 			return url, nil
 		}
-		if command == "" {
-			return url, nil
+		if command != "" {
+			if out, err := deps.Shell.ShellCmd(command, map[string]string{"{url}": url}); err == nil && strings.TrimSpace(out) != "" {
+				return out, nil
+			}
 		}
-		out, err := deps.Shell.ShellCmd(command, map[string]string{"{url}": url})
-		if err != nil || strings.TrimSpace(out) == "" {
-			return url, nil
+		if out, err := fetchMarkdown(url); err == nil && strings.TrimSpace(out) != "" {
+			return out, nil
 		}
-		return out, nil
+		return url, nil
 	}
 }
 

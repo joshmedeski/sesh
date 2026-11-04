@@ -142,7 +142,7 @@
         },
         "preview_command": {
           "type": "string",
-          "description": "Command whose output previews a non-GitHub URL; {url} is replaced with the URL. Default: \"defuddle parse {url} --markdown\" when defuddle is on PATH."
+          "description": "Command whose output previews a non-GitHub URL; {url} is replaced with the URL. Default: \"defuddle parse {url} --markdown\" when defuddle is on PATH, otherwise sesh fetches the page and converts its main content to markdown itself."
         }
       }
     },

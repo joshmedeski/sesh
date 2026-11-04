@@ -687,8 +687,9 @@ set-hook -g session-created 'run-shell -b "sesh rename --enrich"'
 
 `sesh url` 会在选择器中列出当前 tmux 窗格里的所有链接，并在浏览器中打开你选中的链接。
 按 Enter 打开高亮的 URL；按 Tab 可以标记多个一次性打开。预览窗格会显示 GitHub issue
-和 PR（标题、状态和正文），其他页面则在 `PATH` 中有
-[defuddle](https://github.com/kepano/defuddle) 时以 markdown 形式显示。
+和 PR（标题、状态和正文），其他页面则以 markdown 形式显示。
+sesh 会自行提取页面的主要内容；设置 `preview_command` 或安装
+[defuddle](https://github.com/kepano/defuddle) 即可改用它们。
 
 除了 `http(s)`、`ftp` 和 `file` URL，它还能识别裸 `www.` 域名、IP 地址、`git@` 远程地址、
 带引号的 `"org/repo"` 字符串、JS/TS `import` 包名，以及 `#1234`——它会链接到
