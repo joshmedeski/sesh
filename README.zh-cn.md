@@ -691,8 +691,8 @@ set-hook -g session-created 'run-shell -b "sesh rename --enrich"'
 [defuddle](https://github.com/kepano/defuddle) 时以 markdown 形式显示。
 
 除了 `http(s)`、`ftp` 和 `file` URL，它还能识别裸 `www.` 域名、IP 地址、`git@` 远程地址、
-带引号的 `"org/repo"` 字符串、JS/TS `import` 包名，以及 `#1234`——它会链接到会话所属
-`[[worktree]]` 仓库中的 issue，否则链接到窗格所在目录的 GitHub `origin`。
+带引号的 `"org/repo"` 字符串、JS/TS `import` 包名，以及 `#1234`——它会链接到
+`path` 或其 worktree 包含当前会话或窗格的 `[[worktree]]` 仓库中的 issue，否则链接到窗格所在目录的 GitHub `origin`。
 
 在 `tmux.conf` 中将其绑定到弹出窗口：
 

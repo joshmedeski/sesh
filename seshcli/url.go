@@ -24,7 +24,7 @@ func NewURLCommand(base *BaseDeps) *cobra.Command {
 		Long: `List every link in the current tmux pane in a picker and open the chosen ones.
 
 Enter opens the highlighted URL; tab marks several to open at once. A bare #1234
-links to an issue in the session's [[worktree]] repo, or else in the GitHub
+links to an issue in the [[worktree]] repo holding the session or pane, or else the GitHub
 origin of the pane's directory. --history includes that many lines of scrollback.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -85,6 +85,9 @@ func issueRepo(deps *Deps) string {
 	panePath, err := deps.Tmux.CurrentPanePath()
 	if err != nil {
 		return ""
+	}
+	if repo, ok := deps.Worktree.RepoAt(panePath); ok {
+		return repo
 	}
 	origin, err := deps.Git.OriginURL(panePath)
 	if err != nil {

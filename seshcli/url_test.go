@@ -49,6 +49,17 @@ func TestIssueRepo(t *testing.T) {
 		assert.Equal(t, "joshmedeski/sesh", issueRepo(&Deps{Tmux: mockTmux, Worktree: mockWorktree}))
 	})
 
+	t.Run("uses the pane's worktree repo", func(t *testing.T) {
+		mockTmux := new(tmux.MockTmux)
+		mockWorktree := new(worktree.MockWorktree)
+		mockTmux.On("FocusedSessionPath").Return("/code", nil)
+		mockWorktree.On("RepoAt", "/code").Return("", false)
+		mockTmux.On("CurrentPanePath").Return("/repo", nil)
+		mockWorktree.On("RepoAt", "/repo").Return("joshmedeski/sesh", true)
+
+		assert.Equal(t, "joshmedeski/sesh", issueRepo(&Deps{Tmux: mockTmux, Worktree: mockWorktree}))
+	})
+
 	t.Run("falls back to the pane's GitHub origin", func(t *testing.T) {
 		mockTmux := new(tmux.MockTmux)
 		mockWorktree := new(worktree.MockWorktree)
@@ -56,6 +67,7 @@ func TestIssueRepo(t *testing.T) {
 		mockTmux.On("FocusedSessionPath").Return("/code", nil)
 		mockWorktree.On("RepoAt", "/code").Return("", false)
 		mockTmux.On("CurrentPanePath").Return("/code/app", nil)
+		mockWorktree.On("RepoAt", "/code/app").Return("", false)
 		mockGit.On("OriginURL", "/code/app").Return("git@github.com:org/app.git", nil)
 
 		deps := &Deps{BaseDeps: BaseDeps{Git: mockGit}, Tmux: mockTmux, Worktree: mockWorktree}

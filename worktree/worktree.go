@@ -27,8 +27,8 @@ type Worktree interface {
 	// BrowseURL returns the GitHub URL for the worktree containing
 	// sessionPath: its issue, or with pr the pull request for its branch.
 	BrowseURL(sessionPath string, pr bool) (string, error)
-	// RepoAt returns the GitHub repo of the [[worktree]] block whose root
-	// contains path.
+	// RepoAt returns the GitHub repo of the [[worktree]] block whose path or
+	// worktree root contains path.
 	RepoAt(path string) (string, bool)
 }
 
@@ -493,6 +493,18 @@ func renderBranch(cfg model.WorktreeConfig, key int) string {
 }
 
 func (w *RealWorktree) RepoAt(path string) (string, bool) {
-	cfg, _, _, ok := w.worktreeAt(path)
-	return cfg.Repo, ok && cfg.Repo != ""
+	path = w.resolveSymlinks(path)
+	for _, cfg := range w.config.WorktreeConfigs {
+		repoPath, err := w.home.ExpandPath(cfg.Path)
+		if err != nil || cfg.Repo == "" {
+			continue
+		}
+		for _, root := range []string{repoPath, w.worktreeRoot(cfg, repoPath)} {
+			rel, err := w.path.Rel(w.resolveSymlinks(root), path)
+			if err == nil && !strings.HasPrefix(rel, "..") {
+				return cfg.Repo, true
+			}
+		}
+	}
+	return "", false
 }

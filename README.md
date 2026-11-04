@@ -698,8 +698,9 @@ state and body) and other pages as markdown via
 
 Besides `http(s)`, `ftp` and `file` URLs it picks up bare `www.` domains, IP
 addresses, `git@` remotes, quoted `"org/repo"` strings, JS/TS `import` package
-names, and `#1234`, which links to an issue in the session's `[[worktree]]` repo
-or else the GitHub `origin` of the pane's directory.
+names, and `#1234`, which links to an issue in the `[[worktree]]` repo whose
+`path` or worktrees hold the session or pane, or else the GitHub `origin` of the
+pane's directory.
 
 Bind it to a popup in your `tmux.conf`:
 
