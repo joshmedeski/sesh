@@ -11,10 +11,18 @@ import (
 // sessionTarget adds a trailing colon so tmux reads a dotted name as a session, not a pane
 // an existing colon already marks a window or pane target, so that target stays unchanged
 func sessionTarget(name string) string {
-	if strings.Contains(name, ":") {
+	if strings.Contains(name, ":") || isPaneID(name) {
 		return name
 	}
 	return name + ":"
+}
+
+func isPaneID(name string) bool {
+	id, ok := strings.CutPrefix(name, "%")
+	if !ok || id == "" {
+		return false
+	}
+	return strings.Trim(id, "0123456789") == ""
 }
 
 func escapeFormat(s string) string {
@@ -28,16 +36,20 @@ type Tmux interface {
 	ListAllWindows() (map[string][]model.TmuxWindow, error)
 	NewSession(sessionName string, startDir string) (string, error)
 	NewWindowInSession(opts model.TmuxWindowOpts) (string, error)
+	NewPaneInWindow(opts model.TmuxPaneOpts) (string, error)
 	IsAttached() bool
-	AttachSession(targetSession string) (string, error)
+	AttachSession(targetSession string, message string) (string, error)
 	SendKeys(name string, command string) (string, error)
 	SwitchClient(targetSession string) (string, error)
 	CapturePane(targetSession string) (string, error)
 	NextWindowInSession(targetSession string) (string, error)
 	SelectWindow(targetWindow string) (string, error)
+	SelectLayout(targetWindow string, layout string) (string, error)
 	SwitchOrAttach(name string, opts model.ConnectOpts) (string, error)
 	ListTmuxPanes() ([]*model.TmuxPane, error)
 	SelectPane(windowIndex int, paneIndex int) (string, error)
+	SelectPaneByID(paneID string) (string, error)
+	ZoomPane(target string) (string, error)
 	GetCurrentSession() (string, error)
 	ListClients() ([]model.TmuxClient, error)
 	ResolveClient() string
@@ -45,6 +57,7 @@ type Tmux interface {
 	SwitchClientTarget(client string, targetSession string) (string, error)
 	RenameSession(target string, newName string) (string, error)
 	KillSession(target string) (string, error)
+	DisplayMessage(message string) (string, error)
 }
 
 type RealTmux struct {
@@ -60,9 +73,13 @@ func NewTmux(os oswrap.Os, shell shell.Shell, bin string) Tmux {
 	return &RealTmux{os, shell, bin}
 }
 
-func (t *RealTmux) AttachSession(targetSession string) (string, error) {
+func (t *RealTmux) AttachSession(targetSession string, message string) (string, error) {
+	args := []string{"attach-session", "-t", sessionTarget(targetSession)}
+	if message != "" {
+		args = append(append(args, ";"), displayMessageArgs(message)...)
+	}
 	// Using t.shell.Cmd() here (capturing stdout/stderr in buffers) would block psmux on Windows.
-	return t.shell.CmdWithOutput(t.bin, "attach-session", "-t", sessionTarget(targetSession))
+	return t.shell.CmdWithOutput(t.bin, args...)
 }
 
 func (t *RealTmux) SwitchClient(targetSession string) (string, error) {

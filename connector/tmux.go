@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -20,7 +21,16 @@ func tmuxStrategy(c *RealConnector, name string) (model.Connection, error) {
 	}, nil
 }
 
+func startupErrorMessage(err error) string {
+	return "sesh: " + err.Error()
+}
+
+func (c *RealConnector) showStartupError(err error) {
+	_, _ = c.tmux.DisplayMessage(startupErrorMessage(err))
+}
+
 func connectToTmux(c *RealConnector, connection model.Connection, opts model.ConnectOpts) (string, error) {
+	var startupErr error
 	if connection.New {
 		// Everything below assumes the session now exists, so a failure here
 		// makes the rest meaningless — and it is how "tmux isn't on the PATH"
@@ -31,14 +41,24 @@ func connectToTmux(c *RealConnector, connection model.Connection, opts model.Con
 		if opts.Command != "" {
 			_, _ = c.tmux.SendKeys(connection.Session.Name+":", opts.Command)
 		} else {
-			_, _ = c.startup.Exec(connection.Session)
+			_, startupErr = c.startup.Exec(connection.Session)
 		}
 	}
 
 	if opts.Background {
+		if startupErr != nil {
+			return connection.Session.Name, fmt.Errorf("session %s startup failed: %w", connection.Session.Name, startupErr)
+		}
 		return connection.Session.Name, nil
 	}
-	return c.focusSession(connection.Session.Name, opts.Switch)
+	if startupErr == nil {
+		return c.focusSession(connection.Session.Name, opts.Switch, "")
+	}
+	message, err := c.focusSession(connection.Session.Name, opts.Switch, startupErrorMessage(startupErr))
+	if err != nil {
+		return message, errors.Join(err, startupErr)
+	}
+	return message, fmt.Errorf("session %s startup failed: %w", connection.Session.Name, startupErr)
 }
 
 func (c *RealConnector) connectDetached(sessionName string) (string, error) {

@@ -62,7 +62,7 @@ func (c *RealConnector) ConnectWindow(opts model.WindowConnectOpts) (string, err
 		return target, nil
 	}
 	// new-window already made it the session's active window.
-	if _, err := c.focusSession(session.Name, opts.Switch); err != nil {
+	if _, err := c.focusSession(session.Name, opts.Switch, ""); err != nil {
 		return "", err
 	}
 	return target, nil
@@ -83,7 +83,7 @@ func (c *RealConnector) reuseWindow(sessionName string, target string, opts mode
 	if _, err := c.tmux.SelectWindow(target); err != nil {
 		return "", fmt.Errorf("failed to select window '%s': %w", target, err)
 	}
-	if _, err := c.focusSession(sessionName, opts.Switch); err != nil {
+	if _, err := c.focusSession(sessionName, opts.Switch, ""); err != nil {
 		return "", err
 	}
 	return target, nil
