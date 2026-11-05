@@ -166,12 +166,12 @@ wrong when it's a background step.
 | Situation | Flag |
 |---|---|
 | The user asked for this and wants to land there | *(default)* |
-| Background work; leave them where they are | `-b` (windows), `--background` (worktrees) |
+| Background work; leave them where they are | `-b` (connect, mkdir, clone, windows), `--background` (worktrees) |
 | Triggered from outside tmux — hotkey, script, another app | `-s` |
 
 `-b` / `--background` creates the window without selecting it or moving the client. Prefer it for
-anything the user didn't explicitly ask to be taken to. `sesh connect` has no `-b`; a window
-connect with `-t` is the way to set something up without moving. `sesh worktree connect` takes
+anything the user didn't explicitly ask to be taken to. `sesh connect -b`, `sesh mkdir -b`, and
+`sesh clone -b` create the session and print its name. `sesh worktree connect` takes
 `--background` (its `-b` is `--browser`).
 
 ## Finding the right target
