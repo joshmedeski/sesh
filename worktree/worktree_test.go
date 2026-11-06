@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/browser"
+	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
@@ -43,6 +44,7 @@ func TestConnectIssueWithRepoOverride(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -68,7 +70,7 @@ func TestConnectIssueWithRepoOverride(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -79,6 +81,7 @@ func TestConnectOwnPrWithClosingIssue(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -101,7 +104,7 @@ func TestConnectOwnPrWithClosingIssue(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/42-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -112,6 +115,7 @@ func TestConnectForeignPrDetachCheckout(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -135,7 +139,7 @@ func TestConnectForeignPrDetachCheckout(t *testing.T) {
 	mGh.EXPECT().PrCheckout(wPath, "nutiliti/nutiliti", 200).Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -146,6 +150,7 @@ func TestConnectResolvesConfigFromCwd(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -174,7 +179,7 @@ func TestConnectResolvesConfigFromCwd(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Switch: true})
 	require.NoError(t, err)
 }
@@ -185,6 +190,7 @@ func TestConnectOwnPrFirstIssueRefFallback(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -207,7 +213,7 @@ func TestConnectOwnPrFirstIssueRefFallback(t *testing.T) {
 	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/7-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 100, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -218,6 +224,7 @@ func TestConnectExistingWorktreeRunsStartupCommand(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -236,7 +243,7 @@ func TestConnectExistingWorktreeRunsStartupCommand(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_setup"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -247,6 +254,7 @@ func TestConnectExistingPrWorktreeRunsStartupCommand(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -269,7 +277,7 @@ func TestConnectExistingPrWorktreeRunsStartupCommand(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_setup"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 200, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -280,6 +288,7 @@ func TestConnectCreateWithoutCreateCommandRunsNothing(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -304,7 +313,7 @@ func TestConnectCreateWithoutCreateCommandRunsNothing(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: ""}).
 		Return("", nil)
 
-	w := NewWorktree(cfg, mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(cfg, mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -315,11 +324,12 @@ func TestConnectNoConfigMatch(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 1, Repo: "unknown/repo"})
 	require.Error(t, err)
 }
@@ -352,7 +362,7 @@ func newJjFixture(t *testing.T, targetExists bool) jjFixture {
 		}
 		return nil, os.ErrNotExist
 	})
-	w := NewWorktree(nuConfig(), git.NewMockGit(t), mJj, mGh, mConn, browser.NewMockBrowser(t),
+	w := NewWorktree(nuConfig(), git.NewMockGit(t), mJj, mGh, mConn, browser.NewMockBrowser(t), clipboard.NewMockClipboard(t),
 		home.NewHome(mOs), mOs, p, testIssueCache(t))
 	return jjFixture{mJj, mGh, mConn, mOs, w}
 }
@@ -414,6 +424,7 @@ func TestConnectWithCommandOpensNewWindow(t *testing.T) {
 		mGh := github.NewMockGithub(t)
 		mConn := connector.NewMockConnector(t)
 		mBrowser := browser.NewMockBrowser(t)
+		mClipboard := clipboard.NewMockClipboard(t)
 		mOs := oswrap.NewMockOs(t)
 		h := home.NewHome(mOs)
 		p := pathwrap.NewPath()
@@ -439,7 +450,7 @@ func TestConnectWithCommandOpensNewWindow(t *testing.T) {
 			}).
 			Return("nutiliti/2345:3", nil)
 
-		w := NewWorktree(nuConfig(), mGit, jj.NewMockJj(t), mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+		w := NewWorktree(nuConfig(), mGit, jj.NewMockJj(t), mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 		_, err := w.Connect(model.WorktreeConnectOpts{
 			Number:     2345,
 			Repo:       "nutiliti/nutiliti",
@@ -455,6 +466,7 @@ func TestConnectBackgroundWithoutCommand(t *testing.T) {
 	mGh := github.NewMockGithub(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -473,7 +485,7 @@ func TestConnectBackgroundWithoutCommand(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Command: "nu_install", Background: true}).
 		Return("nutiliti/2345", nil)
 
-	w := NewWorktree(nuConfig(), mGit, jj.NewMockJj(t), mGh, mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, jj.NewMockJj(t), mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{Number: 2345, Repo: "nutiliti/nutiliti", Background: true})
 	require.NoError(t, err)
 }
