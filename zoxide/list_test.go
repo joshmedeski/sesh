@@ -77,4 +77,26 @@ func TestListResults(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual)
 	})
+
+	t.Run("keeps trailing whitespace that is part of the path", func(t *testing.T) {
+		mockShell := new(shell.MockShell)
+		zoxide := NewZoxide(mockShell, model.FrecencyConfig{})
+		mockShell.EXPECT().
+			PrepareCmd("zoxide query --list --score", map[string]string{}).
+			Return([]string{"zoxide", "query", "--list", "--score"}, nil)
+		mockShell.EXPECT().ListCmd("zoxide", "query", "--list", "--score").Return([]string{
+			"   4.0 /Users/joshmedeski/trail ",
+			"   4.0 /Users/joshmedeski/tab\t",
+			"   2.0 /Users/joshmedeski/crlf\r",
+			"  \r",
+		}, nil)
+		expected := []*model.ZoxideResult{
+			{Path: "/Users/joshmedeski/trail ", Score: 4.0},
+			{Path: "/Users/joshmedeski/tab\t", Score: 4.0},
+			{Path: "/Users/joshmedeski/crlf", Score: 2.0},
+		}
+		actual, err := zoxide.ListResults()
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actual)
+	})
 }
