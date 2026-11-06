@@ -1443,9 +1443,11 @@ sesh worktree connect 2345 --pr                  # force the pull-request path
 sesh worktree connect 2345 --switch              # switch (not attach) — for invocation outside tmux
 sesh worktree connect 2345 -c 'claude'          # also run claude in a new window named claude
 sesh worktree connect 2345 --background         # create without attaching or switching the client
+sesh worktree connect https://github.com/nutiliti/nutiliti/issues/2345   # a URL works in place of a number
+sesh worktree connect --clipboard                # read the reference (number or URL) from the clipboard
 ```
 
-Most flags also have a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`, `--command`/`-c`.
+Most flags also have a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`, `--command`/`-c`, `--clipboard`/`-l`.
 
 `--command` runs alongside the session's startup command rather than replacing it: the
 session starts (or is reused) as usual, then the command runs in a newly created window
@@ -1513,6 +1515,25 @@ sesh worktree connect --browser   # or: sesh wt c -b
 
 The URL's `org/repo` is matched against your `[[worktree]]` entries by `repo`. Both
 `/issues/N` and `/pull/N` URLs are supported. macOS only.
+
+On other platforms, you can copy the browser URL and either paste it as positional
+argument or use the `--clipboard` flag.
+
+#### Connecting to a worktree from the clipboard
+
+`--clipboard` (`-l`) reads the issue/PR reference from the system clipboard instead,
+and accepts either a URL or a bare number:
+
+```bash
+sesh worktree connect --clipboard   # or: sesh wt c -l
+```
+
+Like with `--browser`, a URL reference's `org/repo` is matched against your
+`[[worktree]]` entries by `repo`, and `--repo` overrides it.
+
+On Linux, the clipboard is read through Wayland's data-control protocol when available,
+falling back to X11. In a session with neither — a headless server, or tmux over SSH
+with no `DISPLAY` — `--clipboard` fails with an error.
 
 #### Opening a worktree's issue or PR in the browser
 

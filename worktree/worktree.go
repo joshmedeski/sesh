@@ -9,6 +9,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/cache"
+	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/github"
@@ -36,6 +37,7 @@ type RealWorktree struct {
 	github    github.Github
 	connector connector.Connector
 	browser   browser.Browser
+	clipboard clipboard.Clipboard
 	home      home.Home
 	os        oswrap.Os
 	path      pathwrap.Path
@@ -51,12 +53,13 @@ func NewWorktree(
 	gh github.Github,
 	c connector.Connector,
 	b browser.Browser,
+	cb clipboard.Clipboard,
 	h home.Home,
 	os oswrap.Os,
 	p pathwrap.Path,
 	issues *cache.Namespace[github.Issue],
 ) Worktree {
-	return &RealWorktree{config, g, j, gh, c, b, h, os, p, issues}
+	return &RealWorktree{config, g, j, gh, c, b, cb, h, os, p, issues}
 }
 
 // connectPlan captures the decisions derived from gh before touching git.
@@ -69,6 +72,20 @@ type connectPlan struct {
 func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 	if opts.FromBrowser {
 		resolved, err := w.resolveFromBrowser(opts)
+		if err != nil {
+			return "", err
+		}
+		opts = resolved
+
+	} else if opts.FromClipboard {
+		resolved, err := w.resolveFromClipboard(opts)
+		if err != nil {
+			return "", err
+		}
+		opts = resolved
+
+	} else if opts.Ref != "" {
+		resolved, err := w.resolveFromRef(opts)
 		if err != nil {
 			return "", err
 		}
@@ -190,9 +207,29 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeConnectOpts) (model
 	if !ok {
 		return opts, fmt.Errorf("browser tab lookup unavailable: set [browser].application (macOS only)")
 	}
-	repo, number, isPR, ok := parseGitHubRef(url)
+	opts.Ref = url
+	return w.resolveFromRef(opts)
+}
+
+// resolveFromClipboard reads the clipboard and fills Number/Repo/Pr from the
+// GitHub issue/PR it points at.
+func (w *RealWorktree) resolveFromClipboard(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
+	ref, err := w.clipboard.Read()
+	if err != nil {
+		return opts, err
+	}
+	if number, err := strconv.Atoi(ref); err == nil {
+		opts.Number = number
+		return opts, nil
+	}
+	opts.Ref = ref
+	return w.resolveFromRef(opts)
+}
+
+func (w *RealWorktree) resolveFromRef(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
+	repo, number, isPR, ok := parseGitHubRef(opts.Ref)
 	if !ok {
-		return opts, fmt.Errorf("could not parse a GitHub issue/PR from browser URL %q", url)
+		return opts, fmt.Errorf("could not parse a GitHub issue/PR from %q", opts.Ref)
 	}
 	if opts.Repo == "" {
 		opts.Repo = repo

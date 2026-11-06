@@ -1421,9 +1421,11 @@ sesh worktree connect 2345 --pr                  # 强制使用 pull request 路
 sesh worktree connect 2345 --switch              # 切换（而非附加）—— 用于在 tmux 外部调用
 sesh worktree connect 2345 -c 'claude'          # 同时在名为 claude 的新窗口中运行 claude
 sesh worktree connect 2345 --background         # 创建但不附加或切换客户端
+sesh worktree connect https://github.com/nutiliti/nutiliti/issues/2345   # URL 可以代替编号
+sesh worktree connect --clipboard                # 从剪贴板读取引用（编号或 URL）
 ```
 
-大多数标志也有短格式：`--repo`/`-r`、`--pr`/`-p`、`--switch`/`-s`、`--command`/`-c`。
+大多数标志也有短格式：`--repo`/`-r`、`--pr`/`-p`、`--switch`/`-s`、`--command`/`-c`、`--clipboard`/`-l`。
 
 `--command` 与会话的启动命令并存，而不是替换它：会话照常启动（或复用），然后该命令在一个以其程序命名的
 新建窗口中运行，因此再次运行绝不会把输入敲进已在运行的窗口。配合 `--background` 可以连续启动多个
@@ -1479,6 +1481,22 @@ sesh worktree connect --browser   # 或：sesh wt c -b
 
 URL 中的 `org/repo` 会按 `repo` 与您的 `[[worktree]]` 条目匹配。`/issues/N` 和 `/pull/N`
 两种 URL 都受支持。仅限 macOS。
+
+在其他平台上，您可以复制浏览器 URL，然后将其作为位置参数粘贴，或使用 `--clipboard` 标志。
+
+#### 从剪贴板连接到 worktree
+
+`--clipboard`（`-l`）改为从系统剪贴板读取 issue/PR 引用，并接受 URL 或纯编号：
+
+```bash
+sesh worktree connect --clipboard   # 或：sesh wt c -l
+```
+
+与 `--browser` 一样，URL 引用的 `org/repo` 会按 `repo` 与您的 `[[worktree]]` 条目匹配，
+`--repo` 会覆盖它。
+
+在 Linux 上，剪贴板在可用时通过 Wayland 的 data-control 协议读取，否则回退到 X11。
+在两者都不可用的会话中 —— 无头服务器，或没有 `DISPLAY` 的 SSH tmux —— `--clipboard` 会报错。
 
 #### 在浏览器中打开 worktree 的 issue 或 PR
 

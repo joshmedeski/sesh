@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -87,7 +88,7 @@ func newListFixture(t *testing.T, issues *cache.Namespace[github.Issue]) listFix
 
 	w := NewWorktree(
 		nuConfig(), git.NewMockGit(t), jj.NewMockJj(t), mGh, connector.NewMockConnector(t),
-		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), issues,
+		browser.NewMockBrowser(t), clipboard.NewMockClipboard(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), issues,
 	)
 	return listFixture{worktree: w, gh: mGh, os: mOs, issues: issues, created: created}
 }
@@ -431,7 +432,7 @@ func TestList_MissingRepoKeyErrors(t *testing.T) {
 	}).Maybe()
 	w := NewWorktree(
 		config, git.NewMockGit(t), jj.NewMockJj(t), github.NewMockGithub(t), connector.NewMockConnector(t),
-		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), testIssueCache(t),
+		browser.NewMockBrowser(t), clipboard.NewMockClipboard(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), testIssueCache(t),
 	)
 
 	_, err := w.List(model.WorktreeListOpts{Path: "/repo/w"})
