@@ -2,6 +2,7 @@ package model
 
 import (
 	"cmp"
+	"fmt"
 	"path/filepath"
 )
 
@@ -45,6 +46,27 @@ const (
 	// not set.
 	DefaultPreviewBorder = PreviewBorderLine
 )
+
+// Forge selects the git forge backend in a [[worktree]] config.
+type Forge string
+
+const (
+	ForgeGithub  Forge = "github"
+	ForgeGitlab  Forge = "gitlab"
+	DefaultForge       = ForgeGithub
+)
+
+// Normalize returns a valid forge, defaulting to DefaultForge when empty. It
+func (f Forge) Normalize() (Forge, error) {
+	switch f {
+	case "":
+		return DefaultForge, nil
+
+	case ForgeGithub, ForgeGitlab:
+		return f, nil
+	}
+	return "", fmt.Errorf("invalid forge %q (expected %q or %q)", f, ForgeGithub, ForgeGitlab)
+}
 
 type (
 	Config struct {
@@ -246,11 +268,13 @@ type (
 		Icon string `toml:"icon"`
 	}
 
-	// WorktreeConfig maps a GitHub "org/repo" to a local repository so
+	// WorktreeConfig maps a repository to a local repository so
 	// `sesh worktree connect <number>` knows where to add worktrees, how to
 	// name their branches, and what to run on connect.
 	WorktreeConfig struct {
-		Repo           string `toml:"repo"`            // GitHub "org/repo"
+		Repo           string `toml:"repo"`            // GitHub "org/repo", GitLab "group/project", etc.
+		Forge          Forge  `toml:"forge"`           // git forge type ("github" | "gitlab"; default "github")
+		Host           string `toml:"host"`            // custom hosting domain, e.g. "gitlab.example.com"
 		Path           string `toml:"path"`            // local repo root (supports ~)
 		WorktreeDir    string `toml:"worktree_dir"`    // default ".wk"; relative to Path or absolute
 		BranchTemplate string `toml:"branch_template"` // default "{number}"
