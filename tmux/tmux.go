@@ -25,8 +25,8 @@ func isPaneID(name string) bool {
 	return strings.Trim(id, "0123456789") == ""
 }
 
-func escapeFormat(s string) string {
-	return strings.ReplaceAll(s, "#", "##")
+func escapeFormatKeepStyles(s string) string {
+	return strings.NewReplacer("#[", "#[", "#", "##").Replace(s)
 }
 
 type Tmux interface {
@@ -91,7 +91,7 @@ func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
 }
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
-	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", escapeFormat(sessionName), "-c", escapeFormat(startDir))
+	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", escapeFormatKeepStyles(sessionName), "-c", escapeFormatKeepStyles(startDir))
 }
 
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {

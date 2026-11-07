@@ -81,3 +81,25 @@ func TestNewSessionEscapesFormatSequences(t *testing.T) {
 	_, err := tm.NewSession("#(id)", "/tmp/#(touch x)")
 	require.NoError(t, err)
 }
+
+func TestEscapeFormatKeepStyles(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"escapes commands", "#(cmd)", "##(cmd)"},
+		{"escapes format expansions", "#{x}", "##{x}"},
+		{"escapes hashes", "name#", "name##"},
+		{"keeps style codes", "#[fg=red]name", "#[fg=red]name"},
+		{"escapes commands inside styles", "#[#(cmd)]", "#[##(cmd)]"},
+		{"escapes format expansions inside styles", "#[fg=#{x}]", "#[fg=##{x}]"},
+		{"escapes trailing hashes inside styles", "#[fg=#ffffff]", "#[fg=##ffffff]"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, escapeFormatKeepStyles(tt.in))
+		})
+	}
+}
