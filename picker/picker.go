@@ -1,12 +1,17 @@
 package picker
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/glamour/v2"
+	"charm.land/glamour/v2/styles"
+	"charm.land/lipgloss/v2"
 
 	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/github"
@@ -23,6 +28,7 @@ const (
 	defaultPrompt              = "> "
 	defaultPlaceholder         = "Filter sessions..."
 	defaultWorktreePlaceholder = "Filter worktrees..."
+	defaultURLPlaceholder      = "Filter URLs..."
 )
 
 type PickerOptions struct {
@@ -53,6 +59,9 @@ type Picker interface {
 	// PickWorktree picks a worktree by issue number or title. The second return
 	// is false when nothing was chosen — the picker was quit, or had no rows.
 	PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePickerOptions) (model.WorktreeEntry, bool, error)
+	// PickURLs lists urls numbered in order and returns the ones chosen, or nil
+	// when the picker was quit.
+	PickURLs(urls []string, preview PreviewFunc) ([]string, error)
 }
 
 type RealPicker struct {
@@ -395,4 +404,61 @@ func (p *RealPicker) PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePick
 	}
 	entry, picked := pickerModel.Chosen()
 	return entry, picked, nil
+}
+
+func (p *RealPicker) PickURLs(urls []string, preview PreviewFunc) ([]string, error) {
+	sessions := model.SeshSessions{Directory: make(map[string]model.SeshSession, len(urls))}
+	for _, url := range urls {
+		sessions.OrderedIndex = append(sessions.OrderedIndex, url)
+		sessions.Directory[url] = model.SeshSession{Src: "url", Name: url}
+	}
+	fetch := func() (model.SeshSessions, error) { return sessions, nil }
+
+	prompt := cmp.Or(p.config.TUI.Prompt, defaultPrompt)
+	m := New(fetch, Options{
+		Prompt:          prompt,
+		Placeholder:     defaultURLPlaceholder,
+		Pointer:         cmp.Or(p.config.TUI.Pointer, model.DefaultPointer),
+		Preview:         true,
+		PreviewWidth:    previewWidth(p.config.TUI.PreviewWidth),
+		PreviewMinWidth: previewMinWidth(p.config.TUI.PreviewMinWidth),
+		PreviewBorder:   p.config.TUI.PreviewBorder,
+		PreviewFunc:     preview,
+		PreviewFormat:   markdownFormatter(markdownStyle()),
+		MultiSelect:     true,
+		Numbered:        true,
+	})
+	result, err := tea.NewProgram(m).Run()
+	if err != nil {
+		return nil, fmt.Errorf("picker error: %w", err)
+	}
+	pickerModel, ok := result.(Model)
+	if !ok {
+		return nil, errors.New("unexpected model type")
+	}
+	if pickerModel.Quit() {
+		return nil, nil
+	}
+	return pickerModel.ChosenAll(), nil
+}
+
+func markdownStyle() string {
+	if lipgloss.HasDarkBackground(os.Stdin, os.Stdout) {
+		return styles.DarkStyle
+	}
+	return styles.LightStyle
+}
+
+func markdownFormatter(style string) func(string, int) string {
+	return func(content string, width int) string {
+		r, err := glamour.NewTermRenderer(glamour.WithStandardStyle(style), glamour.WithWordWrap(width))
+		if err != nil {
+			return content
+		}
+		out, err := r.Render(content)
+		if err != nil {
+			return content
+		}
+		return out
+	}
 }

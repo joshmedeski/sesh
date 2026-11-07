@@ -683,6 +683,33 @@ set-hook -g session-created 'run-shell -b "sesh rename --enrich"'
 切换到没有 issue 的分支会将会话重命名回其基本名称。重新连接到该目录会附加到已丰富的会话，
 而不是创建重复的会话。
 
+### 打开窗格中的 URL
+
+`sesh url` 会在选择器中列出当前 tmux 窗格里的所有链接，并在浏览器中打开你选中的链接。
+按 Enter 打开高亮的 URL；按 Tab 可以标记多个一次性打开。预览窗格会显示 GitHub issue
+和 PR（标题、状态和正文），其他页面则以 markdown 形式显示。
+sesh 会自行提取页面的主要内容；设置 `preview_command` 或安装
+[defuddle](https://github.com/kepano/defuddle) 即可改用它们。
+
+除了 `http(s)`、`ftp` 和 `file` URL，它还能识别裸 `www.` 域名、IP 地址、`git@` 远程地址、
+带引号的 `"org/repo"` 字符串、JS/TS `import` 包名，以及 `#1234`——它会链接到
+`path` 或其 worktree 包含当前会话或窗格的 `[[worktree]]` 仓库中的 issue，否则链接到窗格所在目录的 GitHub `origin`。
+
+在 `tmux.conf` 中将其绑定到弹出窗口：
+
+```sh
+bind -N "open URLs from the pane (via sesh)" u display-popup -E -w 80% -h 80% "sesh url"
+```
+
+`--history <lines>` 还会搜索相应行数的回滚历史。在 `sesh.toml` 中设置默认值：
+
+```toml
+[url]
+history = 2000
+extra_filter = "grep -oE 'JIRA-[0-9]+' | sed 's#^#https://jira.example.com/browse/#'"
+preview_command = "defuddle parse {url} --markdown"
+```
+
 ### 连接到根目录
 
 在嵌套会话中工作时，您可能希望连接到 git worktree 或 git 存储库的根会话。为此，您可以将 `--root` 标志与 `sesh connect` 命令一起使用。

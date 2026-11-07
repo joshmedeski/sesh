@@ -25,9 +25,9 @@ func TestParseGitHubRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo, number, isPR, ok := parseGitHubRef(tt.url)
+			repo, number, isPR, ok := ParseGitHubRef(tt.url)
 			if ok != tt.ok || repo != tt.repo || number != tt.number || isPR != tt.isPR {
-				t.Fatalf("parseGitHubRef(%q) = (%q, %d, %v, %v); want (%q, %d, %v, %v)",
+				t.Fatalf("ParseGitHubRef(%q) = (%q, %d, %v, %v); want (%q, %d, %v, %v)",
 					tt.url, repo, number, isPR, ok, tt.repo, tt.number, tt.isPR, tt.ok)
 			}
 		})

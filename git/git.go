@@ -24,6 +24,7 @@ type Git interface {
 	Pull(repoPath string) (string, error)
 	CurrentBranch(path string) (bool, string, error)
 	StatusSummary(path string) (StatusSummary, error)
+	OriginURL(path string) (string, error)
 }
 
 type RealGit struct {
@@ -132,4 +133,8 @@ func (g *RealGit) StatusSummary(path string) (StatusSummary, error) {
 		}
 	}
 	return s, nil
+}
+
+func (g *RealGit) OriginURL(path string) (string, error) {
+	return g.shell.Cmd("git", "-C", path, "remote", "get-url", "origin")
 }

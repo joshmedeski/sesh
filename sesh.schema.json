@@ -126,6 +126,26 @@
         }
       }
     },
+    "url": {
+      "type": "object",
+      "description": "Settings for `sesh url`, the picker that opens links from the current tmux pane.",
+      "additionalProperties": false,
+      "properties": {
+        "history": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Lines of scrollback to search besides the visible screen. Default: 0 (visible screen only)."
+        },
+        "extra_filter": {
+          "type": "string",
+          "description": "Shell command that reads the pane on stdin and prints one extra match per line."
+        },
+        "preview_command": {
+          "type": "string",
+          "description": "Command whose output previews a non-GitHub URL; {url} is replaced with the URL. Default: \"defuddle parse {url} --markdown\" when defuddle is on PATH, otherwise sesh fetches the page and converts its main content to markdown itself."
+        }
+      }
+    },
     "frecency": {
       "type": "object",
       "description": "Override the frecency directory-jumping backend commands to use an alternative to zoxide (e.g. fasd, autojump, memy). Empty fields fall back to the zoxide defaults.",
