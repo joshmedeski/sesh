@@ -26,13 +26,8 @@ func (p *RealHome) ShortenHome(path string) (string, error) {
 		return "", err
 	}
 
-	if strings.HasPrefix(path, home) {
-		// Only shorten when the home dir ends at a path boundary, so that a sibling
-		// like /home/username is not turned into ~name when home is /home/user.
-		rest := path[len(home):]
-		if rest == "" || rest[0] == '/' || rest[0] == filepath.Separator {
-			return "~" + rest, nil
-		}
+	if rel, err := filepath.Rel(home, path); err == nil && filepath.IsLocal(rel) {
+		return filepath.Join("~", rel), nil
 	}
 
 	return path, nil

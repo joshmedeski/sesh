@@ -2,6 +2,7 @@ package home
 
 import (
 	"errors"
+	"path/filepath"
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -97,7 +98,7 @@ func TestShortenHome(t *testing.T) {
 
 		got, err := NewHome(mockOs).ShortenHome("/home/user/projects")
 		assert.NoError(t, err)
-		assert.Equal(t, "~/projects", got)
+		assert.Equal(t, filepath.FromSlash("~/projects"), got)
 	})
 
 	t.Run("shortens the home dir itself to a tilde", func(t *testing.T) {
