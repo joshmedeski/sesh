@@ -17,17 +17,8 @@ func sessionTarget(name string) string {
 	return name + ":"
 }
 
-func escapeFormat(s string) string {
-	var b strings.Builder
-	b.Grow(len(s))
-	for i := 0; i < len(s); i++ {
-		if s[i] == '#' && (i+1 >= len(s) || s[i+1] != '[') {
-			b.WriteString("##")
-		} else {
-			b.WriteByte(s[i])
-		}
-	}
-	return b.String()
+func escapeFormatKeepStyles(s string) string {
+	return strings.NewReplacer("#[", "#[", "#", "##").Replace(s)
 }
 
 type Tmux interface {
@@ -83,7 +74,7 @@ func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
 }
 
 func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
-	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", escapeFormat(sessionName), "-c", escapeFormat(startDir))
+	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", escapeFormatKeepStyles(sessionName), "-c", escapeFormatKeepStyles(startDir))
 }
 
 func (t *RealTmux) CapturePane(targetSession string) (string, error) {
