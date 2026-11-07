@@ -1,6 +1,7 @@
 package home
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -25,8 +26,8 @@ func (p *RealHome) ShortenHome(path string) (string, error) {
 		return "", err
 	}
 
-	if strings.HasPrefix(path, home) {
-		return strings.Replace(path, home, "~", 1), nil
+	if rel, err := filepath.Rel(home, path); err == nil && filepath.IsLocal(rel) {
+		return filepath.Join("~", rel), nil
 	}
 
 	return path, nil
