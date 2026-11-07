@@ -596,6 +596,12 @@ sesh mkdir ~/projects/my-app     # 相对于主目录
 sesh mkdir /Users/josh/dev/api   # 绝对路径
 ```
 
+向 `sesh connect`、`sesh mkdir` 或 `sesh clone` 传入 `-b` / `--background`，即可创建会话而不移动客户端；命令会输出会话名，便于脚本继续使用：
+
+```sh
+sesh connect -b ~/c/api -c "npm run dev"
+```
+
 ## gum + tmux
 
 如果您更喜欢使用 [charmbracelet's gum](https://github.com/charmbracelet/gum)，那么您可以使用以下命令连接到会话：

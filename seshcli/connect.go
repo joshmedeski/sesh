@@ -2,6 +2,7 @@ package seshcli
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -34,6 +35,7 @@ func NewConnectCommand(base *BaseDeps) *cobra.Command {
 			command, _ := cmd.Flags().GetString("command")
 			tmuxinator, _ := cmd.Flags().GetBool("tmuxinator")
 			root, _ := cmd.Flags().GetBool("root")
+			background, _ := cmd.Flags().GetBool("background")
 
 			if root {
 				hasRootDir, rootDir := base.Dir.RootDir(name)
@@ -42,11 +44,15 @@ func NewConnectCommand(base *BaseDeps) *cobra.Command {
 				}
 			}
 
-			opts := model.ConnectOpts{Switch: switchFlag, Command: command, Tmuxinator: tmuxinator}
+			opts := model.ConnectOpts{Switch: switchFlag, Command: command, Tmuxinator: tmuxinator, Background: background}
 			trimmedName := deps.Icon.RemoveIcon(name)
-			if _, err := deps.Connector.Connect(trimmedName, opts); err != nil {
+			session, err := deps.Connector.Connect(trimmedName, opts)
+			if err != nil {
 				// TODO: add to logging
 				return err
+			}
+			if background {
+				fmt.Println(session)
 			}
 			// Refresh cache in background so next sesh list has fresh data
 			if deps.CachingLister != nil {
@@ -61,6 +67,7 @@ func NewConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().StringP("command", "c", "", "Execute a command when connecting to a new session. Will be ignored if the session exists.")
 	cmd.Flags().BoolP("tmuxinator", "T", false, "Use tmuxinator to start session if it doesnt exist")
 	cmd.Flags().BoolP("root", "r", false, "Switches to the root of the current session")
+	cmd.Flags().BoolP("background", "b", false, "create without selecting it or moving the client")
 
 	return cmd
 }

@@ -599,6 +599,12 @@ sesh mkdir ~/projects/my-app     # relative to your home directory
 sesh mkdir /Users/josh/dev/api   # absolute path
 ```
 
+Pass `-b` / `--background` to `sesh connect`, `sesh mkdir`, or `sesh clone` to create the session without moving the client; the session name is printed so scripts can chain off it:
+
+```sh
+sesh connect -b ~/c/api -c "npm run dev"
+```
+
 ## gum + tmux
 
 If you prefer to use [charmbracelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
