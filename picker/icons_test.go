@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/oswrap"
@@ -15,6 +16,17 @@ import (
 // nerdGlyph is a nerd font icon (the Go language logo), written as an escape so
 // the source stays readable. It occupies a single cell, like the source glyphs.
 const nerdGlyph = "\ue627"
+
+func forgeResolver(f forge.Forge) forge.Resolver {
+	return forge.NewResolver(
+		func(cfg model.WorktreeConfig) (forge.Forge, error) {
+			return f, nil
+		},
+		func(path string) (forge.Forge, error) {
+			return f, nil
+		},
+	)
+}
 
 func TestIconColWidth(t *testing.T) {
 	assert.Equal(t, 1, iconColWidth(model.Config{}),
@@ -42,10 +54,13 @@ func TestWorktreeResolver_OffByDefault(t *testing.T) {
 		WorktreeConfigs: []model.WorktreeConfig{{Repo: "org/repo", Path: "~/c/repo", WorktreeDir: "w"}},
 	}
 
-	assert.Nil(t, worktreeResolver(config, h, nil))
+	assert.Nil(t, worktreeResolver(config, h, nil, nil))
+
+	mockF := forge.NewMockForge(t)
+	mockF.EXPECT().WorktreeNumber("7").Return(7, false, nil)
 
 	config.TUI.ShowWorktreeTitles = true
-	resolve := worktreeResolver(config, h, nil)
+	resolve := worktreeResolver(config, h, forgeResolver(mockF), nil)
 	require.NotNil(t, resolve)
 	assert.Equal(t, 7, resolve("/home/user/c/repo/w/7").Number)
 }

@@ -489,7 +489,7 @@ sesh list --format '{fg:gray}{source}{/fg} {fg:bright-cyan}{active_window_name}{
 
 活动窗口名称通过一次 tmux 调用实时获取，并且仅在格式使用了活动窗口名称占位符时才会获取。tmux 查询失败只会让这些占位符为空。`--format` 不能与 `--json` 一起使用。
 
-`sesh list --json` 报告连接时实际会使用的内容：每个会话解析后的 `Icon`（与选择器显示的相同）、它的 `Alias`、`AliasAutoConnect` 和 `Tmuxp`、匹配的 `Wildcard` 模式，以及应用了 `[[wildcard]]` 和 `[default_session]` 回退后的 `StartupCommand`、`PreviewCommand`、`WindowNames` 和 `WindowConfigs`。无论是否设置了 `[tui] show_windows`，tmux 会话都包含其实时的 `TmuxWindows`（`Name`、`Index`、`Path`、`Active`）。位于 `[[worktree]]` 根目录下的会话包含 `Worktree`（`Repo`、`Number`、`Title`、`State`），其中 `Title` 和 `State` 读取自 `sesh worktree list` 填充的 issue 缓存；其他会话均为 `null`。
+`sesh list --json` 报告连接时实际会使用的内容：每个会话解析后的 `Icon`（与选择器显示的相同）、它的 `Alias`、`AliasAutoConnect` 和 `Tmuxp`、匹配的 `Wildcard` 模式，以及应用了 `[[wildcard]]` 和 `[default_session]` 回退后的 `StartupCommand`、`PreviewCommand`、`WindowNames` 和 `WindowConfigs`。无论是否设置了 `[tui] show_windows`，tmux 会话都包含其实时的 `TmuxWindows`（`Name`、`Index`、`Path`、`Active`）。位于 `[[worktree]]` 根目录下的会话包含 `Worktree`（`Repo`、`Number`、`Title`、`State`、`Name`、`RefType`），其中 `Title` 和 `State` 读取自 `sesh worktree list` 填充的 issue 缓存。`RefType` 报告 forge 引用类型（`"issue"` 或 `"pull_request"`），而 `Name` 以 forge 特定的形式携带 worktree 目录名：例如，GitLab 合并请求 worktree 报告 `Number: 101`、`Name: "mr-101"` 和 `RefType: "pull_request"`，而名为 `101` 的目录报告 `Name: "101"` 和 `RefType: "issue"`。其他会话均为 `null`。
 
 任意格式化的行只是显示输出，`sesh connect` 不会将其解析回来。使用 fzf 时，请将原始会话名称保留在隐藏字段中，只显示格式化字段：
 

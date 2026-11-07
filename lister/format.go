@@ -78,7 +78,7 @@ func firstActiveWindowNameBySession(windowNames map[string][]string) map[string]
 // fall back from the session to its wildcard to [default_session].
 func (l *RealLister) resolve(sessions model.SeshSessions) model.SeshSessions {
 	resolveIcon := IconResolver(l.config, l.home, l)
-	resolveWorktree := WorktreeResolver(l.config, l.home, l.issues)
+	resolveWorktree := WorktreeResolver(l.config, l.home, l.forges, l.issues)
 	var liveWindows map[string][]model.TmuxWindow
 	if hasTmuxSessions(sessions) {
 		liveWindows, _ = l.tmux.ListAllWindows()
