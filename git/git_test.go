@@ -149,3 +149,38 @@ func TestStatusSummary_Deleted(t *testing.T) {
 	s := statusSummary(t, " D a.go\nD  b.go\n")
 	assert.Equal(t, StatusSummary{Staged: 1, Deleted: 2}, s)
 }
+
+func TestRemoteHost(t *testing.T) {
+	cases := []struct {
+		name    string
+		url     string
+		cmdErr  error
+		wantOK  bool
+		want    string
+		wantErr string
+	}{
+		{"https url", "https://github.com/owner/repo.git", nil, true, "github.com", ""},
+		{"ssh url", "ssh://git@gitlab.com/owner/repo.git", nil, true, "gitlab.com", ""},
+		{"self hosted https", "https://github.example.com/owner/repo.git", nil, true, "github.example.com", ""},
+		{"scp style with user", "git@github.com:owner/repo.git", nil, true, "github.com", ""},
+		{"ssh alias", "git@github.com-work:owner/repo.git", nil, true, "github.com-work", ""},
+		{"scp style without user", "github.com:owner/repo", nil, false, "", ""},
+		{"empty url", "", nil, false, "", ""},
+		{"no remote", "", fmt.Errorf("fatal: no such remote"), false, "", "fatal: no such remote"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			g := NewGit(&fakeShell{out: c.url, err: c.cmdErr})
+
+			ok, host, err := g.RemoteHost("/repo", "origin")
+
+			if c.wantErr != "" {
+				require.EqualError(t, err, c.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, c.wantOK, ok)
+			assert.Equal(t, c.want, host)
+		})
+	}
+}

@@ -72,6 +72,7 @@ func TestFormatSessions(t *testing.T) {
 			new(tmuxinator.MockTmuxinator),
 			formatter.NewFormatter(icon.NewIcon(config)),
 			nil,
+			nil,
 		)
 	}
 
@@ -160,7 +161,7 @@ func TestFormatJsonResolvesSessions(t *testing.T) {
 	mockTmux.On("ListAllWindows").Return(map[string][]model.TmuxWindow{
 		"work": {{Name: "nvim", Index: 1, Active: true}, {Name: "shell", Index: 2}},
 	}, nil).Once()
-	l := NewLister(config, iconTestHome(t), mockTmux, nil, nil, nil, nil)
+	l := NewLister(config, iconTestHome(t), mockTmux, nil, nil, nil, nil, nil)
 	notes, _ := l.FindConfigSession("notes")
 	sessions := model.SeshSessions{
 		OrderedIndex: []string{"config:notes", "zoxide:app", "zoxide:quiet", "zoxide:other", "tmux:work"},

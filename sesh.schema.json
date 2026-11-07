@@ -440,7 +440,17 @@
         "properties": {
           "repo": {
             "type": "string",
-            "description": "GitHub repository as org/repo"
+            "description": "Git repository as org/repo or group/project"
+          },
+          "forge": {
+            "type": "string",
+            "description": "Git forge platform to use for issues and PR/MR management",
+            "enum": ["github", "gitlab"],
+            "default": "github"
+          },
+          "host": {
+            "type": "string",
+            "description": "Custom hosting domain for self-hosted GitLab or GitHub Enterprise instances (e.g. \"gitlab.example.com\")"
           },
           "path": {
             "type": "string",

@@ -6,30 +6,36 @@ import (
 	"io/fs"
 	"log/slog"
 	"sort"
-	"strconv"
 	"time"
 
-	"github.com/joshmedeski/sesh/v2/github"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
 // IssueCacheName and IssueCacheVersion identify the namespace holding fetched
-// issue titles. Bump the version whenever github.Issue changes shape: the new
+// issue titles. Bump the version whenever forge.Issue changes shape: the new
 // version starts from an empty file and refetches, which is always safe because
-// the values are only ever a cache of what GitHub already knows.
+// the values are only ever a cache of what the forge already knows.
 const (
-	IssueCacheName    = "github-issues"
-	IssueCacheVersion = 1
+	IssueCacheName    = "forge-issues"
+	IssueCacheVersion = 2
 
 	// IssueCacheTTL is how long a fetched title is trusted. Titles change
 	// rarely, so this is deliberately long: the cost of a stale title is a
 	// slightly wrong label, while the cost of a short TTL is a network round
 	// trip on a listing the user expects to be instant.
+	// This is reused for PRs as well.
 	IssueCacheTTL = 24 * time.Hour
 	// IssueCacheMissingTTL is shorter because an issue that did not resolve
 	// may simply have been created since, or moved.
+	// This is reused for PRs as well.
 	IssueCacheMissingTTL = time.Hour
 )
+
+type WorktreeNumber struct {
+	Number       int
+	IsExplicitPr bool
+}
 
 // List returns every worktree under the configured root, each paired with its
 // issue title. Titles come from the cache when they are still fresh; anything
@@ -53,23 +59,37 @@ func (w *RealWorktree) List(opts model.WorktreeListOpts) ([]model.WorktreeEntry,
 	}
 	root := w.worktreeRoot(cfg, repoPath)
 
-	numbers, err := w.worktreeNumbers(root)
+	f, err := w.ForgeFromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	numbers, err := w.worktreeNumbers(f, root)
 	if err != nil {
 		return nil, err
 	}
 
-	issues := w.resolveIssues(cfg.Repo, numbers, opts.Refresh)
+	issues, err := w.resolveIssues(cfg, f, numbers, opts.Refresh)
+	if err != nil {
+		return nil, err
+	}
 
 	entries := make([]model.WorktreeEntry, 0, len(numbers))
 	for _, number := range numbers {
-		entry := model.WorktreeEntry{
-			Number: number,
-			Path:   w.path.Join(root, strconv.Itoa(number)),
-			Icon:   cfg.Icon,
+		name := f.WorktreeName(number.Number, number.IsExplicitPr)
+		refType := model.RefTypeIssue
+		if number.IsExplicitPr {
+			refType = model.RefTypePr
 		}
-		if issue, ok := issues[number]; ok {
+		entry := model.WorktreeEntry{
+			Number:  number.Number,
+			RefType: refType,
+			Name:    name,
+			Path:    w.path.Join(root, name),
+			Icon:    cfg.Icon,
+		}
+		if issue, ok := issues[name]; ok {
 			entry.Title = issue.Title
-			entry.State = issue.State
+			entry.State = string(issue.State)
 		}
 		entry.Created = w.createdAt(entry.Path)
 		entries = append(entries, entry)
@@ -78,7 +98,7 @@ func (w *RealWorktree) List(opts model.WorktreeListOpts) ([]model.WorktreeEntry,
 }
 
 // resolveListConfig picks the [[worktree]] block to list. --repo matches on the
-// GitHub name, --path on the resolved worktree root, and neither falls back to
+// repo name, --path on the resolved worktree root, and neither falls back to
 // detecting the repo from the current directory.
 func (w *RealWorktree) resolveListConfig(opts model.WorktreeListOpts) (model.WorktreeConfig, error) {
 	if opts.Repo != "" {
@@ -111,7 +131,7 @@ func (w *RealWorktree) resolveListConfig(opts model.WorktreeListOpts) (model.Wor
 // worktreeNumbers lists the issue numbers that have a worktree directory. Only
 // numerically named directories count — that is the naming Connect creates, and
 // it keeps unrelated files in the root from showing up as entries.
-func (w *RealWorktree) worktreeNumbers(root string) ([]int, error) {
+func (w *RealWorktree) worktreeNumbers(f forge.Forge, root string) ([]*WorktreeNumber, error) {
 	dirEntries, err := w.os.ReadDir(root)
 	if err != nil {
 		// An absent root just means no worktrees have been created yet.
@@ -120,47 +140,65 @@ func (w *RealWorktree) worktreeNumbers(root string) ([]int, error) {
 		}
 		return nil, fmt.Errorf("reading worktree root %q: %w", root, err)
 	}
-
-	var numbers []int
+	var numbers []*WorktreeNumber
 	for _, dirEntry := range dirEntries {
 		if !dirEntry.IsDir() {
 			continue
 		}
-		number, err := strconv.Atoi(dirEntry.Name())
+		number, isExplicitPr, err := f.WorktreeNumber(dirEntry.Name())
 		if err != nil {
 			continue
 		}
-		numbers = append(numbers, number)
+		numbers = append(numbers, &WorktreeNumber{Number: number, IsExplicitPr: isExplicitPr})
 	}
-	sort.Ints(numbers)
+	sort.Slice(numbers, func(i, j int) bool {
+		iIsExplicitPr := numbers[i].IsExplicitPr
+		jIsExplicitPr := numbers[j].IsExplicitPr
+
+		if iIsExplicitPr == jIsExplicitPr {
+			return numbers[i].Number < numbers[j].Number
+		}
+		return !iIsExplicitPr && jIsExplicitPr
+	})
 	return numbers, nil
 }
 
-// resolveIssues returns the issue for each number, reading the cache first and
+// resolveIssues returns the issues and explicit pull requests for given
+// worktree numbers using the provided forge driver, reading the cache first and
 // batching everything stale into one request. Fetch failures are logged and
 // swallowed: a missing title degrades the listing to a bare number, which is
 // far better than failing it outright.
 //
 // refresh counts every number as stale, so the whole listing is refetched and
 // the cache written back over.
-func (w *RealWorktree) resolveIssues(repo string, numbers []int, refresh bool) map[int]github.Issue {
+func (w *RealWorktree) resolveIssues(
+	cfg model.WorktreeConfig,
+	f forge.Forge,
+	numbers []*WorktreeNumber,
+	refresh bool,
+) (map[string]forge.Issue, error) {
 	if len(numbers) == 0 {
-		return nil
+		return nil, nil
 	}
 
+	host, err := forge.Host(cfg)
+	if err != nil {
+		return nil, err
+	}
+	repo := cfg.Repo
 	entries := w.issues.Load()
-	issues := make(map[int]github.Issue, len(numbers))
+	issues := make(map[string]forge.Issue, len(numbers))
 
 	keys := make([]string, 0, len(numbers))
-	byKey := make(map[string]int, len(numbers))
+	byKey := make(map[string]*WorktreeNumber, len(numbers))
 	for _, number := range numbers {
-		key := github.IssueKey(repo, number)
+		key := f.IssueKey(host, repo, number.Number, number.IsExplicitPr)
 		keys = append(keys, key)
 		byKey[key] = number
 		// Stale values are used as-is here; the refetch below overwrites them
 		// when it succeeds, so a rate-limited run still shows real titles.
 		if issue, found, _ := w.issues.Lookup(entries, key); found {
-			issues[number] = issue
+			issues[f.WorktreeName(number.Number, number.IsExplicitPr)] = issue
 		}
 	}
 
@@ -169,34 +207,54 @@ func (w *RealWorktree) resolveIssues(repo string, numbers []int, refresh bool) m
 		staleKeys = w.issues.Stale(entries, keys)
 	}
 	if len(staleKeys) == 0 {
-		return issues
+		return issues, nil
 	}
 
-	staleNumbers := make([]int, 0, len(staleKeys))
+	staleIssueNumbers := make([]int, 0, len(staleKeys))
+	stalePrNumbers := make([]int, 0, len(staleKeys))
 	for _, key := range staleKeys {
-		staleNumbers = append(staleNumbers, byKey[key])
+		number := byKey[key]
+		if number.IsExplicitPr {
+			stalePrNumbers = append(stalePrNumbers, number.Number)
+		} else {
+			staleIssueNumbers = append(staleIssueNumbers, number.Number)
+		}
 	}
 
-	found, missing, err := w.github.Issues(repo, staleNumbers)
+	foundIssues, missingIssues, err := f.Issues(host, repo, staleIssueNumbers)
 	if err != nil {
 		slog.Debug("worktree list: could not fetch issues", "repo", repo, "error", err)
-		return issues
+		return issues, nil
+	}
+	foundPrs, missingPrs, err := f.PrsAsIssues(host, repo, stalePrNumbers)
+	if err != nil {
+		slog.Debug("worktree list: could not fetch pull requests", "repo", repo, "error", err)
+		return issues, nil
 	}
 
-	for number, issue := range found {
-		issues[number] = issue
-		entries.Put(github.IssueKey(repo, number), issue)
+	for number, issue := range foundIssues {
+		issues[f.WorktreeName(number, false)] = issue
+		entries.Put(f.IssueKey(host, repo, number, false), issue)
 	}
-	for _, number := range missing {
+	for _, number := range missingIssues {
 		// Negatively cached so a worktree for a deleted issue stops being
 		// refetched on every listing.
-		entries.PutMissing(github.IssueKey(repo, number))
+		entries.PutMissing(f.IssueKey(host, repo, number, false))
+	}
+	for number, issue := range foundPrs {
+		issues[f.WorktreeName(number, true)] = issue
+		entries.Put(f.IssueKey(host, repo, number, true), issue)
+	}
+	for _, number := range missingPrs {
+		// Negatively cached so a worktree for a deleted pull request stops being
+		// refetched on every listing.
+		entries.PutMissing(f.IssueKey(host, repo, number, true))
 	}
 
 	if err := w.issues.Save(entries); err != nil {
 		slog.Debug("worktree list: could not save issue cache", "error", err)
 	}
-	return issues
+	return issues, nil
 }
 
 func (w *RealWorktree) createdAt(dir string) time.Time {
