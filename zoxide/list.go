@@ -2,6 +2,7 @@ package zoxide
 
 import (
 	"strings"
+	"unicode"
 
 	"github.com/joshmedeski/sesh/v2/convert"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -18,11 +19,14 @@ func (z *RealZoxide) ListResults() ([]*model.ZoxideResult, error) {
 	}
 	results := make([]*model.ZoxideResult, 0, len(list))
 	for _, result := range list {
-		trimmedResult := strings.TrimSpace(result)
-		if trimmedResult == "" {
+		// Trim only the left, where zoxide pads the score to right-align it.
+		// Trailing whitespace belongs to the path. A directory name can end in
+		// a space, and zoxide stores it as is.
+		line := strings.TrimLeftFunc(strings.TrimSuffix(result, "\r"), unicode.IsSpace)
+		if line == "" {
 			continue
 		}
-		results = append(results, parseResult(trimmedResult))
+		results = append(results, parseResult(line))
 	}
 	return results, nil
 }

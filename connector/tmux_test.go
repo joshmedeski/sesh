@@ -99,6 +99,40 @@ func TestConnectToTmuxDetachedSwitchesClientAndFocuses(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestConnectToTmuxDetachedShowsStartupErrorAfterSwitching(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mFocuser := focuser.NewMockFocuser(t)
+	mStartup := startup.NewMockStartup(t)
+	startupErr := errors.New("window foo is not defined in config")
+
+	var calls []string
+	mTmux.EXPECT().NewSession("nutiliti/2345", "/repo/w/2345").Return("", nil)
+	mStartup.EXPECT().Exec(mock.Anything).Return("", startupErr)
+	mTmux.EXPECT().IsAttached().Return(false)
+	mTmux.EXPECT().ListClients().Return([]model.TmuxClient{
+		{Name: "/dev/ttys002", TTY: "/dev/ttys002", SessionID: "$2"},
+	}, nil)
+	mTmux.EXPECT().ResolveClient().Return("/dev/ttys002")
+	mTmux.EXPECT().SwitchClientTarget("/dev/ttys002", "nutiliti/2345").
+		Run(func(string, string) { calls = append(calls, "switch") }).Return("", nil)
+	mFocuser.EXPECT().Activate("wezterm").Return(true, nil)
+	mTmux.EXPECT().DisplayMessage("sesh: window foo is not defined in config").
+		Run(func(string) { calls = append(calls, "message") }).Return("", nil)
+
+	c := NewConnector(
+		model.Config{Terminal: "wezterm"},
+		nil, nil, nil, nil, mStartup, mTmux, nil, nil, mFocuser,
+	).(*RealConnector)
+
+	conn := model.Connection{
+		Found: true, New: true,
+		Session: model.SeshSession{Src: "dir", Name: "nutiliti/2345", Path: "/repo/w/2345"},
+	}
+	_, err := connectToTmux(c, conn, model.ConnectOpts{Switch: true})
+	require.ErrorIs(t, err, startupErr)
+	assert.Equal(t, []string{"switch", "message"}, calls)
+}
+
 func TestConnectToTmuxCommandTargetsSession(t *testing.T) {
 	mTmux := tmux.NewMockTmux(t)
 
@@ -183,4 +217,77 @@ func TestConnectToTmuxBackgroundSkipsFocus(t *testing.T) {
 	name, err := connectToTmux(c, connection, model.ConnectOpts{Background: true})
 	require.NoError(t, err)
 	assert.Equal(t, "myapp", name)
+}
+
+func TestConnectToTmuxBackgroundReturnsStartupErrors(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mStartup := startup.NewMockStartup(t)
+	startupErr := errors.New("window foo is not defined in config")
+
+	session := model.SeshSession{Src: "config", Name: "myapp", Path: "/repo/myapp"}
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mStartup.EXPECT().Exec(session).Return("", startupErr)
+
+	c := NewConnector(
+		model.Config{}, nil, nil, nil, nil, mStartup, mTmux, nil, nil, nil,
+	).(*RealConnector)
+
+	connection := model.Connection{Found: true, New: true, Session: session}
+	name, err := connectToTmux(c, connection, model.ConnectOpts{Background: true})
+	assert.Equal(t, "myapp", name)
+	require.ErrorIs(t, err, startupErr)
+}
+
+func TestConnectToTmuxShowsStartupErrorsAndFails(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mStartup := startup.NewMockStartup(t)
+	startupErr := errors.New("window dev: pane bar is not defined in config")
+
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mStartup.EXPECT().Exec(mock.Anything).Return("", startupErr)
+	mTmux.EXPECT().
+		SwitchOrAttach("myapp", model.ConnectOpts{Message: "sesh: window dev: pane bar is not defined in config"}).
+		Return("switching", nil)
+
+	c := NewConnector(
+		model.Config{}, nil, nil, nil, nil, mStartup, mTmux, nil, nil, nil,
+	).(*RealConnector)
+
+	connection := model.Connection{
+		Found: true, New: true,
+		Session: model.SeshSession{Src: "config", Name: "myapp", Path: "/repo/myapp"},
+	}
+
+	message, err := connectToTmux(c, connection, model.ConnectOpts{})
+
+	assert.Equal(t, "switching", message)
+	require.ErrorContains(t, err, "session myapp startup failed: window dev: pane bar is not defined in config")
+	require.ErrorIs(t, err, startupErr)
+}
+
+func TestConnectToTmuxJoinsFocusAndStartupErrors(t *testing.T) {
+	mTmux := tmux.NewMockTmux(t)
+	mStartup := startup.NewMockStartup(t)
+	startupErr := errors.New("window foo is not defined in config")
+	focusErr := errors.New("attach failed")
+
+	mTmux.EXPECT().NewSession("myapp", "/repo/myapp").Return("", nil)
+	mStartup.EXPECT().Exec(mock.Anything).Return("", startupErr)
+	mTmux.EXPECT().
+		SwitchOrAttach("myapp", model.ConnectOpts{Message: "sesh: window foo is not defined in config"}).
+		Return("", focusErr)
+
+	c := NewConnector(
+		model.Config{}, nil, nil, nil, nil, mStartup, mTmux, nil, nil, nil,
+	).(*RealConnector)
+
+	connection := model.Connection{
+		Found: true, New: true,
+		Session: model.SeshSession{Src: "config", Name: "myapp", Path: "/repo/myapp"},
+	}
+
+	_, err := connectToTmux(c, connection, model.ConnectOpts{})
+
+	require.ErrorIs(t, err, focusErr)
+	require.ErrorIs(t, err, startupErr)
 }

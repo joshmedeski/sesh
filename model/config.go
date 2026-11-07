@@ -56,6 +56,7 @@ type (
 		SessionConfigs          []SessionConfig       `toml:"session"`
 		SortOrder               SortOrder             `toml:"sort_order"`
 		WindowConfigs           []WindowConfig        `toml:"window"`
+		PaneConfigs             []PaneConfig          `toml:"pane"`
 		WildcardConfigs         []WildcardConfig      `toml:"wildcard"`
 		WorktreeConfigs         []WorktreeConfig      `toml:"worktree"`
 		DirLength               int                   `toml:"dir_length"`
@@ -144,6 +145,7 @@ type (
 		Tmuxinator     string   `toml:"tmuxinator"`
 		PreviewCommand string   `toml:"preview_command"`
 		Windows        []string `toml:"windows"`
+		WindowPanes
 	}
 
 	SessionConfig struct {
@@ -170,6 +172,20 @@ type (
 		Name          string `toml:"name"`
 		StartupScript string `toml:"startup_script"`
 		Path          string `toml:"path"`
+		WindowPanes
+	}
+
+	WindowPanes struct {
+		Panes  []string `toml:"panes"`
+		Layout string   `toml:"layout"`
+		Zoom   bool     `toml:"zoom"`
+	}
+
+	PaneConfig struct {
+		Name           string `toml:"name"`
+		StartupCommand string `toml:"startup_command"`
+		Focus          bool   `toml:"focus"`
+		Zoom           bool   `toml:"zoom"`
 	}
 
 	TUIConfig struct {
@@ -209,12 +225,13 @@ type (
 		// pane: "line" (default), "thick", "double", or "none" for no divider.
 		// Empty means unset.
 		PreviewBorder string `toml:"preview_border"`
-		// GroupSeparator draws a faint rule between the sort_order groups in
+		// GroupSeparator draws a gray rule between the sort_order groups in
 		// the picker, so the boundary between live tmux sessions and everywhere
 		// else is visible once a merged group interleaves the sources. Opt-in:
 		// with a flat sort_order every source is its own group, and a rule
 		// between each of them is more lines than most lists want.
-		GroupSeparator bool `toml:"group_separator"`
+		GroupSeparator     bool `toml:"group_separator"`
+		ShowWorktreeTitles bool `toml:"show_worktree_titles"`
 	}
 
 	WildcardConfig struct {
@@ -223,6 +240,7 @@ type (
 		DisableStartCommand bool     `toml:"disable_startup_command"`
 		PreviewCommand      string   `toml:"preview_command"`
 		Windows             []string `toml:"windows"`
+		WindowPanes
 		// Icon replaces the source glyph every session under this pattern gets
 		// in the picker. See SessionConfig.Icon.
 		Icon string `toml:"icon"`

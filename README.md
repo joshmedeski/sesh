@@ -26,7 +26,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 
 - **Smart session creation** - automatically names sessions based on git repo, git remote, or directory
 - **Zoxide integration** - jump to your most-used projects instantly
-- **Session configuration** - define startup commands, windows, and preview commands per project in `sesh.toml`
+- **Session configuration** - define startup commands, windows, panes, and preview commands per project in `sesh.toml`
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
 - **Clone and connect** - clone a git repo and start a session in one step
@@ -918,7 +918,7 @@ exactly as it always has: merging is opt-in.
 
 Once sources are interleaved, the boundary between live tmux sessions and
 everywhere else stops being obvious from position alone. `group_separator` draws
-a faint rule between the `sort_order` groups in the picker:
+a gray rule between the `sort_order` groups in the picker:
 
 ```toml
 [tui]
@@ -978,6 +978,7 @@ placeholder = "Filter sessions... "
 show_icons = false
 show_windows = false
 group_separator = false
+show_worktree_titles = false
 window_name_format = "#{window_name}"
 alias_auto_connect_delay = "150ms"
 alias_filter_prefix = "/"
@@ -1314,6 +1315,57 @@ name = "git"
 startup_script = "git pull"
 ```
 
+#### Panes
+
+A window can be split into panes. Define each pane once with `[[pane]]` and list it by name in a window's `panes`. The window's own pane runs `startup_script` and stays first; the listed panes follow in order, start in the window's path, and run their `startup_command`.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+windows = [ "dev" ]
+
+[[window]]
+name = "dev"
+startup_script = "nvim"
+panes = [ "server", "tests" ]
+layout = "main-vertical"
+
+[[pane]]
+name = "server"
+startup_command = "npm run dev"
+
+[[pane]]
+name = "tests"
+startup_command = "npm test -- --watch"
+focus = true
+```
+
+| Field | Description |
+|-------|-------------|
+| `[[window]]` `panes` | Names of `[[pane]]` entries to split into the window, in order |
+| `[[window]]` `layout` | tmux layout applied to the window: `main-vertical`, `main-horizontal`, `tiled`, `even-horizontal`, `even-vertical`, or a custom layout string |
+| `[[window]]` `zoom` | Zoom the focused pane once the panes are created |
+| `[[pane]]` `name` | Name used in a window's `panes` |
+| `[[pane]]` `startup_command` | Command to run in the pane |
+| `[[pane]]` `focus` | Make this pane active instead of the window's own pane |
+| `[[pane]]` `zoom` | Zoom this pane, which also focuses it |
+
+The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows.
+
+The session's first window takes the same `panes`, `layout`, and `zoom` keys on `[[session]]`, `[[wildcard]]`, or `[default_session]`. Its `startup_command` runs in the window's own pane. The first of `[[session]]`, `[[wildcard]]`, `[default_session]` that sets `panes` or `layout` is used, together with its `zoom`. A session with `disable_startup_command` doesn't inherit the `[default_session]` panes.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+startup_command = "nvim"
+panes = [ "server" ]
+layout = "main-vertical"
+```
+
+If a window, pane, or layout can't be set up, sesh stops there, shows the error in the tmux status line, and `sesh connect` exits non-zero.
+
 ### Wildcard Configuration
 
 Wildcard configs let you define session settings that apply to any directory matching a glob pattern, instead of creating a `[[session]]` entry for each project. This is useful when you have a directory full of projects that should all use the same startup command.
@@ -1344,6 +1396,7 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
+| `panes`, `layout`, `zoom` | Panes for the session's first window — see [Panes](#panes) |
 | `icon` | Icon shown for matching sessions in the picker — see [Custom icons](#custom-icons) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.
@@ -1404,6 +1457,22 @@ PRs it resolves the closing issue (falling back to the first `#N` reference in t
 PR title or body); for others' PRs it creates a detached worktree and runs `gh pr checkout`.
 When invoked outside tmux with `--switch`, `sesh` switches the active tmux client to
 the new session and (on macOS) activates the `terminal` app.
+
+##### Jujutsu (jj) repositories
+
+When `path` contains a `.jj` directory (jj-only or colocated), `sesh worktree` creates
+jj workspaces instead of git worktrees:
+
+- Issues run `jj workspace add --name <number> -r <base_branch>`, then create a bookmark
+  named from `branch_template` on the new working-copy commit. Move it along with
+  `jj bookmark set` as you commit.
+- `base_branch` in git form (`origin/main`) is translated to `main@origin`; a value
+  containing `@` or `(` (`main@origin`, `trunk()`) is used as a revset as-is.
+- Others' PRs fetch the PR branch with `jj git fetch --branch` and add a workspace on
+  it. PRs from forks add a remote named after the fork owner first. Reconnecting
+  fetches again and runs `jj new` on the updated head.
+- `sesh worktree browse --pr` looks up the PR by bookmark name, falling back to the
+  workspace's PR number.
 
 ##### `create_command` vs `startup_command`
 
@@ -1564,6 +1633,27 @@ Sesh is the successor to my popular [t-smart-tmux-session-manager](https://githu
 I've decided to start over and build a session manager from the ground up. This time, I'm using a language that's more suited for the task: Go. Go is a compiled language that's fast, statically typed, and has a great standard library. It's perfect for a project like this. I've also decided to make this session manager multiplexer agnostic. It will be able to work with any terminal multiplexer, including tmux, zellij, Wezterm, and more.
 
 The first step is to build a CLI that can interact with tmux and be a drop-in replacement for my previous tmux plugin. Once that's complete, I'll extend it to support other terminal multiplexers.
+
+## Alternatives
+
+If you use a terminal or multiplexer other than tmux, these projects bring the sesh workflow to it.
+
+### Herdr
+
+- [herdr-plugin-sesh](https://github.com/fullerzz/herdr-plugin-sesh): sesh-style workspace picker for [Herdr](https://herdr.dev/), with zoxide integration
+
+### Rex
+
+- [resh](https://github.com/CruelAddict/resh): native macOS session manager for [Rex](https://www.superlogical.com/rex), inspired by sesh
+- [sex](https://github.com/rtuszik/sex): session manager for Rex, built on sesh
+
+### WezTerm
+
+- [smart_workspace_switcher.wezterm](https://github.com/MLFlexer/smart_workspace_switcher.wezterm): smart workspace switcher for [WezTerm](https://wezterm.org/), inspired by sesh's predecessor, the "t" script
+
+### Zellij
+
+- [noren](https://github.com/MaySeikatsu/noren): sesh-style session manager for [Zellij](https://zellij.dev), with zoxide and fzf integration
 
 ## StarMapper
 

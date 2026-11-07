@@ -234,7 +234,7 @@ func BenchmarkBuildItems(b *testing.B) {
 				}
 				b.ReportAllocs()
 				for b.Loop() {
-					buildItems(sessions, tc.separatorAware, resolveIcon)
+					buildItems(sessions, tc.separatorAware, resolveIcon, nil)
 				}
 			})
 		}

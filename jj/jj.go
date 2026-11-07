@@ -13,6 +13,11 @@ type Jj interface {
 	// workspace belongs to (the same directory for the default workspace)
 	Roots(path string) (isJj bool, workspace string, repo string)
 	Clone(url string, dest string, flags ...string) error
+	Fetch(repo string, flags ...string) (string, error)
+	RemoteAdd(repo, name, url string) (string, error)
+	WorkspaceAdd(repo, name, rev, target string) (string, error)
+	BookmarkCreate(workspace, name, rev string) (string, error)
+	New(workspace, rev string) (string, error)
 }
 
 type RealJj struct {
@@ -54,4 +59,24 @@ func (j *RealJj) Clone(url string, dest string, flags ...string) error {
 	args := append([]string{"git", "clone"}, flags...)
 	_, err := j.shell.CmdWithOutput("jj", append(args, url, dest)...)
 	return err
+}
+
+func (j *RealJj) Fetch(repo string, flags ...string) (string, error) {
+	return j.shell.CmdWithOutput("jj", append([]string{"-R", repo, "git", "fetch"}, flags...)...)
+}
+
+func (j *RealJj) RemoteAdd(repo, name, url string) (string, error) {
+	return j.shell.CmdWithOutput("jj", "-R", repo, "git", "remote", "add", name, url)
+}
+
+func (j *RealJj) WorkspaceAdd(repo, name, rev, target string) (string, error) {
+	return j.shell.CmdWithOutput("jj", "-R", repo, "workspace", "add", "--name", name, "-r", rev, target)
+}
+
+func (j *RealJj) BookmarkCreate(workspace, name, rev string) (string, error) {
+	return j.shell.CmdWithOutput("jj", "-R", workspace, "bookmark", "create", name, "-r", rev)
+}
+
+func (j *RealJj) New(workspace, rev string) (string, error) {
+	return j.shell.CmdWithOutput("jj", "-R", workspace, "new", rev)
 }

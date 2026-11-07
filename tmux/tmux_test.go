@@ -59,6 +59,8 @@ func TestListClientsWithNoClientsAttached(t *testing.T) {
 func TestSessionTarget(t *testing.T) {
 	assert.Equal(t, "example.session:", sessionTarget("example.session"))
 	assert.Equal(t, "second-brain:4", sessionTarget("second-brain:4"))
+	assert.Equal(t, "%12", sessionTarget("%12"))
+	assert.Equal(t, "%dotfiles:", sessionTarget("%dotfiles"))
 }
 
 func TestSwitchClientTarget(t *testing.T) {

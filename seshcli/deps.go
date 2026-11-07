@@ -153,7 +153,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	p := previewer.NewPreviewer(usedLister, t, ic, b.Dir, b.Home, l, config, b.Shell)
 	cl := cloner.NewCloner(c, b.Git, b.Jj)
 	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
-	wt := worktree.NewWorktree(config, b.Git, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
+	wt := worktree.NewWorktree(config, b.Git, b.Jj, b.Github, c, br, b.Home, b.Os, b.Path, issueCache)
 	// Removing an entry from the picker has to be written through to the cache,
 	// or the next launch reads back the directory that was just removed. Nil
 	// when caching is off: the picker refetches every time anyway.
@@ -161,7 +161,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	if cachedLi != nil {
 		refreshCache = func() { cachedLi.RefreshCache(lister.ListOptions{}) }
 	}
-	pk := picker.NewPicker(config, p, b.Home, usedLister, b.Zoxide, t, refreshCache)
+	pk := picker.NewPicker(config, p, b.Home, usedLister, b.Zoxide, t, refreshCache, issueCache)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
 
 	return &Deps{

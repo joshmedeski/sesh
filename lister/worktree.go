@@ -39,7 +39,7 @@ func (r worktreeRoot) number(path string) (int, bool) {
 	return number, err == nil
 }
 
-func worktreeResolver(config model.Config, h home.Home, issues *cache.Namespace[github.Issue]) func(path string) *model.WorktreeInfo {
+func WorktreeResolver(config model.Config, h home.Home, issues *cache.Namespace[github.Issue]) func(path string) *model.WorktreeInfo {
 	roots := worktreeRoots(config, h)
 	if len(roots) == 0 {
 		return nil

@@ -12,6 +12,7 @@ type (
 
 	SeshSessionMap map[string]SeshSession
 	SeshWindowMap  map[string]WindowConfig
+	SeshPaneMap    map[string]PaneConfig
 
 	SeshSession struct {
 		Src  string // The source of the session (config, tmux, zoxide, tmuxinator)

@@ -15,6 +15,11 @@ type PullRequest struct {
 	ClosingIssues []int
 	Title         string
 	Body          string
+	URL           string
+	HeadRefName   string
+	HeadOwner     string
+	HeadRepo      string
+	IsFork        bool
 }
 
 // Issue is the subset of GitHub issue data sesh renders in the status bar.
@@ -37,6 +42,9 @@ type Github interface {
 	// PrURL returns the URL of the pull request for the branch checked out in
 	// dir. found is false (with nil error) when the branch has no PR.
 	PrURL(dir string) (url string, found bool, err error)
+	// PrURLForHead returns the URL of the newest pull request in repo whose
+	// head branch is head, in any state.
+	PrURLForHead(repo string, head string) (url string, found bool, err error)
 	// PrCheckout runs `gh pr checkout` inside dir (a worktree).
 	PrCheckout(dir string, repo string, number int) (string, error)
 	// Issue returns the GitHub issue for the branch checked out at path.
@@ -64,7 +72,7 @@ func (g *RealGithub) PrView(repo string, number int) (PullRequest, bool, error) 
 	out, err := g.shell.Cmd(
 		"gh", "pr", "view", strconv.Itoa(number),
 		"--repo", repo,
-		"--json", "author,closingIssuesReferences,title,body",
+		"--json", "author,closingIssuesReferences,title,body,url,headRefName,headRepository,headRepositoryOwner,isCrossRepository",
 	)
 	if err != nil || out == "" {
 		// Not a PR (or gh reported no such PR); treat as "not found", not an error.
@@ -78,14 +86,32 @@ func (g *RealGithub) PrView(repo string, number int) (PullRequest, bool, error) 
 		ClosingIssuesReferences []struct {
 			Number int `json:"number"`
 		} `json:"closingIssuesReferences"`
-		Title string `json:"title"`
-		Body  string `json:"body"`
+		Title          string `json:"title"`
+		Body           string `json:"body"`
+		URL            string `json:"url"`
+		HeadRefName    string `json:"headRefName"`
+		HeadRepository struct {
+			Name string `json:"name"`
+		} `json:"headRepository"`
+		HeadRepositoryOwner struct {
+			Login string `json:"login"`
+		} `json:"headRepositoryOwner"`
+		IsCrossRepository bool `json:"isCrossRepository"`
 	}
 	if err := json.Unmarshal([]byte(out), &raw); err != nil {
 		return PullRequest{}, false, err
 	}
 
-	pr := PullRequest{Author: raw.Author.Login, Title: raw.Title, Body: raw.Body}
+	pr := PullRequest{
+		Author:      raw.Author.Login,
+		Title:       raw.Title,
+		Body:        raw.Body,
+		URL:         raw.URL,
+		HeadRefName: raw.HeadRefName,
+		HeadOwner:   raw.HeadRepositoryOwner.Login,
+		HeadRepo:    raw.HeadRepository.Name,
+		IsFork:      raw.IsCrossRepository,
+	}
 	for _, ref := range raw.ClosingIssuesReferences {
 		pr.ClosingIssues = append(pr.ClosingIssues, ref.Number)
 	}
@@ -102,6 +128,17 @@ func (g *RealGithub) PrCheckout(dir string, repo string, number int) (string, er
 
 func (g *RealGithub) PrURL(dir string) (string, bool, error) {
 	out, err := g.shell.CmdInDir(dir, "gh", "pr", "view", "--json", "url", "--jq", ".url")
+	if err != nil || out == "" {
+		return "", false, nil
+	}
+	return out, true, nil
+}
+
+func (g *RealGithub) PrURLForHead(repo string, head string) (string, bool, error) {
+	out, err := g.shell.Cmd(
+		"gh", "pr", "list", "--repo", repo, "--head", head,
+		"--state", "all", "--limit", "1", "--json", "url", "--jq", ".[0].url",
+	)
 	if err != nil || out == "" {
 		return "", false, nil
 	}

@@ -10,3 +10,9 @@ type TmuxWindowOpts struct {
 	Command    string
 	Background bool // -d: create the window without making it the active one
 }
+
+type TmuxPaneOpts struct {
+	TargetWindow string
+	TargetPane   string
+	StartDir     string
+}

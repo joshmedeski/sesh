@@ -7,6 +7,7 @@ type ConnectOpts struct {
 	Switch     bool
 	Tmuxinator bool
 	Background bool
+	Message    string
 }
 
 type WorktreeConnectOpts struct {
