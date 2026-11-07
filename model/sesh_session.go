@@ -2,6 +2,16 @@ package model
 
 import "time"
 
+// RefType constants are used to identify the type of worktree reference,
+// meaning whether the worktree number corresponds to an issue or a pull request
+// in a forge's API. For GitHub, "issue" is used for both issues and pull requests,
+// since they share a common numbering scheme. For GitLab, "issue" is used for issues
+// and "pull_request" is used for merge requests.
+const (
+	RefTypeIssue = "issue"
+	RefTypePr    = "pull_request"
+)
+
 type (
 	SeshSessions struct {
 		// catalog of the sessions
@@ -49,10 +59,17 @@ type (
 	}
 
 	WorktreeInfo struct {
-		Repo   string
+		Repo string
+		// Name is the worktree directory name in forge-specific form: e.g.,
+		// "mr-101" for a GitLab merge request, "101" for an issue. It matches
+		// WorktreeEntry.Name, so both listings report the same string.
+		Name   string
 		Number int
-		Title  string
-		State  string
+		// RefType is the forge-specific reference kind: "issue" or "pull_request".
+		// For GitHub, "issue" is used for both issues and PRs.
+		RefType string
+		Title   string
+		State   string
 	}
 
 	SeshSrcs struct {

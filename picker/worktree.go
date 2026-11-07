@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/sahilm/fuzzy"
 
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -78,12 +79,14 @@ type filteredWorktree struct {
 	titleIndexes  []int
 }
 
-// Issue and PR states as GitHub's GraphQL API spells them. A PR also reports
-// MERGED; an issue only ever reports the first two.
+// The states a badge can show, taken from the forge-neutral enum rather than spelled
+// out again: one source of truth means the picker cannot drift from what the forges
+// report. A pull or merge request also reports merged; an issue only ever reports the
+// first two.
 const (
-	stateOpen   = "OPEN"
-	stateClosed = "CLOSED"
-	stateMerged = "MERGED"
+	stateOpen   = string(forge.IssueStateOpen)
+	stateClosed = string(forge.IssueStateClosed)
+	stateMerged = string(forge.IssueStateMerged)
 )
 
 // badgeCellWidth is the width the badge column is padded to: the longest label,
@@ -91,7 +94,7 @@ const (
 // pill never butts up against the title. Padding the column rather than the pill
 // keeps every pill hugging its own text, so the badges read as one column of
 // tags rather than bars of differing length.
-const badgeCellWidth = len("MERGED") + badgeCapWidth*2 + 1
+const badgeCellWidth = len(stateMerged) + badgeCapWidth*2 + 1
 
 // badgeCapWidth is the display width of each end cap, a half circle or the space
 // standing in for one. Taken as a constant rather than measured so a font that
@@ -100,7 +103,7 @@ const badgeCellWidth = len("MERGED") + badgeCapWidth*2 + 1
 const badgeCapWidth = 1
 
 // badgeColor returns the ANSI color a state's badge is filled with, and whether
-// the state is one that gets a badge at all. The coding follows GitHub's own:
+// the state is one that gets a badge at all. The coding follows GitHub's:
 // green for open, purple for merged, red for closed.
 func badgeColor(state string) (lipgloss.ANSIColor, bool) {
 	switch strings.ToUpper(state) {
@@ -156,7 +159,11 @@ func stateBadge(state string, showIcons bool) string {
 func buildWorktreeItems(entries []model.WorktreeEntry) worktreeItems {
 	items := make(worktreeItems, 0, len(entries))
 	for _, entry := range entries {
-		number := strconv.Itoa(entry.Number)
+		// First check for a forge-specific name derived from the issue/PR number.
+		number := entry.Name
+		if number == "" {
+			number = strconv.Itoa(entry.Number)
+		}
 		searchText := number
 		if entry.Title != "" {
 			searchText += " " + entry.Title

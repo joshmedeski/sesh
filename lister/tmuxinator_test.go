@@ -24,7 +24,7 @@ func TestListTmuxinatorConfigs(t *testing.T) {
 			{Name: "dotfiles"},
 		}, nil)
 
-		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil)
+		lister := NewLister(mockConfig, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil, nil)
 
 		realLister, ok := lister.(*RealLister)
 		if !ok {
