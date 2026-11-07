@@ -26,7 +26,16 @@ func isPaneID(name string) bool {
 }
 
 func escapeFormat(s string) string {
-	return strings.ReplaceAll(s, "#", "##")
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i] == '#' && (i+1 >= len(s) || s[i+1] != '[') {
+			b.WriteString("##")
+		} else {
+			b.WriteByte(s[i])
+		}
+	}
+	return b.String()
 }
 
 type Tmux interface {

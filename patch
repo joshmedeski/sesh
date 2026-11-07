@@ -1,0 +1,82 @@
+diff --git a/tmux/new_win.go b/tmux/new_win.go
+index 831bdb9..e86e858 100644
+--- a/tmux/new_win.go
++++ b/tmux/new_win.go
+@@ -15,10 +15,10 @@ const windowTargetFormat = "#{session_name}:#{window_index}"
+ func (t *RealTmux) NewWindowInSession(opts model.TmuxWindowOpts) (string, error) {
+ 	args := []string{"new-window", "-P", "-F", windowTargetFormat}
+ 	if opts.Name != "" {
+-		args = append(args, "-n", escapeFormat(opts.Name))
++		args = append(args, "-n", escapeFormatKeepStyles(opts.Name))
+ 	}
+ 	if opts.StartDir != "" {
+-		args = append(args, "-c", escapeFormat(opts.StartDir))
++		args = append(args, "-c", escapeFormatKeepStyles(opts.StartDir))
+ 	}
+ 	if opts.Background {
+ 		args = append(args, "-d")
+diff --git a/tmux/rename.go b/tmux/rename.go
+index c724f56..4e898af 100644
+--- a/tmux/rename.go
++++ b/tmux/rename.go
+@@ -4,5 +4,5 @@ package tmux
+ // newName may contain spaces (it is passed as a single argv element, so no
+ // shell quoting is required).
+ func (t *RealTmux) RenameSession(target string, newName string) (string, error) {
+-	return t.shell.Cmd(t.bin, "rename-session", "-t", sessionTarget(target), escapeFormat(newName))
++	return t.shell.Cmd(t.bin, "rename-session", "-t", sessionTarget(target), escapeFormatKeepStyles(newName))
+ }
+diff --git a/tmux/tmux.go b/tmux/tmux.go
+index 6cee310..ad9df6e 100644
+--- a/tmux/tmux.go
++++ b/tmux/tmux.go
+@@ -17,8 +17,8 @@ func sessionTarget(name string) string {
+ 	return name + ":"
+ }
+ 
+-func escapeFormat(s string) string {
+-	return strings.ReplaceAll(s, "#", "##")
++func escapeFormatKeepStyles(s string) string {
++	return strings.NewReplacer("#[", "#[", "#", "##").Replace(s)
+ }
+ 
+ type Tmux interface {
+@@ -74,7 +74,7 @@ func (t *RealTmux) SendKeys(targetPane string, keys string) (string, error) {
+ }
+ 
+ func (t *RealTmux) NewSession(sessionName string, startDir string) (string, error) {
+-	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", escapeFormat(sessionName), "-c", escapeFormat(startDir))
++	return t.shell.Cmd(t.bin, "new-session", "-d", "-s", escapeFormatKeepStyles(sessionName), "-c", escapeFormatKeepStyles(startDir))
+ }
+ 
+ func (t *RealTmux) CapturePane(targetSession string) (string, error) {
+diff --git a/tmux/tmux_test.go b/tmux/tmux_test.go
+index 3cea253..2d92b57 100644
+--- a/tmux/tmux_test.go
++++ b/tmux/tmux_test.go
+@@ -79,3 +79,25 @@ func TestNewSessionEscapesFormatSequences(t *testing.T) {
+ 	_, err := tm.NewSession("#(id)", "/tmp/#(touch x)")
+ 	require.NoError(t, err)
+ }
++
++func TestEscapeFormatKeepStyles(t *testing.T) {
++	tests := []struct {
++		name string
++		in   string
++		want string
++	}{
++		{"escapes commands", "#(cmd)", "##(cmd)"},
++		{"escapes format expansions", "#{x}", "##{x}"},
++		{"escapes hashes", "name#", "name##"},
++		{"keeps style codes", "#[fg=red]name", "#[fg=red]name"},
++		{"escapes commands inside styles", "#[#(cmd)]", "#[##(cmd)]"},
++		{"escapes format expansions inside styles", "#[fg=#{x}]", "#[fg=##{x}]"},
++		{"escapes trailing hashes inside styles", "#[fg=#ffffff]", "#[fg=##ffffff]"},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			assert.Equal(t, tt.want, escapeFormatKeepStyles(tt.in))
++		})
++	}
++}
