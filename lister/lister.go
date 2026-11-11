@@ -27,6 +27,22 @@ type Lister interface {
 	Format(sessions model.SeshSessions, opts ListOptions) (model.SeshSessions, error)
 }
 
+// SourceResults holds what individual sources returned, keyed by source name
+// ("tmux", "config", "tmuxinator", "zoxide", "tmux-pane").
+type SourceResults map[string]model.SeshSessions
+
+// SourceLister is a Lister that can fetch sources one by one and assemble a
+// list from sources fetched earlier. A caller that keeps some sources in a
+// cache uses it to list the others live.
+type SourceLister interface {
+	Lister
+	// ListSources fetches the named sources concurrently.
+	ListSources(sources []string) (SourceResults, error)
+	// ListWith is List where every requested source that is a key of fetched
+	// is taken from fetched instead of being fetched.
+	ListWith(opts ListOptions, fetched SourceResults) (model.SeshSessions, error)
+}
+
 type RealLister struct {
 	config     model.Config
 	home       home.Home
@@ -51,7 +67,7 @@ func NewLister(
 	tmuxinator tmuxinator.Tmuxinator,
 	formatter formatter.Formatter,
 	issues *cache.Namespace[github.Issue],
-) Lister {
+) SourceLister {
 	return &RealLister{
 		config:     config,
 		home:       home,

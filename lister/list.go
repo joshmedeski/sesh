@@ -43,7 +43,40 @@ var srcStrategies = map[string]srcStrategy{
 	"tmux-pane":  listTmuxPanes,
 }
 
+// ListSources runs the strategies of the named sources concurrently.
+func (l *RealLister) ListSources(sources []string) (SourceResults, error) {
+	resultsChan := make(chan strategyResult, len(sources))
+	var wg sync.WaitGroup
+	for _, src := range sources {
+		wg.Add(1)
+		go func(s string) {
+			defer wg.Done()
+			sessions, err := srcStrategies[s](l)
+			resultsChan <- strategyResult{source: s, sessions: sessions, err: err}
+		}(src)
+	}
+	wg.Wait()
+	close(resultsChan)
+
+	results := make(SourceResults, len(sources))
+	for res := range resultsChan {
+		if res.err != nil {
+			return nil, res.err
+		}
+		results[res.source] = res.sessions
+	}
+	return results, nil
+}
+
 func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
+	return l.ListWith(opts, nil)
+}
+
+// ListWith lists the sources opts request. A requested source that is a key of
+// fetched is taken from there, even when its result is empty; the others are
+// fetched. Keys of fetched that opts do not request are never read, so a result
+// fetched for one view cannot leak into the ordering of another.
+func (l *RealLister) ListWith(opts ListOptions, fetched SourceResults) (model.SeshSessions, error) {
 	fullDirectory := make(model.SeshSessionMap)
 	fullOrderedIndex := make([]string, 0)
 
@@ -54,40 +87,42 @@ func (l *RealLister) List(opts ListOptions) (model.SeshSessions, error) {
 	srcGroups := groupSources(srcs(opts), sortOrder)
 	srcsOrderedIndex := slices.Concat(srcGroups...)
 
-	resultsChan := make(chan strategyResult, len(srcsOrderedIndex))
-	var wg sync.WaitGroup
+	var missing []string
+	for _, src := range srcsOrderedIndex {
+		if _, ok := fetched[src]; !ok {
+			missing = append(missing, src)
+		}
+	}
 
 	// Window names are display-only and fetched once for all sessions, in
 	// parallel with the source strategies, so they never cost a tmux call per
 	// session.
 	var windowNames map[string][]string
+	var windowsWg sync.WaitGroup
 	if l.config.TUI.ShowWindows && slices.Contains(srcsOrderedIndex, "tmux") {
-		wg.Add(1)
+		windowsWg.Add(1)
 		go func() {
-			defer wg.Done()
+			defer windowsWg.Done()
 			windowNames = tmuxWindowNames(l)
 		}()
 	}
 
-	for _, src := range srcsOrderedIndex {
-		wg.Add(1)
-		go func(s string) {
-			defer wg.Done()
-			sessions, err := srcStrategies[s](l)
-			resultsChan <- strategyResult{source: s, sessions: sessions, err: err}
-		}(src)
+	fetchedNow, err := l.ListSources(missing)
+	// The window name lookup must not outlive the call, whether or not a
+	// source failed.
+	windowsWg.Wait()
+	if err != nil {
+		return model.SeshSessions{}, err
 	}
-
-	wg.Wait()
-	close(resultsChan)
 
 	// Collect results into a map for easy lookup
 	resultsMap := make(map[string]model.SeshSessions)
-	for res := range resultsChan {
-		if res.err != nil {
-			return model.SeshSessions{}, res.err
+	for _, src := range srcsOrderedIndex {
+		if sessions, ok := fetched[src]; ok {
+			resultsMap[src] = sessions
+		} else {
+			resultsMap[src] = fetchedNow[src]
 		}
-		resultsMap[res.source] = res.sessions
 	}
 
 	// The directory is filled first so a merged group can look a session up by

@@ -139,7 +139,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	).WithMissingTTL(worktree.IssueCacheMissingTTL)
 	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator, fm, issueCache)
 
-	usedLister := li
+	var usedLister lister.Lister = li
 	var cachedLi *lister.CachingLister
 	if config.Cache {
 		fc := cache.NewFileCache()
