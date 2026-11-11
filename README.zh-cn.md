@@ -918,37 +918,30 @@ group_separator = true
 > [!WARNING]
 > 此功能为实验性功能，可能无法按预期工作。
 
-Sesh 可以缓存会话列表以加快重复调用。缓存是可选的，默认禁用。启用后，sesh 会将结果存储在 `$XDG_CACHE_HOME/sesh/sessions.gob`（默认为 `~/.cache/sesh/sessions.gob`），并使用 TTL 为 5 秒的 stale-while-revalidate 策略：
+Sesh 可以缓存会话列表以加快重复调用。缓存是可选的，默认禁用。启用后，sesh 会将较慢的数据源（zoxide 和 tmuxinator）的结果存储在 `$XDG_CACHE_HOME/sesh/sessions.v2.gob`（默认为 `~/.cache/sesh/sessions.v2.gob`），并使用 TTL 为 5 秒的 stale-while-revalidate 策略：
 
-- **冷启动**：缓存不存在，获取实时数据并写入缓存
-- **新鲜命中**（5 秒内）：立即返回缓存数据
-- **过期命中**（5 秒后）：立即返回缓存数据，并在后台刷新缓存
+- **冷启动**：缓存不存在，获取 zoxide 和 tmuxinator 并写入缓存
+- **新鲜命中**（5 秒内）：使用缓存的 zoxide 和 tmuxinator 结果
+- **过期命中**（5 秒后）：使用缓存的结果，并在后台刷新缓存
 
-缓存也会在 `sesh connect` 之后自动刷新。
+缓存也会在 `sesh connect` 和 `sesh mkdir` 之后自动刷新。
 
 ```toml
 cache = true
 ```
 
-在 `sesh connect` 之外创建或终止的会话（例如直接使用 `tmux new-session`、关闭会话的最后一个窗口）在下一次过期命中刷新之前不会出现在缓存中。为保持缓存最新，请在这些事件发生时运行 `sesh cache refresh` —— 它会获取实时数据并重写缓存，缓存禁用时则不执行任何操作。使用 tmux 钩子可以覆盖这两种事件：
+tmux 会话从不缓存。列出它们只是一次通过本地套接字的调用，只需几毫秒，因此每次列表都显示实时会话，缓存不会保存过时或为空的 tmux 会话列表。来自 `[[session]]` 块的会话以及 `--panes` 的窗格同样实时列出。数据源顺序、黑名单、`--hide-attached`、`--hide-duplicates` 和格式化的行为与未启用缓存时相同。
 
-```sh
-set-hook -g session-created 'run-shell -b "sesh cache refresh"'
-set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
-```
+其他对 zoxide 或 tmuxinator 的更改，包括通过 `sesh picker` 连接时添加的 zoxide 条目，会在下一次过期命中刷新后出现。运行 `sesh cache refresh` 可立即重新获取这两个数据源并重写缓存；缓存禁用时它不执行任何操作。无需为 `session-created` 和 `session-closed` 设置 tmux 钩子。
 
-如需在单次运行中跳过缓存，请向 `sesh list` 或 `sesh picker` 传入 `--no-cache`。它会列出实时会话并将其写回缓存，因此下一次使用缓存的启动也是最新的。缓存禁用时它不执行任何操作。
+如需在单次运行中跳过缓存，请向 `sesh list` 或 `sesh picker` 传入 `--no-cache`。它会实时获取 zoxide 和 tmuxinator 并将其写回缓存，因此下一次使用缓存的启动也是最新的。缓存禁用时它不执行任何操作。
 
 ```sh
 sesh list --no-cache
 sesh picker --no-cache
 ```
 
-如果您在 fzf 选择器中使用了终止绑定（如上例中的 `ctrl-d`），请在重新加载列表之前刷新缓存，使被终止的会话立即消失：
-
-```sh
---bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
-```
+fzf 选择器中的终止绑定（如上例中的 `ctrl-d`）无需 `sesh cache refresh`：下一次 `sesh list` 会实时读取 tmux 会话。
 
 ### 选择器 TUI
 
@@ -1119,7 +1112,7 @@ filter: #
 
 允许终止您当前附加的会话：tmux 会将您的客户端移到另一个会话，如果这是最后一个会话则退出。选择器也会随之关闭，因为它就运行在那里。
 
-zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，两种操作之后都会重写缓存，因此下次启动时不会再列出刚刚移除的内容。
+zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，移除 zoxide 条目之后还会重写缓存，因此下次启动时不会再列出刚刚移除的内容。终止 tmux 会话无需重写，因为 tmux 会话不会被缓存。
 
 #### 预览窗格
 
