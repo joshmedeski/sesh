@@ -80,7 +80,9 @@ func (cl *CachingLister) listLive(opts ListOptions) (model.SeshSessions, error) 
 			return model.SeshSessions{}, err
 		}
 		// The failing source may not be one this list shows. The uncached list
-		// decides: it fails only when a source it needs fails.
+		// decides: it fails only when a source it needs fails. A cached source
+		// the list does show is fetched a second time there, which only happens
+		// while a cached source fails.
 		slog.Debug("cache: fetching the cached sources failed, listing uncached", "error", err)
 		return cl.inner.ListWith(opts, nil)
 	}

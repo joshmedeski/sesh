@@ -108,16 +108,37 @@ func TestCachingLister_StaleHitServesStoredSourcesAndRevalidates(t *testing.T) {
 	t.Cleanup(release)
 	cl, fc := f.cached()
 
-	got := listNames(t, cl, lister.ListOptions{})
+	got, err := listWithin(t, cl, lister.ListOptions{})
 
 	// The background fetch is still held open: the list did not wait for it.
-	assert.Equal(t, []string{"main", "dev", "~/old"}, got, "tmux is live, zoxide is the stored snapshot")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"main", "dev", "~/old"}, names(got), "tmux is live, zoxide is the stored snapshot")
 	<-started
 	release()
 	cl.Wait()
 	stored, err := fc.Read()
 	require.NoError(t, err)
 	assert.Equal(t, []string{"zoxide:~/new"}, stored.Sessions.OrderedIndex)
+}
+
+func TestCachingLister_StaleHitSurvivesAFailingRefresh(t *testing.T) {
+	f := newFixture(t, nil)
+	f.config.SessionConfigs = nil
+	f.tmuxinator.configs = nil
+	writeCacheFile(t, f.cachePath, storedZoxide("/home/user/old"), longAgo)
+	before, err := os.ReadFile(f.cachePath)
+	require.NoError(t, err)
+	f.zoxide.fail(errors.New("zoxide is broken"))
+	cl, _ := f.cached()
+
+	got, err := listWithin(t, cl, lister.ListOptions{})
+	cl.Wait()
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"main", "dev", "~/old"}, names(got))
+	after, err := os.ReadFile(f.cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, before, after, "a failed refresh leaves the stored sources in place")
 }
 
 func TestCachingLister_SkipReadFetchesTheSlowSourcesAndWritesThem(t *testing.T) {
@@ -196,6 +217,7 @@ func TestCachingLister_ColdStartWithOnlyTmuxinatorRequestedSurvivesAFailingZoxid
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"work"}, names(got))
+	assert.EqualValues(t, 2, f.tmuxinator.calls.Load(), "fetched with the cached sources, then again by the uncached list")
 	assert.NoFileExists(t, f.cachePath)
 }
 

@@ -58,22 +58,65 @@ func TestCachingLister_WarmHitEqualsTheUncachedList(t *testing.T) {
 		{name: "format with the active window", opts: lister.ListOptions{Format: "{active_window_name_prefix}{name}", FormatSet: true}},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			f := newFixture(t, tc.tweak)
+	// Each case runs against every way the cache can serve a list: nothing
+	// cached yet, a fresh cache, a stale one, and a read that is skipped.
+	modes := []struct {
+		name string
+		list func(t *testing.T, f *fixture, opts lister.ListOptions) model.SeshSessions
+	}{
+		{"cold", func(t *testing.T, f *fixture, opts lister.ListOptions) model.SeshSessions {
+			cl, _ := f.cached()
+			got, err := cl.List(opts)
+			require.NoError(t, err)
+			cl.Wait()
+			return got
+		}},
+		{"fresh", func(t *testing.T, f *fixture, opts lister.ListOptions) model.SeshSessions {
 			cl, _ := f.cached()
 			_, err := cl.List(lister.ListOptions{})
 			require.NoError(t, err, "fills the cache")
-
-			want, err := f.real().List(tc.opts)
+			got, err := cl.List(opts)
 			require.NoError(t, err)
-			got, err := cl.List(tc.opts)
-			require.NoError(t, err)
-
-			// What a caller sees is the ordered rows. Directory may hold rows the
-			// order leaves out, so it is not compared.
-			assert.Equal(t, rows(want), rows(got))
 			cl.Wait()
+			return got
+		}},
+		{"stale", func(t *testing.T, f *fixture, opts lister.ListOptions) model.SeshSessions {
+			cl, fc := f.cached()
+			_, err := cl.List(lister.ListOptions{})
+			require.NoError(t, err, "fills the cache")
+			filled, err := fc.Read()
+			require.NoError(t, err)
+			writeCacheFile(t, f.cachePath, filled.Sessions, longAgo)
+			got, err := listWithin(t, cl, opts)
+			require.NoError(t, err)
+			cl.Wait()
+			return got
+		}},
+		{"skip read", func(t *testing.T, f *fixture, opts lister.ListOptions) model.SeshSessions {
+			cl, _ := f.cached()
+			cl.SkipRead()
+			got, err := cl.List(opts)
+			require.NoError(t, err)
+			cl.Wait()
+			return got
+		}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, mode := range modes {
+				t.Run(mode.name, func(t *testing.T) {
+					f := newFixture(t, tc.tweak)
+
+					want, err := f.real().List(tc.opts)
+					require.NoError(t, err)
+					got := mode.list(t, f, tc.opts)
+
+					// What a caller sees is the ordered rows. Directory may hold rows
+					// the order leaves out, so it is not compared.
+					assert.Equal(t, rows(want), rows(got))
+				})
+			}
 		})
 	}
 }

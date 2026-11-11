@@ -2,9 +2,12 @@ package lister
 
 import (
 	"errors"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/joshmedeski/sesh/v2/home"
@@ -151,12 +154,36 @@ func TestListWith_StillFetchesWindowNamesLive(t *testing.T) {
 func TestListWith_SourceErrorWaitsForWindowNames(t *testing.T) {
 	b := newListWithBackends()
 	b.tmux.On("ListSessions").Return([]*model.TmuxSession{{Name: "main", Path: "/m"}}, nil)
-	b.tmux.On("ListAllWindowNames", "").Return(map[string][]string{"main": {"editor"}}, nil).Once()
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	var releaseOnce sync.Once
+	releaseLookup := func() { releaseOnce.Do(func() { close(release) }) }
+	t.Cleanup(releaseLookup)
+	b.tmux.On("ListAllWindowNames", "").
+		Run(func(mock.Arguments) {
+			close(entered)
+			<-release
+		}).
+		Return(map[string][]string{"main": {"editor"}}, nil).Once()
 	b.zoxide.On("ListResults").Return(nil, errors.New("zoxide failed"))
 	config := model.Config{}
 	config.TUI.ShowWindows = true
 
-	_, err := b.lister(config).ListWith(ListOptions{Tmux: true, Zoxide: true}, nil)
+	done := make(chan error, 1)
+	go func() {
+		_, err := b.lister(config).ListWith(ListOptions{Tmux: true, Zoxide: true}, nil)
+		done <- err
+	}()
+
+	// The zoxide failure is immediate; the lookup is held open.
+	<-entered
+	select {
+	case <-done:
+		t.Fatal("ListWith returned while the window name lookup was still running")
+	case <-time.After(100 * time.Millisecond):
+	}
+	releaseLookup()
+	err := <-done
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "zoxide failed")

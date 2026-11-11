@@ -93,6 +93,7 @@ type fakeZoxide struct {
 	err     error
 	gate    chan struct{}
 	started chan struct{}
+	open    func()
 
 	calls atomic.Int32
 }
@@ -110,15 +111,26 @@ func (z *fakeZoxide) fail(err error) {
 }
 
 // hold makes every following call announce itself on started and then wait
-// for gate to close.
+// for the returned release. release is safe to call more than once.
 func (z *fakeZoxide) hold() (started chan struct{}, release func()) {
 	gate := make(chan struct{})
 	started = make(chan struct{}, 8)
-	z.mu.Lock()
-	z.gate, z.started = gate, started
-	z.mu.Unlock()
 	var once sync.Once
-	return started, func() { once.Do(func() { close(gate) }) }
+	release = func() { once.Do(func() { close(gate) }) }
+	z.mu.Lock()
+	z.gate, z.started, z.open = gate, started, release
+	z.mu.Unlock()
+	return started, release
+}
+
+// release lets every held call go, and does nothing when nothing is held.
+func (z *fakeZoxide) release() {
+	z.mu.Lock()
+	open := z.open
+	z.mu.Unlock()
+	if open != nil {
+		open()
+	}
 }
 
 func (z *fakeZoxide) ListResults() ([]*model.ZoxideResult, error) {
@@ -163,6 +175,7 @@ type fixture struct {
 	tmuxinator *fakeTmuxinator
 	config     model.Config
 	cachePath  string
+	t          *testing.T
 }
 
 // newFixture builds a machine with two tmux sessions (main is attached), two
@@ -191,6 +204,7 @@ func newFixture(t *testing.T, tweak func(*model.Config)) *fixture {
 		tmuxinator: &fakeTmuxinator{configs: []*model.TmuxinatorConfig{{Name: "work"}}},
 		config:     config,
 		cachePath:  filepath.Join(t.TempDir(), "sessions.v2.gob"),
+		t:          t,
 	}
 	f.tmux.set(
 		&model.TmuxSession{Name: "main", Path: "/home/user/main", Attached: 1, Windows: 2},
@@ -210,9 +224,17 @@ func (f *fixture) real() lister.SourceLister {
 		formatter.NewFormatter(icon.NewIcon(f.config)), nil)
 }
 
+// cached is a CachingLister over the machine. When the test ends, any held
+// zoxide call is released and background refreshes finish, so none outlives it
+// and a failing gate test cannot deadlock the cleanup.
 func (f *fixture) cached() (*lister.CachingLister, *cache.FileCache) {
 	fc := cache.NewFileCacheWithPath(f.cachePath)
-	return lister.NewCachingLister(f.real(), fc), fc
+	cl := lister.NewCachingLister(f.real(), fc)
+	f.t.Cleanup(func() {
+		f.zoxide.release()
+		cl.Wait()
+	})
+	return cl, fc
 }
 
 // listNames lists with opts and returns the session names in order.
