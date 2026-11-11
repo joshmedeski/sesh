@@ -200,3 +200,13 @@ func TestListSources_ReturnsASourceError(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "zoxide failed")
 }
+
+func TestListSources_RejectsAnUnknownSourceBeforeFetchingAny(t *testing.T) {
+	b := newListWithBackends()
+
+	_, err := b.lister(model.Config{}).ListSources([]string{"zoxide", "nope"})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `unknown source "nope"`)
+	b.zoxide.AssertNotCalled(t, "ListResults")
+}

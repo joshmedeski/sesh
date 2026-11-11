@@ -2,6 +2,7 @@ package lister
 
 import (
 	"cmp"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -43,8 +44,15 @@ var srcStrategies = map[string]srcStrategy{
 	"tmux-pane":  listTmuxPanes,
 }
 
-// ListSources runs the strategies of the named sources concurrently.
+// ListSources runs the strategies of the named sources concurrently. A name
+// that is not a source fails the call before any strategy starts.
 func (l *RealLister) ListSources(sources []string) (SourceResults, error) {
+	for _, src := range sources {
+		if _, ok := srcStrategies[src]; !ok {
+			return nil, fmt.Errorf("unknown source %q", src)
+		}
+	}
+
 	resultsChan := make(chan strategyResult, len(sources))
 	var wg sync.WaitGroup
 	for _, src := range sources {
