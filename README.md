@@ -1133,7 +1133,7 @@ Only tmux and zoxide rows can be removed — a `[[session]]` block or a tmuxinat
 
 Killing the session you are attached to is allowed: tmux moves your client to another session, or exits if that was the last one. The picker goes with it, since it was running there.
 
-The zoxide removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, the cache is rewritten behind either action so the next launch doesn't list what just went away.
+The zoxide removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, removing a zoxide entry also rewrites the cache so the next launch doesn't list what just went away. Killing a tmux session needs no rewrite because tmux sessions are not cached.
 
 #### Preview pane
 

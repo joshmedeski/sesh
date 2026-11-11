@@ -1112,7 +1112,7 @@ filter: #
 
 允许终止您当前附加的会话：tmux 会将您的客户端移到另一个会话，如果这是最后一个会话则退出。选择器也会随之关闭，因为它就运行在那里。
 
-zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，两种操作之后都会重写缓存，因此下次启动时不会再列出刚刚移除的内容。
+zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，移除 zoxide 条目之后还会重写缓存，因此下次启动时不会再列出刚刚移除的内容。终止 tmux 会话无需重写，因为 tmux 会话不会被缓存。
 
 #### 预览窗格
 

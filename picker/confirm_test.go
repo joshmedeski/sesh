@@ -506,14 +506,14 @@ func TestRealPicker_RemoveEntry(t *testing.T) {
 }
 
 func TestRealPicker_KillSession(t *testing.T) {
-	t.Run("refreshes the cache after a successful kill", func(t *testing.T) {
+	t.Run("leaves the cache alone after a successful kill", func(t *testing.T) {
 		mockTmux := new(tmux.MockTmux)
 		mockTmux.EXPECT().KillSession("my-project").Return("", nil)
 		refreshed := 0
 		p := &RealPicker{tmux: mockTmux, refreshCache: func() { refreshed++ }}
 
 		assert.NoError(t, p.killSession("my-project"))
-		assert.Equal(t, 1, refreshed)
+		assert.Zero(t, refreshed)
 	})
 
 	t.Run("leaves the cache alone when the kill failed", func(t *testing.T) {
