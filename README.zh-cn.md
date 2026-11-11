@@ -932,7 +932,7 @@ cache = true
 
 tmux 会话从不缓存。列出它们只是一次通过本地套接字的调用，只需几毫秒，因此每次列表都显示实时会话，缓存不会保存过时或为空的 tmux 会话列表。来自 `[[session]]` 块的会话以及 `--panes` 的窗格同样实时列出。数据源顺序、黑名单、`--hide-attached`、`--hide-duplicates` 和格式化的行为与未启用缓存时相同。
 
-在 sesh 之外对 zoxide 或 tmuxinator 所做的更改会在下一次过期命中刷新后出现。运行 `sesh cache refresh` 可立即重新获取这两个数据源并重写缓存；缓存禁用时它不执行任何操作。无需为 `session-created` 和 `session-closed` 设置 tmux 钩子。
+其他对 zoxide 或 tmuxinator 的更改，包括通过 `sesh picker` 连接时添加的 zoxide 条目，会在下一次过期命中刷新后出现。运行 `sesh cache refresh` 可立即重新获取这两个数据源并重写缓存；缓存禁用时它不执行任何操作。无需为 `session-created` 和 `session-closed` 设置 tmux 钩子。
 
 如需在单次运行中跳过缓存，请向 `sesh list` 或 `sesh picker` 传入 `--no-cache`。它会实时获取 zoxide 和 tmuxinator 并将其写回缓存，因此下一次使用缓存的启动也是最新的。缓存禁用时它不执行任何操作。
 

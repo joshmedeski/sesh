@@ -948,7 +948,7 @@ cache = true
 
 tmux sessions are never cached. Listing them is a single call over a local socket and takes milliseconds, so every list shows the live sessions, and the cache cannot hold an out-of-date or empty tmux session list. Sessions from `[[session]]` blocks and the panes of `--panes` are listed live too. Source order, the blacklist, `--hide-attached`, `--hide-duplicates` and formatting work as they do without the cache.
 
-Changes to zoxide or tmuxinator made outside sesh show up after the next stale-hit refresh. Run `sesh cache refresh` to refetch both sources and rewrite the cache right away; it does nothing when the cache is disabled. tmux hooks on `session-created` and `session-closed` are not needed.
+Other changes to zoxide or tmuxinator, including the zoxide entry a connect from `sesh picker` adds, show up after the next stale-hit refresh. Run `sesh cache refresh` to refetch both sources and rewrite the cache right away; it does nothing when the cache is disabled. tmux hooks on `session-created` and `session-closed` are not needed.
 
 To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It fetches zoxide and tmuxinator live and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
 
