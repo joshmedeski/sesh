@@ -934,37 +934,30 @@ and the groups no longer line up with contiguous ranges.
 > [!WARNING]
 > This feature is experimental and may not work as expected.
 
-Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores results at `$XDG_CACHE_HOME/sesh/sessions.gob` (default `~/.cache/sesh/sessions.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
+Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores the results of the slow sources, zoxide and tmuxinator, at `$XDG_CACHE_HOME/sesh/sessions.v2.gob` (default `~/.cache/sesh/sessions.v2.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
 
-- **Cold start**: no cache exists, fetches live data and writes the cache
-- **Fresh hit** (within 5s): returns cached data instantly
-- **Stale hit** (after 5s): returns cached data instantly and refreshes the cache in the background
+- **Cold start**: no cache exists, fetches zoxide and tmuxinator and writes the cache
+- **Fresh hit** (within 5s): uses the cached zoxide and tmuxinator results
+- **Stale hit** (after 5s): uses the cached results and refreshes the cache in the background
 
-The cache is also refreshed automatically after `sesh connect`.
+The cache is also refreshed automatically after `sesh connect` and `sesh mkdir`.
 
 ```toml
 cache = true
 ```
 
-Sessions created or killed outside `sesh connect` (e.g. plain `tmux new-session`, closing a session's last window) are missing from the cache until the next stale-hit refresh. To keep the cache current, run `sesh cache refresh` when those events happen — it fetches live data and rewrites the cache, and does nothing when the cache is disabled. With tmux hooks this covers both events:
+tmux sessions are never cached. Listing them is a single call over a local socket and takes milliseconds, so every list shows the live sessions, and the cache cannot hold an out-of-date or empty tmux session list. Sessions from `[[session]]` blocks and the panes of `--panes` are listed live too. Source order, the blacklist, `--hide-attached`, `--hide-duplicates` and formatting work as they do without the cache.
 
-```sh
-set-hook -g session-created 'run-shell -b "sesh cache refresh"'
-set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
-```
+Changes to zoxide or tmuxinator made outside sesh show up after the next stale-hit refresh. Run `sesh cache refresh` to refetch both sources and rewrite the cache right away; it does nothing when the cache is disabled. tmux hooks on `session-created` and `session-closed` are not needed.
 
-To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It lists live sessions and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
+To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It fetches zoxide and tmuxinator live and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
 
 ```sh
 sesh list --no-cache
 sesh picker --no-cache
 ```
 
-If you use a kill binding in an fzf picker (like `ctrl-d` in the example above), refresh the cache before reloading the list so the killed session disappears immediately:
-
-```sh
---bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
-```
+A kill binding in an fzf picker (like `ctrl-d` in the example above) needs no `sesh cache refresh`: the next `sesh list` reads the tmux sessions live.
 
 ### Picker TUI
 

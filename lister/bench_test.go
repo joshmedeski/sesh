@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/tmux"
 )
@@ -136,7 +138,7 @@ func benchLister(n int, tweak func(*model.Config)) *RealLister {
 }
 
 // benchSessions is the merged, unfiltered list the post-merge stages operate
-// on: what applyDedup and CachingLister.applyFilters get handed.
+// on: what applyDedup gets handed.
 func benchSessions(n int) model.SeshSessions {
 	l := benchLister(n, nil)
 	sessions, err := l.List(ListOptions{})
@@ -238,61 +240,20 @@ func BenchmarkBlacklistFilter(b *testing.B) {
 	}
 }
 
-// benchInnerLister is the Lister a CachingLister decorates. Only
-// GetAttachedTmuxSession is reached by applyFilters; the rest exist to satisfy
-// the interface and fail loudly if a benchmark strays into them.
-type benchInnerLister struct {
-	attached model.SeshSession
-	ok       bool
+// benchCache serves one snapshot from memory. It skips gob decoding and file
+// I/O, so BenchmarkCachingListerList measures assembling the list and not the
+// disk.
+type benchCache struct {
+	cached cache.CachedData
 }
 
-func (l *benchInnerLister) List(ListOptions) (model.SeshSessions, error) {
-	panic("benchInnerLister.List: unexpected live fetch in benchmark")
-}
+func (c *benchCache) Read() (cache.CachedData, error) { return c.cached, nil }
+func (c *benchCache) Write(model.SeshSessions) error  { return nil }
 
-func (l *benchInnerLister) Format(sessions model.SeshSessions, _ ListOptions) (model.SeshSessions, error) {
-	return sessions, nil
-}
-
-func (l *benchInnerLister) ListTmuxPanes() (model.SeshSessions, error) {
-	panic("benchInnerLister.ListTmuxPanes: unexpected call in benchmark")
-}
-
-func (l *benchInnerLister) GetAttachedTmuxSession() (model.SeshSession, bool) {
-	return l.attached, l.ok
-}
-
-func (l *benchInnerLister) FindTmuxSession(string) (model.SeshSession, bool) {
-	return model.SeshSession{}, false
-}
-
-func (l *benchInnerLister) FindTmuxSessionByBase(string) (model.SeshSession, bool) {
-	return model.SeshSession{}, false
-}
-
-func (l *benchInnerLister) GetLastTmuxSession() (model.SeshSession, bool) {
-	return model.SeshSession{}, false
-}
-
-func (l *benchInnerLister) FindConfigSession(string) (model.SeshSession, bool) {
-	return model.SeshSession{}, false
-}
-
-func (l *benchInnerLister) FindConfigWildcard(string) (model.WildcardConfig, bool) {
-	return model.WildcardConfig{}, false
-}
-
-func (l *benchInnerLister) FindZoxideSession(string) (model.SeshSession, bool) {
-	return model.SeshSession{}, false
-}
-
-func (l *benchInnerLister) FindTmuxinatorConfig(string) (model.SeshSession, bool) {
-	return model.SeshSession{}, false
-}
-
-// BenchmarkCachingListerApplyFilters is the steady-state path: it runs on every
-// invocation, cache hit or miss, so it matters more than the cold List.
-func BenchmarkCachingListerApplyFilters(b *testing.B) {
+// BenchmarkCachingListerList is the steady-state path: a cache hit, which runs
+// on every invocation. The slow sources come from the snapshot and tmux is
+// listed live.
+func BenchmarkCachingListerList(b *testing.B) {
 	cases := []struct {
 		name string
 		opts ListOptions
@@ -306,12 +267,21 @@ func BenchmarkCachingListerApplyFilters(b *testing.B) {
 	for _, n := range benchSizes {
 		for _, tc := range cases {
 			b.Run(fmt.Sprintf("n=%d/%s", n, tc.name), func(b *testing.B) {
-				sessions := benchSessions(n)
-				attached := sessions.Directory[sessions.OrderedIndex[0]]
-				cl := NewCachingLister(&benchInnerLister{attached: attached, ok: true}, nil)
+				l := benchLister(n, nil)
+				l.tmux.(*benchTmux).sessions[0].Attached = 1
+				fetched, err := l.ListSources(cachedSources)
+				if err != nil {
+					b.Fatal(err)
+				}
+				// Dated in the future so the snapshot stays fresh however long the
+				// benchmark runs, instead of starting a background refresh.
+				snapshot := cache.CachedData{Sessions: flatten(fetched), Timestamp: time.Now().Add(time.Hour)}
+				cl := NewCachingLister(l, &benchCache{cached: snapshot})
 				b.ReportAllocs()
 				for b.Loop() {
-					cl.applyFilters(sessions, tc.opts)
+					if _, err := cl.List(tc.opts); err != nil {
+						b.Fatal(err)
+					}
 				}
 			})
 		}
