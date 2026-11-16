@@ -2,6 +2,7 @@ package seshcli
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -30,11 +31,16 @@ func NewMkdirCommand(base *BaseDeps) *cobra.Command {
 
 			switchFlag, _ := cmd.Flags().GetBool("switch")
 			command, _ := cmd.Flags().GetString("command")
+			background, _ := cmd.Flags().GetBool("background")
 
-			opts := model.ConnectOpts{Switch: switchFlag, Command: command}
-			if _, err := deps.Mkdirer.Mkdir(path, opts); err != nil {
+			opts := model.ConnectOpts{Switch: switchFlag, Command: command, Background: background}
+			session, err := deps.Mkdirer.Mkdir(path, opts)
+			if err != nil {
 				// TODO: add to logging
 				return err
+			}
+			if background {
+				fmt.Println(session)
 			}
 			// Refresh cache in background so next sesh list has fresh data
 			if deps.CachingLister != nil {
@@ -47,6 +53,7 @@ func NewMkdirCommand(base *BaseDeps) *cobra.Command {
 
 	cmd.Flags().BoolP("switch", "s", false, "Switch the session (rather than attach). This is useful for actions triggered outside the terminal.")
 	cmd.Flags().StringP("command", "c", "", "Execute a command when connecting to the new session.")
+	cmd.Flags().BoolP("background", "b", false, "create without selecting it or moving the client")
 
 	return cmd
 }

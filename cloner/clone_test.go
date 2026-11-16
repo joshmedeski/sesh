@@ -105,4 +105,18 @@ func TestClone(t *testing.T) {
 		assert.Error(t, err)
 		mockConnector.AssertNotCalled(t, "Connect")
 	})
+
+	t.Run("passes connect options through and returns the session", func(t *testing.T) {
+		mockConnector := new(connector.MockConnector)
+		mockGit := new(git.MockGit)
+		c := NewCloner(mockConnector, mockGit, new(jj.MockJj))
+		connectOpts := model.ConnectOpts{Background: true, Switch: true, Command: "nvim"}
+		mockGit.On("Clone", "https://github.com/joshmedeski/sesh", "/code", "").Return("", nil)
+		mockConnector.On("Connect", "/code/sesh", connectOpts).Return("sesh", nil)
+
+		session, err := c.Clone(model.GitCloneOptions{Repo: "https://github.com/joshmedeski/sesh", CmdDir: "/code", Connect: connectOpts})
+
+		assert.NoError(t, err)
+		assert.Equal(t, "sesh", session)
+	})
 }
