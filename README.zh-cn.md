@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img src="sesh-hero.jpg" alt="双手在键盘上打字，绿色闪电从每个指尖射入按键" />
 </p>
 
 <h1 align="center">Sesh，智能 tmux 会话管理器</h1>
@@ -49,6 +49,7 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
     <td>
 
 - [视频](#视频)
+- [演示](#演示)
 - [如何安装](#如何安装)
 - [Shell 补全](#shell-补全)
 - [扩展](#扩展)
@@ -88,6 +89,12 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
     </td>
   </tr>
 </table>
+
+## 演示
+
+<p align="center">
+  <img src="sesh-demo.gif" alt="sesh 演示：打开会话选择器，模糊查找项目，并使用键盘快捷键在会话之间跳转" />
+</p>
 
 ## 如何安装
 

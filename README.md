@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img src="sesh-hero.jpg" alt="Hands typing on a keyboard with green lightning arcing from each fingertip into the keys" />
 </p>
 
 <h1 align="center">Sesh, the smart tmux session manager</h1>
@@ -49,6 +49,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     <td>
 
 - [Videos](#videos)
+- [Demo](#demo)
 - [How to install](#how-to-install)
 - [Shell Completion](#shell-completion)
 - [Extensions](#extensions)
@@ -88,6 +89,12 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     </td>
   </tr>
 </table>
+
+## Demo
+
+<p align="center">
+  <img src="sesh-demo.gif" alt="sesh demo: opening the session picker, fuzzy finding a project, and jumping between sessions with keyboard shortcuts" />
+</p>
 
 ## How to install
 
