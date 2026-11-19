@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -25,6 +26,7 @@ type sessionItem struct {
 	src        string // source type (tmux, config, zoxide, tmuxinator)
 	icon       string // custom icon from config, "" to use the source glyph
 	title      string // worktree issue title shown after the name, "" for none
+	number     int
 }
 
 // sessionItems implements fuzzy.Source for fuzzy matching.
@@ -168,6 +170,13 @@ type Options struct {
 	// tmux session. Nil leaves ctrl+x inert on the rows it would have owned.
 	Remove RemoveFunc
 	Kill   KillFunc
+	// PreviewFormat rewraps a fetched preview to the width of the pane it is
+	// drawn in. Nil shows previews as fetched.
+	PreviewFormat func(content string, width int) string
+	// MultiSelect lets tab mark rows; enter then returns every marked row.
+	MultiSelect bool
+	// Numbered prefixes each row with its position in the fetched list.
+	Numbered bool
 }
 
 type Model struct {
@@ -243,6 +252,13 @@ type Model struct {
 	// previewSeq increments on every request so a result that arrives after the
 	// cursor moved on can be told apart from the current one.
 	previewSeq int
+
+	previewFormat func(content string, width int) string
+
+	multiSelect bool
+	numbered    bool
+	marked      map[string]bool
+	chosenAll   []string
 }
 
 // iconCell renders the icon column for a row: the icon configured for the
@@ -410,6 +426,7 @@ func buildItems(sessions model.SeshSessions, separatorAware bool, resolveIcon Ic
 			src:        s.Src,
 			icon:       icn,
 			title:      title,
+			number:     len(items) + 1,
 		})
 	}
 	return items
@@ -485,6 +502,10 @@ func New(fetchFunc FetchFunc, opts Options) Model {
 		previewMinWidth:         previewMinWidth(opts.PreviewMinWidth),
 		previewBorderName:       previewBorder(opts.PreviewBorder),
 		groupSeparator:          opts.GroupSeparator,
+		previewFormat:           opts.PreviewFormat,
+		multiSelect:             opts.MultiSelect,
+		numbered:                opts.Numbered,
+		marked:                  map[string]bool{},
 	}
 	m.focusCmd = m.filterInput.Focus()
 	return m
@@ -548,8 +569,13 @@ func (m *Model) schedulePreview() tea.Cmd {
 
 func (m Model) fetchPreview(seq int, name string) tea.Cmd {
 	previewFunc := m.previewFunc
+	format := m.previewFormat
+	width := m.previewCols() - m.previewChrome()
 	return func() tea.Msg {
 		content, err := previewFunc(name)
+		if err == nil && format != nil {
+			content = format(content, width)
+		}
 		return previewLoadedMsg{seq: seq, name: name, content: content, err: err}
 	}
 }
@@ -631,6 +657,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				selected := m.filtered[m.cursor]
 				m.chosen = selected.item.name
 			}
+			m.chosenAll = m.markedNames()
+			if len(m.chosenAll) == 0 && m.chosen != "" {
+				m.chosenAll = []string{m.chosen}
+			}
 			return m, tea.Quit
 
 		case "esc", "ctrl+c":
@@ -651,6 +681,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+d":
 			m.cursorDown(m.visibleCount() / 2)
+			return m, m.schedulePreview()
+
+		case "tab":
+			if !m.multiSelect {
+				break
+			}
+			if name, ok := m.highlightedName(); ok {
+				m.marked[name] = !m.marked[name]
+			}
+			m.cursorDown(1)
 			return m, m.schedulePreview()
 
 		case "ctrl+x":
@@ -1192,6 +1232,8 @@ func (m Model) View() tea.View {
 		// Index mode numbers the rows so the jump target can be read off the
 		// list instead of counted.
 		_, indexMode := m.indexFilterQuery(m.filterInput.Value())
+		numberWidth := len(strconv.Itoa(len(m.allItems)))
+		cursorPrefixStyle := lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)).Bold(true)
 
 		for r := m.offset; r < end; r++ {
 			if m.rows[r].separator {
@@ -1207,6 +1249,12 @@ func (m Model) View() tea.View {
 			}
 			if indexMode {
 				prefix += indexGutter(i, indexStyle)
+			}
+			if m.multiSelect {
+				prefix += markGutter(m.marked[item.item.name], cursorPrefixStyle)
+			}
+			if m.numbered {
+				prefix += indexStyle.Render(fmt.Sprintf("%*d ", numberWidth, item.item.number))
 			}
 
 			var tag string
@@ -1432,6 +1480,28 @@ func highlightMatches(s string, indexes []int, matchStyle, normalStyle lipgloss.
 }
 
 func (m Model) Chosen() string { return m.chosen }
+
+// ChosenAll returns the marked rows in list order, or the highlighted row when
+// none were marked.
+func (m Model) ChosenAll() []string { return m.chosenAll }
+
 func (m Model) Quit() bool     { return m.quit }
 func (m Model) LoadErr() error { return m.loadErr }
 func (m Model) Loading() bool  { return m.loading }
+
+func (m Model) markedNames() []string {
+	var names []string
+	for _, item := range m.allItems {
+		if m.marked[item.name] {
+			names = append(names, item.name)
+		}
+	}
+	return names
+}
+
+func markGutter(marked bool, style lipgloss.Style) string {
+	if marked {
+		return style.Render("+ ")
+	}
+	return "  "
+}

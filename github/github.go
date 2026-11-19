@@ -45,7 +45,7 @@ type RealGithub struct {
 	git   git.Git
 }
 
-func NewGithub(shell shell.Shell, git git.Git) forge.Forge {
+func NewGithub(shell shell.Shell, git git.Git) *RealGithub {
 	return &RealGithub{shell, git}
 }
 
@@ -197,4 +197,39 @@ func (g *RealGithub) Issue(path string) (forge.Issue, bool, error) {
 		return forge.Issue{}, false, nil
 	}
 	return dto.toIssue(), true, nil
+}
+
+type IssueDetailer interface {
+	IssueDetail(repo string, number int) (IssueDetail, error)
+}
+
+// IssueDetail is an issue or pull request as the URL picker previews it.
+type IssueDetail struct {
+	Title string
+	State string
+	Body  string
+	IsPR  bool
+}
+
+func (g *RealGithub) IssueDetail(repo string, number int) (IssueDetail, error) {
+	out, err := g.shell.Cmd("gh", "api", "repos/"+repo+"/issues/"+strconv.Itoa(number))
+	if err != nil {
+		return IssueDetail{}, err
+	}
+	var raw struct {
+		Title       string `json:"title"`
+		State       string `json:"state"`
+		Body        string `json:"body"`
+		PullRequest *struct {
+			MergedAt *string `json:"merged_at"`
+		} `json:"pull_request"`
+	}
+	if err := json.Unmarshal([]byte(out), &raw); err != nil {
+		return IssueDetail{}, err
+	}
+	detail := IssueDetail{Title: raw.Title, State: strings.ToUpper(raw.State), Body: raw.Body, IsPR: raw.PullRequest != nil}
+	if detail.IsPR && raw.PullRequest.MergedAt != nil {
+		detail.State = "MERGED"
+	}
+	return detail, nil
 }

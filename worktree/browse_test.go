@@ -189,3 +189,22 @@ func TestBrowseURLPrJjFallsBackToThePrNumber(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "https://github.com/nutiliti/nutiliti/pull/200", url)
 }
+
+func TestRepoAtMatchesTheRepoAndItsWorktrees(t *testing.T) {
+	w := newBrowseFixture(t).w
+	for _, path := range []string{"/repo", "/repo/apps/web", "/repo/w/2345"} {
+		repo, ok := w.RepoAt(path)
+		assert.True(t, ok, path)
+		assert.Equal(t, "nutiliti/nutiliti", repo, path)
+	}
+	_, ok := w.RepoAt("/elsewhere")
+	assert.False(t, ok)
+}
+
+func TestRepoAtSkipsNonGitHubWorktrees(t *testing.T) {
+	w := newBrowseFixture(t).w
+	for _, path := range []string{"/gitlab-repo", "/internal-repo", "/enterprise-repo"} {
+		_, ok := w.RepoAt(path)
+		assert.False(t, ok, path)
+	}
+}

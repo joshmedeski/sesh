@@ -58,6 +58,7 @@ type BaseDeps struct {
 	Jj         jj.Jj
 	Github     forge.Forge
 	Gitlab     forge.Forge
+	Issues     github.IssueDetailer
 	Focuser    focuser.Focuser
 	Dir        dir.Dir
 	Zoxide     zoxide.Zoxide
@@ -116,6 +117,7 @@ func NewBaseDeps() *BaseDeps {
 		Git:        g,
 		Jj:         jjr,
 		Github:     gh,
+		Issues:     gh,
 		Gitlab:     gl,
 		Focuser:    fo,
 		Dir:        d,
