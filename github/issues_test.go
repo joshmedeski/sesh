@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/shell"
 )
@@ -18,6 +19,7 @@ func expectGraphql(t *testing.T, s *shell.MockShell, numbers []int, out string, 
 	query, _ := buildIssueQuery(numbers)
 	s.EXPECT().
 		CmdCapture("gh", "api", "graphql",
+			"--hostname", "github.com",
 			"-f", "query="+query,
 			"-f", "owner=joshmedeski",
 			"-f", "name=sesh",
@@ -34,11 +36,11 @@ func TestIssues_BatchesIntoOneCall(t *testing.T) {
 	}}}`, nil)
 
 	g := NewGithub(s, git.NewMockGit(t))
-	found, missing, err := g.Issues("joshmedeski/sesh", []int{409, 426})
+	found, missing, err := g.Issues("github.com", "joshmedeski/sesh", []int{409, 426})
 
 	require.NoError(t, err)
 	assert.Empty(t, missing)
-	assert.Equal(t, map[int]Issue{
+	assert.Equal(t, map[int]forge.Issue{
 		409: {Number: 409, Title: "worktree support", State: "OPEN"},
 		426: {Number: 426, Title: "cap fuzzy penalty", State: "CLOSED"},
 	}, found)
@@ -54,10 +56,10 @@ func TestIssues_KeepsSiblingsWhenOneIsNotFound(t *testing.T) {
 	)
 
 	g := NewGithub(s, git.NewMockGit(t))
-	found, missing, err := g.Issues("joshmedeski/sesh", []int{409, 99999999})
+	found, missing, err := g.Issues("github.com", "joshmedeski/sesh", []int{409, 99999999})
 
 	require.NoError(t, err, "a NOT_FOUND for one number must not fail the batch")
-	assert.Equal(t, map[int]Issue{
+	assert.Equal(t, map[int]forge.Issue{
 		409: {Number: 409, Title: "Add git worktree support", State: "OPEN"},
 	}, found)
 	assert.Equal(t, []int{99999999}, missing, "confirmed-absent numbers are reported for negative caching")
@@ -71,7 +73,7 @@ func TestIssues_NullWithoutNotFoundIsNotMissing(t *testing.T) {
 	)
 
 	g := NewGithub(s, git.NewMockGit(t))
-	found, missing, err := g.Issues("joshmedeski/sesh", []int{409})
+	found, missing, err := g.Issues("github.com", "joshmedeski/sesh", []int{409})
 
 	require.NoError(t, err)
 	assert.Empty(t, found)
@@ -84,7 +86,7 @@ func TestIssues_ErrorsWhenNoBodyAtAll(t *testing.T) {
 	expectGraphql(t, s, []int{409}, "", fmt.Errorf("gh: not authenticated"))
 
 	g := NewGithub(s, git.NewMockGit(t))
-	_, _, err := g.Issues("joshmedeski/sesh", []int{409})
+	_, _, err := g.Issues("github.com", "joshmedeski/sesh", []int{409})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not authenticated")
@@ -95,7 +97,7 @@ func TestIssues_ErrorsOnEmptySuccessfulResponse(t *testing.T) {
 	expectGraphql(t, s, []int{409}, "", nil)
 
 	g := NewGithub(s, git.NewMockGit(t))
-	_, _, err := g.Issues("joshmedeski/sesh", []int{409})
+	_, _, err := g.Issues("github.com", "joshmedeski/sesh", []int{409})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "empty response")
@@ -106,7 +108,7 @@ func TestIssues_MalformedBodyReportsGhFailure(t *testing.T) {
 	expectGraphql(t, s, []int{409}, "not json", fmt.Errorf("gh: could not connect"))
 
 	g := NewGithub(s, git.NewMockGit(t))
-	_, _, err := g.Issues("joshmedeski/sesh", []int{409})
+	_, _, err := g.Issues("github.com", "joshmedeski/sesh", []int{409})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "could not connect")
@@ -117,7 +119,7 @@ func TestIssues_MalformedBodyWithoutGhError(t *testing.T) {
 	expectGraphql(t, s, []int{409}, "not json", nil)
 
 	g := NewGithub(s, git.NewMockGit(t))
-	_, _, err := g.Issues("joshmedeski/sesh", []int{409})
+	_, _, err := g.Issues("github.com", "joshmedeski/sesh", []int{409})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "decoding gh graphql response")
@@ -133,7 +135,7 @@ func TestIssues_DedupesAndSorts(t *testing.T) {
 	}}}`, nil)
 
 	g := NewGithub(s, git.NewMockGit(t))
-	found, _, err := g.Issues("joshmedeski/sesh", []int{426, 409, 426, 409})
+	found, _, err := g.Issues("github.com", "joshmedeski/sesh", []int{426, 409, 426, 409})
 
 	require.NoError(t, err)
 	assert.Len(t, found, 2)
@@ -143,7 +145,7 @@ func TestIssues_NoNumbersMakesNoCall(t *testing.T) {
 	// No CmdCapture is registered, so any gh call fails the test.
 	g := NewGithub(shell.NewMockShell(t), git.NewMockGit(t))
 
-	found, missing, err := g.Issues("joshmedeski/sesh", nil)
+	found, missing, err := g.Issues("github.com", "joshmedeski/sesh", nil)
 
 	require.NoError(t, err)
 	assert.Empty(t, found)
@@ -164,7 +166,7 @@ func TestIssues_ChunksLargeRequests(t *testing.T) {
 			issueBatchSize+5, issueBatchSize+5), nil)
 
 	g := NewGithub(s, git.NewMockGit(t))
-	found, _, err := g.Issues("joshmedeski/sesh", numbers)
+	found, _, err := g.Issues("github.com", "joshmedeski/sesh", numbers)
 
 	require.NoError(t, err)
 	assert.Equal(t, "first", found[1].Title)
@@ -175,7 +177,7 @@ func TestIssues_RejectsMalformedRepo(t *testing.T) {
 	g := NewGithub(shell.NewMockShell(t), git.NewMockGit(t))
 
 	for _, repo := range []string{"sesh", "", "/sesh", "joshmedeski/", "a/b/c"} {
-		_, _, err := g.Issues(repo, []int{409})
+		_, _, err := g.Issues("github.com", repo, []int{409})
 		assert.Error(t, err, repo)
 	}
 }

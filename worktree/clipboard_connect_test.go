@@ -9,7 +9,7 @@ import (
 	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/github"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -22,7 +22,7 @@ import (
 func TestConnectFromClipboardIssueURL(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -40,14 +40,15 @@ func TestConnectFromClipboardIssueURL(t *testing.T) {
 	mClipboard.EXPECT().Read().Return("https://github.com/nutiliti/nutiliti/issues/2345", nil)
 
 	// Not a PR => issue path.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 2345).Return(forge.PullRequest{}, false, nil)
+	mGh.EXPECT().WorktreeName(2345, false).Return("2345")
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromClipboard: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -55,7 +56,7 @@ func TestConnectFromClipboardIssueURL(t *testing.T) {
 func TestConnectFromClipboardPRURL(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -73,16 +74,17 @@ func TestConnectFromClipboardPRURL(t *testing.T) {
 	mClipboard.EXPECT().Read().Return("https://github.com/nutiliti/nutiliti/pull/678", nil)
 
 	// PR authored by someone else => foreign PR, detached checkout keyed on the PR number.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 678).Return(github.PullRequest{Author: "octocat"}, true, nil)
-	mGh.EXPECT().CurrentUser().Return("me", nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 678).Return(forge.PullRequest{Author: "octocat"}, true, nil)
+	mGh.EXPECT().WorktreeName(678, true).Return("678")
+	mGh.EXPECT().CurrentUser("github.com").Return("me", nil)
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAddDetached("/repo", wPath, "origin/main").Return("", nil)
-	mGh.EXPECT().PrCheckout(wPath, "nutiliti/nutiliti", 678).Return("", nil)
+	mGh.EXPECT().PrCheckout(wPath, "github.com", "nutiliti/nutiliti", 678).Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromClipboard: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -90,7 +92,7 @@ func TestConnectFromClipboardPRURL(t *testing.T) {
 func TestConnectFromClipboardBareNumber(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -108,14 +110,15 @@ func TestConnectFromClipboardBareNumber(t *testing.T) {
 	mClipboard.EXPECT().Read().Return("2345", nil)
 
 	// Not a PR => issue path.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 2345).Return(forge.PullRequest{}, false, nil)
+	mGh.EXPECT().WorktreeName(2345, false).Return("2345")
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{
 		FromClipboard: true,
 		Repo:          "nutiliti/nutiliti",
@@ -129,7 +132,7 @@ func TestConnectFromClipboardBareNumber(t *testing.T) {
 func TestConnectFromClipboardRepoOverrideWins(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -149,14 +152,15 @@ func TestConnectFromClipboardRepoOverrideWins(t *testing.T) {
 	mClipboard.EXPECT().Read().Return("https://github.com/someone/other/issues/2345", nil)
 
 	// Not a PR => issue path.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 2345).Return(forge.PullRequest{}, false, nil)
+	mGh.EXPECT().WorktreeName(2345, false).Return("2345")
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{
 		FromClipboard: true,
 		Repo:          "nutiliti/nutiliti",
@@ -170,7 +174,7 @@ func TestConnectFromClipboardRepoOverrideWins(t *testing.T) {
 func TestConnectFromClipboardBareNumberWithoutRepo(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -196,14 +200,15 @@ func TestConnectFromClipboardBareNumberWithoutRepo(t *testing.T) {
 		nil)
 
 	// Not a PR => issue path.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 2345).Return(forge.PullRequest{}, false, nil)
+	mGh.EXPECT().WorktreeName(2345, false).Return("2345")
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAdd("/repo", wPath, "jam/2345-1", "origin/main").Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromClipboard: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -214,7 +219,7 @@ func TestConnectFromClipboardUnparseableURL(t *testing.T) {
 
 	w := NewWorktree(
 		nuConfig(),
-		git.NewMockGit(t), jj.NewMockJj(t), github.NewMockGithub(t), connector.NewMockConnector(t),
+		git.NewMockGit(t), jj.NewMockJj(t), forgeResolver(forge.NewMockForge(t)), connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), mClipboard, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t),
 		pathwrap.NewPath(), testIssueCache(t),
 	)
@@ -230,7 +235,7 @@ func TestConnectFromClipboardReadError(t *testing.T) {
 
 	w := NewWorktree(
 		nuConfig(),
-		git.NewMockGit(t), jj.NewMockJj(t), github.NewMockGithub(t), connector.NewMockConnector(t),
+		git.NewMockGit(t), jj.NewMockJj(t), forgeResolver(forge.NewMockForge(t)), connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), mClipboard, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t),
 		pathwrap.NewPath(), testIssueCache(t),
 	)

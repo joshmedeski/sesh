@@ -7,8 +7,8 @@ import (
 	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -21,7 +21,7 @@ import (
 func TestConnectFromBrowserIssue(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -41,7 +41,8 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 		Return("https://github.com/nutiliti/nutiliti/issues/2345", true, nil)
 
 	// Not a PR => issue path.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 2345).Return(forge.PullRequest{}, false, nil)
+	mGh.EXPECT().WorktreeName(2345, false).Return("2345")
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
@@ -50,7 +51,7 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -58,7 +59,7 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -79,7 +80,8 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 
 	// The caller's --repo ("nutiliti/nutiliti") must win over the URL's repo
 	// ("someone/other"); only the number (2345) comes from the URL.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 2345).Return(github.PullRequest{}, false, nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 2345).Return(forge.PullRequest{}, false, nil)
+	mGh.EXPECT().WorktreeName(2345, false).Return("2345")
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
@@ -88,7 +90,7 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -96,7 +98,7 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 func TestConnectFromBrowserPR(t *testing.T) {
 	mGit := git.NewMockGit(t)
 	mJj := jj.NewMockJj(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
 	mClipboard := clipboard.NewMockClipboard(t)
@@ -117,17 +119,18 @@ func TestConnectFromBrowserPR(t *testing.T) {
 
 	// PR authored by someone else => foreign PR, detached checkout keyed on
 	// the PR number.
-	mGh.EXPECT().PrView("nutiliti/nutiliti", 678).
-		Return(github.PullRequest{Author: "octocat"}, true, nil)
-	mGh.EXPECT().CurrentUser().Return("me", nil)
+	mGh.EXPECT().PrView("github.com", "nutiliti/nutiliti", 678).
+		Return(forge.PullRequest{Author: "octocat"}, true, nil)
+	mGh.EXPECT().CurrentUser("github.com").Return("me", nil)
+	mGh.EXPECT().WorktreeName(678, true).Return("678")
 
 	mOs.EXPECT().Stat(wPath).Return(nil, os.ErrNotExist)
 	mOs.EXPECT().MkdirAll(wRoot, mock.Anything).Return(nil)
 	mGit.EXPECT().WorktreeAddDetached("/repo", wPath, "origin/main").Return("", nil)
-	mGh.EXPECT().PrCheckout(wPath, "nutiliti/nutiliti", 678).Return("", nil)
+	mGh.EXPECT().PrCheckout(wPath, "github.com", "nutiliti/nutiliti", 678).Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, mGh, mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -138,9 +141,8 @@ func TestConnectFromBrowserUnparseableURL(t *testing.T) {
 
 	w := NewWorktree(
 		nuConfig(),
-		git.NewMockGit(t), jj.NewMockJj(t), github.NewMockGithub(t), connector.NewMockConnector(t),
-		mBrowser, clipboard.NewMockClipboard(t), home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(),
-		testIssueCache(t),
+		git.NewMockGit(t), jj.NewMockJj(t), forgeResolver(forge.NewMockForge(t)), connector.NewMockConnector(t),
+		mBrowser, clipboard.NewMockClipboard(t), home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
 	)
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})
 	require.Error(t, err)
@@ -153,7 +155,7 @@ func TestConnectFromBrowserUnavailable(t *testing.T) {
 
 	w := NewWorktree(
 		nuConfig(),
-		git.NewMockGit(t), jj.NewMockJj(t), github.NewMockGithub(t), connector.NewMockConnector(t),
+		git.NewMockGit(t), jj.NewMockJj(t), forgeResolver(forge.NewMockForge(t)), connector.NewMockConnector(t),
 		mBrowser, nil, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
 	)
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})

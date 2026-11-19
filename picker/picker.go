@@ -1,15 +1,20 @@
 package picker
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/glamour/v2"
+	"charm.land/glamour/v2/styles"
+	"charm.land/lipgloss/v2"
 
 	"github.com/joshmedeski/sesh/v2/cache"
-	"github.com/joshmedeski/sesh/v2/github"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/lister"
@@ -23,6 +28,7 @@ const (
 	defaultPrompt              = "> "
 	defaultPlaceholder         = "Filter sessions..."
 	defaultWorktreePlaceholder = "Filter worktrees..."
+	defaultURLPlaceholder      = "Filter URLs..."
 )
 
 type PickerOptions struct {
@@ -53,6 +59,9 @@ type Picker interface {
 	// PickWorktree picks a worktree by issue number or title. The second return
 	// is false when nothing was chosen — the picker was quit, or had no rows.
 	PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePickerOptions) (model.WorktreeEntry, bool, error)
+	// PickURLs lists urls numbered in order and returns the ones chosen, or nil
+	// when the picker was quit.
+	PickURLs(urls []string, preview PreviewFunc) ([]string, error)
 }
 
 type RealPicker struct {
@@ -70,19 +79,22 @@ type RealPicker struct {
 	// tmux is reached only to kill a live session the user confirmed killing
 	// from the picker.
 	tmux tmux.Tmux
-	// refreshCache refetches the session list into the cache after a removal.
-	// Nil when caching is off, which is also when there is nothing to refresh.
+	// forges provides methods for determining forge drivers for repositories.
+	forges forge.Resolver
+	// refreshCache refetches the cached sources into the cache after a frecency
+	// entry is removed. Nil when caching is off, which is also when there is
+	// nothing to refresh.
 	refreshCache CacheRefreshFunc
-	issues       *cache.Namespace[github.Issue]
+	issues       *cache.Namespace[forge.Issue]
 }
 
 // CacheRefreshFunc rewrites the session cache from live data. The picker calls
-// it after removing an entry: the cache is what the next launch reads, and
-// without this it would list a directory the frecency backend has already
+// it after removing a frecency entry: the cache is what the next launch reads,
+// and without this it would list a directory the frecency backend has already
 // forgotten until the entry aged out on its own.
 type CacheRefreshFunc func()
 
-func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards lister.WildcardFinder, zoxide zoxide.Zoxide, tmux tmux.Tmux, refreshCache CacheRefreshFunc, issues *cache.Namespace[github.Issue]) Picker {
+func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards lister.WildcardFinder, zoxide zoxide.Zoxide, tmux tmux.Tmux, forges forge.Resolver, refreshCache CacheRefreshFunc, issues *cache.Namespace[forge.Issue]) Picker {
 	return &RealPicker{
 		config:       config,
 		previewer:    previewer,
@@ -90,6 +102,7 @@ func NewPicker(config model.Config, previewer previewer.Previewer, home home.Hom
 		wildcards:    wildcards,
 		zoxide:       zoxide,
 		tmux:         tmux,
+		forges:       forges,
 		refreshCache: refreshCache,
 		issues:       issues,
 	}
@@ -109,17 +122,11 @@ func (p *RealPicker) removeEntry(path string) error {
 	return nil
 }
 
-// killSession ends a live tmux session and refreshes the cache behind it, for
-// the same reason removeEntry does: the cache is what the next launch reads,
-// and without this it would offer a session that no longer exists.
+// killSession ends a live tmux session. The cache does not hold tmux sessions,
+// so there is nothing to refresh behind it.
 func (p *RealPicker) killSession(name string) error {
-	if _, err := p.tmux.KillSession(name); err != nil {
-		return err
-	}
-	if p.refreshCache != nil {
-		p.refreshCache()
-	}
-	return nil
+	_, err := p.tmux.KillSession(name)
+	return err
 }
 
 // buildAliases collects the aliases defined on [[session]] blocks, keyed by
@@ -151,11 +158,11 @@ func aliasAutoConnectDelay(configured string) time.Duration {
 	return d
 }
 
-func worktreeResolver(config model.Config, h home.Home, issues *cache.Namespace[github.Issue]) WorktreeFunc {
+func worktreeResolver(config model.Config, h home.Home, forges forge.Resolver, issues *cache.Namespace[forge.Issue]) WorktreeFunc {
 	if !config.TUI.ShowWorktreeTitles {
 		return nil
 	}
-	return lister.WorktreeResolver(config, h, issues)
+	return lister.WorktreeResolver(config, h, forges, issues)
 }
 
 // previewWidth resolves the percent of the terminal guaranteed to the preview
@@ -295,7 +302,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
 		DisableAliasAutoConnect: disableAliasAutoConnect,
 		Icon:                    lister.IconResolver(p.config, p.home, p.wildcards),
-		Worktree:                worktreeResolver(p.config, p.home, p.issues),
+		Worktree:                worktreeResolver(p.config, p.home, p.forges, p.issues),
 		IconWidth:               iconColWidth(p.config),
 		Glyphs:                  glyphs,
 		Preview:                 preview,
@@ -395,4 +402,61 @@ func (p *RealPicker) PickWorktree(fetchFunc WorktreeFetchFunc, opts WorktreePick
 	}
 	entry, picked := pickerModel.Chosen()
 	return entry, picked, nil
+}
+
+func (p *RealPicker) PickURLs(urls []string, preview PreviewFunc) ([]string, error) {
+	sessions := model.SeshSessions{Directory: make(map[string]model.SeshSession, len(urls))}
+	for _, url := range urls {
+		sessions.OrderedIndex = append(sessions.OrderedIndex, url)
+		sessions.Directory[url] = model.SeshSession{Src: "url", Name: url}
+	}
+	fetch := func() (model.SeshSessions, error) { return sessions, nil }
+
+	prompt := cmp.Or(p.config.TUI.Prompt, defaultPrompt)
+	m := New(fetch, Options{
+		Prompt:          prompt,
+		Placeholder:     defaultURLPlaceholder,
+		Pointer:         cmp.Or(p.config.TUI.Pointer, model.DefaultPointer),
+		Preview:         true,
+		PreviewWidth:    previewWidth(p.config.TUI.PreviewWidth),
+		PreviewMinWidth: previewMinWidth(p.config.TUI.PreviewMinWidth),
+		PreviewBorder:   p.config.TUI.PreviewBorder,
+		PreviewFunc:     preview,
+		PreviewFormat:   markdownFormatter(markdownStyle()),
+		MultiSelect:     true,
+		Numbered:        true,
+	})
+	result, err := tea.NewProgram(m).Run()
+	if err != nil {
+		return nil, fmt.Errorf("picker error: %w", err)
+	}
+	pickerModel, ok := result.(Model)
+	if !ok {
+		return nil, errors.New("unexpected model type")
+	}
+	if pickerModel.Quit() {
+		return nil, nil
+	}
+	return pickerModel.ChosenAll(), nil
+}
+
+func markdownStyle() string {
+	if lipgloss.HasDarkBackground(os.Stdin, os.Stdout) {
+		return styles.DarkStyle
+	}
+	return styles.LightStyle
+}
+
+func markdownFormatter(style string) func(string, int) string {
+	return func(content string, width int) string {
+		r, err := glamour.NewTermRenderer(glamour.WithStandardStyle(style), glamour.WithWordWrap(width))
+		if err != nil {
+			return content
+		}
+		out, err := r.Render(content)
+		if err != nil {
+			return content
+		}
+		return out
+	}
 }

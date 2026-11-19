@@ -169,6 +169,7 @@ func pickWorktree(
 	// <number>` would have — startup command and PR refresh included.
 	_, err = deps.Worktree.Connect(model.WorktreeConnectOpts{
 		Number: entry.Number,
+		Pr:     entry.RefType == model.RefTypePr,
 		Repo:   listOpts.Repo,
 		Switch: switchSession,
 	})
@@ -234,10 +235,14 @@ neither, the repo is detected from the current directory.`,
 // number leads so the list sorts and filters by it, with the title appended
 // when it is known.
 func worktreeLabel(entry model.WorktreeEntry) string {
-	if entry.Title == "" {
-		return strconv.Itoa(entry.Number)
+	name := entry.Name
+	if name == "" {
+		name = strconv.Itoa(entry.Number)
 	}
-	return fmt.Sprintf("%d  %s", entry.Number, entry.Title)
+	if entry.Title == "" {
+		return name
+	}
+	return fmt.Sprintf("%s  %s", name, entry.Title)
 }
 
 func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {

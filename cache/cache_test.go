@@ -33,7 +33,7 @@ func testSessions() model.SeshSessions {
 
 func TestFileCache_WriteAndRead(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "sesh", "sessions.gob")
+	path := filepath.Join(dir, "sesh", "sessions.v2.gob")
 	c := NewFileCacheWithPath(path)
 
 	sessions := testSessions()
@@ -62,7 +62,7 @@ func TestFileCache_ReadMissingFile(t *testing.T) {
 
 func TestFileCache_AtomicWrite(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "sesh", "sessions.gob")
+	path := filepath.Join(dir, "sesh", "sessions.v2.gob")
 	c := NewFileCacheWithPath(path)
 
 	sessions1 := testSessions()
@@ -91,7 +91,7 @@ func TestNewFileCache_XDGCacheHome(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", dir)
 
 	c := NewFileCache()
-	expected := filepath.Join(dir, "sesh", "sessions.gob")
+	expected := filepath.Join(dir, "sesh", "sessions.v2.gob")
 	assert.Equal(t, expected, c.path)
 }
 
@@ -100,5 +100,5 @@ func TestNewFileCache_FallbackToHomeCache(t *testing.T) {
 	t.Setenv("HOME", "/fakehome")
 
 	c := NewFileCache()
-	assert.Contains(t, c.path, filepath.Join(".cache", "sesh", "sessions.gob"))
+	assert.Contains(t, c.path, filepath.Join(".cache", "sesh", "sessions.v2.gob"))
 }
