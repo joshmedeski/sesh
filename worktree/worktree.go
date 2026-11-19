@@ -244,6 +244,7 @@ func (w *RealWorktree) resolveFromClipboard(opts model.WorktreeConnectOpts) (mod
 	if err != nil {
 		return opts, err
 	}
+	ref = strings.TrimSpace(ref)
 	if number, err := strconv.Atoi(ref); err == nil {
 		opts.Number = number
 		return opts, nil

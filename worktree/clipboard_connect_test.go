@@ -189,7 +189,7 @@ func TestConnectFromClipboardBareNumberWithoutRepo(t *testing.T) {
 	mOs.EXPECT().ExpandEnv("/repo").Return("/repo").Maybe()
 	mOs.EXPECT().Stat(pathwrap.NewPath().FromSlash("/repo/.jj")).Return(nil, os.ErrNotExist).Maybe()
 
-	mClipboard.EXPECT().Read().Return("2345", nil)
+	mClipboard.EXPECT().Read().Return("2345\n", nil)
 
 	// No --repo, so the config is detected from cwd.
 	mOs.EXPECT().Getwd().Return(wPath, nil)
