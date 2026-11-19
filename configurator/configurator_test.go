@@ -266,6 +266,42 @@ func TestGetConfig_ImportPathWithTilde(t *testing.T) {
 	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
 }
 
+func TestGetConfig_ImportsWorktreeConfigs(t *testing.T) {
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		files: map[string][]byte{
+			"/main/sesh.toml":                []byte(`import = ["~/imports/wt.toml"]` + "\n"),
+			"/home/testuser/imports/wt.toml": []byte("[[worktree]]\nrepo = \"owner/repo\"\npath = \"~/c/repo\"\n"),
+		},
+	}
+	c := NewConfiguratorWithPath(mockOs, pathwrap.NewPath(), &runtimewrap.MockRunTime{}, "/main/sesh.toml")
+	config, err := c.GetConfig()
+
+	require.NoError(t, err)
+	require.Len(t, config.WorktreeConfigs, 1)
+	assert.Equal(t, "owner/repo", config.WorktreeConfigs[0].Repo)
+	assert.Equal(t, model.ForgeGithub, config.WorktreeConfigs[0].Forge)
+}
+
+func TestGetConfig_ImportAbsolutePathResolvesPlatformRoot(t *testing.T) {
+	importPath, err := filepath.Abs("/imports/abs.toml")
+	require.NoError(t, err)
+
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		files: map[string][]byte{
+			"/main/sesh.toml":            []byte(`import = ["/imports/abs.toml"]` + "\n"),
+			filepath.ToSlash(importPath): []byte("[[session]]\nname = \"abs\"\npath = \"~/abs\"\n"),
+		},
+	}
+	c := NewConfiguratorWithPath(mockOs, pathwrap.NewPath(), &runtimewrap.MockRunTime{}, "/main/sesh.toml")
+	config, err := c.GetConfig()
+
+	require.NoError(t, err)
+	require.Len(t, config.SessionConfigs, 1)
+	assert.Equal(t, "abs", config.SessionConfigs[0].Name)
+}
+
 // configFromTOML loads a config straight from TOML content, going through the
 // same defaults and validation as a real config file.
 func configFromTOML(t *testing.T, contents string) (model.Config, error) {
