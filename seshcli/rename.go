@@ -10,10 +10,10 @@ import (
 func NewRenameCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rename [name]",
-		Short: "Rename a tmux session, optionally enriching it with its GitHub issue title",
+		Short: "Rename a tmux session, optionally enriching it with its issue title",
 		Long: "Rename a tmux session. With --enrich, the session named by [name] " +
 			"(or the attached session) is renamed to '<namer name> — <issue title>' " +
-			"when its branch resolves to a GitHub issue, and back to the bare namer " +
+			"when its branch resolves to an issue, and back to the bare namer " +
 			"name when it does not. Intended to be run from a tmux session-created hook.",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -28,7 +28,7 @@ func NewRenameCommand(base *BaseDeps) *cobra.Command {
 			return runEnrich(deps, args)
 		},
 	}
-	cmd.Flags().Bool("enrich", false, "Rename the session to include its GitHub issue title")
+	cmd.Flags().Bool("enrich", false, "Rename the session to include its issue title")
 	return cmd
 }
 
@@ -40,11 +40,14 @@ func runEnrich(deps *Deps, args []string) error {
 	if !ok || target.Name == "" {
 		return nil
 	}
-	newName := enrichedName(deps, target.Path)
+	newName, err := enrichedName(deps, target.Path)
+	if err != nil {
+		return err
+	}
 	if newName == "" || newName == target.Name {
 		return nil
 	}
-	_, err := deps.Tmux.RenameSession(target.Name, newName)
+	_, err = deps.Tmux.RenameSession(target.Name, newName)
 	return err
 }
 
@@ -61,18 +64,30 @@ func renameTarget(deps *Deps, args []string) (model.SeshSession, bool) {
 // truth, which makes re-runs idempotent) and appends the sanitized issue title
 // when the branch resolves to an issue. With no issue it returns the bare base,
 // which self-heals a stale suffix. Returns "" when the base cannot be computed.
-func enrichedName(deps *Deps, path string) string {
+//
+// An unresolvable forge and a missing issue both mean "no title to add", so they
+// fall back to the bare base. A failure to read an issue the forge did find is
+// returned instead: that is the difference between "there is no issue" and "we
+// cannot tell".
+func enrichedName(deps *Deps, path string) (string, error) {
 	baseName, err := deps.Namer.Name(path)
 	if err != nil || baseName == "" {
-		return ""
+		return "", nil
 	}
-	issue, found, _ := deps.Github.Issue(path)
+	forge, err := deps.ForgeResolver.FromPath(path)
+	if err != nil {
+		return baseName, nil
+	}
+	issue, found, err := forge.Issue(path)
+	if err != nil {
+		return "", err
+	}
 	if !found {
-		return baseName
+		return baseName, nil
 	}
 	title := namer.SanitizeTitle(issue.Title)
 	if title == "" {
-		return baseName
+		return baseName, nil
 	}
-	return baseName + model.SessionNameSeparator + title
+	return baseName + model.SessionNameSeparator + title, nil
 }

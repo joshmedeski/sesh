@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/joshmedeski/sesh/v2/cache"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/formatter"
-	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/tmux"
@@ -34,7 +34,8 @@ type RealLister struct {
 	zoxide     zoxide.Zoxide
 	tmuxinator tmuxinator.Tmuxinator
 	formatter  formatter.Formatter
-	issues     *cache.Namespace[github.Issue]
+	forges     forge.Resolver
+	issues     *cache.Namespace[forge.Issue]
 
 	// wildcards caches config.WildcardConfigs with their patterns expanded, so
 	// resolving a wildcard for every session in a list expands each pattern
@@ -50,7 +51,8 @@ func NewLister(
 	zoxide zoxide.Zoxide,
 	tmuxinator tmuxinator.Tmuxinator,
 	formatter formatter.Formatter,
-	issues *cache.Namespace[github.Issue],
+	forges forge.Resolver,
+	issues *cache.Namespace[forge.Issue],
 ) Lister {
 	return &RealLister{
 		config:     config,
@@ -59,6 +61,7 @@ func NewLister(
 		zoxide:     zoxide,
 		tmuxinator: tmuxinator,
 		formatter:  formatter,
+		forges:     forges,
 		issues:     issues,
 	}
 }
