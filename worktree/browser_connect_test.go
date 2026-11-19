@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/browser"
+	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/git"
@@ -23,6 +24,7 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -49,7 +51,7 @@ func TestConnectFromBrowserIssue(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -60,6 +62,7 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -87,7 +90,7 @@ func TestConnectFromBrowserRepoOverrideWins(t *testing.T) {
 		Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).
 		Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Repo: "nutiliti/nutiliti", Switch: true})
 	require.NoError(t, err)
 }
@@ -98,6 +101,7 @@ func TestConnectFromBrowserPR(t *testing.T) {
 	mGh := forge.NewMockForge(t)
 	mConn := connector.NewMockConnector(t)
 	mBrowser := browser.NewMockBrowser(t)
+	mClipboard := clipboard.NewMockClipboard(t)
 	mOs := oswrap.NewMockOs(t)
 	h := home.NewHome(mOs)
 	p := pathwrap.NewPath()
@@ -126,7 +130,7 @@ func TestConnectFromBrowserPR(t *testing.T) {
 	mGh.EXPECT().PrCheckout(wPath, "github.com", "nutiliti/nutiliti", 678).Return("", nil)
 	mConn.EXPECT().Connect(wPath, model.ConnectOpts{Switch: true, Command: "nu_install"}).Return("", nil)
 
-	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, h, mOs, p, testIssueCache(t))
+	w := NewWorktree(nuConfig(), mGit, mJj, forgeResolver(mGh), mConn, mBrowser, mClipboard, h, mOs, p, testIssueCache(t))
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true, Switch: true})
 	require.NoError(t, err)
 }
@@ -138,7 +142,7 @@ func TestConnectFromBrowserUnparseableURL(t *testing.T) {
 	w := NewWorktree(
 		nuConfig(),
 		git.NewMockGit(t), jj.NewMockJj(t), forgeResolver(forge.NewMockForge(t)), connector.NewMockConnector(t),
-		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
+		mBrowser, clipboard.NewMockClipboard(t), home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
 	)
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})
 	require.Error(t, err)
@@ -152,7 +156,7 @@ func TestConnectFromBrowserUnavailable(t *testing.T) {
 	w := NewWorktree(
 		nuConfig(),
 		git.NewMockGit(t), jj.NewMockJj(t), forgeResolver(forge.NewMockForge(t)), connector.NewMockConnector(t),
-		mBrowser, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
+		mBrowser, nil, home.NewHome(oswrap.NewMockOs(t)), oswrap.NewMockOs(t), pathwrap.NewPath(), testIssueCache(t),
 	)
 	_, err := w.Connect(model.WorktreeConnectOpts{FromBrowser: true})
 	require.Error(t, err)

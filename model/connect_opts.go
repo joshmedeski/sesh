@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type ConnectOpts struct {
 	Command    string
@@ -11,13 +13,15 @@ type ConnectOpts struct {
 }
 
 type WorktreeConnectOpts struct {
-	Number      int
-	Repo        string // GitHub "org/repo" override; empty => detect from cwd
-	Pr          bool   // force the pull-request path
-	Switch      bool
-	FromBrowser bool // resolve Number/Repo/Pr from the active browser tab URL
-	Command     string
-	Background  bool
+	Number        int
+	Ref           string // any non-numerical issue/PR reference; currently only URL is supported
+	Repo          string // GitHub "org/repo" override; empty => detect from cwd
+	Pr            bool   // force the pull-request path
+	Switch        bool
+	FromBrowser   bool // resolve Number/Repo/Pr from the active browser tab URL
+	FromClipboard bool // resolve Number/Repo/Pr from the clipboard
+	Command       string
+	Background    bool
 }
 
 // WorktreeListOpts selects which repo's worktrees to list. Path and Repo are

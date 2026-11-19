@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/spf13/cobra"
 
 	"github.com/joshmedeski/sesh/v2/browser"
@@ -201,7 +202,8 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	cl := cloner.NewCloner(c, b.Git, b.Jj)
 	br := browser.NewBrowser(b.Runtime, b.Shell, config.Browser)
 
-	wt = worktree.NewWorktree(config, b.Git, b.Jj, fr, c, br, b.Home, b.Os, b.Path, issueCache)
+	cb := clipboard.NewClipboard()
+	wt = worktree.NewWorktree(config, b.Git, b.Jj, fr, c, br, cb, b.Home, b.Os, b.Path, issueCache)
 	// Removing an entry from the picker has to be written through to the cache,
 	// or the next launch reads back the directory that was just removed. Nil
 	// when caching is off: the picker refetches every time anyway.

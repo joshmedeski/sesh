@@ -9,6 +9,7 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/cache"
+	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/git"
@@ -46,6 +47,7 @@ type RealWorktree struct {
 	forges    forge.Resolver
 	connector connector.Connector
 	browser   browser.Browser
+	clipboard clipboard.Clipboard
 	home      home.Home
 	os        oswrap.Os
 	path      pathwrap.Path
@@ -61,12 +63,13 @@ func NewWorktree(
 	f forge.Resolver,
 	c connector.Connector,
 	b browser.Browser,
+	cb clipboard.Clipboard,
 	h home.Home,
 	os oswrap.Os,
 	p pathwrap.Path,
 	issues *cache.Namespace[forge.Issue],
 ) Worktree {
-	return &RealWorktree{config, g, j, f, c, b, h, os, p, issues}
+	return &RealWorktree{config, g, j, f, c, b, cb, h, os, p, issues}
 }
 
 func (w *RealWorktree) ForgeFromConfig(cfg model.WorktreeConfig) (forge.Forge, error) {
@@ -87,6 +90,20 @@ type connectPlan struct {
 func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 	if opts.FromBrowser {
 		resolved, err := w.resolveFromBrowser(opts)
+		if err != nil {
+			return "", err
+		}
+		opts = resolved
+
+	} else if opts.FromClipboard {
+		resolved, err := w.resolveFromClipboard(opts)
+		if err != nil {
+			return "", err
+		}
+		opts = resolved
+
+	} else if opts.Ref != "" {
+		resolved, err := w.resolveFromRef(opts)
 		if err != nil {
 			return "", err
 		}
@@ -216,9 +233,30 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeConnectOpts) (model
 	if !ok {
 		return opts, fmt.Errorf("browser tab lookup unavailable: set [browser].application (macOS only)")
 	}
-	repo, number, isPR, ok := ParseGitHubRef(url)
+	opts.Ref = url
+	return w.resolveFromRef(opts)
+}
+
+// resolveFromClipboard reads the clipboard and fills Number/Repo/Pr from the
+// GitHub issue/PR it points at.
+func (w *RealWorktree) resolveFromClipboard(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
+	ref, err := w.clipboard.Read()
+	if err != nil {
+		return opts, err
+	}
+	ref = strings.TrimSpace(ref)
+	if number, err := strconv.Atoi(ref); err == nil {
+		opts.Number = number
+		return opts, nil
+	}
+	opts.Ref = ref
+	return w.resolveFromRef(opts)
+}
+
+func (w *RealWorktree) resolveFromRef(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
+	repo, number, isPR, ok := parseForgeRef(opts.Ref)
 	if !ok {
-		return opts, fmt.Errorf("could not parse a GitHub issue/PR from browser URL %q", url)
+		return opts, fmt.Errorf("could not parse an issue/PR/MR URL from %q", opts.Ref)
 	}
 	if opts.Repo == "" {
 		opts.Repo = repo
@@ -522,6 +560,21 @@ func firstIssueRef(text string) int {
 // ("issues"|"pull"), and the number. Tolerant of scheme, trailing path,
 // query, and fragment.
 var githubRefRe = regexp.MustCompile(`(?:^|https?://)(?:www\.)?github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
+
+var (
+	gitlabRefRe = regexp.MustCompile(`(?:^|https?://)[^/\s:]+(?::\d+)?/([^\s?#]+?)/-/(issues|merge_requests)/(\d+)`)
+	forgeRefRe  = regexp.MustCompile(`(?:^|https?://)[^/\s:]+(?::\d+)?/([^/\s]+/[^/\s]+)/(issues|pull)/(\d+)`)
+)
+
+func parseForgeRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
+	for _, re := range []*regexp.Regexp{gitlabRefRe, forgeRefRe} {
+		if m := re.FindStringSubmatch(rawURL); m != nil {
+			n, err := strconv.Atoi(m[3])
+			return m[1], n, m[2] != "issues", err == nil
+		}
+	}
+	return "", 0, false, false
+}
 
 // ParseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
 // ok is false for any URL that is not a recognizable issue/PR reference.
