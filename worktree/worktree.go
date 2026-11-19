@@ -254,9 +254,9 @@ func (w *RealWorktree) resolveFromClipboard(opts model.WorktreeConnectOpts) (mod
 }
 
 func (w *RealWorktree) resolveFromRef(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
-	repo, number, isPR, ok := ParseGitHubRef(opts.Ref)
+	repo, number, isPR, ok := parseForgeRef(opts.Ref)
 	if !ok {
-		return opts, fmt.Errorf("could not parse a GitHub issue/PR from %q", opts.Ref)
+		return opts, fmt.Errorf("could not parse an issue/PR/MR URL from %q", opts.Ref)
 	}
 	if opts.Repo == "" {
 		opts.Repo = repo
@@ -560,6 +560,21 @@ func firstIssueRef(text string) int {
 // ("issues"|"pull"), and the number. Tolerant of scheme, trailing path,
 // query, and fragment.
 var githubRefRe = regexp.MustCompile(`(?:^|https?://)(?:www\.)?github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
+
+var (
+	gitlabRefRe = regexp.MustCompile(`(?:^|https?://)[^/\s:]+(?::\d+)?/([^\s?#]+?)/-/(issues|merge_requests)/(\d+)`)
+	forgeRefRe  = regexp.MustCompile(`(?:^|https?://)[^/\s:]+(?::\d+)?/([^/\s]+/[^/\s]+)/(issues|pull)/(\d+)`)
+)
+
+func parseForgeRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
+	for _, re := range []*regexp.Regexp{gitlabRefRe, forgeRefRe} {
+		if m := re.FindStringSubmatch(rawURL); m != nil {
+			n, err := strconv.Atoi(m[3])
+			return m[1], n, m[2] != "issues", err == nil
+		}
+	}
+	return "", 0, false, false
+}
 
 // ParseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
 // ok is false for any URL that is not a recognizable issue/PR reference.

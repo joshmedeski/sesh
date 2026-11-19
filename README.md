@@ -1550,8 +1550,9 @@ application = "Helium"
 sesh worktree connect --browser   # or: sesh wt c -b
 ```
 
-The URL's `org/repo` is matched against your `[[worktree]]` entries by `repo`. Both
-`/issues/N` and `/pull/N` URLs are supported. macOS only.
+The URL's `org/repo` (or GitLab `group/project`) is matched against your `[[worktree]]`
+entries by `repo`. GitHub `/issues/N` and `/pull/N` and GitLab `/-/issues/N` and
+`/-/merge_requests/N` URLs are supported, including custom hosts. macOS only.
 
 On other platforms, you can copy the browser URL and either paste it as positional
 argument or use the `--clipboard` flag.

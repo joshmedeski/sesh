@@ -7,8 +7,8 @@ import (
 	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
-	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/forge"
+	"github.com/joshmedeski/sesh/v2/git"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -137,5 +137,5 @@ func TestConnectFromRefUnparseableURL(t *testing.T) {
 		pathwrap.NewPath(), testIssueCache(t),
 	)
 	_, err := w.Connect(model.WorktreeConnectOpts{Ref: "https://example.com/"})
-	require.EqualError(t, err, "could not parse a GitHub issue/PR from \"https://example.com/\"")
+	require.EqualError(t, err, "could not parse an issue/PR/MR URL from \"https://example.com/\"")
 }

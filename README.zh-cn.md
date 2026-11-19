@@ -1512,8 +1512,9 @@ application = "Helium"
 sesh worktree connect --browser   # 或：sesh wt c -b
 ```
 
-URL 中的 `org/repo` 会按 `repo` 与您的 `[[worktree]]` 条目匹配。`/issues/N` 和 `/pull/N`
-两种 URL 都受支持。仅限 macOS。
+URL 中的 `org/repo`（或 GitLab 的 `group/project`）会按 `repo` 与您的 `[[worktree]]` 条目匹配。
+支持 GitHub 的 `/issues/N` 和 `/pull/N` 以及 GitLab 的 `/-/issues/N` 和 `/-/merge_requests/N`
+URL，包括自定义主机。仅限 macOS。
 
 在其他平台上，您可以复制浏览器 URL，然后将其作为位置参数粘贴，或使用 `--clipboard` 标志。
 
