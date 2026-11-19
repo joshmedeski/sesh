@@ -34,11 +34,13 @@ type WorktreeListOpts struct {
 
 // WorktreeEntry is one worktree directory paired with the issue it maps to.
 type WorktreeEntry struct {
-	Number int    // issue/PR number, taken from the directory name
-	Path   string // absolute path to the worktree
-	Title  string // issue title; empty when unknown or not yet fetched
-	State  string // "OPEN" | "CLOSED" | "MERGED"; empty when unknown
-	Icon   string
+	Number  int    // issue/PR number, taken from the directory name
+	RefType string // "issue" or "pull_request"
+	Name    string // the worktree/directory name (in forge-specific form)
+	Path    string // absolute path to the worktree
+	Title   string // issue title; empty when unknown or not yet fetched
+	State   string // "OPEN" | "CLOSED" | "MERGED"; empty when unknown
+	Icon    string
 	// Created is when the worktree was added; zero when unknown.
 	Created time.Time
 }

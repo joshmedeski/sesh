@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img src="sesh-hero.jpg" alt="Hands typing on a keyboard with green lightning arcing from each fingertip into the keys" />
 </p>
 
 <h1 align="center">Sesh, the smart tmux session manager</h1>
@@ -49,6 +49,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     <td>
 
 - [Videos](#videos)
+- [Demo](#demo)
 - [How to install](#how-to-install)
 - [Shell Completion](#shell-completion)
 - [Extensions](#extensions)
@@ -88,6 +89,12 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     </td>
   </tr>
 </table>
+
+## Demo
+
+<p align="center">
+  <img src="sesh-demo.gif" alt="sesh demo: opening the session picker, fuzzy finding a project, and jumping between sessions with keyboard shortcuts" />
+</p>
 
 ## How to install
 
@@ -491,7 +498,7 @@ Supported colors are `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan
 
 The active window names are fetched live in one tmux call and only when the format uses an active-window-name placeholder. A tmux lookup failure simply leaves the active-window-name placeholders empty. `--format` cannot be combined with `--json`.
 
-`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set. Sessions under a `[[worktree]]` root include `Worktree` (`Repo`, `Number`, `Title`, `State`), with `Title` and `State` read from the issue cache that `sesh worktree list` fills; it is `null` for every other session.
+`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set. Sessions under a `[[worktree]]` root include `Worktree` (`Repo`, `Number`, `Title`, `State`, `Name`, `RefType`), with `Title` and `State` read from the issue cache that `sesh worktree list` fills. `RefType` reports the forge reference kind (`"issue"` or `"pull_request"`), and `Name` carries the worktree directory name in the forge-specific form: e.g., a GitLab merge request worktree reports `Number: 101` with `Name: "mr-101"` and `RefType: "pull_request"`, while a directory named `101` reports `Name: "101"` and `RefType: "issue"`. It is `null` for every other session.
 
 Arbitrary formatted rows are display output and are not parsed back by `sesh connect`. When using fzf, keep the raw session name in a hidden field and show only the formatted field:
 
@@ -597,6 +604,12 @@ sesh mkdir my-new-project
 sesh mkdir my-new-project        # relative to the current directory
 sesh mkdir ~/projects/my-app     # relative to your home directory
 sesh mkdir /Users/josh/dev/api   # absolute path
+```
+
+Pass `-b` / `--background` to `sesh connect`, `sesh mkdir`, or `sesh clone` to create the session without moving the client; the session name is printed so scripts can chain off it:
+
+```sh
+sesh connect -b ~/c/api -c "npm run dev"
 ```
 
 ## gum + tmux

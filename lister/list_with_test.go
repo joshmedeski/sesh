@@ -37,7 +37,7 @@ func newListWithBackends() *listWithBackends {
 }
 
 func (b *listWithBackends) lister(config model.Config) SourceLister {
-	return NewLister(config, b.home, b.tmux, b.zoxide, b.tmuxinator, nil, nil)
+	return NewLister(config, b.home, b.tmux, b.zoxide, b.tmuxinator, nil, nil, nil)
 }
 
 func zoxideSource(name, path string, score float64) model.SeshSessions {

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,6 @@ import (
 	"github.com/joshmedeski/sesh/v2/cache"
 	"github.com/joshmedeski/sesh/v2/connector"
 	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -25,9 +25,9 @@ import (
 
 // testIssueCache points the issue namespace at a scratch directory so tests
 // never read or write the developer's real cache.
-func testIssueCache(t *testing.T) *cache.Namespace[github.Issue] {
+func testIssueCache(t *testing.T) *cache.Namespace[forge.Issue] {
 	t.Helper()
-	return cache.NewNamespaceInDir[github.Issue](
+	return cache.NewNamespaceInDir[forge.Issue](
 		t.TempDir(), IssueCacheName, IssueCacheVersion, IssueCacheTTL,
 	)
 }
@@ -55,10 +55,57 @@ func dirs(names ...string) []os.DirEntry {
 // worktrees under /repo/w.
 type listFixture struct {
 	worktree Worktree
-	gh       *github.MockGithub
+	gh       *forge.MockForge
+	gl       *forge.MockForge
 	os       *oswrap.MockOs
-	issues   *cache.Namespace[github.Issue]
+	issues   *cache.Namespace[forge.Issue]
 	created  map[string]time.Time
+}
+
+func (f *listFixture) expectWorktree(id int, isPr bool) {
+	name := strconv.Itoa(id)
+	if isPr {
+		name = "mr-" + name
+	}
+	f.gh.EXPECT().WorktreeNumber(name).Return(id, isPr, nil).Maybe()
+	f.gh.EXPECT().IssueKey("github.com", "nutiliti/nutiliti", id, isPr).
+		Return("github.com/nutiliti/nutiliti#" + strconv.Itoa(id)).Maybe()
+	f.gh.EXPECT().WorktreeName(id, isPr).Return(name).Maybe()
+}
+
+func (f *listFixture) expectWorktreeCustomHost(host, repo string, id int, isPr bool) {
+	name := strconv.Itoa(id)
+	if isPr {
+		name = "mr-" + name
+	}
+	f.gh.EXPECT().WorktreeNumber(name).Return(id, isPr, nil).Maybe()
+	f.gh.EXPECT().IssueKey(host, repo, id, isPr).
+		Return(host + "/" + repo + "#" + strconv.Itoa(id)).Maybe()
+	f.gh.EXPECT().WorktreeName(id, isPr).Return(name).Maybe()
+}
+
+func (f *listFixture) expectWorktrees(ids ...int) {
+	for _, id := range ids {
+		f.expectWorktree(id, false)
+	}
+}
+
+func (f *listFixture) expectGitLabWorktreeCustomHost(host, repo string, id int, isPr bool) {
+	name := strconv.Itoa(id)
+	if isPr {
+		name = "mr-" + name
+	}
+	key := host + "/" + repo + "#" + strconv.Itoa(id)
+	if isPr {
+		key = host + "/" + repo + "!" + strconv.Itoa(id)
+	}
+	f.gl.EXPECT().WorktreeNumber(name).Return(id, isPr, nil).Maybe()
+	f.gl.EXPECT().IssueKey(host, repo, id, isPr).Return(key).Maybe()
+	f.gl.EXPECT().WorktreeName(id, isPr).Return(name).Maybe()
+}
+
+func (f *listFixture) expectGitLabWorktree(repo string, id int, isPr bool) {
+	f.expectGitLabWorktreeCustomHost("gitlab.com", repo, id, isPr)
 }
 
 type fakeFileInfo struct {
@@ -68,15 +115,17 @@ type fakeFileInfo struct {
 
 func (f fakeFileInfo) ModTime() time.Time { return f.modTime }
 
-func newListFixture(t *testing.T, issues *cache.Namespace[github.Issue]) listFixture {
+func newListFixture(t *testing.T, issues *cache.Namespace[forge.Issue]) listFixture {
 	t.Helper()
 	mOs := oswrap.NewMockOs(t)
-	mGh := github.NewMockGithub(t)
+	mGh := forge.NewMockForge(t)
+	mGl := forge.NewMockForge(t)
 
 	mOs.EXPECT().UserHomeDir().Return("/home/me", nil).Maybe()
 	// None of the paths under test contain ~ or $VARs, so expansion is identity.
 	mOs.EXPECT().ExpandEnv(mock.Anything).
 		RunAndReturn(func(s string) string { return s }).Maybe()
+	mGh.EXPECT().PrsAsIssues("github.com", "nutiliti/nutiliti", []int{}).Return(map[int]forge.Issue{}, nil, nil).Maybe()
 	created := map[string]time.Time{}
 	mOs.EXPECT().Stat(mock.Anything).RunAndReturn(func(name string) (os.FileInfo, error) {
 		if t, ok := created[name]; ok {
@@ -85,11 +134,48 @@ func newListFixture(t *testing.T, issues *cache.Namespace[github.Issue]) listFix
 		return nil, os.ErrNotExist
 	}).Maybe()
 
+	cfg := nuConfig()
+	cfg.WorktreeConfigs = append(cfg.WorktreeConfigs,
+		model.WorktreeConfig{
+			Repo:        "enterprise/repo",
+			Host:        "github.example.com",
+			Path:        "/enterprise-repo",
+			WorktreeDir: ".wk",
+		},
+		model.WorktreeConfig{
+			Repo:        "inkscape/inkscape",
+			Forge:       "gitlab",
+			Path:        "/gitlab-repo",
+			WorktreeDir: ".wk",
+		},
+		model.WorktreeConfig{
+			Repo:        "internal/repo",
+			Forge:       "gitlab",
+			Host:        "gitlab.example.com",
+			Path:        "/internal-repo",
+			WorktreeDir: ".wk",
+		},
+	)
+
+	fr := forge.NewResolver(
+		func(c model.WorktreeConfig) (forge.Forge, error) {
+			if c.Forge == model.ForgeGitlab {
+				return mGl, nil
+			}
+			return mGh, nil
+		},
+		func(path string) (forge.Forge, error) {
+			return mGh, nil
+		},
+	)
+
 	w := NewWorktree(
-		nuConfig(), git.NewMockGit(t), jj.NewMockJj(t), mGh, connector.NewMockConnector(t),
+		cfg, git.NewMockGit(t), jj.NewMockJj(t), fr, connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), issues,
 	)
-	return listFixture{worktree: w, gh: mGh, os: mOs, issues: issues, created: created}
+	f := listFixture{worktree: w, gh: mGh, gl: mGl, os: mOs, issues: issues, created: created}
+	f.expectWorktrees(409, 426)
+	return f
 }
 
 func TestList_FetchesTitlesOnColdCache(t *testing.T) {
@@ -97,7 +183,7 @@ func TestList_FetchesTitlesOnColdCache(t *testing.T) {
 
 	f := newListFixture(t, testIssueCache(t))
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409", "426"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409, 426}).Return(map[int]github.Issue{
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409, 426}).Return(map[int]forge.Issue{
 		409: {Number: 409, Title: "worktree support", State: "OPEN"},
 		426: {Number: 426, Title: "cap fuzzy penalty", State: "CLOSED"},
 	}, nil, nil).Once()
@@ -106,8 +192,8 @@ func TestList_FetchesTitlesOnColdCache(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, []model.WorktreeEntry{
-		{Number: 409, Path: p.FromSlash("/repo/w/409"), Title: "worktree support", State: "OPEN"},
-		{Number: 426, Path: p.FromSlash("/repo/w/426"), Title: "cap fuzzy penalty", State: "CLOSED"},
+		{Number: 409, Name: "409", Path: p.FromSlash("/repo/w/409"), Title: "worktree support", State: "OPEN", RefType: model.RefTypeIssue},
+		{Number: 426, Name: "426", Path: p.FromSlash("/repo/w/426"), Title: "cap fuzzy penalty", State: "CLOSED", RefType: model.RefTypeIssue},
 	}, entries)
 }
 
@@ -120,7 +206,7 @@ func TestList_WarmCacheMakesNoRequest(t *testing.T) {
 	// First run populates the cache.
 	first := newListFixture(t, issues)
 	first.os.EXPECT().ReadDir(wRoot).Return(dirs("409"), nil)
-	first.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+	first.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).Return(map[int]forge.Issue{
 		409: {Number: 409, Title: "worktree support", State: "OPEN"},
 	}, nil, nil).Once()
 	_, err := first.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
@@ -141,14 +227,14 @@ func TestList_OnlyFetchesTheStaleNumbers(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	issues := testIssueCache(t)
-	entries := cache.Entries[github.Issue]{}
-	entries.Put(github.IssueKey("nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "cached", State: "OPEN"})
+	entries := cache.Entries[forge.Issue]{}
+	entries.Put("github.com/nutiliti/nutiliti#409", forge.Issue{Number: 409, Title: "cached", State: "OPEN"})
 	require.NoError(t, issues.Save(entries))
 
 	f := newListFixture(t, issues)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409", "426"), nil)
 	// Only 426 is requested — 409 is already fresh.
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{426}).Return(map[int]github.Issue{
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{426}).Return(map[int]forge.Issue{
 		426: {Number: 426, Title: "fetched", State: "OPEN"},
 	}, nil, nil).Once()
 
@@ -164,13 +250,13 @@ func TestList_RefreshRefetchesEvenFreshEntries(t *testing.T) {
 	wRoot := p.FromSlash("/repo/w")
 
 	issues := testIssueCache(t)
-	cached := cache.Entries[github.Issue]{}
-	cached.Put(github.IssueKey("nutiliti/nutiliti", 409), github.Issue{Number: 409, Title: "stale title", State: "OPEN"})
+	cached := cache.Entries[forge.Issue]{}
+	cached.Put("github.com/nutiliti/nutiliti#409", forge.Issue{Number: 409, Title: "stale title", State: "OPEN"})
 	require.NoError(t, issues.Save(cached))
 
 	f := newListFixture(t, issues)
 	f.os.EXPECT().ReadDir(wRoot).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).Return(map[int]forge.Issue{
 		409: {Number: 409, Title: "renamed since", State: "CLOSED"},
 	}, nil, nil).Once()
 
@@ -193,13 +279,13 @@ func TestList_RefreshRefetchesNegativelyCachedNumbers(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	issues := testIssueCache(t)
-	cached := cache.Entries[github.Issue]{}
-	cached.PutMissing(github.IssueKey("nutiliti/nutiliti", 409))
+	cached := cache.Entries[forge.Issue]{}
+	cached.PutMissing("github.com/nutiliti/nutiliti#409")
 	require.NoError(t, issues.Save(cached))
 
 	f := newListFixture(t, issues)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).Return(map[int]forge.Issue{
 		409: {Number: 409, Title: "created since", State: "OPEN"},
 	}, nil, nil).Once()
 
@@ -225,10 +311,10 @@ func TestList_ExpiredEntriesAreRefetched(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	dir := t.TempDir()
-	issues := cache.NewNamespaceInDir[github.Issue](dir, IssueCacheName, IssueCacheVersion, time.Hour)
-	stored := cache.Entries[github.Issue]{
-		github.IssueKey("nutiliti/nutiliti", 409): {
-			Value:     github.Issue{Number: 409, Title: "old title", State: "OPEN"},
+	issues := cache.NewNamespaceInDir[forge.Issue](dir, IssueCacheName, IssueCacheVersion, time.Hour)
+	stored := cache.Entries[forge.Issue]{
+		"github.com/nutiliti/nutiliti#409": {
+			Value:     forge.Issue{Number: 409, Title: "old title", State: "OPEN"},
 			FetchedAt: time.Now().Add(-2 * time.Hour),
 		},
 	}
@@ -236,7 +322,7 @@ func TestList_ExpiredEntriesAreRefetched(t *testing.T) {
 
 	f := newListFixture(t, issues)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).Return(map[int]forge.Issue{
 		409: {Number: 409, Title: "new title", State: "CLOSED"},
 	}, nil, nil).Once()
 
@@ -250,10 +336,10 @@ func TestList_ShowsStaleTitleWhenRefetchFails(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	dir := t.TempDir()
-	issues := cache.NewNamespaceInDir[github.Issue](dir, IssueCacheName, IssueCacheVersion, time.Hour)
-	stored := cache.Entries[github.Issue]{
-		github.IssueKey("nutiliti/nutiliti", 409): {
-			Value:     github.Issue{Number: 409, Title: "stale but useful", State: "OPEN"},
+	issues := cache.NewNamespaceInDir[forge.Issue](dir, IssueCacheName, IssueCacheVersion, time.Hour)
+	stored := cache.Entries[forge.Issue]{
+		"github.com/nutiliti/nutiliti#409": {
+			Value:     forge.Issue{Number: 409, Title: "stale but useful", State: "OPEN"},
 			FetchedAt: time.Now().Add(-2 * time.Hour),
 		},
 	}
@@ -261,7 +347,7 @@ func TestList_ShowsStaleTitleWhenRefetchFails(t *testing.T) {
 
 	f := newListFixture(t, issues)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).
 		Return(nil, nil, assert.AnError).Once()
 
 	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
@@ -276,13 +362,13 @@ func TestList_FetchFailureOnColdCacheStillLists(t *testing.T) {
 
 	f := newListFixture(t, testIssueCache(t))
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).
 		Return(nil, nil, assert.AnError).Once()
 
 	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
 
 	require.NoError(t, err)
-	assert.Equal(t, []model.WorktreeEntry{{Number: 409, Path: p.FromSlash("/repo/w/409")}}, got)
+	assert.Equal(t, []model.WorktreeEntry{{Number: 409, Name: "409", Path: p.FromSlash("/repo/w/409"), RefType: model.RefTypeIssue}}, got)
 }
 
 func TestList_MissingIssuesAreNotRefetched(t *testing.T) {
@@ -292,34 +378,37 @@ func TestList_MissingIssuesAreNotRefetched(t *testing.T) {
 	issues := testIssueCache(t)
 
 	first := newListFixture(t, issues)
+	first.expectWorktrees(99999999)
 	first.os.EXPECT().ReadDir(wRoot).Return(dirs("99999999"), nil)
-	first.gh.EXPECT().Issues("nutiliti/nutiliti", []int{99999999}).
-		Return(map[int]github.Issue{}, []int{99999999}, nil).Once()
+	first.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{99999999}).
+		Return(map[int]forge.Issue{}, []int{99999999}, nil).Once()
 	got, err := first.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
 	require.NoError(t, err)
 	assert.Empty(t, got[0].Title)
 
 	// The absence was cached, so the second run does not ask again.
 	second := newListFixture(t, issues)
+	second.expectWorktrees(99999999)
 	second.os.EXPECT().ReadDir(wRoot).Return(dirs("99999999"), nil)
 
 	got, err = second.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
 
 	require.NoError(t, err)
-	assert.Equal(t, []model.WorktreeEntry{{Number: 99999999, Path: p.FromSlash("/repo/w/99999999")}}, got)
+	assert.Equal(t, []model.WorktreeEntry{{Number: 99999999, Name: "99999999", Path: p.FromSlash("/repo/w/99999999"), RefType: model.RefTypeIssue}}, got)
 }
 
 func TestList_IgnoresNonNumericAndNonDirEntries(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	f := newListFixture(t, testIssueCache(t))
+	f.gh.EXPECT().WorktreeNumber("scratch").Return(0, false, strconv.ErrSyntax)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return([]os.DirEntry{
 		fakeDirEntry{name: "409", isDir: true},
 		fakeDirEntry{name: "scratch", isDir: true},
 		fakeDirEntry{name: ".DS_Store", isDir: false},
 		fakeDirEntry{name: "426", isDir: false}, // a file, not a worktree
 	}, nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).Return(map[int]forge.Issue{
 		409: {Number: 409, Title: "worktree support", State: "OPEN"},
 	}, nil, nil).Once()
 
@@ -334,10 +423,11 @@ func TestList_SortsNumerically(t *testing.T) {
 	p := pathwrap.NewPath()
 
 	f := newListFixture(t, testIssueCache(t))
+	f.expectWorktrees(99, 1000)
 	// ReadDir returns lexical order, in which "1000" precedes "99".
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("1000", "409", "99"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{99, 409, 1000}).
-		Return(map[int]github.Issue{}, nil, nil).Once()
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{99, 409, 1000}).
+		Return(map[int]forge.Issue{}, nil, nil).Once()
 
 	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
 
@@ -389,8 +479,8 @@ func TestList_SelectsConfigByPath(t *testing.T) {
 
 	f := newListFixture(t, testIssueCache(t))
 	f.os.EXPECT().ReadDir(wRoot).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).
-		Return(map[int]github.Issue{409: {Number: 409, Title: "t", State: "OPEN"}}, nil, nil).Once()
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).
+		Return(map[int]forge.Issue{409: {Number: 409, Title: "t", State: "OPEN"}}, nil, nil).Once()
 
 	got, err := f.worktree.List(model.WorktreeListOpts{Path: wRoot})
 
@@ -430,7 +520,7 @@ func TestList_MissingRepoKeyErrors(t *testing.T) {
 		return nil, os.ErrNotExist
 	}).Maybe()
 	w := NewWorktree(
-		config, git.NewMockGit(t), jj.NewMockJj(t), github.NewMockGithub(t), connector.NewMockConnector(t),
+		config, git.NewMockGit(t), jj.NewMockJj(t), forgeResolver(forge.NewMockForge(t)), connector.NewMockConnector(t),
 		browser.NewMockBrowser(t), home.NewHome(mOs), mOs, pathwrap.NewPath(), testIssueCache(t),
 	)
 
@@ -453,13 +543,13 @@ func TestList_KeysAreScopedByRepo(t *testing.T) {
 
 	// A cached issue 409 belonging to a different repo must not be reused.
 	issues := testIssueCache(t)
-	entries := cache.Entries[github.Issue]{}
-	entries.Put(github.IssueKey("other/repo", 409), github.Issue{Number: 409, Title: "wrong repo", State: "OPEN"})
+	entries := cache.Entries[forge.Issue]{}
+	entries.Put("github.com/other/repo#409", forge.Issue{Number: 409, Title: "wrong repo", State: "OPEN"})
 	require.NoError(t, issues.Save(entries))
 
 	f := newListFixture(t, issues)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).Return(map[int]forge.Issue{
 		409: {Number: 409, Title: "right repo", State: "OPEN"},
 	}, nil, nil).Once()
 
@@ -477,7 +567,7 @@ func TestList_CreatedFromDotGitOrDotJjModTime(t *testing.T) {
 	f.created[p.FromSlash("/repo/w/409/.git")] = added
 	f.created[p.FromSlash("/repo/w/426/.jj")] = added.Add(time.Hour)
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409", "426"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409, 426}).Return(map[int]github.Issue{}, nil, nil)
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409, 426}).Return(map[int]forge.Issue{}, nil, nil)
 
 	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
 	require.NoError(t, err)
@@ -492,10 +582,78 @@ func TestList_CarriesConfiguredIcon(t *testing.T) {
 	f := newListFixture(t, testIssueCache(t))
 	f.worktree.(*RealWorktree).config.WorktreeConfigs[0].Icon = "🏠"
 	f.os.EXPECT().ReadDir(p.FromSlash("/repo/w")).Return(dirs("409"), nil)
-	f.gh.EXPECT().Issues("nutiliti/nutiliti", []int{409}).Return(map[int]github.Issue{}, nil, nil)
+	f.gh.EXPECT().Issues("github.com", "nutiliti/nutiliti", []int{409}).Return(map[int]forge.Issue{}, nil, nil)
 
 	got, err := f.worktree.List(model.WorktreeListOpts{Repo: "nutiliti/nutiliti"})
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	assert.Equal(t, "🏠", got[0].Icon)
+}
+
+func TestList_GitLabIssuesAndMergeRequests(t *testing.T) {
+	p := pathwrap.NewPath()
+
+	f := newListFixture(t, testIssueCache(t))
+	f.expectGitLabWorktree("inkscape/inkscape", 42, false)
+	f.expectGitLabWorktree("inkscape/inkscape", 101, true)
+
+	f.os.EXPECT().ReadDir(p.FromSlash("/gitlab-repo/.wk")).Return(dirs("42", "mr-101"), nil)
+	f.gl.EXPECT().Issues("gitlab.com", "inkscape/inkscape", []int{42}).Return(map[int]forge.Issue{
+		42: {Number: 42, Title: "GitLab Issue", State: "OPEN"},
+	}, nil, nil).Once()
+	f.gl.EXPECT().PrsAsIssues("gitlab.com", "inkscape/inkscape", []int{101}).Return(map[int]forge.Issue{
+		101: {Number: 101, Title: "GitLab MR", State: "OPEN"},
+	}, nil, nil).Once()
+
+	entries, err := f.worktree.List(model.WorktreeListOpts{Repo: "inkscape/inkscape"})
+
+	require.NoError(t, err)
+	assert.Equal(t, []model.WorktreeEntry{
+		{Number: 42, Name: "42", Path: p.FromSlash("/gitlab-repo/.wk/42"), Title: "GitLab Issue", State: "OPEN", RefType: model.RefTypeIssue},
+		{Number: 101, Name: "mr-101", Path: p.FromSlash("/gitlab-repo/.wk/mr-101"), Title: "GitLab MR", State: "OPEN", RefType: model.RefTypePr},
+	}, entries)
+}
+
+func TestList_GitLabCustomHost(t *testing.T) {
+	p := pathwrap.NewPath()
+
+	f := newListFixture(t, testIssueCache(t))
+	f.expectGitLabWorktreeCustomHost("gitlab.example.com", "internal/repo", 99, false)
+	f.expectGitLabWorktreeCustomHost("gitlab.example.com", "internal/repo", 202, true)
+
+	f.os.EXPECT().ReadDir(p.FromSlash("/internal-repo/.wk")).Return(dirs("99", "mr-202"), nil)
+	f.gl.EXPECT().Issues("gitlab.example.com", "internal/repo", []int{99}).Return(map[int]forge.Issue{
+		99: {Number: 99, Title: "Custom Host Issue", State: "OPEN"},
+	}, nil, nil).Once()
+	f.gl.EXPECT().PrsAsIssues("gitlab.example.com", "internal/repo", []int{202}).Return(map[int]forge.Issue{
+		202: {Number: 202, Title: "Custom Host MR", State: "OPEN"},
+	}, nil, nil).Once()
+
+	entries, err := f.worktree.List(model.WorktreeListOpts{Repo: "internal/repo"})
+
+	require.NoError(t, err)
+	assert.Equal(t, []model.WorktreeEntry{
+		{Number: 99, Name: "99", Path: p.FromSlash("/internal-repo/.wk/99"), Title: "Custom Host Issue", State: "OPEN", RefType: model.RefTypeIssue},
+		{Number: 202, Name: "mr-202", Path: p.FromSlash("/internal-repo/.wk/mr-202"), Title: "Custom Host MR", State: "OPEN", RefType: model.RefTypePr},
+	}, entries)
+}
+
+func TestList_GitHubCustomHost(t *testing.T) {
+	p := pathwrap.NewPath()
+
+	f := newListFixture(t, testIssueCache(t))
+	f.expectWorktreeCustomHost("github.example.com", "enterprise/repo", 55, false)
+
+	f.os.EXPECT().ReadDir(p.FromSlash("/enterprise-repo/.wk")).Return(dirs("55"), nil)
+	f.gh.EXPECT().Issues("github.example.com", "enterprise/repo", []int{55}).Return(map[int]forge.Issue{
+		55: {Number: 55, Title: "Enterprise Issue", State: "OPEN"},
+	}, nil, nil).Once()
+	f.gh.EXPECT().PrsAsIssues("github.example.com", "enterprise/repo", []int{}).Return(map[int]forge.Issue{}, nil, nil).Once()
+
+	entries, err := f.worktree.List(model.WorktreeListOpts{Repo: "enterprise/repo"})
+
+	require.NoError(t, err)
+	assert.Equal(t, []model.WorktreeEntry{
+		{Number: 55, Name: "55", Path: p.FromSlash("/enterprise-repo/.wk/55"), Title: "Enterprise Issue", State: "OPEN", RefType: model.RefTypeIssue},
+	}, entries)
 }

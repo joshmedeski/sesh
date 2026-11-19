@@ -221,7 +221,7 @@ func newFixture(t *testing.T, tweak func(*model.Config)) *fixture {
 // real is the uncached lister over the machine.
 func (f *fixture) real() lister.SourceLister {
 	return lister.NewLister(f.config, fakeHome{}, f.tmux, f.zoxide, f.tmuxinator,
-		formatter.NewFormatter(icon.NewIcon(f.config)), nil)
+		formatter.NewFormatter(icon.NewIcon(f.config)), nil, nil)
 }
 
 // cached is a CachingLister over the machine. When the test ends, any held

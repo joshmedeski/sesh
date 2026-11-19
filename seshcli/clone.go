@@ -2,6 +2,7 @@ package seshcli
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -29,6 +30,9 @@ func NewCloneCommand(base *BaseDeps) *cobra.Command {
 			dir, _ := cmd.Flags().GetString("dir")
 			vcsFlag, _ := cmd.Flags().GetString("vcs")
 			vcs := cloneVcs(vcsFlag, deps.Config.Vcs)
+			switchFlag, _ := cmd.Flags().GetBool("switch")
+			command, _ := cmd.Flags().GetString("command")
+			background, _ := cmd.Flags().GetBool("background")
 
 			var gitFlags []string
 			dashIdx := cmd.ArgsLenAtDash()
@@ -36,18 +40,31 @@ func NewCloneCommand(base *BaseDeps) *cobra.Command {
 				gitFlags = args[dashIdx:]
 			}
 
-			opts := model.GitCloneOptions{CmdDir: cmdDir, Repo: repo, Dir: dir, GitFlags: gitFlags, Vcs: vcs}
-			if _, err := deps.Cloner.Clone(opts); err != nil {
-				return err
-			} else {
-				return nil
+			opts := model.GitCloneOptions{
+				CmdDir:   cmdDir,
+				Repo:     repo,
+				Dir:      dir,
+				GitFlags: gitFlags,
+				Vcs:      vcs,
+				Connect:  model.ConnectOpts{Switch: switchFlag, Command: command, Background: background},
 			}
+			session, err := deps.Cloner.Clone(opts)
+			if err != nil {
+				return err
+			}
+			if background {
+				fmt.Println(session)
+			}
+			return nil
 		},
 	}
 
 	cmd.Flags().StringP("cmdDir", "c", "", "The directory to clone into")
 	cmd.Flags().StringP("dir", "d", "", "The name of the directory the clone creates")
 	cmd.Flags().String("vcs", "", "Clone with {git|jj} (overrides the vcs config)")
+	cmd.Flags().BoolP("switch", "s", false, "Switch the session (rather than attach). This is useful for actions triggered outside the terminal.")
+	cmd.Flags().String("command", "", "Execute a command when connecting to the new session.")
+	cmd.Flags().BoolP("background", "b", false, "create without selecting it or moving the client")
 
 	return cmd
 }

@@ -9,7 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/joshmedeski/sesh/v2/cache"
-	"github.com/joshmedeski/sesh/v2/github"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/icon"
 	"github.com/joshmedeski/sesh/v2/lister"
@@ -70,11 +70,13 @@ type RealPicker struct {
 	// tmux is reached only to kill a live session the user confirmed killing
 	// from the picker.
 	tmux tmux.Tmux
+	// forges provides methods for determining forge drivers for repositories.
+	forges forge.Resolver
 	// refreshCache refetches the cached sources into the cache after a frecency
 	// entry is removed. Nil when caching is off, which is also when there is
 	// nothing to refresh.
 	refreshCache CacheRefreshFunc
-	issues       *cache.Namespace[github.Issue]
+	issues       *cache.Namespace[forge.Issue]
 }
 
 // CacheRefreshFunc rewrites the session cache from live data. The picker calls
@@ -83,7 +85,7 @@ type RealPicker struct {
 // forgotten until the entry aged out on its own.
 type CacheRefreshFunc func()
 
-func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards lister.WildcardFinder, zoxide zoxide.Zoxide, tmux tmux.Tmux, refreshCache CacheRefreshFunc, issues *cache.Namespace[github.Issue]) Picker {
+func NewPicker(config model.Config, previewer previewer.Previewer, home home.Home, wildcards lister.WildcardFinder, zoxide zoxide.Zoxide, tmux tmux.Tmux, forges forge.Resolver, refreshCache CacheRefreshFunc, issues *cache.Namespace[forge.Issue]) Picker {
 	return &RealPicker{
 		config:       config,
 		previewer:    previewer,
@@ -91,6 +93,7 @@ func NewPicker(config model.Config, previewer previewer.Previewer, home home.Hom
 		wildcards:    wildcards,
 		zoxide:       zoxide,
 		tmux:         tmux,
+		forges:       forges,
 		refreshCache: refreshCache,
 		issues:       issues,
 	}
@@ -146,11 +149,11 @@ func aliasAutoConnectDelay(configured string) time.Duration {
 	return d
 }
 
-func worktreeResolver(config model.Config, h home.Home, issues *cache.Namespace[github.Issue]) WorktreeFunc {
+func worktreeResolver(config model.Config, h home.Home, forges forge.Resolver, issues *cache.Namespace[forge.Issue]) WorktreeFunc {
 	if !config.TUI.ShowWorktreeTitles {
 		return nil
 	}
-	return lister.WorktreeResolver(config, h, issues)
+	return lister.WorktreeResolver(config, h, forges, issues)
 }
 
 // previewWidth resolves the percent of the terminal guaranteed to the preview
@@ -290,7 +293,7 @@ func (p *RealPicker) Pick(fetchFunc FetchFunc, opts PickerOptions) (string, erro
 		AliasAutoConnectDelay:   aliasAutoConnectDelay(p.config.TUI.AliasAutoConnectDelay),
 		DisableAliasAutoConnect: disableAliasAutoConnect,
 		Icon:                    lister.IconResolver(p.config, p.home, p.wildcards),
-		Worktree:                worktreeResolver(p.config, p.home, p.issues),
+		Worktree:                worktreeResolver(p.config, p.home, p.forges, p.issues),
 		IconWidth:               iconColWidth(p.config),
 		Glyphs:                  glyphs,
 		Preview:                 preview,
