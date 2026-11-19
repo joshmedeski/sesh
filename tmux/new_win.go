@@ -15,7 +15,7 @@ const windowTargetFormat = "#{session_name}:#{window_index}"
 func (t *RealTmux) NewWindowInSession(opts model.TmuxWindowOpts) (string, error) {
 	args := []string{"new-window", "-P", "-F", windowTargetFormat}
 	if opts.Name != "" {
-		args = append(args, "-n", escapeFormat(opts.Name))
+		args = append(args, "-n", escapeFormatKeepStyles(opts.Name))
 	}
 	if opts.StartDir != "" {
 		args = append(args, "-c", escapeFormat(opts.StartDir))
