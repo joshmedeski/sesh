@@ -111,7 +111,9 @@ func (c *RealConfigurator) resolveImports(config *model.Config, homeDir string) 
 
 		config.SessionConfigs = append(config.SessionConfigs, importConfig.SessionConfigs...)
 		config.WindowConfigs = append(config.WindowConfigs, importConfig.WindowConfigs...)
+		config.PaneConfigs = append(config.PaneConfigs, importConfig.PaneConfigs...)
 		config.WildcardConfigs = append(config.WildcardConfigs, importConfig.WildcardConfigs...)
+		config.WorktreeConfigs = append(config.WorktreeConfigs, importConfig.WorktreeConfigs...)
 	}
 	return nil
 }
@@ -193,6 +195,39 @@ func validateNameSubstitutions(config *model.Config) error {
 	return nil
 }
 
+func validateWindows(config *model.Config) error {
+	panes := make(map[string]bool, len(config.PaneConfigs))
+	for _, pane := range config.PaneConfigs {
+		panes[pane.Name] = true
+	}
+	for _, window := range config.WindowConfigs {
+		for _, pane := range window.Panes {
+			if !panes[pane] {
+				return fmt.Errorf("window %q uses pane %q, which is not defined in config", window.Name, pane)
+			}
+		}
+	}
+	return nil
+}
+
+// validateWorktrees normalizes the forge in each worktree config so that
+// the rest of the code can rely on a canonical value. It also rejects configs
+// that can't be normalized, which would otherwise cause errors later.
+func validateWorktrees(config *model.Config) error {
+	for i := range config.WorktreeConfigs {
+		wt := &config.WorktreeConfigs[i]
+
+		normalized, err := wt.Forge.Normalize()
+		if err != nil {
+			return fmt.Errorf(
+				"invalid forge in [[worktree]] block %d for repo %q: %w", i+1, wt.Repo, err,
+			)
+		}
+		wt.Forge = normalized
+	}
+	return nil
+}
+
 func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Config, error) {
 	file, err := c.os.ReadFile(configPath)
 	if err != nil {
@@ -214,10 +249,16 @@ func (c *RealConfigurator) getConfigFileFromPath(configPath string) (model.Confi
 	}
 
 	c.applyDefaults(&config)
+	if err := validateWorktrees(&config); err != nil {
+		return config, err
+	}
 	if err := validateAliases(&config); err != nil {
 		return config, err
 	}
 	if err := validateNameSubstitutions(&config); err != nil {
+		return config, err
+	}
+	if err := validateWindows(&config); err != nil {
 		return config, err
 	}
 	if _, err := icon.SourceGlyphs(config.Icons); err != nil {
@@ -255,10 +296,16 @@ func (c *RealConfigurator) getConfigFileFromUserConfigDir() (model.Config, error
 	}
 
 	c.applyDefaults(&config)
+	if err := validateWorktrees(&config); err != nil {
+		return config, err
+	}
 	if err := validateAliases(&config); err != nil {
 		return config, err
 	}
 	if err := validateNameSubstitutions(&config); err != nil {
+		return config, err
+	}
+	if err := validateWindows(&config); err != nil {
 		return config, err
 	}
 	if _, err := icon.SourceGlyphs(config.Icons); err != nil {

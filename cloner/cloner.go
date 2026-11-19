@@ -45,13 +45,7 @@ func (c *RealCloner) Clone(opts model.GitCloneOptions) (string, error) {
 		return "", fmt.Errorf("unsupported vcs %q: use git or jj", opts.Vcs)
 	}
 
-	newOpts := model.ConnectOpts{}
-	if _, err := c.connector.Connect(path, newOpts); err != nil {
-		return "", err
-	}
-
-	return "", nil
-
+	return c.connector.Connect(path, opts.Connect)
 }
 
 func getPath(opts model.GitCloneOptions) string {

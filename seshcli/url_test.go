@@ -68,7 +68,7 @@ func TestIssueRepo(t *testing.T) {
 		mockWorktree.On("RepoAt", "/code").Return("", false)
 		mockTmux.On("CurrentPanePath").Return("/code/app", nil)
 		mockWorktree.On("RepoAt", "/code/app").Return("", false)
-		mockGit.On("OriginURL", "/code/app").Return("git@github.com:org/app.git", nil)
+		mockGit.On("RemoteUrl", "/code/app", "origin").Return(true, "git@github.com:org/app.git", nil)
 
 		deps := &Deps{BaseDeps: BaseDeps{Git: mockGit}, Tmux: mockTmux, Worktree: mockWorktree}
 		assert.Equal(t, "org/app", issueRepo(deps))
@@ -76,13 +76,13 @@ func TestIssueRepo(t *testing.T) {
 }
 
 func TestURLPreview(t *testing.T) {
-	newDeps := func(command string) (*Deps, *github.MockGithub, *shell.MockShell) {
-		mockGithub := new(github.MockGithub)
+	newDeps := func(command string) (*Deps, *github.MockIssueDetailer, *shell.MockShell) {
+		mockGithub := new(github.MockIssueDetailer)
 		mockShell := new(shell.MockShell)
 		mockExec := new(execwrap.MockExec)
 		mockExec.On("LookPath", "defuddle").Return("", errors.New("not found"))
 		deps := &Deps{
-			BaseDeps: BaseDeps{Github: mockGithub, Shell: mockShell, Exec: mockExec},
+			BaseDeps: BaseDeps{Issues: mockGithub, Shell: mockShell, Exec: mockExec},
 			Config:   model.Config{URL: model.URLConfig{PreviewCommand: command}},
 		}
 		return deps, mockGithub, mockShell

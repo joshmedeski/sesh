@@ -1,6 +1,7 @@
 package startup
 
 import (
+	"cmp"
 	"fmt"
 
 	"github.com/joshmedeski/sesh/v2/home"
@@ -37,58 +38,138 @@ func (s *RealStartup) Exec(session model.SeshSession) (string, error) {
 
 	windows := make(model.SeshWindowMap)
 	for _, window := range s.config.WindowConfigs {
-		key := lister.ConfigKey(window.Name)
-		var path string
-		if window.Path != "" {
-			var err error
-			path, err = s.home.ExpandPath(window.Path)
-			if err != nil {
-				return "", fmt.Errorf("couldn't expand home: %q", err)
-			}
-		}
-
-		windows[key] = model.WindowConfig{
-			Name:          window.Name,
-			Path:          path,
-			StartupScript: window.StartupScript,
-		}
+		windows[lister.ConfigKey(window.Name)] = window
 	}
 
-	for _, window := range session.WindowNames {
-		windowConfig, ok := windows[lister.ConfigKey(window)]
-		if !ok {
-			return "", fmt.Errorf("window %s is not defined in config", window)
-		}
-		if windowConfig.Path == "" {
-			path, err := s.home.ExpandPath(session.Path)
-			if err != nil {
-				return "", fmt.Errorf("couldn't expand home: %q", err)
-			}
-			windowConfig.Path = path
-		}
+	panes := make(model.SeshPaneMap)
+	for _, pane := range s.config.PaneConfigs {
+		key := lister.ConfigKey(pane.Name)
+		panes[key] = pane
+	}
 
-		// create the new window
-		if ret, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
-			Name:          windowConfig.Name,
-			StartDir:      windowConfig.Path,
-			TargetSession: session.Name,
-		}); err != nil {
-			return ret, err
-		}
-		if ret, err := s.tmux.SendKeys(session.Name+":", windowConfig.StartupScript); err != nil {
-			return ret, err
+	for _, windowName := range session.WindowNames {
+		if err := s.createWindow(session, windowName, windows, panes); err != nil {
+			return "", err
 		}
 	}
 	_, _ = s.tmux.NextWindowInSession(session.Name)
 
+	var message string
 	for _, strategy := range strategies {
 		if command, err := strategy(s, session); err != nil {
 			return "", fmt.Errorf("failed to determine startup command: %w", err)
 		} else if command != "" {
-			_, _ = s.tmux.SendKeys(session.Name+":", command)
-			return fmt.Sprintf("executing startup command: %s", command), nil
+			if _, err := s.tmux.SendKeys(session.Name+":", command); err != nil {
+				return "", fmt.Errorf("failed to send startup command: %w", err)
+			}
+			message = fmt.Sprintf("executing startup command: %s", command)
+			break
 		}
 	}
 
-	return "", nil // no command to run
+	if firstPanes := s.firstWindowPanes(session); hasPaneSettings(firstPanes) {
+		path, err := s.home.ExpandPath(session.Path)
+		if err != nil {
+			return "", fmt.Errorf("first window: couldn't expand home: %w", err)
+		}
+		if err := s.createPanes(session.Name+":^", path, firstPanes, panes); err != nil {
+			return "", fmt.Errorf("first window: %w", err)
+		}
+	}
+
+	return message, nil
+}
+
+func (s *RealStartup) firstWindowPanes(session model.SeshSession) model.WindowPanes {
+	for _, sessionConfig := range s.config.SessionConfigs {
+		if lister.ConfigKey(sessionConfig.Name) == lister.ConfigKey(session.Name) && hasPaneSettings(sessionConfig.WindowPanes) {
+			return sessionConfig.WindowPanes
+		}
+	}
+	if wildcard, ok := s.lister.FindConfigWildcard(session.Path); ok && hasPaneSettings(wildcard.WindowPanes) {
+		return wildcard.WindowPanes
+	}
+	if session.DisableStartupCommand {
+		return model.WindowPanes{}
+	}
+	return s.config.DefaultSessionConfig.WindowPanes
+}
+
+func hasPaneSettings(windowPanes model.WindowPanes) bool {
+	return len(windowPanes.Panes) > 0 || windowPanes.Layout != ""
+}
+
+func (s *RealStartup) createWindow(session model.SeshSession, name string, windows model.SeshWindowMap, panes model.SeshPaneMap) error {
+	window, ok := windows[lister.ConfigKey(name)]
+	if !ok {
+		return fmt.Errorf("window %s is not defined in config", name)
+	}
+	path, err := s.home.ExpandPath(cmp.Or(window.Path, session.Path))
+	if err != nil {
+		return fmt.Errorf("window %s: couldn't expand home: %w", name, err)
+	}
+
+	target, err := s.tmux.NewWindowInSession(model.TmuxWindowOpts{
+		Name: window.Name, StartDir: path, TargetSession: session.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("window %s: %w", name, err)
+	}
+	if _, err := s.tmux.SendKeys(target, window.StartupScript); err != nil {
+		return fmt.Errorf("window %s: %w", name, err)
+	}
+	if err := s.createPanes(target, path, window.WindowPanes, panes); err != nil {
+		return fmt.Errorf("window %s: %w", name, err)
+	}
+	return nil
+}
+
+func (s *RealStartup) createPanes(target string, startDir string, windowPanes model.WindowPanes, panes model.SeshPaneMap) error {
+	var focusID, zoomID, prevID string
+	for _, paneName := range windowPanes.Panes {
+		pane, ok := panes[lister.ConfigKey(paneName)]
+		if !ok {
+			return fmt.Errorf("pane %s is not defined in config", paneName)
+		}
+		paneID, err := s.tmux.NewPaneInWindow(model.TmuxPaneOpts{
+			TargetWindow: target,
+			TargetPane:   prevID,
+			StartDir:     startDir,
+		})
+		if err != nil {
+			return fmt.Errorf("pane %s: %w", paneName, err)
+		}
+		if pane.StartupCommand != "" {
+			if _, err := s.tmux.SendKeys(paneID, pane.StartupCommand); err != nil {
+				return fmt.Errorf("pane %s: run startup command: %w", paneName, err)
+			}
+		}
+		prevID = paneID
+		if pane.Focus && focusID == "" {
+			focusID = paneID
+		}
+		if pane.Zoom && zoomID == "" {
+			zoomID = paneID
+		}
+	}
+	if windowPanes.Layout != "" {
+		if _, err := s.tmux.SelectLayout(target, windowPanes.Layout); err != nil {
+			return fmt.Errorf("apply layout %s: %w", windowPanes.Layout, err)
+		}
+	}
+	if focusID != "" {
+		if _, err := s.tmux.SelectPaneByID(focusID); err != nil {
+			return fmt.Errorf("focus pane: %w", err)
+		}
+	}
+	zoomTarget := zoomID
+	if zoomTarget == "" && windowPanes.Zoom && len(windowPanes.Panes) > 0 {
+		zoomTarget = cmp.Or(focusID, target)
+	}
+	if zoomTarget != "" {
+		if _, err := s.tmux.ZoomPane(zoomTarget); err != nil {
+			return fmt.Errorf("zoom pane: %w", err)
+		}
+	}
+	return nil
 }

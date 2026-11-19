@@ -3,7 +3,7 @@ package seshcli
 import (
 	"testing"
 
-	"github.com/joshmedeski/sesh/v2/github"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 	"github.com/joshmedeski/sesh/v2/namer"
@@ -31,30 +31,47 @@ func (t *tmuxRenamer) RenameSession(target string, newName string) (string, erro
 	return "", nil
 }
 
+func forgeResolver(f forge.Forge) forge.Resolver {
+	return forge.NewResolver(
+		func(cfg model.WorktreeConfig) (forge.Forge, error) {
+			return f, nil
+		},
+		func(path string) (forge.Forge, error) {
+			return f, nil
+		},
+	)
+}
+
 func TestEnrichedName(t *testing.T) {
 	t.Run("appends sanitized issue title to base", func(t *testing.T) {
 		mockNamer := new(namer.MockNamer)
-		mockGithub := new(github.MockGithub)
+		mockGithub := new(forge.MockForge)
 		mockNamer.On("Name", "/p").Return("400-status", nil)
 		mockGithub.On("Issue", "/p").
-			Return(github.Issue{Number: 400, Title: "warm: the cache", State: "OPEN"}, true, nil)
+			Return(forge.Issue{Number: 400, Title: "warm: the cache", State: "OPEN"}, true, nil)
 
 		deps := &Deps{Namer: mockNamer}
-		deps.Github = mockGithub
+		deps.ForgeResolver = forgeResolver(mockGithub)
 
-		assert.Equal(t, "400-status — warm the cache", enrichedName(deps, "/p"))
+		name, err := enrichedName(deps, "/p")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "400-status — warm the cache", name)
 	})
 
 	t.Run("returns bare base when no issue", func(t *testing.T) {
 		mockNamer := new(namer.MockNamer)
-		mockGithub := new(github.MockGithub)
+		mockGithub := new(forge.MockForge)
 		mockNamer.On("Name", "/p").Return("400-status", nil)
-		mockGithub.On("Issue", "/p").Return(github.Issue{}, false, nil)
+		mockGithub.On("Issue", "/p").Return(forge.Issue{}, false, nil)
 
 		deps := &Deps{Namer: mockNamer}
-		deps.Github = mockGithub
+		deps.ForgeResolver = forgeResolver(mockGithub)
 
-		assert.Equal(t, "400-status", enrichedName(deps, "/p"))
+		name, err := enrichedName(deps, "/p")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "400-status", name)
 	})
 
 	t.Run("returns empty when namer fails", func(t *testing.T) {
@@ -63,7 +80,25 @@ func TestEnrichedName(t *testing.T) {
 
 		deps := &Deps{Namer: mockNamer}
 
-		assert.Equal(t, "", enrichedName(deps, "/p"))
+		name, err := enrichedName(deps, "/p")
+
+		assert.NoError(t, err)
+		assert.Equal(t, "", name)
+	})
+
+	t.Run("returns the error when the forge cannot read the issue it found", func(t *testing.T) {
+		mockNamer := new(namer.MockNamer)
+		mockGithub := new(forge.MockForge)
+		mockNamer.On("Name", "/p").Return("400-status", nil)
+		mockGithub.On("Issue", "/p").Return(forge.Issue{}, false, assert.AnError)
+
+		deps := &Deps{Namer: mockNamer}
+		deps.ForgeResolver = forgeResolver(mockGithub)
+
+		name, err := enrichedName(deps, "/p")
+
+		assert.ErrorIs(t, err, assert.AnError)
+		assert.Equal(t, "", name)
 	})
 }
 
@@ -97,16 +132,16 @@ func TestRunEnrich(t *testing.T) {
 	t.Run("renames when the enriched name differs", func(t *testing.T) {
 		mockLister := new(lister.MockLister)
 		mockNamer := new(namer.MockNamer)
-		mockGithub := new(github.MockGithub)
+		mockGithub := new(forge.MockForge)
 		mockTmux := newTmuxRenamer()
 		mockLister.On("GetAttachedTmuxSession").
 			Return(model.SeshSession{Name: "400-status", Path: "/p"}, true)
 		mockNamer.On("Name", "/p").Return("400-status", nil)
 		mockGithub.On("Issue", "/p").
-			Return(github.Issue{Number: 400, Title: "warm the cache", State: "OPEN"}, true, nil)
+			Return(forge.Issue{Number: 400, Title: "warm the cache", State: "OPEN"}, true, nil)
 
 		deps := &Deps{Lister: mockLister, Namer: mockNamer}
-		deps.Github = mockGithub
+		deps.ForgeResolver = forgeResolver(mockGithub)
 		deps.Tmux = mockTmux
 
 		err := runEnrich(deps, nil)
@@ -119,16 +154,16 @@ func TestRunEnrich(t *testing.T) {
 	t.Run("does not rename when the name is unchanged (idempotent)", func(t *testing.T) {
 		mockLister := new(lister.MockLister)
 		mockNamer := new(namer.MockNamer)
-		mockGithub := new(github.MockGithub)
+		mockGithub := new(forge.MockForge)
 		mockTmux := newTmuxRenamer()
 		mockLister.On("GetAttachedTmuxSession").
 			Return(model.SeshSession{Name: "400-status — warm the cache", Path: "/p"}, true)
 		mockNamer.On("Name", "/p").Return("400-status", nil)
 		mockGithub.On("Issue", "/p").
-			Return(github.Issue{Number: 400, Title: "warm the cache", State: "OPEN"}, true, nil)
+			Return(forge.Issue{Number: 400, Title: "warm the cache", State: "OPEN"}, true, nil)
 
 		deps := &Deps{Lister: mockLister, Namer: mockNamer}
-		deps.Github = mockGithub
+		deps.ForgeResolver = forgeResolver(mockGithub)
 		deps.Tmux = mockTmux
 
 		err := runEnrich(deps, nil)

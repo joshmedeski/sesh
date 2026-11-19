@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img src="sesh-hero.jpg" alt="双手在键盘上打字，绿色闪电从每个指尖射入按键" />
 </p>
 
 <h1 align="center">Sesh，智能 tmux 会话管理器</h1>
@@ -26,7 +26,7 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
 
 - **智能创建会话** - 根据 git 仓库、git 远程或目录自动为会话命名
 - **集成 zoxide** - 立即跳转到您最常用的项目
-- **会话配置** - 在 `sesh.toml` 中为每个项目定义启动命令、窗口和预览命令
+- **会话配置** - 在 `sesh.toml` 中为每个项目定义启动命令、窗口、窗格和预览命令
 - **通配符配置** - 将设置应用于所有匹配 glob 模式的项目
 - **内置选择器** - 交互式会话选择器，也可以与 fzf、television 或 gum 集成
 - **克隆并连接** - 一步克隆 git 仓库并启动会话
@@ -49,6 +49,7 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
     <td>
 
 - [视频](#视频)
+- [演示](#演示)
 - [如何安装](#如何安装)
 - [Shell 补全](#shell-补全)
 - [扩展](#扩展)
@@ -88,6 +89,12 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
     </td>
   </tr>
 </table>
+
+## 演示
+
+<p align="center">
+  <img src="sesh-demo.gif" alt="sesh 演示：打开会话选择器，模糊查找项目，并使用键盘快捷键在会话之间跳转" />
+</p>
 
 ## 如何安装
 
@@ -489,7 +496,7 @@ sesh list --format '{fg:gray}{source}{/fg} {fg:bright-cyan}{active_window_name}{
 
 活动窗口名称通过一次 tmux 调用实时获取，并且仅在格式使用了活动窗口名称占位符时才会获取。tmux 查询失败只会让这些占位符为空。`--format` 不能与 `--json` 一起使用。
 
-`sesh list --json` 报告连接时实际会使用的内容：每个会话解析后的 `Icon`（与选择器显示的相同）、它的 `Alias`、`AliasAutoConnect` 和 `Tmuxp`、匹配的 `Wildcard` 模式，以及应用了 `[[wildcard]]` 和 `[default_session]` 回退后的 `StartupCommand`、`PreviewCommand`、`WindowNames` 和 `WindowConfigs`。无论是否设置了 `[tui] show_windows`，tmux 会话都包含其实时的 `TmuxWindows`（`Name`、`Index`、`Path`、`Active`）。位于 `[[worktree]]` 根目录下的会话包含 `Worktree`（`Repo`、`Number`、`Title`、`State`），其中 `Title` 和 `State` 读取自 `sesh worktree list` 填充的 issue 缓存；其他会话均为 `null`。
+`sesh list --json` 报告连接时实际会使用的内容：每个会话解析后的 `Icon`（与选择器显示的相同）、它的 `Alias`、`AliasAutoConnect` 和 `Tmuxp`、匹配的 `Wildcard` 模式，以及应用了 `[[wildcard]]` 和 `[default_session]` 回退后的 `StartupCommand`、`PreviewCommand`、`WindowNames` 和 `WindowConfigs`。无论是否设置了 `[tui] show_windows`，tmux 会话都包含其实时的 `TmuxWindows`（`Name`、`Index`、`Path`、`Active`）。位于 `[[worktree]]` 根目录下的会话包含 `Worktree`（`Repo`、`Number`、`Title`、`State`、`Name`、`RefType`），其中 `Title` 和 `State` 读取自 `sesh worktree list` 填充的 issue 缓存。`RefType` 报告 forge 引用类型（`"issue"` 或 `"pull_request"`），而 `Name` 以 forge 特定的形式携带 worktree 目录名：例如，GitLab 合并请求 worktree 报告 `Number: 101`、`Name: "mr-101"` 和 `RefType: "pull_request"`，而名为 `101` 的目录报告 `Name: "101"` 和 `RefType: "issue"`。其他会话均为 `null`。
 
 任意格式化的行只是显示输出，`sesh connect` 不会将其解析回来。使用 fzf 时，请将原始会话名称保留在隐藏字段中，只显示格式化字段：
 
@@ -594,6 +601,12 @@ sesh mkdir my-new-project
 sesh mkdir my-new-project        # 相对于当前目录
 sesh mkdir ~/projects/my-app     # 相对于主目录
 sesh mkdir /Users/josh/dev/api   # 绝对路径
+```
+
+向 `sesh connect`、`sesh mkdir` 或 `sesh clone` 传入 `-b` / `--background`，即可创建会话而不移动客户端；命令会输出会话名，便于脚本继续使用：
+
+```sh
+sesh connect -b ~/c/api -c "npm run dev"
 ```
 
 ## gum + tmux
@@ -945,37 +958,30 @@ group_separator = true
 > [!WARNING]
 > 此功能为实验性功能，可能无法按预期工作。
 
-Sesh 可以缓存会话列表以加快重复调用。缓存是可选的，默认禁用。启用后，sesh 会将结果存储在 `$XDG_CACHE_HOME/sesh/sessions.gob`（默认为 `~/.cache/sesh/sessions.gob`），并使用 TTL 为 5 秒的 stale-while-revalidate 策略：
+Sesh 可以缓存会话列表以加快重复调用。缓存是可选的，默认禁用。启用后，sesh 会将较慢的数据源（zoxide 和 tmuxinator）的结果存储在 `$XDG_CACHE_HOME/sesh/sessions.v2.gob`（默认为 `~/.cache/sesh/sessions.v2.gob`），并使用 TTL 为 5 秒的 stale-while-revalidate 策略：
 
-- **冷启动**：缓存不存在，获取实时数据并写入缓存
-- **新鲜命中**（5 秒内）：立即返回缓存数据
-- **过期命中**（5 秒后）：立即返回缓存数据，并在后台刷新缓存
+- **冷启动**：缓存不存在，获取 zoxide 和 tmuxinator 并写入缓存
+- **新鲜命中**（5 秒内）：使用缓存的 zoxide 和 tmuxinator 结果
+- **过期命中**（5 秒后）：使用缓存的结果，并在后台刷新缓存
 
-缓存也会在 `sesh connect` 之后自动刷新。
+缓存也会在 `sesh connect` 和 `sesh mkdir` 之后自动刷新。
 
 ```toml
 cache = true
 ```
 
-在 `sesh connect` 之外创建或终止的会话（例如直接使用 `tmux new-session`、关闭会话的最后一个窗口）在下一次过期命中刷新之前不会出现在缓存中。为保持缓存最新，请在这些事件发生时运行 `sesh cache refresh` —— 它会获取实时数据并重写缓存，缓存禁用时则不执行任何操作。使用 tmux 钩子可以覆盖这两种事件：
+tmux 会话从不缓存。列出它们只是一次通过本地套接字的调用，只需几毫秒，因此每次列表都显示实时会话，缓存不会保存过时或为空的 tmux 会话列表。来自 `[[session]]` 块的会话以及 `--panes` 的窗格同样实时列出。数据源顺序、黑名单、`--hide-attached`、`--hide-duplicates` 和格式化的行为与未启用缓存时相同。
 
-```sh
-set-hook -g session-created 'run-shell -b "sesh cache refresh"'
-set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
-```
+其他对 zoxide 或 tmuxinator 的更改，包括通过 `sesh picker` 连接时添加的 zoxide 条目，会在下一次过期命中刷新后出现。运行 `sesh cache refresh` 可立即重新获取这两个数据源并重写缓存；缓存禁用时它不执行任何操作。无需为 `session-created` 和 `session-closed` 设置 tmux 钩子。
 
-如需在单次运行中跳过缓存，请向 `sesh list` 或 `sesh picker` 传入 `--no-cache`。它会列出实时会话并将其写回缓存，因此下一次使用缓存的启动也是最新的。缓存禁用时它不执行任何操作。
+如需在单次运行中跳过缓存，请向 `sesh list` 或 `sesh picker` 传入 `--no-cache`。它会实时获取 zoxide 和 tmuxinator 并将其写回缓存，因此下一次使用缓存的启动也是最新的。缓存禁用时它不执行任何操作。
 
 ```sh
 sesh list --no-cache
 sesh picker --no-cache
 ```
 
-如果您在 fzf 选择器中使用了终止绑定（如上例中的 `ctrl-d`），请在重新加载列表之前刷新缓存，使被终止的会话立即消失：
-
-```sh
---bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
-```
+fzf 选择器中的终止绑定（如上例中的 `ctrl-d`）无需 `sesh cache refresh`：下一次 `sesh list` 会实时读取 tmux 会话。
 
 ### 选择器 TUI
 
@@ -1146,7 +1152,7 @@ filter: #
 
 允许终止您当前附加的会话：tmux 会将您的客户端移到另一个会话，如果这是最后一个会话则退出。选择器也会随之关闭，因为它就运行在那里。
 
-zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，两种操作之后都会重写缓存，因此下次启动时不会再列出刚刚移除的内容。
+zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，移除 zoxide 条目之后还会重写缓存，因此下次启动时不会再列出刚刚移除的内容。终止 tmux 会话无需重写，因为 tmux 会话不会被缓存。
 
 #### 预览窗格
 
@@ -1321,6 +1327,57 @@ name = "git"
 startup_script = "git pull"
 ```
 
+#### 窗格
+
+窗口可以拆分为多个窗格。使用 `[[pane]]` 定义每个窗格，并在窗口的 `panes` 中按名称引用。窗口自身的窗格运行 `startup_script` 并始终位于第一个；列出的窗格按顺序排列在其后，在窗口的路径中启动，并运行各自的 `startup_command`。
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+windows = [ "dev" ]
+
+[[window]]
+name = "dev"
+startup_script = "nvim"
+panes = [ "server", "tests" ]
+layout = "main-vertical"
+
+[[pane]]
+name = "server"
+startup_command = "npm run dev"
+
+[[pane]]
+name = "tests"
+startup_command = "npm test -- --watch"
+focus = true
+```
+
+| 字段 | 描述 |
+|-------|-------------|
+| `[[window]]` `panes` | 要拆分到窗口中的 `[[pane]]` 名称，按顺序排列 |
+| `[[window]]` `layout` | 应用于窗口的 tmux 布局：`main-vertical`、`main-horizontal`、`tiled`、`even-horizontal`、`even-vertical`，或自定义布局字符串 |
+| `[[window]]` `zoom` | 创建窗格后缩放（全屏）获得焦点的窗格 |
+| `[[pane]]` `name` | 在窗口的 `panes` 中使用的名称 |
+| `[[pane]]` `startup_command` | 在窗格中运行的命令 |
+| `[[pane]]` `focus` | 激活此窗格，而不是窗口自身的窗格 |
+| `[[pane]]` `zoom` | 缩放（全屏）此窗格，同时也会使其获得焦点 |
+
+第一个设置了 `focus` 或 `zoom` 的窗格生效，且缩放的窗格优先于 `focus` 和窗口的 `zoom`。窗格可以在多个窗口中重用。
+
+会话的第一个窗口可以在 `[[session]]`、`[[wildcard]]` 或 `[default_session]` 中使用相同的 `panes`、`layout` 和 `zoom`。其 `startup_command` 在窗口自身的窗格中运行。按 `[[session]]`、`[[wildcard]]`、`[default_session]` 的顺序，第一个设置了 `panes` 或 `layout` 的配置生效，并一同使用其 `zoom`。设置了 `disable_startup_command` 的会话不会继承 `[default_session]` 的窗格。
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+startup_command = "nvim"
+panes = [ "server" ]
+layout = "main-vertical"
+```
+
+如果某个窗口、窗格或布局无法创建，sesh 会在此停止，在 tmux 状态栏中显示该错误，并且 `sesh connect` 以非零状态退出。
+
 ### 通配符配置
 
 通配符配置让您可以定义适用于所有匹配 glob 模式的目录的会话设置，而无需为每个项目创建一个 `[[session]]` 条目。当某个目录下的所有项目都应使用相同的启动命令时，这非常有用。
@@ -1351,6 +1408,7 @@ startup_command = "git status"
 | `preview_command` | 预览会话时运行的命令 |
 | `disable_startup_command` | 设为 `true` 以禁止运行启动命令 |
 | `windows` | 要使用的窗口布局（`[[window]]` 配置中的窗口名称数组） |
+| `panes`、`layout`、`zoom` | 会话第一个窗口的窗格 —— 请参阅 [窗格](#窗格) |
 | `icon` | 匹配的会话在选择器中显示的图标 —— 请参阅 [自定义图标](#自定义图标) |
 
 **注意：** 模式使用 Go 的 `filepath.Match` 语法，支持 `*`（任意序列）、`?`（单个字符）和 `[...]`（字符类）。您也可以在模式末尾使用 `/**` 进行递归匹配 —— `~/projects/**` 匹配 `~/projects/foo`、`~/projects/foo/bar` 以及任何更深层的嵌套。单个 `*` 只匹配一层：`~/projects/*` 匹配 `~/projects/foo`，但不匹配 `~/projects/foo/bar`。显式的 `[[session]]` 配置始终优先于通配符匹配。如果有多个通配符匹配，配置中排在最前的优先。

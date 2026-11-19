@@ -266,6 +266,42 @@ func TestGetConfig_ImportPathWithTilde(t *testing.T) {
 	assert.Equal(t, "test-session", config.SessionConfigs[0].Name)
 }
 
+func TestGetConfig_ImportsWorktreeConfigs(t *testing.T) {
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		files: map[string][]byte{
+			"/main/sesh.toml":                []byte(`import = ["~/imports/wt.toml"]` + "\n"),
+			"/home/testuser/imports/wt.toml": []byte("[[worktree]]\nrepo = \"owner/repo\"\npath = \"~/c/repo\"\n"),
+		},
+	}
+	c := NewConfiguratorWithPath(mockOs, pathwrap.NewPath(), &runtimewrap.MockRunTime{}, "/main/sesh.toml")
+	config, err := c.GetConfig()
+
+	require.NoError(t, err)
+	require.Len(t, config.WorktreeConfigs, 1)
+	assert.Equal(t, "owner/repo", config.WorktreeConfigs[0].Repo)
+	assert.Equal(t, model.ForgeGithub, config.WorktreeConfigs[0].Forge)
+}
+
+func TestGetConfig_ImportAbsolutePathResolvesPlatformRoot(t *testing.T) {
+	importPath, err := filepath.Abs("/imports/abs.toml")
+	require.NoError(t, err)
+
+	mockOs := &testOs{
+		homeDir: "/home/testuser",
+		files: map[string][]byte{
+			"/main/sesh.toml":            []byte(`import = ["/imports/abs.toml"]` + "\n"),
+			filepath.ToSlash(importPath): []byte("[[session]]\nname = \"abs\"\npath = \"~/abs\"\n"),
+		},
+	}
+	c := NewConfiguratorWithPath(mockOs, pathwrap.NewPath(), &runtimewrap.MockRunTime{}, "/main/sesh.toml")
+	config, err := c.GetConfig()
+
+	require.NoError(t, err)
+	require.Len(t, config.SessionConfigs, 1)
+	assert.Equal(t, "abs", config.SessionConfigs[0].Name)
+}
+
 // configFromTOML loads a config straight from TOML content, going through the
 // same defaults and validation as a real config file.
 func configFromTOML(t *testing.T, contents string) (model.Config, error) {
@@ -294,6 +330,28 @@ func TestGetConfig_AliasAutoConnectDelayInvalid(t *testing.T) {
 	_, err := configFromTOML(t, "[tui]\nalias_auto_connect_delay = \"soon\"\n")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid alias_auto_connect_delay")
+}
+
+func TestGetConfig_WindowPanes(t *testing.T) {
+	const pane = "[[pane]]\nname = \"logs\"\n"
+
+	t.Run("accepts a preset layout and defined panes", func(t *testing.T) {
+		config, err := configFromTOML(t, pane+"[[window]]\nname = \"dev\"\npanes = [\"logs\"]\nlayout = \"main-vertical\"\n")
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"logs"}, config.WindowConfigs[0].Panes)
+	})
+
+	t.Run("accepts a custom layout string", func(t *testing.T) {
+		const layout = "bb62,80x24,0,0{40x24,0,0,0,39x24,41,0,1}"
+		config, err := configFromTOML(t, pane+"[[window]]\nname = \"dev\"\npanes = [\"logs\"]\nlayout = \""+layout+"\"\n")
+		assert.NoError(t, err)
+		assert.Equal(t, layout, config.WindowConfigs[0].Layout)
+	})
+
+	t.Run("rejects a pane that is not defined", func(t *testing.T) {
+		_, err := configFromTOML(t, "[[window]]\nname = \"dev\"\npanes = [\"logs\"]\n")
+		assert.ErrorContains(t, err, `window "dev" uses pane "logs", which is not defined in config`)
+	})
 }
 
 func TestGetConfig_AliasFilterPrefixDefault(t *testing.T) {

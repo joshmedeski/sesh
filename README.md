@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img src="sesh-hero.jpg" alt="Hands typing on a keyboard with green lightning arcing from each fingertip into the keys" />
 </p>
 
 <h1 align="center">Sesh, the smart tmux session manager</h1>
@@ -26,7 +26,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 
 - **Smart session creation** - automatically names sessions based on git repo, git remote, or directory
 - **Zoxide integration** - jump to your most-used projects instantly
-- **Session configuration** - define startup commands, windows, and preview commands per project in `sesh.toml`
+- **Session configuration** - define startup commands, windows, panes, and preview commands per project in `sesh.toml`
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
 - **Clone and connect** - clone a git repo and start a session in one step
@@ -49,6 +49,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     <td>
 
 - [Videos](#videos)
+- [Demo](#demo)
 - [How to install](#how-to-install)
 - [Shell Completion](#shell-completion)
 - [Extensions](#extensions)
@@ -88,6 +89,12 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     </td>
   </tr>
 </table>
+
+## Demo
+
+<p align="center">
+  <img src="sesh-demo.gif" alt="sesh demo: opening the session picker, fuzzy finding a project, and jumping between sessions with keyboard shortcuts" />
+</p>
 
 ## How to install
 
@@ -491,7 +498,7 @@ Supported colors are `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan
 
 The active window names are fetched live in one tmux call and only when the format uses an active-window-name placeholder. A tmux lookup failure simply leaves the active-window-name placeholders empty. `--format` cannot be combined with `--json`.
 
-`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set. Sessions under a `[[worktree]]` root include `Worktree` (`Repo`, `Number`, `Title`, `State`), with `Title` and `State` read from the issue cache that `sesh worktree list` fills; it is `null` for every other session.
+`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set. Sessions under a `[[worktree]]` root include `Worktree` (`Repo`, `Number`, `Title`, `State`, `Name`, `RefType`), with `Title` and `State` read from the issue cache that `sesh worktree list` fills. `RefType` reports the forge reference kind (`"issue"` or `"pull_request"`), and `Name` carries the worktree directory name in the forge-specific form: e.g., a GitLab merge request worktree reports `Number: 101` with `Name: "mr-101"` and `RefType: "pull_request"`, while a directory named `101` reports `Name: "101"` and `RefType: "issue"`. It is `null` for every other session.
 
 Arbitrary formatted rows are display output and are not parsed back by `sesh connect`. When using fzf, keep the raw session name in a hidden field and show only the formatted field:
 
@@ -597,6 +604,12 @@ sesh mkdir my-new-project
 sesh mkdir my-new-project        # relative to the current directory
 sesh mkdir ~/projects/my-app     # relative to your home directory
 sesh mkdir /Users/josh/dev/api   # absolute path
+```
+
+Pass `-b` / `--background` to `sesh connect`, `sesh mkdir`, or `sesh clone` to create the session without moving the client; the session name is printed so scripts can chain off it:
+
+```sh
+sesh connect -b ~/c/api -c "npm run dev"
 ```
 
 ## gum + tmux
@@ -965,37 +978,30 @@ and the groups no longer line up with contiguous ranges.
 > [!WARNING]
 > This feature is experimental and may not work as expected.
 
-Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores results at `$XDG_CACHE_HOME/sesh/sessions.gob` (default `~/.cache/sesh/sessions.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
+Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores the results of the slow sources, zoxide and tmuxinator, at `$XDG_CACHE_HOME/sesh/sessions.v2.gob` (default `~/.cache/sesh/sessions.v2.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
 
-- **Cold start**: no cache exists, fetches live data and writes the cache
-- **Fresh hit** (within 5s): returns cached data instantly
-- **Stale hit** (after 5s): returns cached data instantly and refreshes the cache in the background
+- **Cold start**: no cache exists, fetches zoxide and tmuxinator and writes the cache
+- **Fresh hit** (within 5s): uses the cached zoxide and tmuxinator results
+- **Stale hit** (after 5s): uses the cached results and refreshes the cache in the background
 
-The cache is also refreshed automatically after `sesh connect`.
+The cache is also refreshed automatically after `sesh connect` and `sesh mkdir`.
 
 ```toml
 cache = true
 ```
 
-Sessions created or killed outside `sesh connect` (e.g. plain `tmux new-session`, closing a session's last window) are missing from the cache until the next stale-hit refresh. To keep the cache current, run `sesh cache refresh` when those events happen — it fetches live data and rewrites the cache, and does nothing when the cache is disabled. With tmux hooks this covers both events:
+tmux sessions are never cached. Listing them is a single call over a local socket and takes milliseconds, so every list shows the live sessions, and the cache cannot hold an out-of-date or empty tmux session list. Sessions from `[[session]]` blocks and the panes of `--panes` are listed live too. Source order, the blacklist, `--hide-attached`, `--hide-duplicates` and formatting work as they do without the cache.
 
-```sh
-set-hook -g session-created 'run-shell -b "sesh cache refresh"'
-set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
-```
+Other changes to zoxide or tmuxinator, including the zoxide entry a connect from `sesh picker` adds, show up after the next stale-hit refresh. Run `sesh cache refresh` to refetch both sources and rewrite the cache right away; it does nothing when the cache is disabled. tmux hooks on `session-created` and `session-closed` are not needed.
 
-To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It lists live sessions and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
+To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It fetches zoxide and tmuxinator live and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
 
 ```sh
 sesh list --no-cache
 sesh picker --no-cache
 ```
 
-If you use a kill binding in an fzf picker (like `ctrl-d` in the example above), refresh the cache before reloading the list so the killed session disappears immediately:
-
-```sh
---bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
-```
+A kill binding in an fzf picker (like `ctrl-d` in the example above) needs no `sesh cache refresh`: the next `sesh list` reads the tmux sessions live.
 
 ### Picker TUI
 
@@ -1171,7 +1177,7 @@ Only tmux and zoxide rows can be removed — a `[[session]]` block or a tmuxinat
 
 Killing the session you are attached to is allowed: tmux moves your client to another session, or exits if that was the last one. The picker goes with it, since it was running there.
 
-The zoxide removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, the cache is rewritten behind either action so the next launch doesn't list what just went away.
+The zoxide removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, removing a zoxide entry also rewrites the cache so the next launch doesn't list what just went away. Killing a tmux session needs no rewrite because tmux sessions are not cached.
 
 #### Preview pane
 
@@ -1346,6 +1352,57 @@ name = "git"
 startup_script = "git pull"
 ```
 
+#### Panes
+
+A window can be split into panes. Define each pane once with `[[pane]]` and list it by name in a window's `panes`. The window's own pane runs `startup_script` and stays first; the listed panes follow in order, start in the window's path, and run their `startup_command`.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+windows = [ "dev" ]
+
+[[window]]
+name = "dev"
+startup_script = "nvim"
+panes = [ "server", "tests" ]
+layout = "main-vertical"
+
+[[pane]]
+name = "server"
+startup_command = "npm run dev"
+
+[[pane]]
+name = "tests"
+startup_command = "npm test -- --watch"
+focus = true
+```
+
+| Field | Description |
+|-------|-------------|
+| `[[window]]` `panes` | Names of `[[pane]]` entries to split into the window, in order |
+| `[[window]]` `layout` | tmux layout applied to the window: `main-vertical`, `main-horizontal`, `tiled`, `even-horizontal`, `even-vertical`, or a custom layout string |
+| `[[window]]` `zoom` | Zoom the focused pane once the panes are created |
+| `[[pane]]` `name` | Name used in a window's `panes` |
+| `[[pane]]` `startup_command` | Command to run in the pane |
+| `[[pane]]` `focus` | Make this pane active instead of the window's own pane |
+| `[[pane]]` `zoom` | Zoom this pane, which also focuses it |
+
+The first pane with `focus` or `zoom` wins, and a zoomed pane takes precedence over `focus` and the window's `zoom`. Panes are reusable across windows.
+
+The session's first window takes the same `panes`, `layout`, and `zoom` keys on `[[session]]`, `[[wildcard]]`, or `[default_session]`. Its `startup_command` runs in the window's own pane. The first of `[[session]]`, `[[wildcard]]`, `[default_session]` that sets `panes` or `layout` is used, together with its `zoom`. A session with `disable_startup_command` doesn't inherit the `[default_session]` panes.
+
+```toml
+[[session]]
+name = "my app"
+path = "~/c/my-app"
+startup_command = "nvim"
+panes = [ "server" ]
+layout = "main-vertical"
+```
+
+If a window, pane, or layout can't be set up, sesh stops there, shows the error in the tmux status line, and `sesh connect` exits non-zero.
+
 ### Wildcard Configuration
 
 Wildcard configs let you define session settings that apply to any directory matching a glob pattern, instead of creating a `[[session]]` entry for each project. This is useful when you have a directory full of projects that should all use the same startup command.
@@ -1376,6 +1433,7 @@ Available fields:
 | `preview_command` | Command to run when previewing the session |
 | `disable_startup_command` | Set to `true` to suppress the startup command |
 | `windows` | Window layout to use (array of window names from `[[window]]` configs) |
+| `panes`, `layout`, `zoom` | Panes for the session's first window — see [Panes](#panes) |
 | `icon` | Icon shown for matching sessions in the picker — see [Custom icons](#custom-icons) |
 
 **Note:** Patterns use Go's `filepath.Match` syntax which supports `*` (any sequence), `?` (single character), and `[...]` (character classes). You can also use `/**` at the end of a pattern for recursive matching -- `~/projects/**` matches `~/projects/foo`, `~/projects/foo/bar`, and any deeper nesting. A single `*` only matches one level: `~/projects/*` matches `~/projects/foo` but not `~/projects/foo/bar`. Explicit `[[session]]` configs always take priority over wildcard matches. If multiple wildcards match, the first one in config order wins.

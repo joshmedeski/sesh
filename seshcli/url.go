@@ -91,7 +91,7 @@ func issueRepo(deps *Deps) string {
 	if repo, ok := deps.Worktree.RepoAt(panePath); ok {
 		return repo
 	}
-	origin, err := deps.Git.OriginURL(panePath)
+	_, origin, err := deps.Git.RemoteUrl(panePath, "origin")
 	if err != nil {
 		return ""
 	}
@@ -138,7 +138,7 @@ func urlPreview(deps *Deps) picker.PreviewFunc {
 	}
 	return func(url string) (string, error) {
 		if repo, number, _, ok := worktree.ParseGitHubRef(url); ok {
-			if detail, err := deps.Github.IssueDetail(repo, number); err == nil {
+			if detail, err := deps.Issues.IssueDetail(repo, number); err == nil {
 				return issueMarkdown(detail), nil
 			}
 			return url, nil
