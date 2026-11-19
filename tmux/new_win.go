@@ -18,7 +18,7 @@ func (t *RealTmux) NewWindowInSession(opts model.TmuxWindowOpts) (string, error)
 		args = append(args, "-n", escapeFormatKeepStyles(opts.Name))
 	}
 	if opts.StartDir != "" {
-		args = append(args, "-c", escapeFormatKeepStyles(opts.StartDir))
+		args = append(args, "-c", escapeFormat(opts.StartDir))
 	}
 	if opts.Background {
 		args = append(args, "-d")
