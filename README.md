@@ -29,6 +29,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - **Session configuration** - define startup commands, windows, panes, and preview commands per project in `sesh.toml`
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
+- **Smart URL opener** - pick links from the current tmux pane and open them in your browser, with previews of GitHub issues, PRs, and pages, and bare `#1234` references resolved to your repo
 - **Clone and connect** - clone a git repo and start a session in one step
 - **Mkdir and connect** - create a new directory (relative or absolute path) and start a session in one step
 - **Last session switching** - seamlessly bounce between your two most recent sessions
