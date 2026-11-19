@@ -72,15 +72,16 @@ type RealPicker struct {
 	tmux tmux.Tmux
 	// forges provides methods for determining forge drivers for repositories.
 	forges forge.Resolver
-	// refreshCache refetches the session list into the cache after a removal.
-	// Nil when caching is off, which is also when there is nothing to refresh.
+	// refreshCache refetches the cached sources into the cache after a frecency
+	// entry is removed. Nil when caching is off, which is also when there is
+	// nothing to refresh.
 	refreshCache CacheRefreshFunc
 	issues       *cache.Namespace[forge.Issue]
 }
 
 // CacheRefreshFunc rewrites the session cache from live data. The picker calls
-// it after removing an entry: the cache is what the next launch reads, and
-// without this it would list a directory the frecency backend has already
+// it after removing a frecency entry: the cache is what the next launch reads,
+// and without this it would list a directory the frecency backend has already
 // forgotten until the entry aged out on its own.
 type CacheRefreshFunc func()
 
@@ -112,17 +113,11 @@ func (p *RealPicker) removeEntry(path string) error {
 	return nil
 }
 
-// killSession ends a live tmux session and refreshes the cache behind it, for
-// the same reason removeEntry does: the cache is what the next launch reads,
-// and without this it would offer a session that no longer exists.
+// killSession ends a live tmux session. The cache does not hold tmux sessions,
+// so there is nothing to refresh behind it.
 func (p *RealPicker) killSession(name string) error {
-	if _, err := p.tmux.KillSession(name); err != nil {
-		return err
-	}
-	if p.refreshCache != nil {
-		p.refreshCache()
-	}
-	return nil
+	_, err := p.tmux.KillSession(name)
+	return err
 }
 
 // buildAliases collects the aliases defined on [[session]] blocks, keyed by

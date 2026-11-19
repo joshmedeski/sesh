@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -54,9 +53,10 @@ func NewConnectCommand(base *BaseDeps) *cobra.Command {
 			if background {
 				fmt.Println(session)
 			}
-			// Refresh cache in background so next sesh list has fresh data
+			// Connecting adds the directory to zoxide, so refresh the cached sources
+			// for the next sesh list.
 			if deps.CachingLister != nil {
-				deps.CachingLister.RefreshCache(lister.ListOptions{})
+				deps.CachingLister.RefreshCache()
 				deps.CachingLister.Wait()
 			}
 			return nil

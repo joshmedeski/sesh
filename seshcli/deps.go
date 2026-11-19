@@ -184,7 +184,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	)
 	li := lister.NewLister(config, b.Home, t, b.Zoxide, b.Tmuxinator, fm, fr, issueCache)
 
-	usedLister := li
+	var usedLister lister.Lister = li
 	var cachedLi *lister.CachingLister
 	if config.Cache {
 		fc := cache.NewFileCache()
@@ -205,7 +205,7 @@ func (b *BaseDeps) BuildAll(configPath string) (*Deps, error) {
 	// when caching is off: the picker refetches every time anyway.
 	var refreshCache picker.CacheRefreshFunc
 	if cachedLi != nil {
-		refreshCache = func() { cachedLi.RefreshCache(lister.ListOptions{}) }
+		refreshCache = func() { cachedLi.RefreshCache() }
 	}
 	pk := picker.NewPicker(config, p, b.Home, usedLister, b.Zoxide, t, fr, refreshCache, issueCache)
 	mk := mkdirer.NewMkdirer(b.Os, b.Home, c)
