@@ -2,10 +2,10 @@ package seshcli
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
-	"github.com/joshmedeski/sesh/v2/lister"
 	"github.com/joshmedeski/sesh/v2/model"
 )
 
@@ -30,15 +30,21 @@ func NewMkdirCommand(base *BaseDeps) *cobra.Command {
 
 			switchFlag, _ := cmd.Flags().GetBool("switch")
 			command, _ := cmd.Flags().GetString("command")
+			background, _ := cmd.Flags().GetBool("background")
 
-			opts := model.ConnectOpts{Switch: switchFlag, Command: command}
-			if _, err := deps.Mkdirer.Mkdir(path, opts); err != nil {
+			opts := model.ConnectOpts{Switch: switchFlag, Command: command, Background: background}
+			session, err := deps.Mkdirer.Mkdir(path, opts)
+			if err != nil {
 				// TODO: add to logging
 				return err
 			}
-			// Refresh cache in background so next sesh list has fresh data
+			if background {
+				fmt.Println(session)
+			}
+			// Connecting adds the directory to zoxide, so refresh the cached sources
+			// for the next sesh list.
 			if deps.CachingLister != nil {
-				deps.CachingLister.RefreshCache(lister.ListOptions{})
+				deps.CachingLister.RefreshCache()
 				deps.CachingLister.Wait()
 			}
 			return nil
@@ -47,6 +53,7 @@ func NewMkdirCommand(base *BaseDeps) *cobra.Command {
 
 	cmd.Flags().BoolP("switch", "s", false, "Switch the session (rather than attach). This is useful for actions triggered outside the terminal.")
 	cmd.Flags().StringP("command", "c", "", "Execute a command when connecting to the new session.")
+	cmd.Flags().BoolP("background", "b", false, "create without selecting it or moving the client")
 
 	return cmd
 }

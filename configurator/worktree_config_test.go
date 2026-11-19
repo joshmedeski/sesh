@@ -27,16 +27,30 @@ create_command = "pnpm i"
 repo = "joshmedeski/sesh"
 path = "~/c/sesh"
 worktree_dir = "w"
+
+[[worktree]]
+repo = "inkscape/inkscape"
+forge = "gitlab"
+path = "~/c/inkscape"
+worktree_dir = "w"
+
+[[worktree]]
+repo = "internal/project"
+forge = "gitlab"
+host = "gitlab.example.com"
+path = "~/work/project"
 `
 	var c model.Config
 	require.NoError(t, toml.Unmarshal([]byte(input), &c))
 
 	assert.Equal(t, "wezterm", c.Terminal)
-	require.Len(t, c.WorktreeConfigs, 2)
+	require.Len(t, c.WorktreeConfigs, 4)
 
 	nu := c.WorktreeConfigs[0]
 	assert.Equal(t, "nutiliti/nutiliti", nu.Repo)
 	assert.Equal(t, "~/c/nu", nu.Path)
+	assert.Equal(t, model.Forge(""), nu.Forge)
+	assert.Equal(t, "", nu.Host)
 	assert.Equal(t, "w", nu.WorktreeDir)
 	assert.Equal(t, "jam/{number}-1", nu.BranchTemplate)
 	assert.Equal(t, "origin/main", nu.BaseBranch)
@@ -48,4 +62,16 @@ worktree_dir = "w"
 	sesh := c.WorktreeConfigs[1]
 	assert.Equal(t, "joshmedeski/sesh", sesh.Repo)
 	assert.Nil(t, sesh.Fetch) // absent => nil => treated as true downstream
+
+	gl := c.WorktreeConfigs[2]
+	assert.Equal(t, "inkscape/inkscape", gl.Repo)
+	assert.Equal(t, "~/c/inkscape", gl.Path)
+	assert.Equal(t, model.ForgeGitlab, gl.Forge)
+	assert.Equal(t, "", gl.Host)
+
+	selfHosted := c.WorktreeConfigs[3]
+	assert.Equal(t, "internal/project", selfHosted.Repo)
+	assert.Equal(t, "~/work/project", selfHosted.Path)
+	assert.Equal(t, model.ForgeGitlab, selfHosted.Forge)
+	assert.Equal(t, "gitlab.example.com", selfHosted.Host)
 }

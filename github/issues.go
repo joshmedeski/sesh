@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/joshmedeski/sesh/v2/forge"
 )
 
 // issueBatchSize caps how many issues go into a single GraphQL query. Each
@@ -17,16 +19,16 @@ const issueBatchSize = 100
 
 // Issues fetches issues by number using one aliased GraphQL query per batch,
 // instead of one `gh issue view` subprocess per issue.
-func (g *RealGithub) Issues(repo string, numbers []int) (map[int]Issue, []int, error) {
+func (g *RealGithub) Issues(host string, repo string, numbers []int) (map[int]forge.Issue, []int, error) {
 	owner, name, ok := splitRepo(repo)
 	if !ok {
 		return nil, nil, fmt.Errorf("repo must be in owner/name form, got %q", repo)
 	}
 
-	found := make(map[int]Issue)
+	found := make(map[int]forge.Issue)
 	var missing []int
 	for _, batch := range batchNumbers(numbers, issueBatchSize) {
-		batchFound, batchMissing, err := g.issueBatch(owner, name, batch)
+		batchFound, batchMissing, err := g.issueBatch(host, owner, name, batch)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -36,14 +38,15 @@ func (g *RealGithub) Issues(repo string, numbers []int) (map[int]Issue, []int, e
 	return found, missing, nil
 }
 
-func (g *RealGithub) issueBatch(owner, name string, numbers []int) (map[int]Issue, []int, error) {
+func (g *RealGithub) issueBatch(host, owner, name string, numbers []int) (map[int]forge.Issue, []int, error) {
 	query, aliases := buildIssueQuery(numbers)
 
 	// A batch where some numbers do not exist makes gh exit non-zero while
 	// still printing a body that holds the issues that did resolve, so this
 	// reads stdout rather than trusting the exit code.
+	// gh api does have a --hostname flag, unlike gh pr/issue view.
 	out, runErr := g.shell.CmdCapture(
-		"gh", "api", "graphql",
+		"gh", "api", "graphql", "--hostname", host,
 		"-f", "query="+query,
 		"-f", "owner="+owner,
 		"-f", "name="+name,
@@ -57,7 +60,7 @@ func (g *RealGithub) issueBatch(owner, name string, numbers []int) (map[int]Issu
 
 	var resp struct {
 		Data struct {
-			Repository map[string]*Issue `json:"repository"`
+			Repository map[string]*githubIssue `json:"repository"`
 		} `json:"data"`
 		Errors []graphqlError `json:"errors"`
 	}
@@ -71,11 +74,11 @@ func (g *RealGithub) issueBatch(owner, name string, numbers []int) (map[int]Issu
 
 	notFound := notFoundAliases(resp.Errors)
 
-	found := make(map[int]Issue, len(numbers))
+	found := make(map[int]forge.Issue, len(numbers))
 	var missing []int
 	for alias, number := range aliases {
 		if issue := resp.Data.Repository[alias]; issue != nil {
-			found[number] = *issue
+			found[number] = issue.toIssue()
 			continue
 		}
 		// Only a NOT_FOUND proves the issue is really gone. Any other null —

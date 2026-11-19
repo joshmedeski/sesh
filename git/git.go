@@ -1,6 +1,7 @@
 package git
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/joshmedeski/sesh/v2/shell"
@@ -24,6 +25,8 @@ type Git interface {
 	Pull(repoPath string) (string, error)
 	CurrentBranch(path string) (bool, string, error)
 	StatusSummary(path string) (StatusSummary, error)
+	RemoteUrl(path string, remote string) (bool, string, error)
+	RemoteHost(path string, remote string) (bool, string, error)
 }
 
 type RealGit struct {
@@ -132,4 +135,33 @@ func (g *RealGit) StatusSummary(path string) (StatusSummary, error) {
 		}
 	}
 	return s, nil
+}
+
+func (g *RealGit) RemoteUrl(path string, remote string) (bool, string, error) {
+	out, err := g.shell.Cmd("git", "-C", path, "remote", "get-url", remote)
+	if err != nil {
+		return false, "", err
+	}
+	return true, out, nil
+}
+
+func (g *RealGit) RemoteHost(path string, remote string) (bool, string, error) {
+	ok, u, err := g.RemoteUrl(path, remote)
+	if err != nil {
+		return false, "", err
+	}
+	if !ok {
+		return false, "", nil
+	}
+	if parsed, err := url.Parse(u); err == nil && parsed.Hostname() != "" {
+		return true, parsed.Hostname(), nil
+	}
+	if _, after, found := strings.Cut(u, "@"); found {
+		u = after
+	}
+	host, _, found := strings.Cut(u, ":")
+	if !found || host == "" {
+		return false, "", nil
+	}
+	return true, host, nil
 }

@@ -9,9 +9,10 @@ import (
 
 	"github.com/joshmedeski/sesh/v2/browser"
 	"github.com/joshmedeski/sesh/v2/cache"
+	"github.com/joshmedeski/sesh/v2/clipboard"
 	"github.com/joshmedeski/sesh/v2/connector"
+	"github.com/joshmedeski/sesh/v2/forge"
 	"github.com/joshmedeski/sesh/v2/git"
-	"github.com/joshmedeski/sesh/v2/github"
 	"github.com/joshmedeski/sesh/v2/home"
 	"github.com/joshmedeski/sesh/v2/jj"
 	"github.com/joshmedeski/sesh/v2/model"
@@ -27,48 +28,82 @@ type Worktree interface {
 	// BrowseURL returns the GitHub URL for the worktree containing
 	// sessionPath: its issue, or with pr the pull request for its branch.
 	BrowseURL(sessionPath string, pr bool) (string, error)
+	// RepoAt returns the GitHub repo of the [[worktree]] block whose path or
+	// worktree root contains path.
+	RepoAt(path string) (string, bool)
+
+	// MainWorktree returns the primary worktree path (first porcelain entry).
+	MainWorktree(cwd string) (string, error)
+	// ForgeFromConfig returns the forge driver for the given worktree config.
+	ForgeFromConfig(cfg model.WorktreeConfig) (forge.Forge, error)
+	// ForgeFromPath returns the forge driver for the repository at the given path.
+	ForgeFromPath(path string) (forge.Forge, error)
 }
 
 type RealWorktree struct {
 	config    model.Config
 	git       git.Git
 	jj        jj.Jj
-	github    github.Github
+	forges    forge.Resolver
 	connector connector.Connector
 	browser   browser.Browser
+	clipboard clipboard.Clipboard
 	home      home.Home
 	os        oswrap.Os
 	path      pathwrap.Path
 	// issues caches fetched issue titles so listing worktrees does not hit
 	// the network on every keystroke-adjacent invocation.
-	issues *cache.Namespace[github.Issue]
+	issues *cache.Namespace[forge.Issue]
 }
 
 func NewWorktree(
 	config model.Config,
 	g git.Git,
 	j jj.Jj,
-	gh github.Github,
+	f forge.Resolver,
 	c connector.Connector,
 	b browser.Browser,
+	cb clipboard.Clipboard,
 	h home.Home,
 	os oswrap.Os,
 	p pathwrap.Path,
-	issues *cache.Namespace[github.Issue],
+	issues *cache.Namespace[forge.Issue],
 ) Worktree {
-	return &RealWorktree{config, g, j, gh, c, b, h, os, p, issues}
+	return &RealWorktree{config, g, j, f, c, b, cb, h, os, p, issues}
 }
 
-// connectPlan captures the decisions derived from gh before touching git.
+func (w *RealWorktree) ForgeFromConfig(cfg model.WorktreeConfig) (forge.Forge, error) {
+	return w.forges.FromConfig(cfg)
+}
+
+func (w *RealWorktree) ForgeFromPath(path string) (forge.Forge, error) {
+	return w.forges.FromPath(path)
+}
+
+// connectPlan captures the decisions derived from the forge CLI before touching git.
 type connectPlan struct {
-	key        int  // issue or PR number used for the worktree dir/branch
-	prCheckout bool // create detached + `gh pr checkout` (vs. new branch)
-	pr         github.PullRequest
+	key        int  // issue or PR/MR number used for the worktree dir/branch
+	prCheckout bool // key is a PR/MR number ==> create detached + `gh pr checkout`/`glab mr checkout` (vs. new branch)
+	pr         forge.PullRequest
 }
 
 func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 	if opts.FromBrowser {
 		resolved, err := w.resolveFromBrowser(opts)
+		if err != nil {
+			return "", err
+		}
+		opts = resolved
+
+	} else if opts.FromClipboard {
+		resolved, err := w.resolveFromClipboard(opts)
+		if err != nil {
+			return "", err
+		}
+		opts = resolved
+
+	} else if opts.Ref != "" {
+		resolved, err := w.resolveFromRef(opts)
 		if err != nil {
 			return "", err
 		}
@@ -99,18 +134,26 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 		return "", err
 	}
 
+	f, err := w.ForgeFromConfig(cfg)
+	if err != nil {
+		return "", err
+	}
 	root := w.worktreeRoot(cfg, repoPath)
-	target := w.path.Join(root, strconv.Itoa(plan.key))
+	target := w.path.Join(root, f.WorktreeName(plan.key, plan.prCheckout))
 
+	host, err := forge.Host(cfg)
+	if err != nil {
+		return "", err
+	}
 	created := false
 	if _, statErr := w.os.Stat(target); statErr == nil {
 		// Existing worktree: refresh a PR checkout, then reconnect.
 		if plan.prCheckout && isJj {
-			if err := w.jjRefreshPr(repoPath, target, plan.pr); err != nil {
+			if err := w.jjRefreshPr(repoPath, target, host, plan.pr); err != nil {
 				return "", err
 			}
 		} else if plan.prCheckout {
-			if _, err := w.github.PrCheckout(target, cfg.Repo, opts.Number); err != nil {
+			if _, err := f.PrCheckout(target, host, cfg.Repo, opts.Number); err != nil {
 				return "", err
 			}
 			_, _ = w.git.Pull(target)
@@ -128,7 +171,7 @@ func (w *RealWorktree) Connect(opts model.WorktreeConnectOpts) (string, error) {
 			if _, err := w.git.WorktreeAddDetached(repoPath, target, baseBranch(cfg)); err != nil {
 				return "", err
 			}
-			if _, err := w.github.PrCheckout(target, cfg.Repo, opts.Number); err != nil {
+			if _, err := f.PrCheckout(target, host, cfg.Repo, opts.Number); err != nil {
 				return "", err
 			}
 		} else {
@@ -190,9 +233,30 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeConnectOpts) (model
 	if !ok {
 		return opts, fmt.Errorf("browser tab lookup unavailable: set [browser].application (macOS only)")
 	}
-	repo, number, isPR, ok := parseGitHubRef(url)
+	opts.Ref = url
+	return w.resolveFromRef(opts)
+}
+
+// resolveFromClipboard reads the clipboard and fills Number/Repo/Pr from the
+// GitHub issue/PR it points at.
+func (w *RealWorktree) resolveFromClipboard(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
+	ref, err := w.clipboard.Read()
+	if err != nil {
+		return opts, err
+	}
+	ref = strings.TrimSpace(ref)
+	if number, err := strconv.Atoi(ref); err == nil {
+		opts.Number = number
+		return opts, nil
+	}
+	opts.Ref = ref
+	return w.resolveFromRef(opts)
+}
+
+func (w *RealWorktree) resolveFromRef(opts model.WorktreeConnectOpts) (model.WorktreeConnectOpts, error) {
+	repo, number, isPR, ok := parseForgeRef(opts.Ref)
 	if !ok {
-		return opts, fmt.Errorf("could not parse a GitHub issue/PR from browser URL %q", url)
+		return opts, fmt.Errorf("could not parse an issue/PR/MR URL from %q", opts.Ref)
 	}
 	if opts.Repo == "" {
 		opts.Repo = repo
@@ -203,7 +267,15 @@ func (w *RealWorktree) resolveFromBrowser(opts model.WorktreeConnectOpts) (model
 }
 
 func (w *RealWorktree) planConnect(cfg model.WorktreeConfig, opts model.WorktreeConnectOpts) (connectPlan, error) {
-	pr, found, err := w.github.PrView(cfg.Repo, opts.Number)
+	f, err := w.ForgeFromConfig(cfg)
+	if err != nil {
+		return connectPlan{}, err
+	}
+	host, err := forge.Host(cfg)
+	if err != nil {
+		return connectPlan{}, err
+	}
+	pr, found, err := f.PrView(host, cfg.Repo, opts.Number)
 	if err != nil {
 		return connectPlan{}, err
 	}
@@ -212,7 +284,7 @@ func (w *RealWorktree) planConnect(cfg model.WorktreeConfig, opts model.Worktree
 		return connectPlan{key: opts.Number, prCheckout: false}, nil
 	}
 
-	me, err := w.github.CurrentUser()
+	me, err := f.CurrentUser(host)
 	if err != nil {
 		return connectPlan{}, err
 	}
@@ -248,7 +320,11 @@ func (w *RealWorktree) jjAdd(cfg model.WorktreeConfig, repoPath, target string, 
 		_, err := w.jj.BookmarkCreate(target, renderBranch(cfg, plan.key), "@")
 		return err
 	}
-	rev, err := w.jjFetchPr(repoPath, plan.pr)
+	host, err := forge.Host(cfg)
+	if err != nil {
+		return err
+	}
+	rev, err := w.jjFetchPr(repoPath, host, plan.pr)
 	if err != nil {
 		return err
 	}
@@ -256,8 +332,8 @@ func (w *RealWorktree) jjAdd(cfg model.WorktreeConfig, repoPath, target string, 
 	return err
 }
 
-func (w *RealWorktree) jjRefreshPr(repoPath, target string, pr github.PullRequest) error {
-	rev, err := w.jjFetchPr(repoPath, pr)
+func (w *RealWorktree) jjRefreshPr(repoPath, target, host string, pr forge.PullRequest) error {
+	rev, err := w.jjFetchPr(repoPath, host, pr)
 	if err != nil {
 		return err
 	}
@@ -265,14 +341,14 @@ func (w *RealWorktree) jjRefreshPr(repoPath, target string, pr github.PullReques
 	return err
 }
 
-func (w *RealWorktree) jjFetchPr(repoPath string, pr github.PullRequest) (string, error) {
+func (w *RealWorktree) jjFetchPr(repoPath, host string, pr forge.PullRequest) (string, error) {
 	if pr.HeadRefName == "" {
 		return "", fmt.Errorf("could not find the head branch of the pull request")
 	}
 	remote := "origin"
 	if pr.IsFork {
 		remote = pr.HeadOwner
-		_, _ = w.jj.RemoteAdd(repoPath, remote, fmt.Sprintf("https://github.com/%s/%s.git", pr.HeadOwner, pr.HeadRepo))
+		_, _ = w.jj.RemoteAdd(repoPath, remote, fmt.Sprintf("https://%s/%s/%s.git", host, pr.HeadOwner, pr.HeadRepo))
 	}
 	if _, err := w.jj.Fetch(repoPath, "--remote", remote, "--branch", pr.HeadRefName); err != nil {
 		return "", err
@@ -329,24 +405,30 @@ func (w *RealWorktree) repoRoot(cwd string) (string, error) {
 	if isJj, _, repo := w.jj.Roots(cwd); isJj {
 		return repo, nil
 	}
-	return w.mainWorktree(cwd)
+	return w.MainWorktree(cwd)
 }
 
-// mainWorktree returns the primary worktree path (first porcelain entry).
-func (w *RealWorktree) mainWorktree(cwd string) (string, error) {
-	ok, out, err := w.git.WorktreeList(cwd)
+// MainWorktree returns the primary worktree path (first porcelain entry).
+func (w *RealWorktree) MainWorktree(path string) (string, error) {
+	ok, out, err := w.git.WorktreeList(path)
 	if err != nil || !ok {
-		return "", fmt.Errorf("not in a git repository: %s", cwd)
+		return "", fmt.Errorf("not in a git repository: %s", path)
 	}
 	for _, line := range strings.Split(out, "\n") {
 		if strings.HasPrefix(line, "worktree ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "worktree ")), nil
+			return w.path.Abs(strings.TrimSpace(strings.TrimPrefix(line, "worktree ")))
 		}
 	}
-	return "", fmt.Errorf("could not determine main worktree from %q", cwd)
+	return "", fmt.Errorf("could not determine main worktree from %q", path)
 }
 
 func (w *RealWorktree) sameDir(a, b string) bool {
+	aa, err1 := w.path.Abs(a)
+	ab, err2 := w.path.Abs(b)
+	if err1 == nil && err2 == nil {
+		a = aa
+		b = ab
+	}
 	ea, err1 := w.path.EvalSymlinks(a)
 	eb, err2 := w.path.EvalSymlinks(b)
 	if err1 == nil && err2 == nil {
@@ -363,21 +445,35 @@ func (w *RealWorktree) BrowseURL(sessionPath string, pr bool) (string, error) {
 	if sessionPath == "" {
 		return "", fmt.Errorf("no focused tmux session")
 	}
-	cfg, number, dir, ok := w.worktreeAt(sessionPath)
+	cfg, number, isExplicitPr, dir, ok := w.worktreeAt(sessionPath)
 	if !ok {
 		return "", fmt.Errorf("%s is not a worktree (no [[worktree]] root contains it)", sessionPath)
+	}
+	if isExplicitPr {
+		pr = true
+	}
+	f, err := w.ForgeFromConfig(cfg)
+	if err != nil {
+		return "", err
+	}
+	host, err := forge.Host(cfg)
+	if err != nil {
+		return "", err
 	}
 	if !pr {
 		if cfg.Repo == "" {
 			return "", fmt.Errorf(
 				"the [[worktree]] block for path %q is missing `repo = \"org/repo\"`", cfg.Path)
 		}
-		return fmt.Sprintf("https://github.com/%s/issues/%d", cfg.Repo, number), nil
+		return f.IssueURL(host, cfg.Repo, number, false), nil
 	}
 	if w.isJj(dir) {
 		return w.jjPrURL(cfg, number)
 	}
-	url, found, err := w.github.PrURL(dir)
+	if isExplicitPr {
+		return f.IssueURL(host, cfg.Repo, number, true), nil
+	}
+	url, found, err := f.PrURL(dir)
 	if err != nil {
 		return "", err
 	}
@@ -392,11 +488,19 @@ func (w *RealWorktree) jjPrURL(cfg model.WorktreeConfig, number int) (string, er
 		return "", fmt.Errorf(
 			"the [[worktree]] block for path %q is missing `repo = \"org/repo\"`", cfg.Path)
 	}
-	url, found, err := w.github.PrURLForHead(cfg.Repo, renderBranch(cfg, number))
+	f, err := w.ForgeFromConfig(cfg)
+	if err != nil {
+		return "", err
+	}
+	host, err := forge.Host(cfg)
+	if err != nil {
+		return "", err
+	}
+	url, found, err := f.PrURLForHead(host, cfg.Repo, renderBranch(cfg, number))
 	if err != nil || found {
 		return url, err
 	}
-	pr, found, err := w.github.PrView(cfg.Repo, number)
+	pr, found, err := f.PrView(host, cfg.Repo, number)
 	if err != nil {
 		return "", err
 	}
@@ -408,7 +512,7 @@ func (w *RealWorktree) jjPrURL(cfg model.WorktreeConfig, number int) (string, er
 
 // worktreeAt finds the [[worktree]] block whose root contains path, and the
 // numbered worktree directory under that root.
-func (w *RealWorktree) worktreeAt(path string) (model.WorktreeConfig, int, string, bool) {
+func (w *RealWorktree) worktreeAt(path string) (model.WorktreeConfig, int, bool, string, bool) {
 	path = w.resolveSymlinks(path)
 	for _, cfg := range w.config.WorktreeConfigs {
 		repoPath, err := w.home.ExpandPath(cfg.Path)
@@ -420,14 +524,18 @@ func (w *RealWorktree) worktreeAt(path string) (model.WorktreeConfig, int, strin
 		if err != nil || rel == "." || strings.HasPrefix(rel, "..") {
 			continue
 		}
-		key := strings.Split(w.path.ToSlash(rel), "/")[0]
-		number, err := strconv.Atoi(key)
+		f, err := w.ForgeFromConfig(cfg)
 		if err != nil {
 			continue
 		}
-		return cfg, number, w.path.Join(root, key), true
+		name := strings.Split(w.path.ToSlash(rel), "/")[0]
+		number, isExplicitPr, err := f.WorktreeNumber(name)
+		if err != nil {
+			continue
+		}
+		return cfg, number, isExplicitPr, w.path.Join(root, name), true
 	}
-	return model.WorktreeConfig{}, 0, "", false
+	return model.WorktreeConfig{}, 0, false, "", false
 }
 
 func (w *RealWorktree) resolveSymlinks(path string) string {
@@ -453,9 +561,24 @@ func firstIssueRef(text string) int {
 // query, and fragment.
 var githubRefRe = regexp.MustCompile(`(?:^|https?://)(?:www\.)?github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)`)
 
-// parseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
+var (
+	gitlabRefRe = regexp.MustCompile(`(?:^|https?://)[^/\s:]+(?::\d+)?/([^\s?#]+?)/-/(issues|merge_requests)/(\d+)`)
+	forgeRefRe  = regexp.MustCompile(`(?:^|https?://)[^/\s:]+(?::\d+)?/([^/\s]+/[^/\s]+)/(issues|pull)/(\d+)`)
+)
+
+func parseForgeRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
+	for _, re := range []*regexp.Regexp{gitlabRefRe, forgeRefRe} {
+		if m := re.FindStringSubmatch(rawURL); m != nil {
+			n, err := strconv.Atoi(m[3])
+			return m[1], n, m[2] != "issues", err == nil
+		}
+	}
+	return "", 0, false, false
+}
+
+// ParseGitHubRef extracts repo, number, and kind from a GitHub issue/PR URL.
 // ok is false for any URL that is not a recognizable issue/PR reference.
-func parseGitHubRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
+func ParseGitHubRef(rawURL string) (repo string, number int, isPR bool, ok bool) {
 	m := githubRefRe.FindStringSubmatch(rawURL)
 	if len(m) < 4 {
 		return "", 0, false, false
@@ -487,4 +610,24 @@ func renderBranch(cfg model.WorktreeConfig, key int) string {
 		tmpl = "{number}"
 	}
 	return strings.ReplaceAll(tmpl, "{number}", strconv.Itoa(key))
+}
+
+func (w *RealWorktree) RepoAt(path string) (string, bool) {
+	path = w.resolveSymlinks(path)
+	for _, cfg := range w.config.WorktreeConfigs {
+		if host, err := forge.Host(cfg); err != nil || host != "github.com" {
+			continue
+		}
+		repoPath, err := w.home.ExpandPath(cfg.Path)
+		if err != nil || cfg.Repo == "" {
+			continue
+		}
+		for _, root := range []string{repoPath, w.worktreeRoot(cfg, repoPath)} {
+			rel, err := w.path.Rel(w.resolveSymlinks(root), path)
+			if err == nil && !strings.HasPrefix(rel, "..") {
+				return cfg.Repo, true
+			}
+		}
+	}
+	return "", false
 }

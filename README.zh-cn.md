@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img src="sesh-hero.jpg" alt="双手在键盘上打字，绿色闪电从每个指尖射入按键" />
 </p>
 
 <h1 align="center">Sesh，智能 tmux 会话管理器</h1>
@@ -29,6 +29,7 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
 - **会话配置** - 在 `sesh.toml` 中为每个项目定义启动命令、窗口、窗格和预览命令
 - **通配符配置** - 将设置应用于所有匹配 glob 模式的项目
 - **内置选择器** - 交互式会话选择器，也可以与 fzf、television 或 gum 集成
+- **智能 URL 打开器** - 从当前 tmux 窗格中选择链接并在浏览器中打开，可预览 GitHub issue、PR 和网页，并将裸 `#1234` 引用解析为您仓库中的 issue
 - **克隆并连接** - 一步克隆 git 仓库并启动会话
 - **创建目录并连接** - 一步创建新目录（相对或绝对路径）并启动会话
 - **切换到上一个会话** - 在最近的两个会话之间无缝切换
@@ -49,6 +50,7 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
     <td>
 
 - [视频](#视频)
+- [演示](#演示)
 - [如何安装](#如何安装)
 - [Shell 补全](#shell-补全)
 - [扩展](#扩展)
@@ -88,6 +90,12 @@ Sesh 是一个 CLI 工具，可帮助您使用 zoxide 快速轻松地创建和�
     </td>
   </tr>
 </table>
+
+## 演示
+
+<p align="center">
+  <img src="sesh-demo.gif" alt="sesh 演示：打开会话选择器，模糊查找项目，并使用键盘快捷键在会话之间跳转" />
+</p>
 
 ## 如何安装
 
@@ -489,7 +497,7 @@ sesh list --format '{fg:gray}{source}{/fg} {fg:bright-cyan}{active_window_name}{
 
 活动窗口名称通过一次 tmux 调用实时获取，并且仅在格式使用了活动窗口名称占位符时才会获取。tmux 查询失败只会让这些占位符为空。`--format` 不能与 `--json` 一起使用。
 
-`sesh list --json` 报告连接时实际会使用的内容：每个会话解析后的 `Icon`（与选择器显示的相同）、它的 `Alias`、`AliasAutoConnect` 和 `Tmuxp`、匹配的 `Wildcard` 模式，以及应用了 `[[wildcard]]` 和 `[default_session]` 回退后的 `StartupCommand`、`PreviewCommand`、`WindowNames` 和 `WindowConfigs`。无论是否设置了 `[tui] show_windows`，tmux 会话都包含其实时的 `TmuxWindows`（`Name`、`Index`、`Path`、`Active`）。位于 `[[worktree]]` 根目录下的会话包含 `Worktree`（`Repo`、`Number`、`Title`、`State`），其中 `Title` 和 `State` 读取自 `sesh worktree list` 填充的 issue 缓存；其他会话均为 `null`。
+`sesh list --json` 报告连接时实际会使用的内容：每个会话解析后的 `Icon`（与选择器显示的相同）、它的 `Alias`、`AliasAutoConnect` 和 `Tmuxp`、匹配的 `Wildcard` 模式，以及应用了 `[[wildcard]]` 和 `[default_session]` 回退后的 `StartupCommand`、`PreviewCommand`、`WindowNames` 和 `WindowConfigs`。无论是否设置了 `[tui] show_windows`，tmux 会话都包含其实时的 `TmuxWindows`（`Name`、`Index`、`Path`、`Active`）。位于 `[[worktree]]` 根目录下的会话包含 `Worktree`（`Repo`、`Number`、`Title`、`State`、`Name`、`RefType`），其中 `Title` 和 `State` 读取自 `sesh worktree list` 填充的 issue 缓存。`RefType` 报告 forge 引用类型（`"issue"` 或 `"pull_request"`），而 `Name` 以 forge 特定的形式携带 worktree 目录名：例如，GitLab 合并请求 worktree 报告 `Number: 101`、`Name: "mr-101"` 和 `RefType: "pull_request"`，而名为 `101` 的目录报告 `Name: "101"` 和 `RefType: "issue"`。其他会话均为 `null`。
 
 任意格式化的行只是显示输出，`sesh connect` 不会将其解析回来。使用 fzf 时，请将原始会话名称保留在隐藏字段中，只显示格式化字段：
 
@@ -596,6 +604,12 @@ sesh mkdir ~/projects/my-app     # 相对于主目录
 sesh mkdir /Users/josh/dev/api   # 绝对路径
 ```
 
+向 `sesh connect`、`sesh mkdir` 或 `sesh clone` 传入 `-b` / `--background`，即可创建会话而不移动客户端；命令会输出会话名，便于脚本继续使用：
+
+```sh
+sesh connect -b ~/c/api -c "npm run dev"
+```
+
 ## gum + tmux
 
 如果您更喜欢使用 [charmbracelet's gum](https://github.com/charmbracelet/gum)，那么您可以使用以下命令连接到会话：
@@ -682,6 +696,33 @@ set-hook -g session-created 'run-shell -b "sesh rename --enrich"'
 当分支没有可解析的 issue 时，该命令不执行任何操作（会话保留其普通名称），并且它会自我修复：
 切换到没有 issue 的分支会将会话重命名回其基本名称。重新连接到该目录会附加到已丰富的会话，
 而不是创建重复的会话。
+
+### 打开窗格中的 URL
+
+`sesh url` 会在选择器中列出当前 tmux 窗格里的所有链接，并在浏览器中打开你选中的链接。
+按 Enter 打开高亮的 URL；按 Tab 可以标记多个一次性打开。预览窗格会显示 GitHub issue
+和 PR（标题、状态和正文），其他页面则以 markdown 形式显示。
+sesh 会自行提取页面的主要内容；设置 `preview_command` 或安装
+[defuddle](https://github.com/kepano/defuddle) 即可改用它们。
+
+除了 `http(s)`、`ftp` 和 `file` URL，它还能识别裸 `www.` 域名、IP 地址、`git@` 远程地址、
+带引号的 `"org/repo"` 字符串、JS/TS `import` 包名，以及 `#1234`——它会链接到
+`path` 或其 worktree 包含当前会话或窗格的 `[[worktree]]` 仓库中的 issue，否则链接到窗格所在目录的 GitHub `origin`。
+
+在 `tmux.conf` 中将其绑定到弹出窗口：
+
+```sh
+bind -N "open URLs from the pane (via sesh)" u display-popup -E -w 80% -h 80% "sesh url"
+```
+
+`--history <lines>` 还会搜索相应行数的回滚历史。在 `sesh.toml` 中设置默认值：
+
+```toml
+[url]
+history = 2000
+extra_filter = "grep -oE 'JIRA-[0-9]+' | sed 's#^#https://jira.example.com/browse/#'"
+preview_command = "defuddle parse {url} --markdown"
+```
 
 ### 连接到根目录
 
@@ -918,37 +959,30 @@ group_separator = true
 > [!WARNING]
 > 此功能为实验性功能，可能无法按预期工作。
 
-Sesh 可以缓存会话列表以加快重复调用。缓存是可选的，默认禁用。启用后，sesh 会将结果存储在 `$XDG_CACHE_HOME/sesh/sessions.gob`（默认为 `~/.cache/sesh/sessions.gob`），并使用 TTL 为 5 秒的 stale-while-revalidate 策略：
+Sesh 可以缓存会话列表以加快重复调用。缓存是可选的，默认禁用。启用后，sesh 会将较慢的数据源（zoxide 和 tmuxinator）的结果存储在 `$XDG_CACHE_HOME/sesh/sessions.v2.gob`（默认为 `~/.cache/sesh/sessions.v2.gob`），并使用 TTL 为 5 秒的 stale-while-revalidate 策略：
 
-- **冷启动**：缓存不存在，获取实时数据并写入缓存
-- **新鲜命中**（5 秒内）：立即返回缓存数据
-- **过期命中**（5 秒后）：立即返回缓存数据，并在后台刷新缓存
+- **冷启动**：缓存不存在，获取 zoxide 和 tmuxinator 并写入缓存
+- **新鲜命中**（5 秒内）：使用缓存的 zoxide 和 tmuxinator 结果
+- **过期命中**（5 秒后）：使用缓存的结果，并在后台刷新缓存
 
-缓存也会在 `sesh connect` 之后自动刷新。
+缓存也会在 `sesh connect` 和 `sesh mkdir` 之后自动刷新。
 
 ```toml
 cache = true
 ```
 
-在 `sesh connect` 之外创建或终止的会话（例如直接使用 `tmux new-session`、关闭会话的最后一个窗口）在下一次过期命中刷新之前不会出现在缓存中。为保持缓存最新，请在这些事件发生时运行 `sesh cache refresh` —— 它会获取实时数据并重写缓存，缓存禁用时则不执行任何操作。使用 tmux 钩子可以覆盖这两种事件：
+tmux 会话从不缓存。列出它们只是一次通过本地套接字的调用，只需几毫秒，因此每次列表都显示实时会话，缓存不会保存过时或为空的 tmux 会话列表。来自 `[[session]]` 块的会话以及 `--panes` 的窗格同样实时列出。数据源顺序、黑名单、`--hide-attached`、`--hide-duplicates` 和格式化的行为与未启用缓存时相同。
 
-```sh
-set-hook -g session-created 'run-shell -b "sesh cache refresh"'
-set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
-```
+其他对 zoxide 或 tmuxinator 的更改，包括通过 `sesh picker` 连接时添加的 zoxide 条目，会在下一次过期命中刷新后出现。运行 `sesh cache refresh` 可立即重新获取这两个数据源并重写缓存；缓存禁用时它不执行任何操作。无需为 `session-created` 和 `session-closed` 设置 tmux 钩子。
 
-如需在单次运行中跳过缓存，请向 `sesh list` 或 `sesh picker` 传入 `--no-cache`。它会列出实时会话并将其写回缓存，因此下一次使用缓存的启动也是最新的。缓存禁用时它不执行任何操作。
+如需在单次运行中跳过缓存，请向 `sesh list` 或 `sesh picker` 传入 `--no-cache`。它会实时获取 zoxide 和 tmuxinator 并将其写回缓存，因此下一次使用缓存的启动也是最新的。缓存禁用时它不执行任何操作。
 
 ```sh
 sesh list --no-cache
 sesh picker --no-cache
 ```
 
-如果您在 fzf 选择器中使用了终止绑定（如上例中的 `ctrl-d`），请在重新加载列表之前刷新缓存，使被终止的会话立即消失：
-
-```sh
---bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
-```
+fzf 选择器中的终止绑定（如上例中的 `ctrl-d`）无需 `sesh cache refresh`：下一次 `sesh list` 会实时读取 tmux 会话。
 
 ### 选择器 TUI
 
@@ -1119,7 +1153,7 @@ filter: #
 
 允许终止您当前附加的会话：tmux 会将您的客户端移到另一个会话，如果这是最后一个会话则退出。选择器也会随之关闭，因为它就运行在那里。
 
-zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，两种操作之后都会重写缓存，因此下次启动时不会再列出刚刚移除的内容。
+zoxide 移除默认运行 `zoxide remove {}`，或您设置的 `remove_command` —— 请参阅 [自定义 frecency 后端](#自定义-frecency-后端fasdautojump-等)。当 `cache = true` 时，移除 zoxide 条目之后还会重写缓存，因此下次启动时不会再列出刚刚移除的内容。终止 tmux 会话无需重写，因为 tmux 会话不会被缓存。
 
 #### 预览窗格
 
@@ -1421,9 +1455,11 @@ sesh worktree connect 2345 --pr                  # 强制使用 pull request 路
 sesh worktree connect 2345 --switch              # 切换（而非附加）—— 用于在 tmux 外部调用
 sesh worktree connect 2345 -c 'claude'          # 同时在名为 claude 的新窗口中运行 claude
 sesh worktree connect 2345 --background         # 创建但不附加或切换客户端
+sesh worktree connect https://github.com/nutiliti/nutiliti/issues/2345   # URL 可以代替编号
+sesh worktree connect --clipboard                # 从剪贴板读取引用（编号或 URL）
 ```
 
-大多数标志也有短格式：`--repo`/`-r`、`--pr`/`-p`、`--switch`/`-s`、`--command`/`-c`。
+大多数标志也有短格式：`--repo`/`-r`、`--pr`/`-p`、`--switch`/`-s`、`--command`/`-c`、`--clipboard`/`-l`。
 
 `--command` 与会话的启动命令并存，而不是替换它：会话照常启动（或复用），然后该命令在一个以其程序命名的
 新建窗口中运行，因此再次运行绝不会把输入敲进已在运行的窗口。配合 `--background` 可以连续启动多个
@@ -1477,8 +1513,25 @@ application = "Helium"
 sesh worktree connect --browser   # 或：sesh wt c -b
 ```
 
-URL 中的 `org/repo` 会按 `repo` 与您的 `[[worktree]]` 条目匹配。`/issues/N` 和 `/pull/N`
-两种 URL 都受支持。仅限 macOS。
+URL 中的 `org/repo`（或 GitLab 的 `group/project`）会按 `repo` 与您的 `[[worktree]]` 条目匹配。
+支持 GitHub 的 `/issues/N` 和 `/pull/N` 以及 GitLab 的 `/-/issues/N` 和 `/-/merge_requests/N`
+URL，包括自定义主机。仅限 macOS。
+
+在其他平台上，您可以复制浏览器 URL，然后将其作为位置参数粘贴，或使用 `--clipboard` 标志。
+
+#### 从剪贴板连接到 worktree
+
+`--clipboard`（`-l`）改为从系统剪贴板读取 issue/PR 引用，并接受 URL 或纯编号：
+
+```bash
+sesh worktree connect --clipboard   # 或：sesh wt c -l
+```
+
+与 `--browser` 一样，URL 引用的 `org/repo` 会按 `repo` 与您的 `[[worktree]]` 条目匹配，
+`--repo` 会覆盖它。
+
+在 Linux 上，剪贴板在可用时通过 Wayland 的 data-control 协议读取，否则回退到 X11。
+在两者都不可用的会话中 —— 无头服务器，或没有 `DISPLAY` 的 SSH tmux —— `--clipboard` 会报错。
 
 #### 在浏览器中打开 worktree 的 issue 或 PR
 

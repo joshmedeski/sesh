@@ -22,6 +22,7 @@ var what = map[string]string{
 	"BlacklistFilter":           "Blacklisting {n}",
 	"BuildItems":                "Building picker rows for {n}",
 	"CachingListerApplyFilters": "Re-filtering {n} on every run",
+	"CachingListerList":         "Listing {n} from a cached snapshot",
 	"FilterAliases":             "Filtering aliases, {n}",
 	"FilterSessions":            "Filtering {n} on a keystroke",
 	"FindTmuxSessionByBase":     "Finding a tmux session among {n}",

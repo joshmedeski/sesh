@@ -169,6 +169,7 @@ func pickWorktree(
 	// <number>` would have — startup command and PR refresh included.
 	_, err = deps.Worktree.Connect(model.WorktreeConnectOpts{
 		Number: entry.Number,
+		Pr:     entry.RefType == model.RefTypePr,
 		Repo:   listOpts.Repo,
 		Switch: switchSession,
 	})
@@ -234,35 +235,42 @@ neither, the repo is detected from the current directory.`,
 // number leads so the list sorts and filters by it, with the title appended
 // when it is known.
 func worktreeLabel(entry model.WorktreeEntry) string {
-	if entry.Title == "" {
-		return strconv.Itoa(entry.Number)
+	name := entry.Name
+	if name == "" {
+		name = strconv.Itoa(entry.Number)
 	}
-	return fmt.Sprintf("%d  %s", entry.Number, entry.Title)
+	if entry.Title == "" {
+		return name
+	}
+	return fmt.Sprintf("%s  %s", name, entry.Title)
 }
 
 func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "connect [number]",
+		Use:     "connect [number|url]",
 		Aliases: []string{"c"},
 		Short:   "Connect to a worktree for an issue/PR, creating it if it doesn't exist",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fromBrowser, _ := cmd.Flags().GetBool("browser")
+			fromClipboard, _ := cmd.Flags().GetBool("clipboard")
 
-			if fromBrowser && len(args) > 0 {
-				return fmt.Errorf("provide a number or --browser, not both")
-			}
-			if !fromBrowser && len(args) == 0 {
-				return fmt.Errorf("provide an issue/PR number or use --browser")
+			if fromBrowser && fromClipboard || (fromBrowser || fromClipboard) && len(args) > 0 {
+				return fmt.Errorf("provide an issue/PR reference or --browser or --clipboard, not a combination")
 			}
 
 			number := 0
-			if !fromBrowser {
+			ref := ""
+			if !fromBrowser && !fromClipboard {
+				if len(args) == 0 {
+					return fmt.Errorf("provide an issue/PR reference or use --browser or --clipboard")
+				}
 				n, err := strconv.Atoi(args[0])
 				if err != nil {
-					return fmt.Errorf("worktree number must be an integer: %q", args[0])
+					ref = args[0]
+				} else {
+					number = n
 				}
-				number = n
 			}
 
 			deps, err := buildDeps(cmd, base)
@@ -277,13 +285,15 @@ func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 			background, _ := cmd.Flags().GetBool("background")
 
 			_, err = deps.Worktree.Connect(model.WorktreeConnectOpts{
-				Number:      number,
-				Repo:        repo,
-				Pr:          pr,
-				Switch:      switchFlag,
-				FromBrowser: fromBrowser,
-				Command:     command,
-				Background:  background,
+				Number:        number,
+				Ref:           ref,
+				Repo:          repo,
+				Pr:            pr,
+				Switch:        switchFlag,
+				FromBrowser:   fromBrowser,
+				FromClipboard: fromClipboard,
+				Command:       command,
+				Background:    background,
 			})
 			return err
 		},
@@ -293,6 +303,7 @@ func newWorktreeConnectCommand(base *BaseDeps) *cobra.Command {
 	cmd.Flags().BoolP("pr", "p", false, "Treat the number as a pull request")
 	cmd.Flags().BoolP("switch", "s", false, "Switch the session rather than attach (for use outside tmux)")
 	cmd.Flags().BoolP("browser", "b", false, "Read the issue/PR from the active browser tab (macOS)")
+	cmd.Flags().BoolP("clipboard", "l", false, "Read the issue/PR from the clipboard")
 	cmd.Flags().StringP("command", "c", "", "Run a command in a new window named after its program")
 	cmd.Flags().Bool("background", false, "Create the session without attaching or switching the client")
 

@@ -34,10 +34,12 @@ type FileCache struct {
 	path string
 }
 
-// NewFileCache creates a FileCache that stores data at $XDG_CACHE_HOME/sesh/sessions.gob
-// (falling back to ~/.cache/sesh/sessions.gob).
+// NewFileCache creates a FileCache that stores data at $XDG_CACHE_HOME/sesh/sessions.v2.gob
+// (falling back to ~/.cache/sesh/sessions.v2.gob). The file holds only the slow
+// sources; the version in its name keeps a sesh that expects the whole list from
+// reading it.
 func NewFileCache() *FileCache {
-	return &FileCache{path: filepath.Join(Dir(), "sessions.gob")}
+	return &FileCache{path: filepath.Join(Dir(), "sessions.v2.gob")}
 }
 
 // NewFileCacheWithPath creates a FileCache at a specific path (useful for testing).

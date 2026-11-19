@@ -6,4 +6,5 @@ type GitCloneOptions struct {
 	Repo     string
 	GitFlags []string
 	Vcs      string
+	Connect  ConnectOpts
 }

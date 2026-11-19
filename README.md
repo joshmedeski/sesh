@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="256" height="256" src="https://github.com/joshmedeski/sesh/blob/main/sesh-icon.png" />
+  <img src="sesh-hero.jpg" alt="Hands typing on a keyboard with green lightning arcing from each fingertip into the keys" />
 </p>
 
 <h1 align="center">Sesh, the smart tmux session manager</h1>
@@ -29,6 +29,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
 - **Session configuration** - define startup commands, windows, panes, and preview commands per project in `sesh.toml`
 - **Wildcard configs** - apply settings to all projects matching a glob pattern
 - **Built-in picker** - interactive session selector, or integrate with fzf, television, or gum
+- **Smart URL opener** - pick links from the current tmux pane and open them in your browser, with previews of GitHub issues, PRs, and pages, and bare `#1234` references resolved to your repo
 - **Clone and connect** - clone a git repo and start a session in one step
 - **Mkdir and connect** - create a new directory (relative or absolute path) and start a session in one step
 - **Last session switching** - seamlessly bounce between your two most recent sessions
@@ -49,6 +50,7 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     <td>
 
 - [Videos](#videos)
+- [Demo](#demo)
 - [How to install](#how-to-install)
 - [Shell Completion](#shell-completion)
 - [Extensions](#extensions)
@@ -88,6 +90,12 @@ Sesh is a CLI that helps you create and manage tmux sessions quickly and easily 
     </td>
   </tr>
 </table>
+
+## Demo
+
+<p align="center">
+  <img src="sesh-demo.gif" alt="sesh demo: opening the session picker, fuzzy finding a project, and jumping between sessions with keyboard shortcuts" />
+</p>
 
 ## How to install
 
@@ -491,7 +499,7 @@ Supported colors are `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan
 
 The active window names are fetched live in one tmux call and only when the format uses an active-window-name placeholder. A tmux lookup failure simply leaves the active-window-name placeholders empty. `--format` cannot be combined with `--json`.
 
-`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set. Sessions under a `[[worktree]]` root include `Worktree` (`Repo`, `Number`, `Title`, `State`), with `Title` and `State` read from the issue cache that `sesh worktree list` fills; it is `null` for every other session.
+`sesh list --json` reports what connecting will actually use: each session's resolved `Icon` (the same one the picker shows), its `Alias`, `AliasAutoConnect`, and `Tmuxp`, the matching `Wildcard` pattern, and `StartupCommand`, `PreviewCommand`, `WindowNames`, and `WindowConfigs` with `[[wildcard]]` and `[default_session]` fallbacks applied. tmux sessions include their live `TmuxWindows` (`Name`, `Index`, `Path`, `Active`) whether or not `[tui] show_windows` is set. Sessions under a `[[worktree]]` root include `Worktree` (`Repo`, `Number`, `Title`, `State`, `Name`, `RefType`), with `Title` and `State` read from the issue cache that `sesh worktree list` fills. `RefType` reports the forge reference kind (`"issue"` or `"pull_request"`), and `Name` carries the worktree directory name in the forge-specific form: e.g., a GitLab merge request worktree reports `Number: 101` with `Name: "mr-101"` and `RefType: "pull_request"`, while a directory named `101` reports `Name: "101"` and `RefType: "issue"`. It is `null` for every other session.
 
 Arbitrary formatted rows are display output and are not parsed back by `sesh connect`. When using fzf, keep the raw session name in a hidden field and show only the formatted field:
 
@@ -599,6 +607,12 @@ sesh mkdir ~/projects/my-app     # relative to your home directory
 sesh mkdir /Users/josh/dev/api   # absolute path
 ```
 
+Pass `-b` / `--background` to `sesh connect`, `sesh mkdir`, or `sesh clone` to create the session without moving the client; the session name is printed so scripts can chain off it:
+
+```sh
+sesh connect -b ~/c/api -c "npm run dev"
+```
+
 ## gum + tmux
 
 If you prefer to use [charmbracelet's gum](https://github.com/charmbracelet/gum) then you can use the following command to connect to a session:
@@ -687,6 +701,37 @@ The command is a no-op when the branch has no resolvable issue (the session
 keeps its plain name), and it self-heals: switching to a branch without an issue
 renames the session back to its base name. Reconnecting to the directory
 reattaches to the enriched session rather than creating a duplicate.
+
+### Open URLs from the pane
+
+`sesh url` lists every link in the current tmux pane in a picker and opens the
+ones you choose in the browser. Enter opens the highlighted URL; tab marks
+several to open at once. The preview pane shows GitHub issues and PRs (title,
+state and body) and other pages as markdown. sesh extracts the main content of
+the page itself; set `preview_command` or install
+[defuddle](https://github.com/kepano/defuddle) to use that instead.
+
+Besides `http(s)`, `ftp` and `file` URLs it picks up bare `www.` domains, IP
+addresses, `git@` remotes, quoted `"org/repo"` strings, JS/TS `import` package
+names, and `#1234`, which links to an issue in the `[[worktree]]` repo whose
+`path` or worktrees hold the session or pane, or else the GitHub `origin` of the
+pane's directory.
+
+Bind it to a popup in your `tmux.conf`:
+
+```sh
+bind -N "open URLs from the pane (via sesh)" u display-popup -E -w 80% -h 80% "sesh url"
+```
+
+`--history <lines>` also searches that much scrollback. Set defaults in
+`sesh.toml`:
+
+```toml
+[url]
+history = 2000
+extra_filter = "grep -oE 'JIRA-[0-9]+' | sed 's#^#https://jira.example.com/browse/#'"
+preview_command = "defuddle parse {url} --markdown"
+```
 
 ### Connect to root
 
@@ -934,37 +979,30 @@ and the groups no longer line up with contiguous ranges.
 > [!WARNING]
 > This feature is experimental and may not work as expected.
 
-Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores results at `$XDG_CACHE_HOME/sesh/sessions.gob` (default `~/.cache/sesh/sessions.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
+Sesh can cache session lists to speed up repeated calls. Caching is opt-in and disabled by default. When enabled, sesh stores the results of the slow sources, zoxide and tmuxinator, at `$XDG_CACHE_HOME/sesh/sessions.v2.gob` (default `~/.cache/sesh/sessions.v2.gob`) and uses a stale-while-revalidate strategy with a 5-second TTL:
 
-- **Cold start**: no cache exists, fetches live data and writes the cache
-- **Fresh hit** (within 5s): returns cached data instantly
-- **Stale hit** (after 5s): returns cached data instantly and refreshes the cache in the background
+- **Cold start**: no cache exists, fetches zoxide and tmuxinator and writes the cache
+- **Fresh hit** (within 5s): uses the cached zoxide and tmuxinator results
+- **Stale hit** (after 5s): uses the cached results and refreshes the cache in the background
 
-The cache is also refreshed automatically after `sesh connect`.
+The cache is also refreshed automatically after `sesh connect` and `sesh mkdir`.
 
 ```toml
 cache = true
 ```
 
-Sessions created or killed outside `sesh connect` (e.g. plain `tmux new-session`, closing a session's last window) are missing from the cache until the next stale-hit refresh. To keep the cache current, run `sesh cache refresh` when those events happen — it fetches live data and rewrites the cache, and does nothing when the cache is disabled. With tmux hooks this covers both events:
+tmux sessions are never cached. Listing them is a single call over a local socket and takes milliseconds, so every list shows the live sessions, and the cache cannot hold an out-of-date or empty tmux session list. Sessions from `[[session]]` blocks and the panes of `--panes` are listed live too. Source order, the blacklist, `--hide-attached`, `--hide-duplicates` and formatting work as they do without the cache.
 
-```sh
-set-hook -g session-created 'run-shell -b "sesh cache refresh"'
-set-hook -g session-closed  'run-shell -b "sesh cache refresh"'
-```
+Other changes to zoxide or tmuxinator, including the zoxide entry a connect from `sesh picker` adds, show up after the next stale-hit refresh. Run `sesh cache refresh` to refetch both sources and rewrite the cache right away; it does nothing when the cache is disabled. tmux hooks on `session-created` and `session-closed` are not needed.
 
-To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It lists live sessions and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
+To skip the cache for a single run, pass `--no-cache` to `sesh list` or `sesh picker`. It fetches zoxide and tmuxinator live and writes them back to the cache, so the next cached launch is current too. It does nothing when the cache is disabled.
 
 ```sh
 sesh list --no-cache
 sesh picker --no-cache
 ```
 
-If you use a kill binding in an fzf picker (like `ctrl-d` in the example above), refresh the cache before reloading the list so the killed session disappears immediately:
-
-```sh
---bind 'ctrl-d:execute(tmux kill-session -t {2..}; sesh cache refresh)+change-prompt(⚡  )+reload(sesh list --icons)' \
-```
+A kill binding in an fzf picker (like `ctrl-d` in the example above) needs no `sesh cache refresh`: the next `sesh list` reads the tmux sessions live.
 
 ### Picker TUI
 
@@ -1140,7 +1178,7 @@ Only tmux and zoxide rows can be removed — a `[[session]]` block or a tmuxinat
 
 Killing the session you are attached to is allowed: tmux moves your client to another session, or exits if that was the last one. The picker goes with it, since it was running there.
 
-The zoxide removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, the cache is rewritten behind either action so the next launch doesn't list what just went away.
+The zoxide removal runs `zoxide remove {}` by default, or whatever `remove_command` you set — see [Custom Frecency Backend](#custom-frecency-backend-fasd-autojump-etc). With `cache = true`, removing a zoxide entry also rewrites the cache so the next launch doesn't list what just went away. Killing a tmux session needs no rewrite because tmux sessions are not cached.
 
 #### Preview pane
 
@@ -1443,9 +1481,11 @@ sesh worktree connect 2345 --pr                  # force the pull-request path
 sesh worktree connect 2345 --switch              # switch (not attach) — for invocation outside tmux
 sesh worktree connect 2345 -c 'claude'          # also run claude in a new window named claude
 sesh worktree connect 2345 --background         # create without attaching or switching the client
+sesh worktree connect https://github.com/nutiliti/nutiliti/issues/2345   # a URL works in place of a number
+sesh worktree connect --clipboard                # read the reference (number or URL) from the clipboard
 ```
 
-Most flags also have a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`, `--command`/`-c`.
+Most flags also have a short form: `--repo`/`-r`, `--pr`/`-p`, `--switch`/`-s`, `--command`/`-c`, `--clipboard`/`-l`.
 
 `--command` runs alongside the session's startup command rather than replacing it: the
 session starts (or is reused) as usual, then the command runs in a newly created window
@@ -1511,8 +1551,28 @@ application = "Helium"
 sesh worktree connect --browser   # or: sesh wt c -b
 ```
 
-The URL's `org/repo` is matched against your `[[worktree]]` entries by `repo`. Both
-`/issues/N` and `/pull/N` URLs are supported. macOS only.
+The URL's `org/repo` (or GitLab `group/project`) is matched against your `[[worktree]]`
+entries by `repo`. GitHub `/issues/N` and `/pull/N` and GitLab `/-/issues/N` and
+`/-/merge_requests/N` URLs are supported, including custom hosts. macOS only.
+
+On other platforms, you can copy the browser URL and either paste it as positional
+argument or use the `--clipboard` flag.
+
+#### Connecting to a worktree from the clipboard
+
+`--clipboard` (`-l`) reads the issue/PR reference from the system clipboard instead,
+and accepts either a URL or a bare number:
+
+```bash
+sesh worktree connect --clipboard   # or: sesh wt c -l
+```
+
+Like with `--browser`, a URL reference's `org/repo` is matched against your
+`[[worktree]]` entries by `repo`, and `--repo` overrides it.
+
+On Linux, the clipboard is read through Wayland's data-control protocol when available,
+falling back to X11. In a session with neither — a headless server, or tmux over SSH
+with no `DISPLAY` — `--clipboard` fails with an error.
 
 #### Opening a worktree's issue or PR in the browser
 
