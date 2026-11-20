@@ -16,3 +16,6 @@ updates:
       go-dependencies:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: charm.land/bubbletea/v2
+        versions: [">= 2.1.0"]
