@@ -167,19 +167,15 @@ func (l *RealLister) ListWith(opts ListOptions, fetched SourceResults) (model.Se
 		fullDirectory = filteredDirectory
 	}
 
-	// HideAttached runs before HideDuplicates so the attached tmux session
-	// is removed from the dedup input. Otherwise tmux would win the dedup
-	// against a same-named config/tmuxinator entry and then be hidden,
-	// leaving no entry for the user to pick.
 	if opts.HideAttached {
-		if attachedSession, ok := GetAttachedTmuxSession(l); ok {
-			for i, index := range fullOrderedIndex {
+		if attached, ok := GetAttachedTmuxSession(l); ok {
+			fullOrderedIndex = slices.DeleteFunc(fullOrderedIndex, func(index string) bool {
 				s := fullDirectory[index]
-				if s.Src == "tmux" && s.Name == attachedSession.Name {
-					fullOrderedIndex = slices.Delete(fullOrderedIndex, i, i+1)
-					break
+				if s.Src == "tmux" {
+					return s.Name == attached.Name
 				}
-			}
+				return opts.HideDuplicates && s.Src == "zoxide" && s.Path == attached.Path
+			})
 		}
 	}
 
