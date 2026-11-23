@@ -1,6 +1,7 @@
 package lister
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/joshmedeski/sesh/v2/home"
@@ -209,6 +210,46 @@ func TestHideAttachedBeforeHideDuplicates(t *testing.T) {
 	kept := result.Directory[result.OrderedIndex[0]]
 	assert.Equal(t, "config", kept.Src)
 	assert.Equal(t, "project", kept.Name)
+}
+
+func TestHideAttachedHidesMatchingZoxideWhenDeduping(t *testing.T) {
+	for _, hideDuplicates := range []bool{true, false} {
+		t.Run(fmt.Sprintf("hideDuplicates=%v", hideDuplicates), func(t *testing.T) {
+			mockTmux := new(tmux.MockTmux)
+			mockZoxide := new(zoxide.MockZoxide)
+			mockHome := new(home.MockHome)
+			mockTmuxinator := new(tmuxinator.MockTmuxinator)
+
+			mockTmux.On("ListSessions").Return([]*model.TmuxSession{
+				{Name: "project", Path: "/p", Attached: 1},
+			}, nil)
+			mockZoxide.On("ListResults").Return([]*model.ZoxideResult{
+				{Path: "/p", Score: 1},
+				{Path: "/other", Score: 1},
+			}, nil)
+			mockHome.On("ShortenHome", "/p").Return("/p", nil)
+			mockHome.On("ShortenHome", "/other").Return("/other", nil)
+
+			l := NewLister(model.Config{}, mockHome, mockTmux, mockZoxide, mockTmuxinator, nil, nil, nil)
+
+			result, err := l.List(ListOptions{
+				Tmux:           true,
+				Zoxide:         true,
+				HideAttached:   true,
+				HideDuplicates: hideDuplicates,
+			})
+			assert.NoError(t, err)
+			var paths []string
+			for _, idx := range result.OrderedIndex {
+				paths = append(paths, result.Directory[idx].Path)
+			}
+			if hideDuplicates {
+				assert.Equal(t, []string{"/other"}, paths)
+			} else {
+				assert.Equal(t, []string{"/p", "/other"}, paths)
+			}
+		})
+	}
 }
 
 func TestBlacklistedFlag(t *testing.T) {
