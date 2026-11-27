@@ -439,6 +439,8 @@ bind-key "T" run-shell "sesh connect \"$(
 )\""
 ```
 
+> **macOS：** 如果弹出窗口响应缓慢，请尝试将上述绑定中的 `sesh list --icons | fzf-tmux -p 80%,70% \` 替换为 `sesh list --icons | fzf --tmux 80%,70% \`。使用 fzf 内置的 tmux 弹出窗口可能会有所改善。
+
 您可以根据需要自定义此项，有关不同选项的更多信息，请参阅 `man fzf`。
 
 要持续刷新活动 tmux 会话的预览，请在预览命令中添加 `--watch`：
