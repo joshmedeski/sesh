@@ -440,6 +440,8 @@ bind-key "T" run-shell "sesh connect \"$(
 )\""
 ```
 
+> **macOS:** If the popup feels sluggish, try replacing `sesh list --icons | fzf-tmux -p 80%,70% \` with `sesh list --icons | fzf --tmux 80%,70% \` in the binding above. Using fzf's built-in tmux popup may help.
+
 You can customize this however you want, see `man fzf` for more info on the different options.
 
 To continuously refresh previews of active tmux sessions, add `--watch` to the preview command:
